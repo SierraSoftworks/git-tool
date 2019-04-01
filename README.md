@@ -10,7 +10,7 @@ by keeping them organized in a simple and concise directory structure inspired b
 Install-Module -Name Git-Tools
 
 # Choose which directory you wish to store your repositories in
-$GitTools.Directory = "C:\dev"
+Set-DevDirectory "C:\dev"
 ```
 
 You can also modify your PowerShell profile to add these lines and automatically
