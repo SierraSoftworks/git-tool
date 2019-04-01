@@ -67,5 +67,3 @@ function Get-RepoInfo {
         Exists  = $(Test-Path -Path $repoPath -PathType Container);
     }
 }
-
-Register-ArgumentCompleter -CommandName Get-RepoInfo -ParameterName Repo -ScriptBlock $Function:SuggestRepoName

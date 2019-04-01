@@ -57,5 +57,3 @@ function Open-Repo {
 
     return $info
 }
-
-Register-ArgumentCompleter -CommandName Open-Repo -ParameterName Repo -ScriptBlock $Function:SuggestRepoName

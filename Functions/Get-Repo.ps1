@@ -124,5 +124,3 @@ function Get-Repo {
 
     return $info
 }
-
-Register-ArgumentCompleter -CommandName Get-Repo -ParameterName Repo -ScriptBlock $Function:SuggestRepoName

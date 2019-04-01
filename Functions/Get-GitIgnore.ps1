@@ -26,8 +26,6 @@ function Get-GitIgnore {
     (Invoke-WebRequest "https://gitignore.io/api/$Language").Content
 }
 
-Register-ArgumentCompleter -CommandName Get-GitIgnore -ParameterName Language -ScriptBlock $Function:SuggestGitIgnoreType
-
 function Get-GitIgnoreTypes {
     (Invoke-WebRequest "https://gitignore.io/api/list").Content.Split(',', "`t", "`n", "`r") | ForEach-Object { $_.Trim() }
 }

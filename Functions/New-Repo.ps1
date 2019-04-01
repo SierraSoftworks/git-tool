@@ -125,6 +125,3 @@ function New-Repo {
 
     return $info
 }
-
-Register-ArgumentCompleter -CommandName New-Repo -ParameterName Repo -ScriptBlock $Function:SuggestRepoPrefix
-Register-ArgumentCompleter -CommandName New-Repo -ParameterName GitIgnore -ScriptBlock $Function:SuggestGitIgnoreType
