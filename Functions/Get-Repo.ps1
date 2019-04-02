@@ -52,7 +52,6 @@ function Get-Repo {
 
         [string]
         [Parameter(HelpMessage = "The service hosting your repository (e.g. github.com)")]
-        [ValidateSet("github.com", "dev.azure.com", "gitlab.com", "bitbucket.org")]
         $Service = $GitTool.Service,
 
         [string]

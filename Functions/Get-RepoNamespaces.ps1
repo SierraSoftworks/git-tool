@@ -26,7 +26,6 @@ function Get-RepoNamespaces {
     param (
         [string]
         [Parameter(HelpMessage = "The service hosting your repository (e.g. github.com)")]
-        [ValidateSet("github.com", "dev.azure.com", "gitlab.com", "bitbucket.org")]
         $Service = $GitTool.Service,
 
         [string]
@@ -35,8 +34,13 @@ function Get-RepoNamespaces {
     )
 
     $servicePath = [System.IO.Path]::Combine($Path, $Service)
+    
+    $matcher = "*"
+    for ($i = 1; $i -lt $GitTool.Services[$Service].NamespaceDepth; $i++) {
+        $matcher = "$matcher/*"
+    }
 
-    Get-ChildItem -Path $servicePath -Directory -Depth 0 | ForEach-Object {
+    Get-ChildItem -Path $servicePath -Directory -Depth ($GitTool.Services[$Service].NamespaceDepth - 1) | ForEach-Object {
         $_.FullName.Substring($servicePath.Length).Replace([System.IO.Path]::DirectorySeparatorChar, "/").Trim("/")
-    } | Sort-Object -Unique
+    } | Sort-Object -Unique | Where-Object { $_ -like $matcher }
 }

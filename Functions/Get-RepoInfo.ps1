@@ -37,7 +37,6 @@ function Get-RepoInfo {
 
         [string]
         [Parameter(HelpMessage = "The service hosting your repository (e.g. github.com)")]
-        [ValidateSet("github.com", "dev.azure.com", "gitlab.com", "bitbucket.org")]
         $Service = $GitTool.Service,
 
         [string]
@@ -45,25 +44,29 @@ function Get-RepoInfo {
         $Path = $GitTool.Directory
     )
 
-    $repoUrl = "https://$Service/$Repo"
-    $gitUrl = "git@${Service}:$Repo.git"
     $repoPath = [System.IO.Path]::Combine($Path, $Service, $Repo.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+    
+    $repoNameSplit = $Repo -split '/'
 
-    if ($Service -eq "dev.azure.com") {
-        $repoNameSplit = $Repo -split '/'
-        $repoNamespace = $repoNameSplit[0..($repoNameSplit.Length - 2)] -join '/'
-        $repoName = $repoNameSplit[-1]
-
-        $repoUrl = "https://$Service/${repoNamespace}/_git/${repoName}"
-        $gitUrl = "git@ssh.dev.azure.com:v3/$Repo"
+    if ($repoNameSplit.Length -ne ($GitTool.Services[$Service].NamespaceDepth + 1)) {
+        Write-Error -Category InvalidArgument -Message "The service $Service expects a repository name with $($GitTool.Services[$Service].NamespaceDepth + 1) path segments, you provided $($repoNameSplit.Length) segments." -RecommendedAction "Please enter a name with $($GitTool.Services[$Service].NamespaceDepth + 1) path segments each separated by a '/'."
+        return
     }
 
+    $repoNamespace = $repoNameSplit[0..($GitTool.Services[$Service].NamespaceDepth - 1)] -join '/'
+    $repoName = $repoNameSplit[$GitTool.Services[$Service].NamespaceDepth]
+
+    $repoUrl = [System.String]::Format($GitTool.Services[$Service].WebURLFormat, $repoNamespace, $repoName)
+    $gitUrl = [System.String]::Format($GitTool.Services[$Service].GitURLFormat, $repoNamespace, $repoName)
+
     return @{
-        Repo    = $Repo;
-        Service = $Service;
-        Path    = $repoPath;
-        WebURL  = $repoUrl;
-        GitURL  = $gitUrl;
-        Exists  = $(Test-Path -Path $repoPath -PathType Container);
+        Repo      = "$repoNamespace/$repoName";
+        Namespace = $repoNamespace;
+        Name      = $repoName;
+        Service   = $Service;
+        Path      = $repoPath;
+        WebURL    = $repoUrl;
+        GitURL    = $gitUrl;
+        Exists    = $(Test-Path -Path $repoPath -PathType Container);
     }
 }

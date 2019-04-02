@@ -36,7 +36,6 @@ function Get-Repos {
     param (
         [string]
         [Parameter(HelpMessage = "The service hosting your repository (e.g. github.com)")]
-        [ValidateSet("github.com", "dev.azure.com", "gitlab.com", "bitbucket.org")]
         $Service = $GitTool.Service,
 
         [string]
@@ -46,7 +45,12 @@ function Get-Repos {
 
     $servicePath = [System.IO.Path]::Combine($Path, $Service)
 
-    Get-ChildItem -Path $servicePath -Directory -Depth 1 | ForEach-Object {
+    $matcher = "*"
+    for ($i = 0; $i -lt $GitTool.Services[$Service].NamespaceDepth; $i++) {
+        $matcher = "$matcher/*"
+    }
+
+    Get-ChildItem -Path $servicePath -Directory -Depth $GitTool.Services[$Service].NamespaceDepth | ForEach-Object {
         $_.FullName.Substring($servicePath.Length).Replace([System.IO.Path]::DirectorySeparatorChar, "/").Trim("/")
-    } | Sort-Object -Unique | Where-Object { $_ -like "*/*" }
+    } | Sort-Object -Unique | Where-Object { $_ -like $matcher }
 }
