@@ -1,9 +1,9 @@
 function SuggestAutocomplete {
     param(
         [string]
-        $commandName, 
+        $commandName,
         [string]
-        $parameterName, 
+        $parameterName,
         [string]
         $wordToComplete,
         $commandAst,
@@ -23,7 +23,7 @@ function SuggestAutocomplete {
             if (-not $fakeBoundParameter.ContainsKey("Service")) {
                 $fakeBoundParameter.Service = $GitTool.Service
             }
-        
+
             if (-not $fakeBoundParameter.ContainsKey("Path")) {
                 $fakeBoundParameter.Path = $GitTool.Directory
             }
