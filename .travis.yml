@@ -1,7 +1,0 @@
-language: minimal
-
-before_script:
-  - docker pull mcr.microsoft.com/powershell:latest
-
-script:
-  - "docker run --rm -it -v $(pwd):/src -e NUGET_APIKEY=$NUGET_APIKEY mcr.microsoft.com/powershell:latest pwsh -Command 'Publish-Module -Path /src/ -NuGetApiKey $env:NUGET_APIKEY'"
