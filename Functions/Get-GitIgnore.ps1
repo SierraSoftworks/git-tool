@@ -23,9 +23,9 @@ function Get-GitIgnore {
         $Language = $GitTool.GitIgnore.Default
     )
 
-    (Invoke-WebRequest "https://gitignore.io/api/$Language").Content
+    (Invoke-WebRequest "https://gitignore.io/api/$Language" -UseBasicParsing).Content
 }
 
 function Get-GitIgnoreTypes {
-    (Invoke-WebRequest "https://gitignore.io/api/list").Content.Split(',', "`t", "`n", "`r") | ForEach-Object { $_.Trim() }
+    (Invoke-WebRequest "https://gitignore.io/api/list" -UseBasicParsing).Content.Split(',', "`t", "`n", "`r") | ForEach-Object { $_.Trim() }
 }
