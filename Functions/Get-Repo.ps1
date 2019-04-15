@@ -84,8 +84,8 @@ function Get-Repo {
 
     if (-not $info.Exists) {
         Write-Host -NoNewline "Running "
-        Write-Host -ForegroundColor DarkGray "git clone ${info.GitURL} ${info.Path}"
-        git.exe clone $info.GitURL $info.Path
+        Write-Host -ForegroundColor DarkGray "git clone --recurse-submodules -j8 ${info.GitURL} ${info.Path}"
+        git.exe clone --recurse-submodules -j8 $info.GitURL $info.Path
     }
     else {
         Push-Location -Path $info.Path
