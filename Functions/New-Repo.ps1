@@ -113,6 +113,11 @@ function New-Repo {
             Write-Host "Adding .gitignore file"
             Get-GitIgnore -Language $GitIgnore | Set-Content .gitignore
         }
+
+        if (($null -ne $GitTool.Services[$Service]) -and ($null -ne $GitTool.Services[$Service].AutoCreate.Enabled) -and (Get-Module -Name "PowerShellForGitHub")) {
+            Write-Host "Creating GitHub repository"
+            New-GitHubRepository -OrganizationName $info.Namespace -RepositoryName $info.Name -Private:$GitTool.Services["github.com"].AutoCreate.Private
+        }
     }
     finally {
         Pop-Location
