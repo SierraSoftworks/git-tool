@@ -1,0 +1,12 @@
+#! /bin/bash
+
+_cli_bash_autocomplete() {
+    local cur opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts=$( ${COMP_WORDS[0]} --bash-completion-filter ${COMP_WORDS[$COMP_CWORD]} ${COMP_WORDS[@]:1:$COMP_CWORD-1} --generate-bash-completion )
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+
+complete -F _cli_bash_autocomplete gt git-tool
