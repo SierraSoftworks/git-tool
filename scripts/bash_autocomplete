@@ -1,12 +1,15 @@
 #! /bin/bash
 
-_cli_bash_autocomplete() {
-    local cur opts base
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts=$( ${COMP_WORDS[0]} --bash-completion-filter ${COMP_WORDS[$COMP_CWORD]} ${COMP_WORDS[@]:1:$COMP_CWORD-1} --generate-bash-completion )
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
+_gittool_bash_autocomplete() {
+    local word=${COMP_WORDS[COMP_CWORD]}
+
+    local completions
+    completions="$(git-tool complete --position "${COMP_POINT}" "${COMP_LINE}" 2>/dev/null)"
+    if [ $? -ne 0 ]; then
+        completions=""
+    fi
+
+    COMPREPLY=( $(compgen -W "$completions" -- "$word") )
 }
 
-complete -F _cli_bash_autocomplete gt git-tool
+complete -F _gittool_bash_autocomplete gt git-tool
