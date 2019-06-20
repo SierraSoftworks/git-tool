@@ -3,8 +3,10 @@ package app
 import (
 	"os"
 
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -44,7 +46,27 @@ var openAppCommand = cli.Command{
 		}
 
 		if r == nil {
-			return errors.New("could not find repository")
+			logrus.WithField("filter", args.First()).Debug("Could not find repo with exact name, checking for search results")
+			rs, err := getMapper().GetRepos()
+			if err != nil {
+				return err
+			}
+
+			matched := []models.Repo{}
+
+			for _, rr := range rs {
+				if autocomplete.Matches(templates.RepoQualifiedName(rr), args.First()) {
+					logrus.WithField("filter", args.First()).WithField("repo", rr).Debug("Found potentially matching repository")
+					matched = append(matched, rr)
+				}
+			}
+
+			if len(matched) == 1 {
+				r = matched[0]
+			} else {
+				logrus.WithField("repos", matched).Debug("Found more than one matching repo")
+				return errors.New("could not find repository")
+			}
 		}
 
 		if !r.Exists() {

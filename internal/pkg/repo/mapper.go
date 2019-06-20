@@ -96,7 +96,7 @@ func (d *Mapper) GetReposForService(service models.Service) ([]models.Repo, erro
 		r := &repo{
 			service:  service,
 			fullName: strings.Trim(strings.Replace(f[len(path):], string(filepath.Separator), "/", -1), "/"),
-			path:     filepath.Join(path, f),
+			path:     f,
 		}
 
 		if r.Exists() {

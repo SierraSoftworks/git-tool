@@ -17,6 +17,7 @@ var completeCommand = cli.Command{
 			Value: -1,
 		},
 	},
+	Hidden: true,
 	Action: func(c *cli.Context) error {
 		cmd := c.Args().First()
 		if c.Int("position") > 0 && c.Int("position") < len(cmd) {

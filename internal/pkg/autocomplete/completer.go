@@ -51,5 +51,5 @@ func (c *Completer) complete(value string) {
 }
 
 func (c *Completer) matchesFilter(value string) bool {
-	return c.Filter == "" || strings.HasPrefix(strings.ToLower(value), strings.ToLower(c.Filter))
+	return Matches(strings.ToLower(value), strings.ToLower(c.Filter))
 }
