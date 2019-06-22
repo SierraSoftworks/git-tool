@@ -41,7 +41,8 @@ func TestApp(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cmd, ShouldNotBeNil)
 			So(cmd.Dir, ShouldEqual, r.Path())
-			So(cmd.Path, ShouldEqual, "make")
+
+			So(cmd.Path, ShouldContain, "make")
 			So(cmd.Args, ShouldResemble, []string{"make", "build"})
 			So(cmd.Env, ShouldResemble, append(os.Environ(), "CI_SERVER=0", "REPO=sierrasoftworks/test1", "GITHOST=github.com"))
 		})
