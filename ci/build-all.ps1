@@ -12,6 +12,9 @@ foreach ($plat in $Platforms) {
     foreach ($arch in $Architectures) {
         $env:GOARCH = "$arch"
        
-        go build -o "bin/git-tool-${plat}-${arch}$($Extensions[$plat])" -ldflags "-X main.version='$Version'" "./cmd/git-tool/main.go"
+        Write-Host "Building git-tool-${plat}-${arch}$($Extensions[$plat])@$Version"
+        go build -o "bin/git-tool-${plat}-${arch}$($Extensions[$plat])" -ldflags "-X main.version=$Version" "./cmd/git-tool/main.go"
     }
 }
+
+Write-Host "Build Complete"
