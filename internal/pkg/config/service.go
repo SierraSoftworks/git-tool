@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/pkg/errors"
 	"bytes"
 	"text/template"
+
 	"github.com/SierraSoftworks/git-tool/pkg/models"
+	"github.com/pkg/errors"
 )
 
 type service struct {
@@ -12,7 +13,7 @@ type service struct {
 
 	WebsiteTemplate string `json:"website" yaml:"website"`
 	HttpUrlTemplate string `json:"httpUrl" yaml:"httpUrl"`
-	GitUrlTemplate string `json:"gitUrl" yaml:"gitUrl"`
+	GitUrlTemplate  string `json:"gitUrl" yaml:"gitUrl"`
 
 	DirectoryGlobField string `json:"pattern" yaml:"pattern"`
 }
