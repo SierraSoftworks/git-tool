@@ -7,7 +7,6 @@ require (
 	github.com/danieljoos/wincred v1.0.2 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/google/go-github/v26 v26.0.4
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/pkg/errors v0.8.1
