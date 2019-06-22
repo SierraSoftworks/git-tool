@@ -1,0 +1,41 @@
+pool:
+  name: Hosted VS2017
+  demands:
+  - cmd
+  - Cmd
+
+steps:
+- task: gittools.gitversion.gitversion-task.GitVersion@4
+  displayName: GitVersion
+  inputs:
+    preferBundledVersion: false
+
+- task: ToreGroneng.ToreGroneng-PSScriptAnalyzer-Task.PSScriptAnalyzer-Task.PowerShell Script Analyzer@1
+  displayName: 'Test Functions'
+  inputs:
+    PsFolder: ./
+
+- task: sabinio.AlterPsModuleVersion.powershell-alter-moduleversion-task.AlterPsModuleVersion@1
+  displayName: 'Alter ModuleVersion '
+  inputs:
+    buildNumber: '$(GitVersion.MajorMinorPatch).$(Build.BuildId)'
+    file: 'Git-Tool.psd1'
+
+- powershell: |
+   Test-ModuleManifest -Path Git-Tool.psd1
+  displayName: 'Test Module Manifest'
+
+- powershell: |
+   Import-Module "./Git-Tool.psd1"
+  displayName: 'Import Module'
+
+- task: CopyFiles@2
+  displayName: 'Copy files to Staging Directory'
+  inputs:
+    Contents: '**/*.ps*'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop/Git-Tool'
+  inputs:
+    ArtifactName: 'drop/Git-Tool'
