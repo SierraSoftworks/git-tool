@@ -1,0 +1,38 @@
+pool:
+  name: Hosted Windows 2019 with VS2019
+
+steps:
+- task: gittools.gitversion.gitversion-task.GitVersion@4
+  displayName: GitVersion
+  inputs:
+    preferBundledVersion: false
+
+- task: GoTool@0
+  displayName: 'Use Go 1.12'
+  inputs:
+    version: 1.12
+
+- task: Go@0
+  displayName: 'go test'
+  inputs:
+    command: test
+    arguments: '-v ./...'
+
+- task: PowerShell@2
+  displayName: 'Build Variants'
+  inputs:
+    targetType: filePath
+    filePath: './ci/build-all.ps1'
+    arguments: '-Version $(GitVersion.FullSemVer)'
+
+- task: CopyFiles@2
+  displayName: 'Staging Directory copy'
+  inputs:
+    SourceFolder: bin
+    Contents: '*'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop/Git-Tool'
+  inputs:
+    ArtifactName: 'drop/Git-Tool'
