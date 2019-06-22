@@ -4,7 +4,7 @@ import "strings"
 
 // Matches determines whether a value matches a specific ordered sequence of
 // characters. For example "Albuquerque" shuould match "abq" but not "lab".
-func Matches(value string, sequence string) bool {
+func Matches(value, sequence string) bool {
 	if sequence == "" {
 		return true
 	}
