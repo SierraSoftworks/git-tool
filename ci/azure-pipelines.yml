@@ -1,6 +1,9 @@
 pool:
   name: Hosted Windows 2019 with VS2019
 
+variables:
+    "Go.Version": "1.12.6"
+
 steps:
 - task: gittools.gitversion.gitversion-task.GitVersion@4
   displayName: GitVersion
@@ -8,9 +11,9 @@ steps:
     preferBundledVersion: false
 
 - task: GoTool@0
-  displayName: 'Use Go 1.12'
+  displayName: 'Use Go $(Go.Version)'
   inputs:
-    version: 1.12
+    version: "$(Go.Version)"
 
 - task: Go@0
   displayName: 'go test'
