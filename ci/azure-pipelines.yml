@@ -17,19 +17,20 @@ steps:
     connection: GitHub
     userRepository: GitTools/GitVersion
     itemPattern: 'GitVersion-bin-coreclr*.zip'
+    downloadPath: tmp/
 
 - task: ExtractFiles@1
   displayName: 'Extract files '
   inputs:
-    archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
-    destinationFolder: '$(System.ArtifactsDirectory)/'
+    archiveFilePatterns: 'tmp/*.zip'
+    destinationFolder: 'tmp/'
     cleanDestinationFolder: false
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet GitVersion.dll'
   inputs:
     command: custom
-    custom: '$(System.ArtifactsDirectory)/GitVersion.dll'
+    custom: 'tmp/GitVersion.dll'
     arguments: '/output buildserver'
 
 - task: GoTool@0
@@ -54,7 +55,7 @@ steps:
   displayName: 'Staging Directory copy'
   inputs:
     SourceFolder: bin
-    Contents: '*/git-tool-*'
+    Contents: 'git-tool-*'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
 - task: PublishBuildArtifacts@1
