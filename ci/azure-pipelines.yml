@@ -1,5 +1,5 @@
 pool:
-  name: Hosted Windows 2019 with VS2019
+  name: Hosted Ubuntu 1604
 
 variables:
     "Go.Version": "1.12.6"
