@@ -19,7 +19,7 @@ steps:
   displayName: 'go test'
   inputs:
     command: test
-    arguments: '-v ./...'
+    arguments: '-v -race ./...'
 
 - task: PowerShell@2
   displayName: 'Build Variants'
