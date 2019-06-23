@@ -5,10 +5,32 @@ variables:
     "Go.Version": "1.12.6"
 
 steps:
-- task: gittools.gitversion.gitversion-task.GitVersion@4
-  displayName: GitVersion
+- task: UseDotNet@2
+  displayName: 'Use .NET Core runtime 2.2.4'
   inputs:
-    preferBundledVersion: false
+    packageType: runtime
+    version: 2.2.4
+    
+- task: DownloadGitHubRelease@0
+  displayName: 'Download GitHub Release'
+  inputs:
+    connection: GitHub
+    userRepository: GitTools/GitVersion
+    itemPattern: 'GitVersion-bin-coreclr*.zip'
+
+- task: ExtractFiles@1
+  displayName: 'Extract files '
+  inputs:
+    archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
+    destinationFolder: '$(System.ArtifactsDirectory)/'
+    cleanDestinationFolder: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet GitVersion.dll'
+  inputs:
+    command: custom
+    custom: '$(System.ArtifactsDirectory)/GitVersion.dll'
+    arguments: '/output buildserver'
 
 - task: GoTool@0
   displayName: 'Use Go $(Go.Version)'
