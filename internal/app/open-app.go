@@ -2,11 +2,12 @@ package app
 
 import (
 	"os"
+	"os/signal"
 
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -88,6 +89,23 @@ var openAppCommand = cli.Command{
 		cmd.Stdin = os.Stdin
 		cmd.Stderr = os.Stderr
 		cmd.Stdout = os.Stdout
+
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt, os.Kill)
+
+		go func() {
+			for s := range sig {
+				if cmd.Process != nil && cmd.ProcessState != nil && !cmd.ProcessState.Exited() {
+					cmd.Process.Signal(s)
+				}
+			}
+		}()
+
+		defer func() {
+			// Shutdown signal forwarding for our process
+			signal.Stop(sig)
+			close(sig)
+		}()
 
 		return cmd.Run()
 	},
