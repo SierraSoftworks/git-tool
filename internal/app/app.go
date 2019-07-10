@@ -1,15 +1,20 @@
 package app
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
-var cfg = config.Default()
+func init() {
+	di.SetConfig(config.Default())
+	di.SetMapper(&repo.Mapper{})
+	di.SetInitializer(&repo.Initializer{})
+}
 
 // NewApp creates a new command line application for Git-Tool
 func NewApp() *cli.App {
@@ -62,7 +67,7 @@ func NewApp() *cli.App {
 			}
 
 			logrus.WithField("config_path", c.GlobalString("config")).Debug("Loaded configuration file")
-			cfg = cfgResult
+			di.SetConfig(cfgResult)
 		}
 
 		if c.GlobalBool("verbose") {
@@ -78,7 +83,7 @@ func NewApp() *cli.App {
 		for _, cmd := range c.App.Commands {
 			for _, name := range cmd.Names() {
 				if filter == "" || strings.HasPrefix(strings.ToLower(name), strings.ToLower(filter)) {
-					fmt.Println(name)
+					di.GetOutput().Println(name)
 				}
 			}
 		}

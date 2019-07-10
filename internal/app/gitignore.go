@@ -1,8 +1,7 @@
 package app
 
 import (
-	"fmt"
-
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
 	"github.com/urfave/cli"
 )
@@ -22,7 +21,7 @@ var getGitignoreCommand = cli.Command{
 			}
 
 			for _, lang := range langs {
-				fmt.Printf(" - %s\n", lang)
+				di.GetOutput().Printf(" - %s\n", lang)
 			}
 		} else {
 			ignore, err := gitignore.Ignore(append([]string{c.Args().First()}, c.Args().Tail()...)...)
@@ -30,7 +29,7 @@ var getGitignoreCommand = cli.Command{
 				return err
 			}
 
-			fmt.Println(ignore)
+			di.GetOutput().Println(ignore)
 		}
 
 		return nil
@@ -42,7 +41,7 @@ var getGitignoreCommand = cli.Command{
 		}
 
 		for _, lang := range langs {
-			fmt.Println(lang)
+			di.GetOutput().Println(lang)
 		}
 	},
 }

@@ -1,10 +1,9 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -18,7 +17,7 @@ var repoInfoCommand = cli.Command{
 	ArgsUsage: "[repo]",
 	Flags:     []cli.Flag{},
 	Action: func(c *cli.Context) error {
-		repo, err := getMapper().GetRepo(c.Args().First())
+		repo, err := di.GetMapper().GetBestRepo(c.Args().First())
 		if err != nil {
 			return err
 		}
@@ -27,7 +26,7 @@ var repoInfoCommand = cli.Command{
 			return errors.New("could not find repository")
 		}
 
-		fmt.Println(templates.RepoFullInfo(repo))
+		di.GetOutput().Println(templates.RepoFullInfo(repo))
 
 		return nil
 	},
@@ -36,7 +35,7 @@ var repoInfoCommand = cli.Command{
 			return
 		}
 
-		cmp := autocomplete.NewCompleter(cfg, c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
 		cmp.DefaultServiceRepos()
 		cmp.AllServiceRepos()

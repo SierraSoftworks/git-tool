@@ -38,3 +38,5 @@ apps:
       - CI_SERVER=0
       - REPO={{ .Repo.FullName }}
       - GITHOST={{ .Service.Domain }}
+aliases:
+  gt: github.com/SierraSoftworks/git-tool

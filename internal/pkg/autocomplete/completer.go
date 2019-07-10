@@ -1,32 +1,21 @@
 package autocomplete
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 )
 
 type Completer struct {
 	Filter string
-	Config config.Config
 
 	repos []models.Repo
 }
 
-func NewCompleter(cfg config.Config, filter string) *Completer {
+func NewCompleter(filter string) *Completer {
 	return &Completer{
 		Filter: filter,
-		Config: cfg,
-	}
-}
-
-func (c *Completer) getMapper() *repo.Mapper {
-	return &repo.Mapper{
-		Directory: c.Config.DevelopmentDirectory(),
-		Services:  c.Config,
 	}
 }
 
@@ -35,7 +24,7 @@ func (c *Completer) getRepos() []models.Repo {
 		return c.repos
 	}
 
-	rs, err := c.getMapper().GetRepos()
+	rs, err := di.GetMapper().GetRepos()
 	if err != nil {
 		return []models.Repo{}
 	}
@@ -46,7 +35,7 @@ func (c *Completer) getRepos() []models.Repo {
 
 func (c *Completer) complete(value string) {
 	if c.matchesFilter(value) {
-		fmt.Println(value)
+		di.GetOutput().Println(value)
 	}
 }
 

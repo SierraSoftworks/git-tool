@@ -1,10 +1,10 @@
 package app
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 
 	"github.com/urfave/cli"
 )
@@ -29,7 +29,7 @@ var listReposCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		repos, err := getMapper().GetRepos()
+		repos, err := di.GetMapper().GetRepos()
 		if err != nil {
 			return err
 		}
@@ -42,15 +42,15 @@ var listReposCommand = cli.Command{
 			}
 
 			if c.Bool("quiet") {
-				fmt.Println(templates.RepoQualifiedName(repo))
+				di.GetOutput().Println(templates.RepoQualifiedName(repo))
 			} else if c.Bool("full") {
 				if i > 0 {
-					fmt.Println("---")
+					di.GetOutput().Println("---")
 				}
 
-				fmt.Println(templates.RepoFullInfo(repo))
+				di.GetOutput().Println(templates.RepoFullInfo(repo))
 			} else {
-				fmt.Println(templates.RepoShortInfo(repo))
+				di.GetOutput().Println(templates.RepoShortInfo(repo))
 			}
 		}
 

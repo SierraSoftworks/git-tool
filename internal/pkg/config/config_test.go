@@ -128,5 +128,31 @@ func TestConfig(t *testing.T) {
 				So(cfg.GetApp("shell").Name(), ShouldEqual, "shell")
 			})
 		})
+
+		Convey("GetAliases()", func() {
+			cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
+			So(err, ShouldBeNil)
+			So(cfg, ShouldNotBeNil)
+
+			Convey("Should return the list of configured aliases", func() {
+				So(cfg.GetAliases(), ShouldResemble, map[string]string{
+					"gt": "github.com/SierraSoftworks/git-tool",
+				})
+			})
+		})
+
+		Convey("GetAlias(name)", func() {
+			cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
+			So(err, ShouldBeNil)
+			So(cfg, ShouldNotBeNil)
+
+			Convey("Should return an empty string if the alias isn't found", func() {
+				So(cfg.GetAlias("unknown"), ShouldBeEmpty)
+			})
+
+			Convey("Should return a configured alias", func() {
+				So(cfg.GetAlias("gt"), ShouldEqual, "github.com/SierraSoftworks/git-tool")
+			})
+		})
 	})
 }

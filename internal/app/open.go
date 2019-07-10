@@ -5,9 +5,7 @@ import (
 	"os/signal"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -26,9 +24,9 @@ var openAppCommand = cli.Command{
 	Action: func(c *cli.Context) error {
 		args := c.Args()
 
-		app := cfg.GetApp(c.Args().First())
+		app := di.GetConfig().GetApp(c.Args().First())
 		if app == nil {
-			app = cfg.GetDefaultApp()
+			app = di.GetConfig().GetDefaultApp()
 		} else {
 			args = cli.Args(c.Args().Tail())
 		}
@@ -41,37 +39,13 @@ var openAppCommand = cli.Command{
 
 		logrus.WithField("app", app.Name()).Debug("Found matching app configuration")
 
-		r, err := getMapper().GetRepo(args.First())
+		r, err := di.GetMapper().GetBestRepo(args.First())
 		if err != nil {
 			return err
 		}
 
-		if r == nil {
-			logrus.WithField("filter", args.First()).Debug("Could not find repo with exact name, checking for search results")
-			rs, err := getMapper().GetRepos()
-			if err != nil {
-				return err
-			}
-
-			matched := []models.Repo{}
-
-			for _, rr := range rs {
-				if autocomplete.Matches(templates.RepoQualifiedName(rr), args.First()) {
-					logrus.WithField("filter", args.First()).WithField("repo", rr).Debug("Found potentially matching repository")
-					matched = append(matched, rr)
-				}
-			}
-
-			if len(matched) == 1 {
-				r = matched[0]
-			} else {
-				logrus.WithField("repos", matched).Debug("Found more than one matching repo")
-				return errors.New("could not find repository")
-			}
-		}
-
 		if !r.Exists() {
-			init := repo.Initializer{}
+			init := di.GetInitializer()
 
 			err := init.Clone(r)
 			if err != nil {
@@ -91,7 +65,7 @@ var openAppCommand = cli.Command{
 		cmd.Stdout = os.Stdout
 
 		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, os.Interrupt, os.Kill)
+		signal.Notify(sig)
 
 		go func() {
 			for s := range sig {
@@ -110,13 +84,14 @@ var openAppCommand = cli.Command{
 		return cmd.Run()
 	},
 	BashComplete: func(c *cli.Context) {
-		cmp := autocomplete.NewCompleter(cfg, c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
 		if c.NArg() == 0 {
 			cmp.Apps()
 		}
 
-		if app := cfg.GetApp(c.Args().First()); app != nil {
+		if app := di.GetConfig().GetApp(c.Args().First()); app != nil {
+			cmp.RepoAliases()
 			cmp.DefaultServiceRepos()
 			cmp.AllServiceRepos()
 		}

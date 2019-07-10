@@ -21,13 +21,17 @@ type Config interface {
 	GetApps() []models.App
 	GetApp(name string) models.App
 	GetDefaultApp() models.App
+
+	GetAliases() map[string]string
+	GetAlias(name string) string
 }
 
 type config struct {
 	Directory string `json:"directory" yaml:"directory"`
 
-	Services     []*service `json:"services" yaml:"services"`
-	Applications []*app     `json:"apps" yaml:"apps"`
+	Services     []*service        `json:"services" yaml:"services"`
+	Applications []*app            `json:"apps" yaml:"apps"`
+	Aliases      map[string]string `json:"aliases" yaml:"aliases"`
 }
 
 // Default gets a simple default configuration for Git Tool
@@ -51,6 +55,7 @@ func Default() Config {
 				CommandLine: "bash",
 			},
 		},
+		Aliases: map[string]string{},
 	}
 }
 
@@ -138,4 +143,12 @@ func (c *config) GetApp(name string) models.App {
 	}
 
 	return nil
+}
+
+func (c *config) GetAliases() map[string]string {
+	return c.Aliases
+}
+
+func (c *config) GetAlias(name string) string {
+	return c.Aliases[name]
 }

@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -16,7 +16,7 @@ var newRepoCommand = cli.Command{
 	Usage:     "Creates a new repository with the provided name.",
 	ArgsUsage: "repo",
 	Action: func(c *cli.Context) error {
-		r, err := getMapper().GetRepo(c.Args().First())
+		r, err := di.GetMapper().GetRepo(c.Args().First())
 		if err != nil {
 			return err
 		}
@@ -25,7 +25,7 @@ var newRepoCommand = cli.Command{
 			return errors.New("not a valid repository name")
 		}
 
-		init := &repo.Initializer{}
+		init := di.GetInitializer()
 		err = init.Init(r)
 		if err != nil {
 			return err
@@ -38,7 +38,7 @@ var newRepoCommand = cli.Command{
 			return
 		}
 
-		cmp := autocomplete.NewCompleter(cfg, c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
 		cmp.DefaultServiceNamespaces()
 		cmp.AllServiceNamespaces()
