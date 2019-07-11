@@ -41,7 +41,7 @@ func TestAppsSubcommand(t *testing.T) {
 					"gt",
 				}), ShouldBeNil)
 
-				So(out.GetOperations(), ShouldContain, "apps")
+				So(out.GetOperations(), ShouldContain, "apps\n")
 			})
 
 			Convey("Should return an empty completions list", func() {

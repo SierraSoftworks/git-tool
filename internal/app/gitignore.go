@@ -11,7 +11,7 @@ var getGitignoreCommand = cli.Command{
 	Aliases: []string{
 		"ignore",
 	},
-	Usage:     "Fetches the latest version of a remote repository.",
+	Usage:     "Generates a .gitignore file for the provided languages.",
 	ArgsUsage: "[languages...]",
 	Action: func(c *cli.Context) error {
 		if c.NArg() == 0 {

@@ -52,7 +52,7 @@ func (o *TestOutput) Print(args ...interface{}) {
 }
 
 func (o *TestOutput) Println(args ...interface{}) {
-	o.operations = append(o.operations, fmt.Sprint(args...))
+	o.operations = append(o.operations, fmt.Sprintln(args...))
 }
 
 func (o *TestOutput) Printf(format string, args ...interface{}) {
