@@ -48,7 +48,7 @@ steps:
   displayName: 'Get Go Dependencies'
 
 - script: |
-    TERM=sh go test -v -race -coverprofile=coverage.txt -covermode count ./... | go run github.com/NeroINC/goconvey-junit-report > report.xml
+    TERM=sh go test -v -coverprofile=coverage.txt -covermode count ./... | go run github.com/NeroINC/goconvey-junit-report > report.xml
     go run github.com/axw/gocov/gocov convert coverage.txt > coverage.json
     go run github.com/AlekSi/gocov-xml < coverage.json > coverage.xml
     mkdir coverage
