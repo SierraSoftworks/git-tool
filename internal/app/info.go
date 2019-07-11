@@ -2,8 +2,8 @@ package app
 
 import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -37,6 +37,7 @@ var repoInfoCommand = cli.Command{
 
 		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
+		cmp.RepoAliases()
 		cmp.DefaultServiceRepos()
 		cmp.AllServiceRepos()
 	},
