@@ -45,10 +45,17 @@ steps:
     go get github.com/axw/gocov/gocov
     go get github.com/AlekSi/gocov-xml
     go get -u gopkg.in/matm/v1/gocov-html
+
+    echo "##vso[task.prependpath]$GOPATH/bin"
+    echo "##vso[task.prependpath]$GOROOT/bin"
+  displayName: 'Get Go Dependencies'
+
+- script: |
     go test -v -race -coverprofile=coverage.txt -covermode count ./... 2>&1 | go-junit-report > report.xmlgocov convert coverage.txt > coverage.json
     gocov-xml < coverage.json > coverage.xml
     mkdir coverage
     gocov-html < coverage.json > coverage/index.html
+  displayName: 'Run Tests'
 
 - task: PublishTestResults@2
   inputs:
