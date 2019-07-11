@@ -50,7 +50,7 @@ steps:
 - script: |
     TERM=sh go test -v -race -coverprofile=coverage.txt -covermode count ./... | go run github.com/NeroINC/goconvey-junit-report > report.xml
     go run github.com/axw/gocov/gocov convert coverage.txt > coverage.json
-    go run github.com/axw/gocov/gocov < coverage.json > coverage.xml
+    go run github.com/AlekSi/gocov-xml < coverage.json > coverage.xml
     mkdir coverage
     go run github.com/matm/gocov-html < coverage.json > coverage/index.html
   displayName: 'Run Tests'
