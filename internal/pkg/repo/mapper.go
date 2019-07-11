@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +19,41 @@ import (
 // A Mapper holds the information about a developer's source code folder which
 // may contain multiple repositories.
 type Mapper struct {
-	
+}
+
+// GetBestRepo gets the repo which best matches a given name
+func (d *Mapper) GetBestRepo(name string) (models.Repo, error) {
+	if a := di.GetConfig().GetAlias(name); a != "" {
+		name = a
+	}
+
+	r, err := d.GetRepo(name)
+	if err != nil {
+		return r, err
+	}
+
+	if r != nil {
+		return r, nil
+	}
+
+	rs, err := d.GetRepos()
+	if err != nil {
+		return nil, err
+	}
+
+	matched := []models.Repo{}
+
+	for _, rr := range rs {
+		if autocomplete.Matches(templates.RepoQualifiedName(rr), name) {
+			matched = append(matched, rr)
+		}
+	}
+
+	if len(matched) == 1 {
+		return matched[0], nil
+	}
+
+	return nil, errors.New("could not find repository")
 }
 
 // GetRepos will fetch all of the repositories contained within a developer's dev
@@ -56,6 +90,16 @@ func (d *Mapper) GetRepos() ([]models.Repo, error) {
 	return repos, nil
 }
 
+// GetScratchpads will fetch all of the known scratchpads which are stored locally.
+func (d *Mapper) GetScratchpads() ([]models.Repo, error) {
+	return d.GetReposForService(&scratchpadService{})
+}
+
+// GetScratchpad will fetch a scratchpad repo with the provided name
+func (d *Mapper) GetScratchpad(name string) (models.Repo, error) {
+	return d.GetRepoForService(&scratchpadService{}, name)
+}
+
 // EnsureRepo will ensure that a repository directory has been created at the correct location
 // on the filesystem.
 func (d *Mapper) EnsureRepo(service models.Service, r models.Repo) error {
@@ -80,6 +124,7 @@ func (d *Mapper) EnsureRepo(service models.Service, r models.Repo) error {
 	return errors.Errorf("repo: repository name already exists and is not a directory '%s'", path)
 }
 
+// GetReposForService will fetch all of the known repositories for a specific service.
 func (d *Mapper) GetReposForService(service models.Service) ([]models.Repo, error) {
 	logrus.WithField("service", service.Domain()).Debug("Enumerating repositories for service")
 
@@ -109,41 +154,6 @@ func (d *Mapper) GetReposForService(service models.Service) ([]models.Repo, erro
 	}
 
 	return repos, nil
-}
-
-// GetBestRepo gets the repo which best matches a given name
-func (d *Mapper) GetBestRepo(name string) (models.Repo, error) {
-	if a := di.GetConfig().GetAlias(name); a != "" {
-		name = a
-	}
-
-	r, err := d.GetRepo(name)
-	if err != nil {
-		return r, err
-	}
-
-	if r != nil {
-		return r, nil
-	}
-
-	rs, err := d.GetRepos()
-	if err != nil {
-		return nil, err
-	}
-
-	matched := []models.Repo{}
-
-	for _, rr := range rs {
-		if autocomplete.Matches(templates.RepoQualifiedName(rr), name) {
-			matched = append(matched, rr)
-		}
-	}
-
-	if len(matched) == 1 {
-		return matched[0], nil
-	}
-	
-	return nil, errors.New("could not find repository")
 }
 
 // GetRepo attempts to resolve the details of a repository given its name.

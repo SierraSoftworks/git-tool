@@ -20,4 +20,5 @@ type Initializer interface {
 	Clone(r models.Repo) error
 	EnsureRemoteRepo(r models.Repo) error
 	CreateRemoteRepo(r models.Repo) error
+	CreateScratchpad(r models.Repo) error
 }

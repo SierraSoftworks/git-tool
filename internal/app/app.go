@@ -38,6 +38,7 @@ func NewApp() *cli.App {
 		listAppsCommand,
 		listServicesCommand,
 		getGitignoreCommand,
+		openScratchCommand,
 		completeCommand,
 	}
 

@@ -17,10 +17,12 @@ func GetMapper() Mapper {
 // A Mapper holds the information about a developer's source code folder which
 // may contain multiple repositories.
 type Mapper interface {
+	GetBestRepo(name string) (models.Repo, error)
 	GetRepos() ([]models.Repo, error)
+	GetScratchpads() ([]models.Repo, error)
+	GetScratchpad(name string) (models.Repo, error)
 	EnsureRepo(service models.Service, r models.Repo) error
 	GetReposForService(service models.Service) ([]models.Repo, error)
-	GetBestRepo(name string) (models.Repo, error)
 	GetRepo(name string) (models.Repo, error)
 	GetRepoForService(service models.Service, name string) (models.Repo, error)
 	GetFullyQualifiedRepo(name string) (models.Repo, error)

@@ -15,6 +15,15 @@ import (
 type Initializer struct {
 }
 
+func (i *Initializer) CreateScratchpad(r models.Repo) error {
+	logrus.WithField("repo", r).Debug("Creating new folder for scratchpad")
+	if err := os.MkdirAll(r.Path(), os.ModePerm); err != nil {
+		return errors.Wrap(err, "repo: unable to create scratchpad directory")
+	}
+
+	return nil
+}
+
 func (i *Initializer) Init(r models.Repo) error {
 	logrus.WithField("repo", r).Debug("Creating new folder for repository")
 	if err := os.MkdirAll(r.Path(), os.ModePerm); err != nil {

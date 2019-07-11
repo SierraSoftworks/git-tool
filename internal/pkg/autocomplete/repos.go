@@ -2,8 +2,9 @@ package autocomplete
 
 import (
 	"fmt"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 )
 
 // RepoAliases will generate autocomplete suggestions for your repo aliases.
@@ -30,6 +31,18 @@ func (c *Completer) DefaultServiceRepos() {
 
 	for _, repo := range repos {
 		c.complete(repo.FullName())
+	}
+}
+
+// AllScratchpads will generate autocomplete suggestions for scratchpads
+func (c *Completer) AllScratchpads() {
+	repos, err := di.GetMapper().GetScratchpads()
+	if err != nil {
+		return
+	}
+
+	for _, repo := range repos {
+		c.complete(repo.Name())
 	}
 }
 
