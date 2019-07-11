@@ -41,10 +41,10 @@ steps:
 - script: |
     go version
     go get -v -t -d ./...
-    go get github.com/jstemmer/go-junit-report
-    go get github.com/axw/gocov/gocov
-    go get github.com/AlekSi/gocov-xml
-    go get github.com/matm/gocov-html
+    go run github.com/jstemmer/go-junit-report --help > /dev/null || echo "Installed gocov-html"
+    go run github.com/axw/gocov/gocov --help > /dev/null || echo "Installed gocov-html"
+    go run github.com/AlekSi/gocov-xml --help > /dev/null || echo "Installed gocov-html"
+    go run github.com/matm/gocov-html --help > /dev/null || echo "Installed gocov-html"
   displayName: 'Get Go Dependencies'
 
 - script: |
