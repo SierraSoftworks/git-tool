@@ -41,14 +41,13 @@ steps:
 - script: |
     go version
     go get -v -t -d ./...
-    go run github.com/NeroINC/goconvey-junit-report --help > /dev/null || echo "Installed goconvey-junit-report"
     go run github.com/axw/gocov/gocov --help > /dev/null || echo "Installed gocov"
     go run github.com/AlekSi/gocov-xml --help > /dev/null || echo "Installed gocov-xml"
     go run github.com/matm/gocov-html --help > /dev/null || echo "Installed gocov-html"
   displayName: 'Get Go Dependencies'
 
 - script: |
-    TERM=sh go test -v -coverprofile=coverage.txt -covermode count ./... | go run github.com/NeroINC/goconvey-junit-report > report.xml
+    TERM=sh go test -v -coverprofile=coverage.txt -covermode count ./...
     go run github.com/axw/gocov/gocov convert coverage.txt > coverage.json
     go run github.com/AlekSi/gocov-xml < coverage.json > coverage.xml
     mkdir coverage
@@ -58,7 +57,7 @@ steps:
 - task: PublishTestResults@2
   inputs:
     testRunner: JUnit
-    testResultsFiles: $(System.DefaultWorkingDirectory)/**/report.xml
+    testResultsFiles: $(System.DefaultWorkingDirectory)/**/junit.xml
     
 - task: PublishCodeCoverageResults@1
   inputs:

@@ -1,61 +1,65 @@
 package app
 
 import (
-	"testing"
-
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestAppsSubcommand(t *testing.T) {
-	Convey("Apps", t, func() {
-		app := NewApp()
+var _ = Describe("gt apps", func() {
+	var out *di.TestOutput
+	app := NewApp()
 
-		out := &di.TestOutput{}
+	BeforeEach(func() {
+		out = &di.TestOutput{}
 		di.SetOutput(out)
+	})
 
-		Convey("gt apps", func() {
-			Convey("Should be registered", func() {
-				cmd := app.Command("apps")
-				So(cmd, ShouldNotBeNil)
-			})
+	It("Should be registered with the CLI", func() {
+		Expect(app.Command("apps")).ToNot(BeNil())
+	})
 
-			Convey("Should print out the list of apps which have been configured", func() {
-				defer out.Reset()
+	It("Should print out the list of apps which have been configured", func() {
+		Expect(app.Run([]string{
+			"gt",
+			"apps",
+		})).To(BeNil())
 
-				So(app.Run([]string{
-					"gt",
-					"apps",
-				}), ShouldBeNil)
+		Expect(out.GetOperations()).To(HaveLen(len(di.GetConfig().GetApps())))
+	})
 
-				So(out.GetOperations(), ShouldNotBeEmpty)
-				So(out.GetOperations(), ShouldHaveLength, len(di.GetConfig().GetApps()))
-			})
+	It("Should print out every app", func() {
+		Expect(app.Run([]string{
+			"gt",
+			"apps",
+		})).To(BeNil())
 
-			Convey("Should appear in the root completions list", func() {
-				defer out.Reset()
+		for _, app := range di.GetConfig().GetApps() {
+			Expect(out.GetOperations()).To(ContainElement(app.Name() + "\n"))
+		}
+	})
 
-				So(app.Run([]string{
-					"gt",
-					"complete",
-					"gt",
-				}), ShouldBeNil)
+	Context("Root autocompletion", func() {
+		It("Should appear in the completions list", func() {
+			Expect(app.Run([]string{
+				"gt",
+				"complete",
+				"gt",
+			})).To(BeNil())
 
-				So(out.GetOperations(), ShouldContain, "apps\n")
-			})
-
-			Convey("Should return an empty completions list", func() {
-				defer out.Reset()
-
-				So(app.Run([]string{
-					"gt",
-					"complete",
-					"--position=8",
-					"gt apps",
-				}), ShouldBeNil)
-
-				So(out.GetOperations(), ShouldBeEmpty)
-			})
+			Expect(out.GetOperations()).To(ContainElement("apps\n"))
 		})
 	})
-}
+
+	Context("Command autocompletion", func() {
+		It("Should return an empty completions list", func() {
+			Expect(app.Run([]string{
+				"gt",
+				"complete",
+				"gt apps ",
+			})).To(BeNil())
+
+			Expect(out.GetOperations()).To(BeEmpty())
+		})
+	})
+})

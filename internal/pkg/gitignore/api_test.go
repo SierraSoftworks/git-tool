@@ -1,59 +1,97 @@
 package gitignore_test
 
 import (
-	"testing"
-
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestGitignore(t *testing.T) {
-	Convey("Gitignore", t, func() {
-		Convey("List()", func() {
-			list, err := gitignore.List()
-			So(err, ShouldBeNil)
-			So(list, ShouldNotBeNil)
+var _ = Describe("GitIgnore", func() {
+	Describe("List()", func() {
+		var (
+			list    []string
+			listErr error
+		)
 
-			Convey("Should return at least one item", func() {
-				So(len(list), ShouldBeGreaterThan, 0)
+		BeforeEach(func() {
+			list, listErr = gitignore.List()
+		})
+
+		It("Should not return an error", func() {
+			Expect(listErr).ToNot(HaveOccurred())
+		})
+
+		It("Should return at least one item", func() {
+			Expect(len(list)).To(BeNumerically(">", 0))
+		})
+
+		It("Should split the items in the list correctly", func() {
+			for _, item := range list {
+				Expect(item).ToNot(BeEmpty())
+				Expect(item).ToNot(ContainSubstring(","))
+				Expect(item).ToNot(ContainSubstring("\n"))
+			}
+		})
+	})
+
+	Describe("Ignore()", func() {
+		var (
+			langs  []string
+			ignore string
+			err    error
+		)
+
+		BeforeEach(func() {
+			langs = []string{}
+		})
+
+		JustBeforeEach(func() {
+			ignore, err = gitignore.Ignore(langs...)
+		})
+
+		Context("With an unrecognized language", func() {
+			BeforeEach(func() {
+				langs = []string{"thisisnotareallanguage"}
 			})
 
-			Convey("Should split the items in the list correctly", func() {
-				for _, item := range list {
-					So(item, ShouldNotContainSubstring, ",")
-					So(item, ShouldNotContainSubstring, "\n")
-					So(item, ShouldNotBeEmpty)
-				}
+			It("Should not return an error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("Should return an emppty ignore file", func() {
+				Expect(ignore).To(BeEmpty())
 			})
 		})
 
-		Convey("Ignore()", func() {
-			Convey("with no languages", func() {
-				ignore, err := gitignore.Ignore()
-				So(err, ShouldBeNil)
-				So(ignore, ShouldBeEmpty)
+		Context("With a single language", func() {
+			BeforeEach(func() {
+				langs = []string{"go"}
 			})
 
-			Convey("with an unrecognized language", func() {
-				ignore, err := gitignore.Ignore("thisisnotareallanguage")
-				So(err, ShouldBeNil)
-				So(ignore, ShouldBeEmpty)
+			It("Should not return an error", func() {
+				Expect(err).To(BeNil())
 			})
 
-			Convey("with a single language", func() {
-				ignore, err := gitignore.Ignore("csharp")
-				So(err, ShouldBeNil)
-				So(ignore, ShouldNotBeEmpty)
-				So(ignore, ShouldContainSubstring, "csharp")
+			It("Should return a valid ignore file", func() {
+				Expect(ignore).ToNot(BeEmpty())
+				Expect(ignore).To(ContainSubstring(".exe~"))
+			})
+		})
+
+		Context("With multiple languages", func() {
+			BeforeEach(func() {
+				langs = []string{"go", "node"}
 			})
 
-			Convey("with multiple languages", func() {
-				ignore, err := gitignore.Ignore("csharp", "node")
-				So(err, ShouldBeNil)
-				So(ignore, ShouldNotBeEmpty)
-				So(ignore, ShouldContainSubstring, "csharp")
-				So(ignore, ShouldContainSubstring, "node_modules")
+			It("Should not return an error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("Should return a valid ignore file", func() {
+				Expect(ignore).ToNot(BeEmpty())
+				Expect(ignore).To(ContainSubstring(".exe~"))
+				Expect(ignore).To(ContainSubstring("node_modules"))
 			})
 		})
 	})
-}
+})

@@ -2,157 +2,168 @@ package config_test
 
 import (
 	"os"
-	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/test"
 
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestConfig(t *testing.T) {
-	Convey("Config", t, func() {
-		Convey("Default()", func() {
-			os.Setenv("DEV_DIRECTORY", test.GetTestPath())
+var _ = Describe("Config", func() {
+	BeforeSuite(func() {
+		os.Setenv("DEV_DIRECTORY", test.GetTestPath())
+	})
 
-			cfg := config.Default()
+	Describe("Default()", func() {
+		It("Should return a config", func() {
+			Expect(config.Default()).ToNot(BeNil())
+		})
 
-			Convey("Should return a default configuration", func() {
-				So(cfg, ShouldNotBeNil)
+		It("Should use the right development directory", func() {
+			Expect(config.Default().DevelopmentDirectory()).To(Equal(test.GetTestPath()))
+		})
 
-				Convey("with a valid directory", func() {
-					So(cfg.DevelopmentDirectory(), ShouldNotBeEmpty)
-					So(cfg.DevelopmentDirectory(), ShouldEqual, test.GetTestPath())
-				})
+		It("Should have a service entry for GitHub", func() {
+			Expect(config.Default().GetServices()).ToNot(BeEmpty())
+			Expect(config.Default().GetDefaultService()).ToNot(BeNil())
+		})
 
-				Convey("with a github.com service entry", func() {
-					So(cfg.GetServices(), ShouldNotBeEmpty)
-					So(cfg.GetDefaultService(), ShouldNotBeNil)
-					So(cfg.GetDefaultService().Domain(), ShouldEqual, "github.com")
-				})
+		It("Should have an app entry for the shell", func() {
+			Expect(config.Default().GetApps()).ToNot(BeEmpty())
+			Expect(config.Default().GetDefaultApp()).ToNot(BeNil())
+			Expect(config.Default().GetDefaultApp().Name()).To(Equal("shell"))
+			Expect(config.Default().GetApp("shell")).ToNot(BeNil())
+		})
+	})
 
-				Convey("with a shell command", func() {
-					So(cfg.GetApps(), ShouldNotBeEmpty)
-					So(cfg.GetDefaultApp(), ShouldNotBeNil)
-					So(cfg.GetDefaultApp().Name(), ShouldEqual, "shell")
-				})
+	Describe("Load()", func() {
+		var (
+			cfg     config.Config
+			cfgFile string
+			cfgErr  error
+		)
+
+		BeforeEach(func() {
+			cfgFile = "config.valid.yml"
+		})
+
+		JustBeforeEach(func() {
+			cfg, cfgErr = config.Load(test.GetTestDataPath(cfgFile))
+		})
+
+		Context("With a missing file name", func() {
+			BeforeEach(func() {
+				cfgFile = "config.missing.yml"
+			})
+
+			It("Should return an error", func() {
+				Expect(cfgErr).To(HaveOccurred())
+			})
+
+			It("Should return a nil config", func() {
+				Expect(cfg).To(BeNil())
 			})
 		})
 
-		Convey("Load()", func() {
-			Convey("When the config is missing", func() {
-				cfg, err := config.Load(test.GetTestDataPath("config.missing.yml"))
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldStartWith, "config: unable to read config file")
-				So(cfg, ShouldBeNil)
+		Context("With a config file containing invalid yaml", func() {
+			BeforeEach(func() {
+				cfgFile = "config.invalid-yaml.yml"
 			})
 
-			Convey("When the config is invalid", func() {
-				cfg, err := config.Load(test.GetTestDataPath("config.invalid-yaml.yml"))
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldStartWith, "config: unable to parse config file")
-				So(cfg, ShouldBeNil)
+			It("Should return an error", func() {
+				Expect(cfgErr).To(HaveOccurred())
 			})
 
-			Convey("When the config is valid", func() {
-				cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
-				So(err, ShouldBeNil)
-				So(cfg, ShouldNotBeNil)
+			It("Should return a nil config", func() {
+				Expect(cfg).To(BeNil())
 			})
 		})
 
-		Convey("GetServices()", func() {
-			cfg := config.Default()
-
-			Convey("Should return the list of registered services", func() {
-				So(cfg.GetServices(), ShouldHaveLength, 1)
-			})
-		})
-
-		Convey("GetDefaultService()", func() {
-			cfg := config.Default()
-
-			Convey("Should return the first defined service", func() {
-				So(cfg.GetServices(), ShouldHaveLength, 1)
-				So(cfg.GetDefaultService(), ShouldEqual, cfg.GetServices()[0])
-			})
-		})
-
-		Convey("GetService(domain)", func() {
-			cfg := config.Default()
-
-			Convey("Should return nil if the service cannot be found", func() {
-				So(cfg.GetService("notadomain.invalid"), ShouldBeNil)
+		Context("With a valid config file", func() {
+			It("Should not return an error", func() {
+				Expect(cfgErr).ToNot(HaveOccurred())
 			})
 
-			Convey("Should return the default service if no domain is specified", func() {
-				So(cfg.GetService(""), ShouldEqual, cfg.GetDefaultService())
+			It("Should return a non-nil config", func() {
+				Expect(cfg).ToNot(BeNil())
 			})
 
-			Convey("Should return a service based on its domain name", func() {
-				So(cfg.GetService("github.com"), ShouldNotBeNil)
-				So(cfg.GetService("github.com").Domain(), ShouldEqual, "github.com")
-			})
-		})
-
-		Convey("GetApps()", func() {
-			cfg := config.Default()
-
-			Convey("Should return the list of registered apps", func() {
-				So(cfg.GetApps(), ShouldHaveLength, 1)
-			})
-		})
-
-		Convey("GetDefaultApp()", func() {
-			cfg := config.Default()
-
-			Convey("Should return the first defined app", func() {
-				So(cfg.GetApps(), ShouldHaveLength, 1)
-				So(cfg.GetDefaultApp(), ShouldEqual, cfg.GetApps()[0])
-			})
-		})
-
-		Convey("GetApp(name)", func() {
-			cfg := config.Default()
-
-			Convey("Should return nil if the app cannot be found", func() {
-				So(cfg.GetApp("unknownapp"), ShouldBeNil)
-			})
-
-			Convey("Should return the default app if no name is specified", func() {
-				So(cfg.GetApp(""), ShouldEqual, cfg.GetDefaultApp())
-			})
-
-			Convey("Should return a app based on its name", func() {
-				So(cfg.GetApp("shell"), ShouldNotBeNil)
-				So(cfg.GetApp("shell").Name(), ShouldEqual, "shell")
-			})
-		})
-
-		Convey("GetAliases()", func() {
-			cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
-			So(err, ShouldBeNil)
-			So(cfg, ShouldNotBeNil)
-
-			Convey("Should return the list of configured aliases", func() {
-				So(cfg.GetAliases(), ShouldResemble, map[string]string{
-					"gt": "github.com/SierraSoftworks/git-tool",
+			Describe("GetServices()", func() {
+				It("Should return all of the services", func() {
+					Expect(cfg.GetServices()).To(HaveLen(4))
 				})
 			})
-		})
 
-		Convey("GetAlias(name)", func() {
-			cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
-			So(err, ShouldBeNil)
-			So(cfg, ShouldNotBeNil)
+			Describe("GetDefaultService()", func() {
+				It("Should return a non-nil service", func() {
+					Expect(cfg.GetDefaultService()).ToNot(BeNil())
+				})
 
-			Convey("Should return an empty string if the alias isn't found", func() {
-				So(cfg.GetAlias("unknown"), ShouldBeEmpty)
+				It("Should return the default service", func() {
+					Expect(cfg.GetDefaultService().Domain()).To(Equal("github.com"))
+				})
 			})
 
-			Convey("Should return a configured alias", func() {
-				So(cfg.GetAlias("gt"), ShouldEqual, "github.com/SierraSoftworks/git-tool")
+			Describe("GetService(name)", func() {
+				It("Should return the service if it exists", func() {
+					Expect(cfg.GetService("dev.azure.com")).ToNot(BeNil())
+				})
+
+				It("Should return the default service if no domain name is provided", func() {
+					Expect(cfg.GetService("")).To(Equal(cfg.GetDefaultService()))
+				})
+
+				It("Should return nil if the service does not exist", func() {
+					Expect(cfg.GetService("hubgitlabbucket.orgcom")).To(BeNil())
+				})
+			})
+
+			Describe("GetApps()", func() {
+				It("Should return all of the apps", func() {
+					Expect(cfg.GetApps()).To(HaveLen(3))
+				})
+			})
+
+			Describe("GetDefaultApp()", func() {
+				It("Should return a non-nil app", func() {
+					Expect(cfg.GetDefaultApp()).ToNot(BeNil())
+				})
+
+				It("Should return the default app", func() {
+					Expect(cfg.GetDefaultApp().Name()).To(Equal("shell"))
+				})
+			})
+
+			Describe("GetApp(name)", func() {
+				It("Should return the app if it exists", func() {
+					Expect(cfg.GetApp("code")).ToNot(BeNil())
+				})
+
+				It("Should return the default app if no domain name is provided", func() {
+					Expect(cfg.GetApp("")).To(Equal(cfg.GetDefaultApp()))
+				})
+
+				It("Should return nil if the app does not exist", func() {
+					Expect(cfg.GetApp("missingappname")).To(BeNil())
+				})
+			})
+
+			Describe("GetAliases()", func() {
+				It("Should get the full list of aliases", func() {
+					Expect(cfg.GetAliases()).To(HaveLen(1))
+				})
+			})
+
+			Describe("GetAlias(name)", func() {
+				It("Should return the expansion of the alias if it exists", func() {
+					Expect(cfg.GetAlias("gt")).To(Equal("github.com/SierraSoftworks/git-tool"))
+				})
+
+				It("Should return an empty string if the alias doesn't exist", func() {
+					Expect(cfg.GetAlias("unknown")).To(BeEmpty())
+				})
 			})
 		})
 	})
-}
+})
