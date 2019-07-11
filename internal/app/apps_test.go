@@ -2,8 +2,9 @@ package app
 
 import (
 	"testing"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAppsSubcommand(t *testing.T) {
@@ -27,8 +28,8 @@ func TestAppsSubcommand(t *testing.T) {
 					"apps",
 				}), ShouldBeNil)
 
-				So(out.GetLines(), ShouldNotBeEmpty)
-				So(out.GetLines(), ShouldHaveLength, len(di.GetConfig().GetApps()))
+				So(out.GetOperations(), ShouldNotBeEmpty)
+				So(out.GetOperations(), ShouldHaveLength, len(di.GetConfig().GetApps()))
 			})
 
 			Convey("Should appear in the root completions list", func() {
@@ -37,10 +38,10 @@ func TestAppsSubcommand(t *testing.T) {
 				So(app.Run([]string{
 					"gt",
 					"complete",
-					"gt ",
+					"gt",
 				}), ShouldBeNil)
 
-				So(out.GetLines(), ShouldContain, "apps")
+				So(out.GetOperations(), ShouldContain, "apps")
 			})
 
 			Convey("Should return an empty completions list", func() {
@@ -53,7 +54,7 @@ func TestAppsSubcommand(t *testing.T) {
 					"gt apps",
 				}), ShouldBeNil)
 
-				So(out.GetLines(), ShouldBeEmpty)
+				So(out.GetOperations(), ShouldBeEmpty)
 			})
 		})
 	})
