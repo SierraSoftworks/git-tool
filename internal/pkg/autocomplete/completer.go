@@ -3,8 +3,8 @@ package autocomplete
 import (
 	"strings"
 
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
 type Completer struct {

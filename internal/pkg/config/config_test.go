@@ -37,6 +37,28 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("DefaultForDirectory(dir)", func() {
+		It("Should return a config", func() {
+			Expect(config.DefaultForDirectory(test.GetTestPath())).ToNot(BeNil())
+		})
+
+		It("Should use the right development directory", func() {
+			Expect(config.DefaultForDirectory(test.GetTestPath()).DevelopmentDirectory()).To(Equal(test.GetTestPath()))
+		})
+
+		It("Should have a service entry for GitHub", func() {
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetServices()).ToNot(BeEmpty())
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetDefaultService()).ToNot(BeNil())
+		})
+
+		It("Should have an app entry for the shell", func() {
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetApps()).ToNot(BeEmpty())
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetDefaultApp()).ToNot(BeNil())
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetDefaultApp().Name()).To(Equal("shell"))
+			Expect(config.DefaultForDirectory(test.GetTestPath()).GetApp("shell")).ToNot(BeNil())
+		})
+	})
+
 	Describe("Load()", func() {
 		var (
 			cfg     config.Config

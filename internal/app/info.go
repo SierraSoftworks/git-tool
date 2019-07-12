@@ -17,6 +17,10 @@ var repoInfoCommand = cli.Command{
 	ArgsUsage: "[repo]",
 	Flags:     []cli.Flag{},
 	Action: func(c *cli.Context) error {
+		if c.NArg() == 0 {
+			return errors.New("no repository specified")
+		}
+
 		repo, err := di.GetMapper().GetBestRepo(c.Args().First())
 		if err != nil {
 			return err

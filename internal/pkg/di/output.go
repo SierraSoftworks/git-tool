@@ -2,6 +2,8 @@ package di
 
 import (
 	"fmt"
+	"io"
+	"os"
 )
 
 var output Output = &StdOutput{}
@@ -15,12 +17,17 @@ func SetOutput(o Output) {
 }
 
 type Output interface {
+	io.Writer
 	Print(args ...interface{})
 	Println(args ...interface{})
 	Printf(format string, args ...interface{})
 }
 
 type StdOutput struct {
+}
+
+func (o *StdOutput) Write(b []byte) (int, error) {
+	return os.Stdout.Write(b)
 }
 
 func (o *StdOutput) Print(args ...interface{}) {
@@ -45,6 +52,11 @@ func (o *TestOutput) GetOperations() []string {
 
 func (o *TestOutput) Reset() {
 	o.operations = []string{}
+}
+
+func (o *TestOutput) Write(b []byte) (int, error) {
+	o.operations = append(o.operations, string(b))
+	return len(b), nil
 }
 
 func (o *TestOutput) Print(args ...interface{}) {

@@ -73,6 +73,10 @@ func (d *Mapper) GetRepos() ([]models.Repo, error) {
 			continue
 		}
 
+		if f.Name() == "scratch" {
+			continue
+		}
+
 		service := di.GetConfig().GetService(f.Name())
 		if service == nil {
 			logrus.WithField("service", f.Name()).Warn("Could not find a matching service entry in your configuration")
@@ -203,11 +207,18 @@ func (d *Mapper) GetRepoForService(service models.Service, name string) (models.
 		return nil, nil
 	}
 
-	return &repo{
+	r := &repo{
 		fullName: strings.Join(dirParts[:fullNameLength], "/"),
 		service:  service,
 		path:     filepath.Join(di.GetConfig().DevelopmentDirectory(), service.Domain(), filepath.Join(dirParts[:fullNameLength]...)),
-	}, nil
+	}
+
+	if r.FullName() != filepath.ToSlash(name) {
+		logrus.WithField("fullName", r.FullName()).WithField("name", name).Debug("Repo full name didn't match provided name")
+		return nil, nil
+	}
+
+	return r, nil
 }
 
 // GetFullyQualifiedRepo fetches the repo details for the fully qualified named

@@ -1,7 +1,10 @@
-package app
+package app_test
 
 import (
+	"github.com/SierraSoftworks/git-tool/internal/app"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -12,23 +15,19 @@ var _ = Describe("gt ignore", func() {
 		err error
 	)
 
-	app := NewApp()
-
 	BeforeEach(func() {
 		out = &di.TestOutput{}
 		di.SetOutput(out)
+		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 	})
 
 	It("Should be registered with the CLI", func() {
-		Expect(app.Command("ignore")).ToNot(BeNil())
+		Expect(app.NewApp().Command("ignore")).ToNot(BeNil())
 	})
 
 	Context("With no arguments", func() {
 		BeforeEach(func() {
-			err = app.Run([]string{
-				"gt",
-				"ignore",
-			})
+			err = runApp("ignore")
 		})
 
 		It("Should not return an error", func() {
@@ -44,11 +43,7 @@ var _ = Describe("gt ignore", func() {
 
 	Context("With a single language provided", func() {
 		BeforeEach(func() {
-			err = app.Run([]string{
-				"gt",
-				"ignore",
-				"go",
-			})
+			err = runApp("ignore", "go")
 		})
 
 		It("Should not return an error", func() {
@@ -63,12 +58,7 @@ var _ = Describe("gt ignore", func() {
 
 	Context("With multiple languages provded", func() {
 		BeforeEach(func() {
-			err = app.Run([]string{
-				"gt",
-				"ignore",
-				"go",
-				"node",
-			})
+			err = runApp("ignore", "go", "node")
 		})
 
 		It("Should not return an error", func() {
@@ -84,11 +74,7 @@ var _ = Describe("gt ignore", func() {
 
 	Context("Root autocompletion", func() {
 		BeforeEach(func() {
-			err = app.Run([]string{
-				"gt",
-				"complete",
-				"gt",
-			})
+			err = runApp("complete", "gt")
 		})
 
 		It("Should not return an error", func() {
@@ -102,11 +88,7 @@ var _ = Describe("gt ignore", func() {
 
 	Context("Command autocompletion", func() {
 		BeforeEach(func() {
-			err = app.Run([]string{
-				"gt",
-				"complete",
-				"gt ignore ",
-			})
+			err = runApp("complete", "gt ignore ")
 		})
 
 		It("Should not return an error", func() {

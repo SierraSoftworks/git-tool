@@ -41,7 +41,7 @@ var completeCommand = cli.Command{
 			return err
 		}
 
-		args = append([]string{args[0], "--bash-completion-filter", filter}, args[1:]...)
+		args = append([]string{args[0], "--bash-completion-filter", filter, "--config", c.GlobalString("config")}, args[1:]...)
 
 		return c.App.Run(append(args, "--generate-bash-completion"))
 	},

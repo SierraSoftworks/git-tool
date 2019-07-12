@@ -28,11 +28,11 @@ func GetProjectRoot() string {
 
 // GetTestPath will return the path to the $project/test directory
 // holding test tools and data files.
-func GetTestPath() string {
-	return filepath.Join(GetProjectRoot(), "test")
+func GetTestPath(file ...string) string {
+	return filepath.Join(append([]string{GetProjectRoot(), "test"}, file...)...)
 }
 
 // GetTestDataPath will return the path to a specific test data file
 func GetTestDataPath(file ...string) string {
-	return filepath.Join(append([]string{GetTestPath(), "data"}, file...)...)
+	return GetTestPath(append([]string{"data"}, file...)...)
 }

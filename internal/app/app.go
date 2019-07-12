@@ -90,5 +90,8 @@ func NewApp() *cli.App {
 		}
 	}
 
+	app.Writer = di.GetOutput()
+	app.ErrWriter = di.GetOutput()
+
 	return app
 }

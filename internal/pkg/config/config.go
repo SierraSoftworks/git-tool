@@ -38,8 +38,14 @@ type config struct {
 // for environments where you have not defined a configuration
 // file.
 func Default() Config {
+	return DefaultForDirectory(os.Getenv("DEV_DIRECTORY"))
+}
+
+// DefaultForDirectory gets a simple default configuration for Git Tool
+// pointed at a specific development directory.
+func DefaultForDirectory(dir string) Config {
 	return &config{
-		Directory: os.Getenv("DEV_DIRECTORY"),
+		Directory: dir,
 		Services: []*service{
 			&service{
 				DomainField:        "github.com",
@@ -47,6 +53,13 @@ func Default() Config {
 				WebsiteTemplate:    "https://{{ .Service.Domain }}/{{ .Repo.FullName }}",
 				HttpUrlTemplate:    "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git",
 				GitUrlTemplate:     "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git",
+			},
+			&service{
+				DomainField:        "dev.azure.com",
+				DirectoryGlobField: "*/*/*",
+				WebsiteTemplate:    "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}",
+				HttpUrlTemplate:    "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}",
+				GitUrlTemplate:     "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git",
 			},
 		},
 		Applications: []*app{
