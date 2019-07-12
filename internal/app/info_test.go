@@ -7,6 +7,7 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,12 +15,12 @@ import (
 
 var _ = Describe("gt info", func() {
 	var (
-		out *di.TestOutput
+		out *mocks.Output
 		err error
 	)
 
 	BeforeEach(func() {
-		out = &di.TestOutput{}
+		out = &mocks.Output{}
 		di.SetOutput(out)
 		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 	})

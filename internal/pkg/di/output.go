@@ -41,32 +41,3 @@ func (o *StdOutput) Println(args ...interface{}) {
 func (o *StdOutput) Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
-
-type TestOutput struct {
-	operations []string
-}
-
-func (o *TestOutput) GetOperations() []string {
-	return o.operations
-}
-
-func (o *TestOutput) Reset() {
-	o.operations = []string{}
-}
-
-func (o *TestOutput) Write(b []byte) (int, error) {
-	o.operations = append(o.operations, string(b))
-	return len(b), nil
-}
-
-func (o *TestOutput) Print(args ...interface{}) {
-	o.operations = append(o.operations, fmt.Sprint(args...))
-}
-
-func (o *TestOutput) Println(args ...interface{}) {
-	o.operations = append(o.operations, fmt.Sprintln(args...))
-}
-
-func (o *TestOutput) Printf(format string, args ...interface{}) {
-	o.operations = append(o.operations, fmt.Sprintf(format, args...))
-}

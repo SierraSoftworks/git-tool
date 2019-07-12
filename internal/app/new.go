@@ -16,6 +16,10 @@ var newRepoCommand = cli.Command{
 	Usage:     "Creates a new repository with the provided name.",
 	ArgsUsage: "repo",
 	Action: func(c *cli.Context) error {
+		if c.NArg() == 0 {
+			return errors.New("no repository specified")
+		}
+
 		r, err := di.GetMapper().GetRepo(c.Args().First())
 		if err != nil {
 			return err

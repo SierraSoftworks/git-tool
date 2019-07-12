@@ -46,20 +46,3 @@ func (l *defaultLauncher) Run(cmd *exec.Cmd) error {
 
 	return cmd.Run()
 }
-
-type TestLauncher struct {
-	commands []*exec.Cmd
-}
-
-func (l *TestLauncher) GetCommands() []*exec.Cmd {
-	return l.commands
-}
-
-func (l *TestLauncher) Reset() {
-	l.commands = []*exec.Cmd{}
-}
-
-func (l *TestLauncher) Run(cmd *exec.Cmd) error {
-	l.commands = append(l.commands, cmd)
-	return nil
-}

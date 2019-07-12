@@ -74,7 +74,7 @@ func (c *Completer) DefaultServiceNamespaces() {
 
 		seen[repo.Namespace()] = struct{}{}
 
-		c.complete(repo.Namespace())
+		c.complete(fmt.Sprintf("%s/", repo.Namespace()))
 	}
 }
 
@@ -89,6 +89,6 @@ func (c *Completer) AllServiceNamespaces() {
 
 		seen[repo.Namespace()] = struct{}{}
 
-		c.complete(fmt.Sprintf("%s/%s/\n", repo.Service().Domain(), repo.Namespace()))
+		c.complete(fmt.Sprintf("%s/%s/", repo.Service().Domain(), repo.Namespace()))
 	}
 }

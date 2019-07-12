@@ -4,104 +4,24 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type testInitializer struct {
-	MockCalls []struct {
-		Function string
-		Repo     models.Repo
-	}
-	MockError error
-}
-
-func (i *testInitializer) Init(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"Init",
-		r,
-	})
-
-	return i.MockError
-}
-
-func (i *testInitializer) Pull(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"Pull",
-		r,
-	})
-
-	return i.MockError
-}
-
-func (i *testInitializer) Clone(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"Clone",
-		r,
-	})
-
-	return i.MockError
-}
-
-func (i *testInitializer) EnsureRemoteRepo(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"EnsureRemoteRepo",
-		r,
-	})
-
-	return i.MockError
-}
-
-func (i *testInitializer) CreateRemoteRepo(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"CreateRemoteRepo",
-		r,
-	})
-
-	return i.MockError
-}
-
-func (i *testInitializer) CreateScratchpad(r models.Repo) error {
-	i.MockCalls = append(i.MockCalls, struct {
-		Function string
-		Repo     models.Repo
-	}{
-		"CreateScratchpad",
-		r,
-	})
-
-	return i.MockError
-}
-
 var _ = Describe("gt open", func() {
 	var (
-		out    *di.TestOutput
-		launch *di.TestLauncher
-		init   *testInitializer
+		out    *mocks.Output
+		launch *mocks.Launcher
+		init   *mocks.Initializer
 		err    error
 	)
 
 	BeforeEach(func() {
-		out = &di.TestOutput{}
-		launch = &di.TestLauncher{}
-		init = &testInitializer{}
+		out = &mocks.Output{}
+		launch = &mocks.Launcher{}
+		init = &mocks.Initializer{}
 		di.SetOutput(out)
 		di.SetLauncher(launch)
 		di.SetInitializer(init)
