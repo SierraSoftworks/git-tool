@@ -1,9 +1,9 @@
 package repo
 
 import (
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"os"
-	"strings"
+
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
 // scratchpad describes a repository object with any necessary properties required by
@@ -13,38 +13,12 @@ type scratchpad struct {
 	path     string
 }
 
-func (r *scratchpad) FullName() string {
-	return r.fullName
-}
-
-func (r *scratchpad) Namespace() string {
-	parts := strings.Split(r.fullName, "/")
-	return strings.Join(parts[:len(parts)-1], "/")
-}
-
 func (r *scratchpad) Name() string {
-	parts := strings.Split(r.fullName, "/")
-	return parts[len(parts)-1]
-}
-
-func (r *scratchpad) Service() models.Service {
-	return &scratchpadService{}
+	return r.fullName
 }
 
 func (r *scratchpad) Path() string {
 	return r.path
-}
-
-func (r *scratchpad) Website() string {
-	return ""
-}
-
-func (r *scratchpad) HttpURL() string {
-	return ""
-}
-
-func (r *scratchpad) GitURL() string {
-	return ""
 }
 
 func (r *scratchpad) Exists() bool {
@@ -60,11 +34,7 @@ func (r *scratchpad) Exists() bool {
 	return s.IsDir()
 }
 
-func (r *scratchpad) Valid() bool {
-	return true
-}
-
-type scratchpadService struct {}
+type scratchpadService struct{}
 
 func (s *scratchpadService) Domain() string {
 	return "scratch"

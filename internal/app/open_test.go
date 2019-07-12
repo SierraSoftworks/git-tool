@@ -70,7 +70,7 @@ var _ = Describe("gt open", func() {
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
 				Expect(init.MockCalls[0].Function).To(Equal("Clone"))
-				Expect(init.MockCalls[0].Repo.Path()).To(Equal(repo.Path()))
+				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 
 			It("Should launch the default app", func() {

@@ -58,7 +58,7 @@ var _ = Describe("gt scratch", func() {
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
 				Expect(init.MockCalls[0].Function).To(Equal("CreateScratchpad"))
-				Expect(init.MockCalls[0].Repo.Path()).To(Equal(repo.Path()))
+				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 
 			It("Should launch the default app", func() {
@@ -98,7 +98,7 @@ var _ = Describe("gt scratch", func() {
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
 				Expect(init.MockCalls[0].Function).To(Equal("CreateScratchpad"))
-				Expect(init.MockCalls[0].Repo.Path()).To(Equal(repo.Path()))
+				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 
 			It("Should launch the default app", func() {

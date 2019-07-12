@@ -26,14 +26,8 @@ func (a *app) Name() string {
 
 // GetCmd will fetch the *exec.Cmd used to start this application within
 // the context of a specific service and repository.
-func (a *app) GetCmd(r models.Repo) (*exec.Cmd, error) {
-	ctx := &struct {
-		Repo    models.Repo
-		Service models.Service
-	}{
-		Repo:    r,
-		Service: r.Service(),
-	}
+func (a *app) GetCmd(r models.Target) (*exec.Cmd, error) {
+	ctx := r.TemplateContext()
 
 	args := make([]string, len(a.Arguments))
 

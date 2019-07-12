@@ -19,8 +19,8 @@ func GetMapper() Mapper {
 type Mapper interface {
 	GetBestRepo(name string) (models.Repo, error)
 	GetRepos() ([]models.Repo, error)
-	GetScratchpads() ([]models.Repo, error)
-	GetScratchpad(name string) (models.Repo, error)
+	GetScratchpads() ([]models.Scratchpad, error)
+	GetScratchpad(name string) (models.Scratchpad, error)
 	EnsureRepo(service models.Service, r models.Repo) error
 	GetReposForService(service models.Service) ([]models.Repo, error)
 	GetRepo(name string) (models.Repo, error)

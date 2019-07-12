@@ -5,9 +5,9 @@ import (
 )
 
 // An app represents an application which can be started
-// within the context of a repository.
+// within the context of a Target.
 type App interface {
 	Name() string
 
-	GetCmd(repo Repo) (*exec.Cmd, error)
+	GetCmd(target Target) (*exec.Cmd, error)
 }

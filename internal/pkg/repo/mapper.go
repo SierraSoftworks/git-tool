@@ -95,12 +95,22 @@ func (d *Mapper) GetRepos() ([]models.Repo, error) {
 }
 
 // GetScratchpads will fetch all of the known scratchpads which are stored locally.
-func (d *Mapper) GetScratchpads() ([]models.Repo, error) {
-	return d.GetReposForService(&scratchpadService{})
+func (d *Mapper) GetScratchpads() ([]models.Scratchpad, error) {
+	repos, err := d.GetReposForService(&scratchpadService{})
+	if err != nil {
+		return nil, err
+	}
+
+	scratchpads := make([]models.Scratchpad, len(repos))
+	for i, repo := range repos {
+		scratchpads[i] = repo
+	}
+
+	return scratchpads, nil
 }
 
 // GetScratchpad will fetch a scratchpad repo with the provided name
-func (d *Mapper) GetScratchpad(name string) (models.Repo, error) {
+func (d *Mapper) GetScratchpad(name string) (models.Scratchpad, error) {
 	return d.GetRepoForService(&scratchpadService{}, name)
 }
 

@@ -67,7 +67,7 @@ var _ = Describe("gt new", func() {
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
 				Expect(init.MockCalls[0].Function).To(Equal("Init"))
-				Expect(init.MockCalls[0].Repo.Path()).To(Equal(repo.Path()))
+				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 		})
 
@@ -90,7 +90,7 @@ var _ = Describe("gt new", func() {
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
 				Expect(init.MockCalls[0].Function).To(Equal("Init"))
-				Expect(init.MockCalls[0].Repo.Path()).To(Equal(repo.Path()))
+				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 		})
 	})

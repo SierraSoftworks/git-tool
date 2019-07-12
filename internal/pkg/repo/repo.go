@@ -1,10 +1,11 @@
 package repo
 
 import (
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
 // repo describes a repository object with any necessary properties required by
@@ -69,4 +70,14 @@ func (r *repo) Valid() bool {
 	}
 
 	return s.IsDir()
+}
+
+func (r *repo) TemplateContext() interface{} {
+	return struct {
+		Repo    models.Repo
+		Service models.Service
+	}{
+		Repo:    r,
+		Service: r.Service(),
+	}
 }
