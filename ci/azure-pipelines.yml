@@ -78,6 +78,7 @@ steps:
     SourceFolder: bin
     Contents: 'git-tool-*'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    CleanTargetFolder: true
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop/Git-Tool'
