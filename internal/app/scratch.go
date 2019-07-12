@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
@@ -62,28 +60,7 @@ var openScratchCommand = cli.Command{
 			return err
 		}
 
-		cmd.Stdin = os.Stdin
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig)
-
-		go func() {
-			for s := range sig {
-				if cmd.Process != nil && cmd.ProcessState != nil && !cmd.ProcessState.Exited() {
-					cmd.Process.Signal(s)
-				}
-			}
-		}()
-
-		defer func() {
-			// Shutdown signal forwarding for our process
-			signal.Stop(sig)
-			close(sig)
-		}()
-
-		return cmd.Run()
+		return di.GetLauncher().Run(cmd)
 	},
 	BashComplete: func(c *cli.Context) {
 		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
