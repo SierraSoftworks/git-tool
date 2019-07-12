@@ -53,7 +53,7 @@ func (d *Mapper) GetBestRepo(name string) (models.Repo, error) {
 		return matched[0], nil
 	}
 
-	return nil, errors.New("could not find repository")
+	return nil, nil
 }
 
 // GetRepos will fetch all of the repositories contained within a developer's dev

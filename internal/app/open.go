@@ -1,9 +1,6 @@
 package app
 
 import (
-	"os"
-	"os/signal"
-
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 
@@ -44,15 +41,20 @@ var openAppCommand = cli.Command{
 			return err
 		}
 
+		if r == nil && len(args) == 0 {
+			return errors.New("no repository specified")
+		} else if r == nil {
+			return errors.New("could not find repository")
+		}
+
 		if !r.Exists() {
 			init := di.GetInitializer()
 
 			err := init.Clone(r)
 			if err != nil {
+				logrus.WithError(err).Error("Failed to clone repository")
 				return errors.New("repository doesn't exist yet, use 'new' to create it")
 			}
-
-			logrus.Info("Cloned repository to your local filesystem")
 		}
 
 		cmd, err := app.GetCmd(r)
@@ -60,28 +62,7 @@ var openAppCommand = cli.Command{
 			return err
 		}
 
-		cmd.Stdin = os.Stdin
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig)
-
-		go func() {
-			for s := range sig {
-				if cmd.Process != nil && cmd.ProcessState != nil && !cmd.ProcessState.Exited() {
-					cmd.Process.Signal(s)
-				}
-			}
-		}()
-
-		defer func() {
-			// Shutdown signal forwarding for our process
-			signal.Stop(sig)
-			close(sig)
-		}()
-
-		return cmd.Run()
+		return di.GetLauncher().Run(cmd)
 	},
 	BashComplete: func(c *cli.Context) {
 		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
