@@ -1,8 +1,9 @@
 package testmodels
 
 import (
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"strings"
+
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
 type TestRepo struct {
@@ -54,4 +55,14 @@ func (r *TestRepo) Valid() bool {
 
 func (r *TestRepo) Exists() bool {
 	return r.ModelExists
+}
+
+func (r *TestRepo) TemplateContext() interface{} {
+	return struct {
+		Repo    models.Repo
+		Service models.Service
+	}{
+		Repo:    r,
+		Service: r.Service(),
+	}
 }

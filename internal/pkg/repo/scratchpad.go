@@ -34,6 +34,14 @@ func (r *scratchpad) Exists() bool {
 	return s.IsDir()
 }
 
+func (r *scratchpad) TemplateContext() interface{} {
+	return struct {
+		Scratchpad models.Scratchpad
+	}{
+		Scratchpad: r,
+	}
+}
+
 type scratchpadService struct{}
 
 func (s *scratchpadService) Domain() string {

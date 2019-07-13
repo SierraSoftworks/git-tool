@@ -19,6 +19,7 @@ func GetConfig() Config {
 // The Config is used to configure the behavior of Git Tool
 type Config interface {
 	DevelopmentDirectory() string
+	ScratchDirectory() string
 
 	GetServices() []models.Service
 	GetService(domain string) models.Service

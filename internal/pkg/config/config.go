@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 
@@ -13,6 +14,7 @@ import (
 // The Config is used to configure the behavior of Git Tool
 type Config interface {
 	DevelopmentDirectory() string
+	ScratchDirectory() string
 
 	GetServices() []models.Service
 	GetService(domain string) models.Service
@@ -27,7 +29,8 @@ type Config interface {
 }
 
 type config struct {
-	Directory string `json:"directory" yaml:"directory"`
+	Directory   string `json:"directory" yaml:"directory"`
+	Scratchpads string `json:"scratchpads" yaml:"scratchpads"`
 
 	Services     []*service        `json:"services" yaml:"services"`
 	Applications []*app            `json:"apps" yaml:"apps"`
@@ -89,6 +92,14 @@ func Load(file string) (Config, error) {
 
 func (c *config) DevelopmentDirectory() string {
 	return c.Directory
+}
+
+func (c *config) ScratchDirectory() string {
+	if c.Scratchpads == "" {
+		return filepath.Join(c.Directory, "scratch")
+	}
+
+	return c.Scratchpads
 }
 
 func (c *config) GetApps() []models.App {

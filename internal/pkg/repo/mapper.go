@@ -96,14 +96,25 @@ func (d *Mapper) GetRepos() ([]models.Repo, error) {
 
 // GetScratchpads will fetch all of the known scratchpads which are stored locally.
 func (d *Mapper) GetScratchpads() ([]models.Scratchpad, error) {
-	repos, err := d.GetReposForService(&scratchpadService{})
+	logrus.Debug("Enumerating scratchpads")
+
+	files, err := ioutil.ReadDir(di.GetConfig().ScratchDirectory())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "repo: unable to list directory contents in scratchpad direction '%s'", di.GetConfig().ScratchDirectory())
 	}
 
-	scratchpads := make([]models.Scratchpad, len(repos))
-	for i, repo := range repos {
-		scratchpads[i] = repo
+	scratchpads := []models.Scratchpad{}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+
+		scratchpad, err := d.GetScratchpad(file.Name())
+		if err != nil {
+			return nil, errors.Wrapf(err, "repo: failed to list directory contents in the scratchpad directory '%s'", di.GetConfig().ScratchDirectory())
+		}
+		scratchpads = append(scratchpads, scratchpad)
 	}
 
 	return scratchpads, nil
@@ -111,7 +122,10 @@ func (d *Mapper) GetScratchpads() ([]models.Scratchpad, error) {
 
 // GetScratchpad will fetch a scratchpad repo with the provided name
 func (d *Mapper) GetScratchpad(name string) (models.Scratchpad, error) {
-	return d.GetRepoForService(&scratchpadService{}, name)
+	return &scratchpad{
+		fullName: name,
+		path:     filepath.Join(di.GetConfig().ScratchDirectory(), name),
+	}, nil
 }
 
 // EnsureRepo will ensure that a repository directory has been created at the correct location
