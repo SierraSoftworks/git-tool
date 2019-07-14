@@ -6,8 +6,6 @@ type Repo interface {
 
 	// FullName gets the full name of the repository including its namespace
 	FullName() string
-	// Name gets the short name component of the repository's full name.
-	Name() string
 	// Namespace gets the portion of the repository's full name prior to its final short name segment.
 	Namespace() string
 	

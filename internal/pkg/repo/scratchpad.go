@@ -34,10 +34,9 @@ func (r *scratchpad) Exists() bool {
 	return s.IsDir()
 }
 
-func (r *scratchpad) TemplateContext() interface{} {
-	return struct {
-		Scratchpad models.Scratchpad
-	}{
+func (r *scratchpad) TemplateContext() *models.TemplateContext {
+	return &models.TemplateContext{
+		Target:     r,
 		Scratchpad: r,
 	}
 }

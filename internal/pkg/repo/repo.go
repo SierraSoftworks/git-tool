@@ -72,12 +72,10 @@ func (r *repo) Valid() bool {
 	return s.IsDir()
 }
 
-func (r *repo) TemplateContext() interface{} {
-	return struct {
-		Repo    models.Repo
-		Service models.Service
-	}{
+func (r *repo) TemplateContext() *models.TemplateContext {
+	return &models.TemplateContext{
 		Repo:    r,
+		Target:  r,
 		Service: r.Service(),
 	}
 }

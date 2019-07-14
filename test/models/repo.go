@@ -57,12 +57,10 @@ func (r *TestRepo) Exists() bool {
 	return r.ModelExists
 }
 
-func (r *TestRepo) TemplateContext() interface{} {
-	return struct {
-		Repo    models.Repo
-		Service models.Service
-	}{
+func (r *TestRepo) TemplateContext() *models.TemplateContext {
+	return &models.TemplateContext{
 		Repo:    r,
+		Target:  r,
 		Service: r.Service(),
 	}
 }
