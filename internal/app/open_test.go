@@ -1,6 +1,8 @@
 package app_test
 
 import (
+	"os"
+
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
@@ -28,25 +30,60 @@ var _ = Describe("gt open", func() {
 		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 	})
 
+	AfterEach(func() {
+		os.Chdir(test.GetProjectRoot())
+	})
+
 	It("Should be registered with the CLI", func() {
 		Expect(app.NewApp().Command("open")).ToNot(BeNil())
 	})
 
 	Context("With no arguments", func() {
-		BeforeEach(func() {
+		JustBeforeEach(func() {
 			err = runApp("open")
 		})
 
-		It("Should return an error", func() {
-			Expect(err).To(HaveOccurred())
+		Context("When not in a repository directory", func() {
+			It("Should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("Should inform the user in the error of why the command failed", func() {
+				Expect(err.Error()).To(Equal("no repository specified"))
+			})
+
+			It("Should not print any output", func() {
+				Expect(out.GetOperations()).To(BeEmpty())
+			})
 		})
 
-		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("no repository specified"))
-		})
+		Context("When in a repository directory", func() {
+			BeforeEach(func() {
+				os.Chdir(test.GetTestPath("devdir", "github.com", "sierrasoftworks", "test1"))
+			})
 
-		It("Should not print any output", func() {
-			Expect(out.GetOperations()).To(BeEmpty())
+			It("Should not return an error", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("Should not print any output", func() {
+				Expect(out.GetOperations()).To(BeEmpty())
+			})
+
+			It("Should launch the specified app", func() {
+				Expect(launch.GetCommands()).ToNot(BeEmpty())
+				Expect(launch.GetCommands()).To(HaveLen(1))
+				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
+			})
+
+			It("Should launch the app in the repo's directory", func() {
+				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(launch.GetCommands()).ToNot(BeEmpty())
+				Expect(launch.GetCommands()).To(HaveLen(1))
+				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
+			})
 		})
 	})
 
@@ -110,6 +147,55 @@ var _ = Describe("gt open", func() {
 
 			It("Should launch the app in the repo's directory", func() {
 				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(launch.GetCommands()).ToNot(BeEmpty())
+				Expect(launch.GetCommands()).To(HaveLen(1))
+				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
+			})
+		})
+	})
+
+	Context("With an app provided", func() {
+		JustBeforeEach(func() {
+			err = runApp("open", "shell")
+		})
+
+		Context("When not in a repository directory", func() {
+			It("Should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("Should inform the user in the error of why the command failed", func() {
+				Expect(err.Error()).To(Equal("no repository specified"))
+			})
+
+			It("Should not print any output", func() {
+				Expect(out.GetOperations()).To(BeEmpty())
+			})
+		})
+
+		Context("When in a repository directory", func() {
+			BeforeEach(func() {
+				os.Chdir(test.GetTestPath("devdir", "dev.azure.com", "sierrasoftworks", "opensource", "test1"))
+			})
+
+			It("Should not return an error", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("Should not print any output", func() {
+				Expect(out.GetOperations()).To(BeEmpty())
+			})
+
+			It("Should launch the specified app", func() {
+				Expect(launch.GetCommands()).ToNot(BeEmpty())
+				Expect(launch.GetCommands()).To(HaveLen(1))
+				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
+			})
+
+			It("Should launch the app in the repo's directory", func() {
+				repo, err := di.GetMapper().GetRepo("dev.azure.com/sierrasoftworks/opensource/test1")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(launch.GetCommands()).ToNot(BeEmpty())
