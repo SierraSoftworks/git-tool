@@ -1,6 +1,7 @@
 package autocomplete
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
@@ -35,7 +36,11 @@ func (c *Completer) getRepos() []models.Repo {
 
 func (c *Completer) complete(value string) {
 	if c.matchesFilter(value) {
-		di.GetOutput().Println(value)
+		if strings.ContainsAny(value, " \t\n\r") {
+			di.GetOutput().Println(fmt.Sprintf("'%s'", value))
+		} else {
+			di.GetOutput().Println(value)
+		}
 	}
 }
 
