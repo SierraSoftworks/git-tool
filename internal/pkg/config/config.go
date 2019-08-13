@@ -5,28 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 
 	"github.com/go-yaml/yaml"
 	"github.com/pkg/errors"
 )
-
-// The Config is used to configure the behavior of Git Tool
-type Config interface {
-	DevelopmentDirectory() string
-	ScratchDirectory() string
-
-	GetServices() []models.Service
-	GetService(domain string) models.Service
-	GetDefaultService() models.Service
-
-	GetApps() []models.App
-	GetApp(name string) models.App
-	GetDefaultApp() models.App
-
-	GetAliases() map[string]string
-	GetAlias(name string) string
-}
 
 type config struct {
 	Directory   string `json:"directory" yaml:"directory"`
@@ -35,18 +19,20 @@ type config struct {
 	Services     []*service        `json:"services" yaml:"services"`
 	Applications []*app            `json:"apps" yaml:"apps"`
 	Aliases      map[string]string `json:"aliases" yaml:"aliases"`
+
+	Features *Features `json:"features" yaml:"features"`
 }
 
 // Default gets a simple default configuration for Git Tool
 // for environments where you have not defined a configuration
 // file.
-func Default() Config {
+func Default() di.Config {
 	return DefaultForDirectory(os.Getenv("DEV_DIRECTORY"))
 }
 
 // DefaultForDirectory gets a simple default configuration for Git Tool
 // pointed at a specific development directory.
-func DefaultForDirectory(dir string) Config {
+func DefaultForDirectory(dir string) di.Config {
 	return &config{
 		Directory: dir,
 		Services: []*service{
@@ -71,18 +57,19 @@ func DefaultForDirectory(dir string) Config {
 				CommandLine: "bash",
 			},
 		},
-		Aliases: map[string]string{},
+		Aliases:  map[string]string{},
+		Features: defaultFeatures(),
 	}
 }
 
 // Load will attempt to load a configuration object from the provided file.
-func Load(file string) (Config, error) {
+func Load(file string) (di.Config, error) {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "config: unable to read config file")
 	}
 
-	config := &config{}
+	config := Default()
 	if err := yaml.Unmarshal(bytes, config); err != nil {
 		return nil, errors.Wrap(err, "config: unable to parse config file")
 	}
@@ -175,4 +162,8 @@ func (c *config) GetAliases() map[string]string {
 
 func (c *config) GetAlias(name string) string {
 	return c.Aliases[name]
+}
+
+func (c *config) GetFeatures() di.Features {
+	return c.Features
 }

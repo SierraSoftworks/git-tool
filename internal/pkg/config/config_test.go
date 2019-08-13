@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/test"
 
 	. "github.com/onsi/ginkgo"
@@ -61,7 +62,7 @@ var _ = Describe("Config", func() {
 
 	Describe("Load()", func() {
 		var (
-			cfg     config.Config
+			cfg     di.Config
 			cfgFile string
 			cfgErr  error
 		)
@@ -184,6 +185,16 @@ var _ = Describe("Config", func() {
 
 				It("Should return an empty string if the alias doesn't exist", func() {
 					Expect(cfg.GetAlias("unknown")).To(BeEmpty())
+				})
+			})
+
+			Describe("GetFeatures()", func() {
+				It("Should return a features interface", func() {
+					Expect(cfg.GetFeatures()).ToNot(BeNil())
+				})
+
+				It("Should convey whether native cloning is enabled", func() {
+					Expect(cfg.GetFeatures().UseNativeClone()).To(BeFalse())
 				})
 			})
 		})

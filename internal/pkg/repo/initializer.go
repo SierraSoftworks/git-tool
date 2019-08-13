@@ -2,10 +2,12 @@ package repo
 
 import (
 	"os"
+	"os/exec"
 
 	"github.com/SierraSoftworks/git-tool/pkg/githosts"
-
 	"github.com/SierraSoftworks/git-tool/pkg/models"
+
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-git.v4"
@@ -61,6 +63,10 @@ func (i *Initializer) Init(r models.Repo) error {
 		return errors.Wrap(err, "repo: unable to configure remote 'origin'")
 	}
 
+	if !di.GetConfig().GetFeatures().CreateRemoteRepo() {
+		return nil
+	}
+
 	logrus.WithField("repo", r).Debug("Ensuring that remote repository is created")
 	return i.EnsureRemoteRepo(r)
 }
@@ -89,6 +95,30 @@ func (i *Initializer) Pull(r models.Repo) error {
 }
 
 func (i *Initializer) Clone(r models.Repo) error {
+	if r.Exists() {
+		return nil
+	}
+
+	if di.GetConfig().GetFeatures().UseNativeClone() {
+		return i.cloneNative(r)
+	}
+
+	return i.cloneInternal(r)
+}
+
+func (i *Initializer) cloneNative(r models.Repo) error {
+	cmd := exec.Command(
+		"git",
+		"clone",
+		"--recurse-submodules",
+		r.GitURL(),
+		r.Path(),
+	)
+
+	return di.GetLauncher().Run(cmd)
+}
+
+func (i *Initializer) cloneInternal(r models.Repo) error {
 	_, err := git.PlainClone(r.Path(), false, &git.CloneOptions{
 		URL:               r.GitURL(),
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,

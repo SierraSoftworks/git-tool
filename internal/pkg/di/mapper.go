@@ -21,7 +21,6 @@ type Mapper interface {
 	GetRepos() ([]models.Repo, error)
 	GetScratchpads() ([]models.Scratchpad, error)
 	GetScratchpad(name string) (models.Scratchpad, error)
-	EnsureRepo(service models.Service, r models.Repo) error
 	GetReposForService(service models.Service) ([]models.Repo, error)
 	GetRepo(name string) (models.Repo, error)
 	GetRepoForService(service models.Service, name string) (models.Repo, error)
