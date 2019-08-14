@@ -88,7 +88,7 @@ var _ = Describe("Initializer", func() {
 		BeforeEach(func() {
 			cfg.SetFeatures(&config.Features{
 				NativeClone:  false,
-				CreateRemote: true,
+				CreateRemote: false,
 			})
 		})
 
