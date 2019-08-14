@@ -147,7 +147,7 @@ services:
   - domain: dev.azure.com
     website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
     httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
-    gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git"
+    gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}"
     pattern: "*/*/*"
 ```
 
