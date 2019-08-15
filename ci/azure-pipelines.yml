@@ -5,7 +5,7 @@ variables:
     "Go.Version": "1.12.6"
 
 steps:
-- task: GitVersionNetCore@5
+- task: GitVersion@5
   displayName: 'Run GitVersion'
   inputs:
     updateAssemblyInfo: true
