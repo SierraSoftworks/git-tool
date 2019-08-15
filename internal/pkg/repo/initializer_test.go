@@ -151,8 +151,9 @@ var _ = Describe("Initializer", func() {
 		Context("when using integrated cloning", func() {
 			BeforeEach(func() {
 				cfg.SetFeatures(&config.Features{
-					NativeClone:  false,
-					CreateRemote: false,
+					NativeClone:   false,
+					CreateRemote:  false,
+					HttpTransport: true,
 				})
 			})
 
@@ -214,8 +215,9 @@ var _ = Describe("Initializer", func() {
 		Context("when using native cloning", func() {
 			BeforeEach(func() {
 				cfg.SetFeatures(&config.Features{
-					NativeClone:  true,
-					CreateRemote: false,
+					NativeClone:   true,
+					CreateRemote:  false,
+					HttpTransport: true,
 				})
 
 				di.SetLauncher(di.DefaultLauncher())

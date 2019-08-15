@@ -20,6 +20,7 @@ func GetConfig() Config {
 type Features interface {
 	UseNativeClone() bool
 	CreateRemoteRepo() bool
+	UseHttpTransport() bool
 }
 
 // The Config is used to configure the behavior of Git Tool

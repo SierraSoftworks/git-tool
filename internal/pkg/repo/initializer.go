@@ -45,9 +45,14 @@ func (i *Initializer) Init(r models.Repo) error {
 		}
 	}
 
+	url := r.GitURL()
+	if di.GetConfig().GetFeatures().UseHttpTransport() {
+		url = r.HttpURL()
+	}
+
 	remote := config.RemoteConfig{
 		Name:  "origin",
-		URLs:  []string{r.GitURL()},
+		URLs:  []string{url},
 		Fetch: []config.RefSpec{},
 	}
 
@@ -107,11 +112,16 @@ func (i *Initializer) Clone(r models.Repo) error {
 }
 
 func (i *Initializer) cloneNative(r models.Repo) error {
+	url := r.GitURL()
+	if di.GetConfig().GetFeatures().UseHttpTransport() {
+		url = r.HttpURL()
+	}
+
 	cmd := exec.Command(
 		"git",
 		"clone",
 		"--recurse-submodules",
-		r.GitURL(),
+		url,
 		r.Path(),
 	)
 
@@ -119,8 +129,13 @@ func (i *Initializer) cloneNative(r models.Repo) error {
 }
 
 func (i *Initializer) cloneInternal(r models.Repo) error {
+	url := r.GitURL()
+	if di.GetConfig().GetFeatures().UseHttpTransport() {
+		url = r.HttpURL()
+	}
+
 	_, err := git.PlainClone(r.Path(), false, &git.CloneOptions{
-		URL:               r.GitURL(),
+		URL:               url,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Tags:              git.AllTags,
 		RemoteName:        "origin",
