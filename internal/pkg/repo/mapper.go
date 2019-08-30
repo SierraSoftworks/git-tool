@@ -128,30 +128,6 @@ func (d *Mapper) GetScratchpad(name string) (models.Scratchpad, error) {
 	}, nil
 }
 
-// EnsureRepo will ensure that a repository directory has been created at the correct location
-// on the filesystem.
-func (d *Mapper) EnsureRepo(service models.Service, r models.Repo) error {
-	path := filepath.Join(di.GetConfig().DevelopmentDirectory(), service.Domain(), filepath.FromSlash(r.FullName()))
-
-	s, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(path, os.ModePerm); err != nil {
-				return errors.Wrapf(err, "repo: unable to create repository directory '%s'", path)
-			}
-			return nil
-		}
-
-		return errors.Wrapf(err, "repo: unable to check directory '%s'", path)
-	}
-
-	if s.IsDir() {
-		return nil
-	}
-
-	return errors.Errorf("repo: repository name already exists and is not a directory '%s'", path)
-}
-
 // GetReposForService will fetch all of the known repositories for a specific service.
 func (d *Mapper) GetReposForService(service models.Service) ([]models.Repo, error) {
 	logrus.WithField("service", service.Domain()).Debug("Enumerating repositories for service")
@@ -231,11 +207,7 @@ func (d *Mapper) GetRepoForService(service models.Service, name string) (models.
 		return nil, nil
 	}
 
-	r := &repo{
-		fullName: strings.Join(dirParts[:fullNameLength], "/"),
-		service:  service,
-		path:     filepath.Join(di.GetConfig().DevelopmentDirectory(), service.Domain(), filepath.Join(dirParts[:fullNameLength]...)),
-	}
+	r := NewRepo(service, strings.Join(dirParts[:fullNameLength], "/"))
 
 	if r.FullName() != filepath.ToSlash(name) {
 		logrus.WithField("fullName", r.FullName()).WithField("name", name).Debug("Repo full name didn't match provided name")

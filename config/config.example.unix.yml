@@ -34,3 +34,7 @@ apps:
     command: make
     args:
       - build
+features:
+  http_transport: false
+  native_clone: false
+  create_remote: true

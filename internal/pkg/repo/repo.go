@@ -5,8 +5,18 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
+
+// NewRepo creates a new repo object for the given service and repo name
+func NewRepo(service models.Service, name string) models.Repo {
+	return &repo{
+		fullName: name,
+		service:  service,
+		path:     filepath.Join(di.GetConfig().DevelopmentDirectory(), service.Domain(), filepath.FromSlash(name)),
+	}
+}
 
 // repo describes a repository object with any necessary properties required by
 // Git-Tool.

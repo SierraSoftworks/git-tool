@@ -2,9 +2,19 @@ package repo
 
 import (
 	"os"
+	"path/filepath"
 
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
+
+// NewScratchpad creates a new scratchpad with the given name
+func NewScratchpad(name string) models.Scratchpad {
+	return &scratchpad{
+		fullName: name,
+		path:     filepath.Join(di.GetConfig().ScratchDirectory(), name),
+	}
+}
 
 // scratchpad describes a repository object with any necessary properties required by
 // Git-Tool.

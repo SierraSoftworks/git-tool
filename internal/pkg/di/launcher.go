@@ -20,12 +20,16 @@ type Launcher interface {
 	Run(cmd *exec.Cmd) error
 }
 
+func DefaultLauncher() Launcher {
+	return &defaultLauncher{}
+}
+
 type defaultLauncher struct{}
 
 func (l *defaultLauncher) Run(cmd *exec.Cmd) error {
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	cmd.Stderr = GetOutput()
+	cmd.Stdout = GetOutput()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig)

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
 	testmodels "github.com/SierraSoftworks/git-tool/test/models"
@@ -13,7 +14,7 @@ import (
 )
 
 var _ = Describe("Service", func() {
-	getConfig := func() config.Config {
+	getConfig := func() di.Config {
 		cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
 		Expect(err).To(BeNil())
 		Expect(cfg).ToNot(BeNil())
