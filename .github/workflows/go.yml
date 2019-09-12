@@ -36,7 +36,7 @@ jobs:
       run: go test -v ./...
 
     - name: Build
-      run: go build -o bin/git-tool -ldflags "-X main.version=$(git rev-parse --short HEAD)" ./cmd/git-tool/main.go
+      run: go build -o bin/git-tool -ldflags "-X main.version=$(git describe --tags --always)" ./cmd/git-tool/main.go
       shell: pwsh
       env:
         GOOS: ${{ matrix.os }}
