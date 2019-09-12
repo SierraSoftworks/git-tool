@@ -9,7 +9,6 @@ jobs:
       matrix:
         os: [windows, linux, freebsd, darwin]
         arch: [amd64, "386"]
-        extension: [""]
         include:
           - os: windows
             extension: ".exe"
