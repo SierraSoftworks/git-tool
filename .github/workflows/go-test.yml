@@ -3,9 +3,15 @@ on:
   pull_request:
     paths:
       - '*.go'
+      - '*.yml'
+      - 'test/'
+      - 'go.mod'
   push:
     paths:
       - '*.go'
+      - '*.yml'
+      - 'test/'
+      - 'go.mod'
 jobs:
   test:
     name: Test
