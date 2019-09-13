@@ -42,9 +42,9 @@ jobs:
     - name: Create Sentry Release
       uses: juankaram/sentry-release@master
       env:
-        SENTRY_ORG: sierrasoftworks
+        SENTRY_ORG: sierra-softworks
         SENTRY_PROJECT: git-tool
-        ENVIRONMENT: production
+        ENVIRONMENT: ${{ matrix.os }}-${{ matrix.arch }}
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     - name: Upload to Release
