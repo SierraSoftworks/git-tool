@@ -1,17 +1,5 @@
 name: Test Changes
-on:
-  pull_request:
-    paths:
-      - '*.go'
-      - '*.yml'
-      - 'test/'
-      - 'go.mod'
-  push:
-    paths:
-      - '*.go'
-      - '*.yml'
-      - 'test/'
-      - 'go.mod'
+on: [push, pull_request]
 jobs:
   test:
     name: Test
