@@ -15,4 +15,10 @@ jobs:
       uses: actions/checkout@v1
         
     - name: Run tests
-      run: go test -v ./...
+      run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+      
+    - name: Upload code coverage
+      uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.txt
