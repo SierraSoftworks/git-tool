@@ -38,6 +38,14 @@ jobs:
       env:
         GOOS: ${{ matrix.os }}
         GOARCH: ${{ matrix.arch }}
+        
+    - name: Create Sentry Release
+      uses: juankaram/sentry-release@master
+      env:
+        SENTRY_ORG: sierrasoftworks
+        SENTRY_PROJECT: git-tool
+        ENVIRONMENT: production
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     - name: Upload to Release
       uses: JasonEtco/upload-to-release@v0.1.1
