@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
@@ -84,7 +85,7 @@ func NewApp() *cli.App {
 		for _, cmd := range c.App.Commands {
 			for _, name := range cmd.Names() {
 				if filter == "" || strings.HasPrefix(strings.ToLower(name), strings.ToLower(filter)) {
-					di.GetOutput().Println(name)
+					fmt.Fprintln(di.GetOutput(), name)
 				}
 			}
 		}

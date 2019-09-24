@@ -37,9 +37,9 @@ func (c *Completer) getRepos() []models.Repo {
 func (c *Completer) complete(value string) {
 	if c.matchesFilter(value) {
 		if strings.ContainsAny(value, " \t\n\r") {
-			di.GetOutput().Println(fmt.Sprintf("'%s'", value))
+			fmt.Fprintf(di.GetOutput(), "'%s'\n", value)
 		} else {
-			di.GetOutput().Println(value)
+			fmt.Fprintln(di.GetOutput(), value)
 		}
 	}
 }

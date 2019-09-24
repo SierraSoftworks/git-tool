@@ -1,8 +1,10 @@
 package app
 
 import (
-	"github.com/urfave/cli"
+	"fmt"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/urfave/cli"
 )
 
 var listAppsCommand = cli.Command{
@@ -10,7 +12,7 @@ var listAppsCommand = cli.Command{
 	Usage: "Lists the applications which can be launched with the open command.",
 	Action: func(c *cli.Context) error {
 		for _, app := range di.GetConfig().GetApps() {
-			di.GetOutput().Printf("%s\n", app.Name())
+			fmt.Fprintf(di.GetOutput(), "%s\n", app.Name())
 		}
 
 		return nil
