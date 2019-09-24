@@ -21,6 +21,11 @@ func (o *Output) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
+func (o *Output) WriteString(s string) (int, error) {
+	o.operations = append(o.operations, s)
+	return len(s), nil
+}
+
 func (o *Output) Print(args ...interface{}) {
 	o.operations = append(o.operations, fmt.Sprint(args...))
 }
