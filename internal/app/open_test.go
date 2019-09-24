@@ -90,7 +90,7 @@ var _ = Describe("gt open", func() {
 	Context("With a repository provided", func() {
 		Context("When the repository doesn't exist locally", func() {
 			BeforeEach(func() {
-				err = runApp("open", "github.com/sierrasoftworks/git-tool")
+				err = runApp("open", "github.com/sierrasoftworks/licenses")
 			})
 
 			It("Should not return an error", func() {
@@ -102,7 +102,7 @@ var _ = Describe("gt open", func() {
 			})
 
 			It("Should clone the repository", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/git-tool")
+				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/licenses")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
@@ -117,7 +117,7 @@ var _ = Describe("gt open", func() {
 			})
 
 			It("Should launch the app in the repo's directory", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/git-tool")
+				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/licenses")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(launch.GetCommands()).ToNot(BeEmpty())

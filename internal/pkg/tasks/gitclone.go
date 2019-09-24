@@ -52,7 +52,7 @@ func (t *gitClone) cloneNative(r models.Repo) error {
 		r.Path(),
 	)
 
-	return di.GetLauncher().Run(cmd)
+	return errors.Wrap(di.GetLauncher().Run(cmd), "repo: unable to clone remote repository")
 }
 
 func (t *gitClone) cloneInternal(r models.Repo) error {
@@ -66,11 +66,8 @@ func (t *gitClone) cloneInternal(r models.Repo) error {
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Tags:              git.AllTags,
 		RemoteName:        "origin",
+		Progress:          di.GetOutput(),
 	})
 
-	if err != nil {
-		return errors.Wrap(err, "repo: unable to clone remote repository")
-	}
-
-	return nil
+	return errors.Wrap(err, "repo: unable to clone remote repository")
 }

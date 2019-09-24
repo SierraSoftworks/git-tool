@@ -198,8 +198,8 @@ var _ = Describe("Initializer", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
+				It("should log the clone progress", func() {
+					Expect(out.GetOperations()).ToNot(BeEmpty())
 				})
 
 				It("should have created the repo", func() {
@@ -264,7 +264,7 @@ var _ = Describe("Initializer", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("should log the Git output", func() {
+				It("should log the clone progress", func() {
 					Expect(out.GetOperations()).ToNot(BeEmpty())
 				})
 

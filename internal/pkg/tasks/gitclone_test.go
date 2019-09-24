@@ -41,7 +41,7 @@ var _ = Describe("Git Clone Task", func() {
 	})
 
 	Describe("GitClone()", func() {
-		runCloneTests := func(logClone bool) {
+		runCloneTests := func() {
 			Context("when applied to a repo", func() {
 				JustBeforeEach(func() {
 					err = tasks.GitClone().ApplyRepo(r)
@@ -60,16 +60,6 @@ var _ = Describe("Git Clone Task", func() {
 						Expect(err).To(HaveOccurred())
 					})
 
-					if logClone {
-						It("should log the native tool's output", func() {
-							Expect(out.GetOperations()).ToNot(BeEmpty())
-						})
-					} else {
-						It("should not log anything", func() {
-							Expect(out.GetOperations()).To(BeEmpty())
-						})
-					}
-
 					It("Should not have created the repo folder", func() {
 						Expect(r.Exists()).To(BeFalse())
 					})
@@ -77,22 +67,16 @@ var _ = Describe("Git Clone Task", func() {
 
 				Context("which doesn't exist locally", func() {
 					BeforeEach(func() {
-						r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/git-tool")
+						r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/licenses")
 					})
 
 					AfterEach(func() {
 						os.RemoveAll(r.Path())
 					})
 
-					if logClone {
-						It("should log the native tool's output", func() {
-							Expect(out.GetOperations()).ToNot(BeEmpty())
-						})
-					} else {
-						It("should not log anything", func() {
-							Expect(out.GetOperations()).To(BeEmpty())
-						})
-					}
+					It("should log the clone progress", func() {
+						Expect(out.GetOperations()).ToNot(BeEmpty())
+					})
 
 					It("Should not return an error", func() {
 						Expect(err).ToNot(HaveOccurred())
@@ -155,7 +139,7 @@ var _ = Describe("Git Clone Task", func() {
 				})
 			})
 
-			runCloneTests(false)
+			runCloneTests()
 		})
 
 		Context("when using native cloning", func() {
@@ -167,7 +151,7 @@ var _ = Describe("Git Clone Task", func() {
 				})
 			})
 
-			runCloneTests(true)
+			runCloneTests()
 		})
 
 	})
