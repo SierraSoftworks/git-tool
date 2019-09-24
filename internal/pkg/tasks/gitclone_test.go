@@ -41,8 +41,7 @@ var _ = Describe("Git Clone Task", func() {
 	})
 
 	Describe("GitClone()", func() {
-
-		runCloneTests := func() {
+		runCloneTests := func(logClone bool) {
 			Context("when applied to a repo", func() {
 				JustBeforeEach(func() {
 					err = tasks.GitClone().ApplyRepo(r)
@@ -61,9 +60,15 @@ var _ = Describe("Git Clone Task", func() {
 						Expect(err).To(HaveOccurred())
 					})
 
-					It("should not log anything", func() {
-						Expect(out.GetOperations()).To(BeEmpty())
-					})
+					if logClone {
+						It("should log the native tool's output", func() {
+							Expect(out.GetOperations()).ToNot(BeEmpty())
+						})
+					} else {
+						It("should not log anything", func() {
+							Expect(out.GetOperations()).To(BeEmpty())
+						})
+					}
 
 					It("Should not have created the repo folder", func() {
 						Expect(r.Exists()).To(BeFalse())
@@ -79,9 +84,15 @@ var _ = Describe("Git Clone Task", func() {
 						os.RemoveAll(r.Path())
 					})
 
-					It("should not log anything", func() {
-						Expect(out.GetOperations()).To(BeEmpty())
-					})
+					if logClone {
+						It("should log the native tool's output", func() {
+							Expect(out.GetOperations()).ToNot(BeEmpty())
+						})
+					} else {
+						It("should not log anything", func() {
+							Expect(out.GetOperations()).To(BeEmpty())
+						})
+					}
 
 					It("Should not return an error", func() {
 						Expect(err).ToNot(HaveOccurred())
@@ -118,7 +129,7 @@ var _ = Describe("Git Clone Task", func() {
 				})
 
 				AfterEach(func() {
-					os.RemoveAll(r.Path())
+					os.RemoveAll(sp.Path())
 				})
 
 				It("Should not return an error", func() {
@@ -144,7 +155,7 @@ var _ = Describe("Git Clone Task", func() {
 				})
 			})
 
-			runCloneTests()
+			runCloneTests(false)
 		})
 
 		Context("when using native cloning", func() {
@@ -156,7 +167,7 @@ var _ = Describe("Git Clone Task", func() {
 				})
 			})
 
-			runCloneTests()
+			runCloneTests(true)
 		})
 
 	})
