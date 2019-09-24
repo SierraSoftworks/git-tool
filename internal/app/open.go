@@ -50,7 +50,7 @@ var openAppCommand = cli.Command{
 		if !r.Exists() {
 			init := di.GetInitializer()
 
-			err := init.Clone(r)
+			err := init.CloneRepository(r)
 			if err != nil {
 				logrus.WithError(err).Error("Failed to clone repository")
 				return errors.New("repository doesn't exist yet, use 'new' to create it")
