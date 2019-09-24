@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
@@ -28,7 +30,7 @@ var repoInfoCommand = cli.Command{
 			return errors.New("could not find repository")
 		}
 
-		di.GetOutput().Println(templates.RepoFullInfo(repo))
+		fmt.Fprintln(di.GetOutput(), templates.RepoFullInfo(repo))
 
 		return nil
 	},

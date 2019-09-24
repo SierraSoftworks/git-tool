@@ -1,10 +1,11 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 
 	"github.com/urfave/cli"
 )
@@ -42,15 +43,15 @@ var listReposCommand = cli.Command{
 			}
 
 			if c.Bool("quiet") {
-				di.GetOutput().Println(templates.RepoQualifiedName(repo))
+				fmt.Fprintln(di.GetOutput(), templates.RepoQualifiedName(repo))
 			} else if c.Bool("full") {
 				if i > 0 {
-					di.GetOutput().Println("---")
+					fmt.Fprintln(di.GetOutput(), "---")
 				}
 
-				di.GetOutput().Println(templates.RepoFullInfo(repo))
+				fmt.Fprintln(di.GetOutput(), templates.RepoFullInfo(repo))
 			} else {
-				di.GetOutput().Println(templates.RepoShortInfo(repo))
+				fmt.Fprintln(di.GetOutput(), templates.RepoShortInfo(repo))
 			}
 		}
 

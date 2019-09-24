@@ -1,8 +1,10 @@
 package app
 
 import (
-	"github.com/urfave/cli"
+	"fmt"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/urfave/cli"
 )
 
 var listServicesCommand = cli.Command{
@@ -10,7 +12,7 @@ var listServicesCommand = cli.Command{
 	Usage: "Lists the services which are known to host git repos.",
 	Action: func(c *cli.Context) error {
 		for _, svc := range di.GetConfig().GetServices() {
-			di.GetOutput().Printf("%s\n", svc.Domain())
+			fmt.Fprintf(di.GetOutput(), "%s\n", svc.Domain())
 		}
 
 		return nil
