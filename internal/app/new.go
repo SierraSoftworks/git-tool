@@ -30,7 +30,7 @@ var newRepoCommand = cli.Command{
 		}
 
 		init := di.GetInitializer()
-		err = init.Init(r)
+		err = init.CreateRepository(r)
 		if err != nil {
 			return err
 		}

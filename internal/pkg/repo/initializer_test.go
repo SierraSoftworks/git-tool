@@ -84,7 +84,7 @@ var _ = Describe("Initializer", func() {
 		})
 	})
 
-	Describe("Init()", func() {
+	Describe("CreateRepository()", func() {
 		BeforeEach(func() {
 			cfg.SetFeatures(&config.Features{
 				NativeClone:  false,
@@ -95,7 +95,7 @@ var _ = Describe("Initializer", func() {
 		Context("when the repo doesn't exist", func() {
 			BeforeEach(func() {
 				r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
-				err = di.GetInitializer().Init(r)
+				err = di.GetInitializer().CreateRepository(r)
 			})
 
 			AfterEach(func() {
@@ -122,7 +122,7 @@ var _ = Describe("Initializer", func() {
 		Context("when the repo exists", func() {
 			BeforeEach(func() {
 				r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test2")
-				err = di.GetInitializer().Init(r)
+				err = di.GetInitializer().CreateRepository(r)
 			})
 
 			AfterEach(func() {
@@ -147,7 +147,7 @@ var _ = Describe("Initializer", func() {
 		})
 	})
 
-	Describe("Clone()", func() {
+	Describe("CloneRepository()", func() {
 		Context("when using integrated cloning", func() {
 			BeforeEach(func() {
 				cfg.SetFeatures(&config.Features{
@@ -160,7 +160,7 @@ var _ = Describe("Initializer", func() {
 			Context("when the repo already exists", func() {
 				BeforeEach(func() {
 					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-					err = di.GetInitializer().Clone(r)
+					err = di.GetInitializer().CloneRepository(r)
 				})
 
 				AfterEach(func() {
@@ -187,7 +187,7 @@ var _ = Describe("Initializer", func() {
 			Context("when the repo doesn't exist", func() {
 				BeforeEach(func() {
 					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/git-tool")
-					err = di.GetInitializer().Clone(r)
+					err = di.GetInitializer().CloneRepository(r)
 				})
 
 				AfterEach(func() {
@@ -226,7 +226,7 @@ var _ = Describe("Initializer", func() {
 			Context("when the repo already exists", func() {
 				BeforeEach(func() {
 					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-					err = di.GetInitializer().Clone(r)
+					err = di.GetInitializer().CloneRepository(r)
 				})
 
 				AfterEach(func() {
@@ -253,7 +253,7 @@ var _ = Describe("Initializer", func() {
 			Context("when the repo doesn't exist", func() {
 				BeforeEach(func() {
 					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/git-tool")
-					err = di.GetInitializer().Clone(r)
+					err = di.GetInitializer().CloneRepository(r)
 				})
 
 				AfterEach(func() {

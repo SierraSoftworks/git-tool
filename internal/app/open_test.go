@@ -106,7 +106,7 @@ var _ = Describe("gt open", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(init.MockCalls).ToNot(BeEmpty())
-				Expect(init.MockCalls[0].Function).To(Equal("Clone"))
+				Expect(init.MockCalls[0].Function).To(Equal("CloneRepository"))
 				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
 			})
 

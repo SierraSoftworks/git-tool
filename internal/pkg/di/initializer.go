@@ -15,10 +15,7 @@ func GetInitializer() Initializer {
 }
 
 type Initializer interface {
-	Init(r models.Repo) error
-	Pull(r models.Repo) error
-	Clone(r models.Repo) error
-	EnsureRemoteRepo(r models.Repo) error
-	CreateRemoteRepo(r models.Repo) error
+	CreateRepository(r models.Repo) error
+	CloneRepository(r models.Repo) error
 	CreateScratchpad(r models.Scratchpad) error
 }
