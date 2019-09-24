@@ -27,7 +27,7 @@ func (i *Initializer) CloneRepository(r models.Repo) error {
 		Function string
 		Target   models.Target
 	}{
-		"Clone",
+		"CloneRepository",
 		r,
 	})
 
