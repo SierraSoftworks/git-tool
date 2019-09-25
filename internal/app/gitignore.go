@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
@@ -26,12 +27,28 @@ var getGitignoreCommand = cli.Command{
 				fmt.Fprintf(di.GetOutput(), " - %s\n", lang)
 			}
 		} else {
-			ignore, err := gitignore.Ignore(append([]string{c.Args().First()}, c.Args().Tail()...)...)
+			languages := append([]string{c.Args().First()}, c.Args().Tail()...)
+
+			output := di.GetOutput()
+
+			if o, ok := output.(interface {
+				Stat() (os.FileInfo, error)
+			}); ok {
+				fi, err := o.Stat()
+				if err == nil {
+					if (fi.Mode() & os.ModeCharDevice) != 0 {
+						// We're outputting to a terminal, we should redirect to the .gitignore file instead
+						return gitignore.AddOrUpdate(".gitignore", languages...)
+					}
+				}
+			}
+
+			ignore, err := gitignore.Ignore(languages...)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(di.GetOutput(), ignore)
+			fmt.Fprintln(output, ignore)
 		}
 
 		return nil

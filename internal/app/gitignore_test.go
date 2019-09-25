@@ -57,7 +57,7 @@ var _ = Describe("gt ignore", func() {
 		})
 	})
 
-	Context("With multiple languages provded", func() {
+	Context("With multiple languages provided", func() {
 		BeforeEach(func() {
 			err = runApp("ignore", "go", "node")
 		})
