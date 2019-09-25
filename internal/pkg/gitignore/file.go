@@ -2,9 +2,7 @@ package gitignore
 
 import (
 	"io/ioutil"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -23,68 +21,39 @@ func AddOrUpdate(file string, languages ...string) error {
 
 	fc := string(fb)
 
-	blocks := getIgnoreBlocks(fc)
-
-	allLangsSet := map[string]struct{}{}
-	for _, lang := range languages {
-		allLangsSet[lang] = struct{}{}
-	}
-
-	for _, block := range blocks {
-		fc = strings.Replace(fc, block.Content, "", 1)
-		for _, lang := range block.Languages {
+	managed := ParseSection(fc)
+	if managed == nil {
+		managed = &ManagedFileSection{
+			Languages: languages,
+			Prologue:  fc,
+			Content:   "",
+		}
+	} else {
+		allLangsSet := map[string]struct{}{}
+		for _, lang := range languages {
 			allLangsSet[lang] = struct{}{}
 		}
+
+		for _, lang := range managed.Languages {
+			allLangsSet[lang] = struct{}{}
+		}
+
+		managed.Languages = []string{}
+		for lang := range allLangsSet {
+			managed.Languages = append(managed.Languages, lang)
+		}
+
+		managed.Content = ""
 	}
 
-	allLangs := []string{}
-	for lang := range allLangsSet {
-		allLangs = append(allLangs, lang)
-	}
-
-	ignore, err := Ignore(allLangs...)
+	ignore, err := Ignore(managed.Languages...)
 	if err != nil {
 		return err
 	}
 
-	fc = strings.TrimSpace(fmt.Sprintf("%s\n%s", fc, ignore))
+	managed.Content = ignore
+
+	fc = managed.String()
 
 	return errors.Wrap(ioutil.WriteFile(file, []byte(fc), os.ModePerm), "gitignore: failed to write gitignore file")
-}
-
-type ignoreBlock struct {
-	Content   string
-	Languages []string
-}
-
-func getIgnoreBlocks(content string) []ignoreBlock {
-	blocks := []ignoreBlock{}
-
-	inBlock := false
-	currentContent := []string{}
-	currentLangs := []string{}
-
-	blockStartPrefix := "# Created by https://www.gitignore.io/api/"
-	blockEndPrefix := "# End of https://www.gitignore.io/api/"
-
-	for _, line := range strings.Split(content, "\n\r") {
-		if inBlock {
-			currentContent = append(currentContent, line)
-
-			if strings.HasPrefix(line, blockEndPrefix) {
-				inBlock = false
-				blocks = append(blocks, ignoreBlock{
-					Content:   strings.Join(currentContent, "\n"),
-					Languages: currentLangs,
-				})
-			}
-		} else if strings.HasPrefix(line, blockStartPrefix) {
-			currentContent = []string{line}
-			inBlock = true
-
-			currentLangs = strings.Split(line[len(blockEndPrefix):], ",")
-		}
-	}
-
-	return blocks
 }

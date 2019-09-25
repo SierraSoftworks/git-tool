@@ -14,11 +14,11 @@ import (
 var _ = Describe("GitIgnore", func() {
 	Describe("AddOrUpdate()", func() {
 		var (
-			filePath string
-			languages []string
+			filePath        string
+			languages       []string
 			originalContent string
-			newContent string
-			err error
+			newContent      string
+			err             error
 		)
 
 		BeforeEach(func() {
@@ -36,13 +36,17 @@ var _ = Describe("GitIgnore", func() {
 			}
 
 			err = gitignore.AddOrUpdate(filePath, languages...)
-			
+
 			oc, ferr = ioutil.ReadFile(filePath)
 			if ferr == nil {
 				newContent = string(oc)
 			}
 		})
-		
+
+		AfterEach(func() {
+			ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm)
+		})
+
 		Context("With a file which doesn't exist", func() {
 			BeforeEach(func() {
 				filePath = test.GetTestDataPath("ignore", ".gitignore")
@@ -65,12 +69,12 @@ var _ = Describe("GitIgnore", func() {
 					Expect(newContent).To(BeEmpty())
 				})
 			})
-			
+
 			Context("With a language provided", func() {
 				BeforeEach(func() {
 					languages = []string{"go"}
 				})
-	
+
 				It("Should not report an error", func() {
 					Expect(err).To(BeNil())
 				})
@@ -84,7 +88,7 @@ var _ = Describe("GitIgnore", func() {
 				})
 			})
 		})
-		
+
 		Context("With an old file", func() {
 			BeforeEach(func() {
 				filePath = test.GetTestDataPath("ignore", "oldgo.gitignore")
@@ -104,12 +108,12 @@ var _ = Describe("GitIgnore", func() {
 					Expect(newContent).ToNot(Equal(originalContent))
 				})
 			})
-			
+
 			Context("With the same language provided", func() {
 				BeforeEach(func() {
 					languages = []string{"go"}
 				})
-	
+
 				It("Should not report an error", func() {
 					Expect(err).To(BeNil())
 				})

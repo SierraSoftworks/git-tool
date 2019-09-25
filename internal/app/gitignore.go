@@ -27,10 +27,7 @@ var getGitignoreCommand = cli.Command{
 				fmt.Fprintf(di.GetOutput(), " - %s\n", lang)
 			}
 		} else {
-			ignore, err := gitignore.Ignore(append([]string{c.Args().First()}, c.Args().Tail()...)...)
-			if err != nil {
-				return err
-			}
+			languages := append([]string{c.Args().First()}, c.Args().Tail()...)
 
 			output := di.GetOutput()
 
@@ -41,13 +38,14 @@ var getGitignoreCommand = cli.Command{
 				if err == nil {
 					if (fi.Mode() & os.ModeCharDevice) != 0 {
 						// We're outputting to a terminal, we should redirect to the .gitignore file instead
-						f, err := os.OpenFile(".gitignore", os.O_CREATE, os.ModePerm)
-						if err == nil {
-							defer f.Close()
-							output = f
-						}
+						return gitignore.AddOrUpdate(".gitignore", languages...)
 					}
 				}
+			}
+
+			ignore, err := gitignore.Ignore(languages...)
+			if err != nil {
+				return err
 			}
 
 			fmt.Fprintln(output, ignore)
