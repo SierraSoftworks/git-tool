@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -19,6 +20,9 @@ var openAppCommand = cli.Command{
 	ArgsUsage: "[app] [repo]",
 	Flags:     []cli.Flag{},
 	Action: func(c *cli.Context) error {
+		tracing.Enter("/app/command/open")
+		defer tracing.Exit()
+
 		args := c.Args()
 
 		app := di.GetConfig().GetApp(c.Args().First())
@@ -48,6 +52,7 @@ var openAppCommand = cli.Command{
 		}
 
 		if !r.Exists() {
+			tracing.Transition("/app/command/open/clone")
 			init := di.GetInitializer()
 
 			err := init.CloneRepository(r)
@@ -57,6 +62,8 @@ var openAppCommand = cli.Command{
 			}
 		}
 
+		tracing.Transition("/app/command/open/run")
+
 		cmd, err := app.GetCmd(r)
 		if err != nil {
 			return err
@@ -65,6 +72,9 @@ var openAppCommand = cli.Command{
 		return di.GetLauncher().Run(cmd)
 	},
 	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/open")
+		defer tracing.Exit()
+
 		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
 		if c.NArg() == 0 {

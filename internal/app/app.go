@@ -7,6 +7,7 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -61,7 +62,11 @@ func NewApp() *cli.App {
 	}
 
 	app.Before = func(c *cli.Context) error {
+		tracing.Enter("/app/before")
+		defer tracing.Exit()
+
 		if c.GlobalString("config") != "" {
+			tracing.Transition("/app/before/loadConfig")
 			logrus.WithField("config_path", c.GlobalString("config")).Debug("Loading configuration file")
 			cfgResult, err := config.Load(c.GlobalString("config"))
 			if err != nil {
@@ -80,6 +85,9 @@ func NewApp() *cli.App {
 	}
 
 	app.BashComplete = func(c *cli.Context) {
+		tracing.Enter("/app/complete/")
+		defer tracing.Exit()
+
 		filter := c.GlobalString("bash-completion-filter")
 
 		for _, cmd := range c.App.Commands {

@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -16,6 +17,9 @@ var newRepoCommand = cli.Command{
 	Usage:     "Creates a new repository with the provided name.",
 	ArgsUsage: "repo",
 	Action: func(c *cli.Context) error {
+		tracing.Enter("/app/command/create")
+		defer tracing.Exit()
+
 		if c.NArg() == 0 {
 			return errors.New("no repository specified")
 		}
@@ -38,6 +42,9 @@ var newRepoCommand = cli.Command{
 		return nil
 	},
 	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/create")
+		defer tracing.Exit()
+
 		if c.NArg() > 0 {
 			return
 		}
