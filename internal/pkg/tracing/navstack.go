@@ -44,7 +44,7 @@ func Exit() sentry.Breadcrumb {
 	default:
 	}
 
-	oldLocation = locations[0]
+	oldLocation := locations[0]
 	locations = locations[1:]
 
 	return sentry.DefaultBreadcrumbs().
