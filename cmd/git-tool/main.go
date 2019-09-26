@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
-	"github.com/SierraSoftworks/sentry-go"
+	"github.com/SierraSoftworks/sentry-go/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
