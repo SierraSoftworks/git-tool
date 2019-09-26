@@ -6,6 +6,7 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/urfave/cli"
 )
 
@@ -17,7 +18,11 @@ var getGitignoreCommand = cli.Command{
 	Usage:     "Generates a .gitignore file for the provided languages.",
 	ArgsUsage: "[languages...]",
 	Action: func(c *cli.Context) error {
+		tracing.Enter("/app/command/gitignore")
+		defer tracing.Exit()
+
 		if c.NArg() == 0 {
+			tracing.Transition("/app/command/gitignore/list")
 			langs, err := gitignore.List()
 			if err != nil {
 				return err
@@ -27,6 +32,7 @@ var getGitignoreCommand = cli.Command{
 				fmt.Fprintf(di.GetOutput(), " - %s\n", lang)
 			}
 		} else {
+			tracing.Transition("/app/command/gitignore/ignore")
 			languages := append([]string{c.Args().First()}, c.Args().Tail()...)
 
 			output := di.GetOutput()
@@ -37,12 +43,14 @@ var getGitignoreCommand = cli.Command{
 				fi, err := o.Stat()
 				if err == nil {
 					if (fi.Mode() & os.ModeCharDevice) != 0 {
+						tracing.Transition("/app/command/gitignore/ignore/file")
 						// We're outputting to a terminal, we should redirect to the .gitignore file instead
 						return gitignore.AddOrUpdate(".gitignore", languages...)
 					}
 				}
 			}
 
+			tracing.Transition("/app/command/gitignore/ignore/stdout")
 			ignore, err := gitignore.Ignore(languages...)
 			if err != nil {
 				return err
@@ -54,6 +62,9 @@ var getGitignoreCommand = cli.Command{
 		return nil
 	},
 	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/gitignore")
+		defer tracing.Exit()
+
 		langs, err := gitignore.List()
 		if err != nil {
 			return

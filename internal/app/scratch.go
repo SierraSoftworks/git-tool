@@ -6,6 +6,7 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +22,9 @@ var openScratchCommand = cli.Command{
 	ArgsUsage: "[app] [week]",
 	Flags:     []cli.Flag{},
 	Action: func(c *cli.Context) error {
+		tracing.Enter("/app/command/scratch")
+		defer tracing.Exit()
+
 		args := c.Args()
 
 		app := di.GetConfig().GetApp(c.Args().First())
@@ -50,11 +54,13 @@ var openScratchCommand = cli.Command{
 		}
 
 		if !r.Exists() {
+			tracing.Transition("/app/command/scratch/create")
 			if err := di.GetInitializer().CreateScratchpad(r); err != nil {
 				return err
 			}
 		}
 
+		tracing.Transition("/app/command/scratch/run")
 		cmd, err := app.GetCmd(r)
 		if err != nil {
 			return err
@@ -63,6 +69,9 @@ var openScratchCommand = cli.Command{
 		return di.GetLauncher().Run(cmd)
 	},
 	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/scratch")
+		defer tracing.Exit()
+
 		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
 
 		if c.NArg() == 0 {

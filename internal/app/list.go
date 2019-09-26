@@ -6,6 +6,7 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 
 	"github.com/urfave/cli"
 )
@@ -30,6 +31,9 @@ var listReposCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
+		tracing.Enter("/app/command/list")
+		defer tracing.Exit()
+
 		repos, err := di.GetMapper().GetRepos()
 		if err != nil {
 			return err
