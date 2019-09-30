@@ -27,11 +27,11 @@ func (h *githubHost) HasRepo(r models.Repo) (bool, error) {
 	}
 
 	if _, res, err := cl.Repositories.Get(ctx, r.Namespace(), r.Name()); err != nil {
-		if res.StatusCode == 404 {
-			return false, nil
+		if res == nil || res.StatusCode != 404 {
+			return false, err
 		}
 
-		return false, err
+		return false, nil
 	}
 
 	return true, nil
