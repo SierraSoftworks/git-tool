@@ -54,12 +54,12 @@ var _ = Describe("GitIgnore", func() {
 				langs = []string{"thisisnotareallanguage"}
 			})
 
-			It("Should not return an error", func() {
-				Expect(err).To(BeNil())
+			It("Should return an error", func() {
+				Expect(err).To(HaveOccurred())
 			})
 
-			It("Should return an emppty ignore file", func() {
-				Expect(ignore).To(BeEmpty())
+			It("Should not return an empty ignore file", func() {
+				Expect(ignore).ToNot(BeEmpty())
 			})
 		})
 
