@@ -87,6 +87,24 @@ var _ = Describe("GitIgnore", func() {
 					Expect(newContent).ToNot(BeEmpty())
 				})
 			})
+
+			Context("With an invalid language provided", func() {
+				BeforeEach(func() {
+					languages = []string{"thisisnotareallanguage"}
+				})
+
+				It("Should report an error", func() {
+					Expect(err).ToNot(BeNil())
+				})
+
+				It("Should not start with any content", func() {
+					Expect(originalContent).To(BeEmpty())
+				})
+
+				It("Should not write any content", func() {
+					Expect(newContent).To(BeEmpty())
+				})
+			})
 		})
 
 		Context("With an old file", func() {

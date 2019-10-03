@@ -48,14 +48,14 @@ func get(resource string) (string, error) {
 		return "", errors.Wrap(err, "gitignore: unable to make web request")
 	}
 
-	if res.StatusCode != 200 {
-		return "", nil
-	}
-
 	bs, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "gitignore: unable to read web response")
 	}
 
-	return string(bs), nil
+	if res.StatusCode != 200 {
+		err = errors.Errorf("gitignore: received status code %d", res.StatusCode)
+	}
+
+	return string(bs), err
 }
