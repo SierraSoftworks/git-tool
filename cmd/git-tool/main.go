@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var version = "0.0.1-dev"
+var version = "v0.0.1-dev"
 
 func main() {
 	sentry.AddDefaultOptions(

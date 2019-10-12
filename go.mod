@@ -4,6 +4,8 @@ go 1.12
 
 require (
 	github.com/SierraSoftworks/sentry-go/v2 v2.0.0
+	github.com/SierraSoftworks/update-go v1.0.3
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/danieljoos/wincred v1.0.2 // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/godbus/dbus v4.1.0+incompatible // indirect

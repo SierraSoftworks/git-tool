@@ -1,13 +1,18 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
+	"github.com/SierraSoftworks/update-go"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -42,6 +47,7 @@ func NewApp() *cli.App {
 		getGitignoreCommand,
 		openScratchCommand,
 		completeCommand,
+		updateCommand,
 	}
 
 	app.Flags = []cli.Flag{
@@ -59,11 +65,35 @@ func NewApp() *cli.App {
 			Usage:  "A filter used to select matches for the local argument",
 			Hidden: true,
 		},
+		cli.StringFlag{
+			Name:   "update-resume-internal",
+			Usage:  "Internal flag used to coordinate update operations",
+			Hidden: true,
+		},
 	}
 
 	app.Before = func(c *cli.Context) error {
 		tracing.Enter("/app/before")
 		defer tracing.Exit()
+
+		updateManager = update.Manager{
+			Application:       os.Args[0],
+			UpdateApplication: filepath.Join(os.TempDir(), filepath.Base(os.Args[0])),
+
+			Variant: update.MyPlatform(),
+			Source:  update.NewGitHubSource("SierraSoftworks/git-tool", "v", "git-tool-"),
+			Shutdown: func() error {
+				fmt.Fprintf(di.GetOutput(), "Shutting down to allow update to proceed\n")
+				os.Exit(0)
+				return nil
+			},
+		}
+
+		if c.String("update-resume-internal") != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			return updateManager.Continue(ctx)
+		}
 
 		if c.GlobalString("config") != "" {
 			tracing.Transition("/app/before/loadConfig")
