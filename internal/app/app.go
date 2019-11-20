@@ -48,6 +48,7 @@ func NewApp() *cli.App {
 		openScratchCommand,
 		completeCommand,
 		updateCommand,
+		shellInitCommand,
 	}
 
 	app.Flags = []cli.Flag{
