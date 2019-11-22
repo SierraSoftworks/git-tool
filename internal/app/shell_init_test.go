@@ -42,6 +42,12 @@ var _ = Describe("gt shell-init", func() {
 
 			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("bash")))
 		})
+
+		It("should return the full bash init script", func() {
+			Expect(runApp("shell-init", "bash", "--full")).To(BeNil())
+
+			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("bash")))
+		})
 	})
 
 	Context("powershell", func() {
@@ -50,6 +56,12 @@ var _ = Describe("gt shell-init", func() {
 
 			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("powershell")))
 		})
+
+		It("should return the full powershell init script", func() {
+			Expect(runApp("shell-init", "powershell", "--full")).To(BeNil())
+
+			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("powershell")))
+		})
 	})
 
 	Context("zsh", func() {
@@ -57,6 +69,12 @@ var _ = Describe("gt shell-init", func() {
 			Expect(runApp("shell-init", "zsh")).To(BeNil())
 
 			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("zsh")))
+		})
+
+		It("should return the full zsh init script", func() {
+			Expect(runApp("shell-init", "zsh", "--full")).To(BeNil())
+
+			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("zsh")))
 		})
 	})
 
