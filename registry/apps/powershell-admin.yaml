@@ -1,0 +1,21 @@
+---
+name: PowerShell (Admin)
+description: Launches an admin powershell instance within a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: psadmin
+      command: powershell.exe
+      args:
+        - "Start-Process"
+        - "powershell.exe"
+        - "-Verb runas"
+        - "-ArgumentList"
+        - "@('-NoExit', '-Command', 'Set-Location ''{{ .Target.Path }}''')"
+  - platform: linux
+    app:
+      name: psadmin
+      command: sudo
+      args:
+        - "pwsh"

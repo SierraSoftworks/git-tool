@@ -1,0 +1,9 @@
+---
+name: Bash
+description: Launches the bash shell within a project directory.
+version: 1.0.0
+configs:
+  - platform: any
+    app:
+      name: bash
+      command: bash

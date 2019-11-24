@@ -1,0 +1,12 @@
+---
+name: Azure DevOps
+description: Adds support for managing Azure DevOps repositories through Git-Tool.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      domain: dev.azure.com
+      website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
+      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
+      gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}"
+      pattern: "*/*/*"
