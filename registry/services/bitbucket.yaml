@@ -1,0 +1,12 @@
+---
+name: BitBucket
+description: Adds support for managing BitBucket repositories through Git-Tool.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      domain: bitbucket.org
+      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      pattern: "*/*"

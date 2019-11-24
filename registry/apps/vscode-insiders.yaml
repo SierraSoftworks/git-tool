@@ -1,0 +1,13 @@
+---
+name: VSCode (Insiders)
+description: Launches Visual Studio Insiders code in a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: code
+      command: code-insiders.cmd
+  - platform: linux
+    app:
+      name: code
+      command: code-insiders

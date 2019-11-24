@@ -1,0 +1,9 @@
+---
+name: Windows Explorer
+description: Launches Windows Explorer in the project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: explorer
+      command: explorer
