@@ -1,11 +1,14 @@
 package registry
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-yaml/yaml"
+	"github.com/pkg/errors"
 )
 
 type filesystemSource struct {
@@ -20,9 +23,8 @@ func FileSystem(path string) Source {
 	}
 }
 
-func (s *filesystemSource) GetEntries() ([]Entry, error) {
-
-	entries := []Entry{}
+func (s *filesystemSource) GetEntries() ([]string, error) {
+	entries := []string{}
 	err := filepath.Walk(s.Path, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
@@ -32,18 +34,9 @@ func (s *filesystemSource) GetEntries() ([]Entry, error) {
 			return nil
 		}
 
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
+		entry := filepath.ToSlash(strings.Trim(path[len(s.Path):len(path)-len(".yaml")], string(filepath.Separator)))
 
-		parsedEntry := Entry{}
-		err = yaml.Unmarshal([]byte(data), &parsedEntry)
-		if err != nil {
-			return err
-		}
-
-		entries = append(entries, parsedEntry)
+		entries = append(entries, entry)
 
 		return nil
 	})
@@ -53,4 +46,22 @@ func (s *filesystemSource) GetEntries() ([]Entry, error) {
 	}
 
 	return entries, nil
+}
+
+func (s *filesystemSource) GetEntry(id string) (*Entry, error) {
+	data, err := ioutil.ReadFile(filepath.Join(s.Path, fmt.Sprintf("%s.yaml", filepath.FromSlash(id))))
+
+	if os.IsNotExist(err) {
+		return nil, errors.New("registry: could not find entry")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	parsedEntry := Entry{}
+	if err := yaml.Unmarshal([]byte(data), &parsedEntry); err != nil {
+		return nil, errors.Wrap(err, "registry: unable to parse entry")
+	}
+	return &parsedEntry, nil
 }
