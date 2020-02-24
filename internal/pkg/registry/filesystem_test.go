@@ -23,7 +23,7 @@ func TestFilesystemSource(t *testing.T) {
 	})
 
 	t.Run("GetEntry(id)", func(t *testing.T) {
-		entry, err := s.GetEntry("apps/bash.yaml")
+		entry, err := s.GetEntry("apps/bash")
 		require.NoError(t, err, "there should not be an error getting an entry")
 
 		require.NotNil(t, entry, "the resulting entry should not be nil")
