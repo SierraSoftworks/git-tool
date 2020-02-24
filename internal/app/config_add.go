@@ -30,7 +30,10 @@ var configAddCommand = cli.Command{
 		}
 
 		if entry != nil {
-			di.GetOutput().WriteString(fmt.Sprintf("Applying %s\n", entry.Name))
+			di.GetOutput().WriteString(fmt.Sprintf("Applying %s\n", c.Args().First()))
+			di.GetOutput().WriteString(fmt.Sprintf("Name:  %s\n", entry.Name))
+			di.GetOutput().WriteString(fmt.Sprintf("About: %s\n", entry.Description))
+
 			for _, e := range entry.Configs {
 				if e.IsCompatible() {
 					di.GetConfig().Update(e)

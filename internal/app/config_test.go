@@ -40,10 +40,10 @@ var _ = Describe("gt config", func() {
 	})
 
 	Context("Command autocompletion", func() {
-		It("Should return an empty completions list", func() {
+		It("Should return a non-empty completions list", func() {
 			Expect(runApp("complete", "gt config ")).ToNot(HaveOccurred())
 
-			Expect(out.GetOperations()).To(BeEmpty())
+			Expect(out.GetOperations()).ToNot(BeEmpty())
 		})
 	})
 })
