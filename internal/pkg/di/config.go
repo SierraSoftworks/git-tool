@@ -42,4 +42,5 @@ type Config interface {
 
 	GetFeatures() Features
 	Update(entry registry.EntryConfig)
+	Save(path string) error
 }

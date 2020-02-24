@@ -189,3 +189,12 @@ func (c *config) Update(entry registry.EntryConfig) {
 		})
 	}
 }
+
+func (c *config) Save(path string) error {
+	out, err := yaml.Marshal(c)
+	if err != nil {
+		return errors.Wrap(err, "config: unable to serialize config")
+	}
+
+	return errors.Wrap(ioutil.WriteFile(path, out, os.ModePerm), "config: unable to save config")
+}

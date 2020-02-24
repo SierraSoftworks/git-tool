@@ -20,6 +20,12 @@ func NewCompleter(filter string) *Completer {
 	}
 }
 
+func (c *Completer) Fixed(options ...string) {
+	for _, opt := range options {
+		c.complete(opt)
+	}
+}
+
 func (c *Completer) getRepos() []models.Repo {
 	if c.repos != nil {
 		return c.repos

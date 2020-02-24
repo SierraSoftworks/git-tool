@@ -26,4 +26,8 @@ var configCommand = cli.Command{
 
 		return nil
 	},
+	Subcommands: cli.Commands{
+		configListCommand,
+		configAddCommand,
+	},
 }
