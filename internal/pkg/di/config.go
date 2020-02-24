@@ -1,6 +1,7 @@
 package di
 
 import (
+	"github.com/SierraSoftworks/git-tool/internal/pkg/registry"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
@@ -40,4 +41,5 @@ type Config interface {
 	GetAlias(name string) string
 
 	GetFeatures() Features
+	Update(entry registry.EntryConfig)
 }
