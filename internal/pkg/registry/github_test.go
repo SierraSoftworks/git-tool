@@ -17,5 +17,6 @@ func TestGitHubSource(t *testing.T) {
 		require.NoError(t, err, "there should not be an error getting the entries")
 
 		assert.NotNil(t, entries, "the resulting entries list should not be nil")
+		assert.NotEmpty(t, entries, "the resulting entries list should not be empty")
 	})
 }

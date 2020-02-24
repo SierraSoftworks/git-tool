@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/registry"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 
 	"github.com/go-yaml/yaml"
@@ -166,4 +167,34 @@ func (c *config) GetAlias(name string) string {
 
 func (c *config) GetFeatures() di.Features {
 	return c.Features
+}
+
+func (c *config) Update(entry registry.EntryConfig) {
+	if entry.App != nil {
+		c.Applications = append(c.Applications, &app{
+			NameField:   entry.App.Name,
+			CommandLine: entry.App.Command,
+			Arguments:   entry.App.Arguments,
+			Environment: entry.App.Environment,
+		})
+	}
+
+	if entry.Service != nil {
+		c.Services = append(c.Services, &service{
+			DomainField:        entry.Service.Domain,
+			WebsiteTemplate:    entry.Service.Website,
+			HttpUrlTemplate:    entry.Service.HTTPURL,
+			GitUrlTemplate:     entry.Service.GitURL,
+			DirectoryGlobField: entry.Service.Pattern,
+		})
+	}
+}
+
+func (c *config) Save(path string) error {
+	out, err := yaml.Marshal(c)
+	if err != nil {
+		return errors.Wrap(err, "config: unable to serialize config")
+	}
+
+	return errors.Wrap(ioutil.WriteFile(path, out, os.ModePerm), "config: unable to save config")
 }

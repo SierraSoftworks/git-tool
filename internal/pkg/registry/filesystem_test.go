@@ -18,6 +18,15 @@ func TestFilesystemSource(t *testing.T) {
 		entries, err := s.GetEntries()
 		require.NoError(t, err, "there should not be an error getting the entries")
 
-		assert.NotEmpty(t, entries, "there should be at least one entry")
+		require.NotEmpty(t, entries, "there should be at least one entry")
+		assert.Contains(t, entries, "apps/bash", "it should contain the bash entry")
+	})
+
+	t.Run("GetEntry(id)", func(t *testing.T) {
+		entry, err := s.GetEntry("apps/bash")
+		require.NoError(t, err, "there should not be an error getting an entry")
+
+		require.NotNil(t, entry, "the resulting entry should not be nil")
+		assert.Equal(t, entry.Name, "Bash", "the resulting entry should have the right name")
 	})
 }

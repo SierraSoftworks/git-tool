@@ -13,8 +13,9 @@ type Entry struct {
 
 // EntryConfig is a platform-specific configuration which should be applied for this entry.
 type EntryConfig struct {
-	Platform string    `json:"platform" yaml:"platform"`
-	App      *EntryApp `json:"app,omitempty" yaml:"app,omitempty"`
+	Platform string        `json:"platform" yaml:"platform"`
+	App      *EntryApp     `json:"app,omitempty" yaml:"app,omitempty"`
+	Service  *EntryService `json:"service,omitempty" yaml:"service,omitempty"`
 }
 
 // IsCompatible determines whether this EntryConfig is compatible with

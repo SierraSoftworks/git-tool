@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/registry"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 )
 
@@ -12,6 +13,7 @@ type Config struct {
 	applications []models.App
 	aliases      map[string]string
 	features     di.Features
+	updates      []registry.EntryConfig
 }
 
 func NewConfig(base di.Config) *Config {
@@ -22,6 +24,7 @@ func NewConfig(base di.Config) *Config {
 		applications: base.GetApps(),
 		aliases:      base.GetAliases(),
 		features:     base.GetFeatures(),
+		updates:      []registry.EntryConfig{},
 	}
 }
 
@@ -106,4 +109,16 @@ func (c *Config) AddAlias(name, value string) *Config {
 func (c *Config) SetFeatures(features di.Features) *Config {
 	c.features = features
 	return c
+}
+
+func (c *Config) GetUpdates() []registry.EntryConfig {
+	return c.updates
+}
+
+func (c *Config) Update(entry registry.EntryConfig) {
+	c.updates = append(c.updates, entry)
+}
+
+func (c *Config) Save(path string) error {
+	return nil
 }

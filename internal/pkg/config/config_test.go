@@ -5,6 +5,7 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/registry"
 	"github.com/SierraSoftworks/git-tool/test"
 
 	. "github.com/onsi/ginkgo"
@@ -195,6 +196,93 @@ var _ = Describe("Config", func() {
 
 				It("Should convey whether native cloning is enabled", func() {
 					Expect(cfg.GetFeatures().UseNativeClone()).To(BeFalse())
+				})
+			})
+		})
+
+		Describe("Update()", func() {
+			var (
+				cfg                 di.Config
+				update              registry.EntryConfig
+				defaultAppCount     int
+				defaultServiceCount int
+			)
+
+			BeforeEach(func() {
+				cfg = config.Default()
+				defaultAppCount = len(cfg.GetApps())
+				defaultServiceCount = len(cfg.GetServices())
+				update = registry.EntryConfig{Platform: "any"}
+			})
+
+			JustBeforeEach(func() {
+				cfg.Update(update)
+			})
+
+			Context("With an empty update entry", func() {
+				BeforeEach(func() {
+					update = registry.EntryConfig{
+						Platform: "any",
+					}
+				})
+
+				It("Should not make any changes to the config's apps", func() {
+					Expect(cfg.GetApps()).To(HaveLen(defaultAppCount))
+				})
+
+				It("Should not make any changes to the config's services", func() {
+					Expect(cfg.GetServices()).To(HaveLen(defaultServiceCount))
+				})
+			})
+
+			Context("With an entry describing an app", func() {
+				BeforeEach(func() {
+					update = registry.EntryConfig{
+						Platform: "any",
+						App: &registry.EntryApp{
+							Name:    "test",
+							Command: "/bin/sh",
+							Arguments: []string{
+								"-c",
+								"echo $MESSAGE",
+							},
+							Environment: []string{
+								"MESSAGE=Test",
+							},
+						},
+					}
+				})
+
+				It("Should add the app", func() {
+					Expect(cfg.GetApps()).To(HaveLen(defaultAppCount + 1))
+					Expect(cfg.GetApp("test")).ToNot(BeNil())
+				})
+
+				It("Should not make any changes to the config's services", func() {
+					Expect(cfg.GetServices()).To(HaveLen(defaultServiceCount))
+				})
+			})
+
+			Context("With an entry describing a service", func() {
+				BeforeEach(func() {
+					update = registry.EntryConfig{
+						Platform: "any",
+						Service: &registry.EntryService{
+							Domain:  "test.example.com",
+							Website: "https://test.example.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}",
+							HTTPURL: "https://test.example.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}.git",
+							GitURL:  "git@test.example.com:{{ .Repo.Namespace }}/{{ .Repo.Name }}",
+							Pattern: "*/*",
+						},
+					}
+				})
+				It("Should not make any changes to the config's apps", func() {
+					Expect(cfg.GetApps()).To(HaveLen(defaultAppCount))
+				})
+
+				It("Should add the service", func() {
+					Expect(cfg.GetServices()).To(HaveLen(defaultServiceCount + 1))
+					Expect(cfg.GetService("test.example.com")).ToNot(BeNil())
 				})
 			})
 		})
