@@ -49,6 +49,7 @@ func NewApp() *cli.App {
 		completeCommand,
 		updateCommand,
 		shellInitCommand,
+		configCommand,
 	}
 
 	app.Flags = []cli.Flag{
