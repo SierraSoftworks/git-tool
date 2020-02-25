@@ -18,6 +18,7 @@ var _ = Describe("gt branch", func() {
 	var (
 		out  *mocks.Output
 		repo models.Repo
+		err  error
 	)
 
 	BeforeEach(func() {
@@ -25,10 +26,30 @@ var _ = Describe("gt branch", func() {
 		di.SetOutput(out)
 		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 
-		repo, _ = di.GetMapper().GetFullyQualifiedRepo("github.com/sierrasoftworks/branch_test_repo")
-		tasks.Sequence(tasks.NewFolder(), tasks.GitInit(), tasks.GitCheckout("master")).ApplyRepo(repo)
+		repo, err = di.GetMapper().GetFullyQualifiedRepo("github.com/sierrasoftworks/branch_test_repo")
+		if err != nil {
+			return
+		}
 
-		os.Chdir(repo.Path())
+		err = tasks.Sequence(
+			tasks.NewFolder(),
+			tasks.GitInit(),
+			tasks.NewFile("README.md", []byte("# Test Repo")),
+			tasks.GitCommit("Initial Commit", "README.md"),
+			tasks.GitCheckout("master"),
+		).ApplyRepo(repo)
+		if err != nil {
+			return
+		}
+
+		err = os.Chdir(repo.Path())
+		if err != nil {
+			return
+		}
+	})
+
+	It("Should not encounter any errors setting up the environment", func() {
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
