@@ -53,6 +53,7 @@ var _ = Describe("gt branch", func() {
 	})
 
 	AfterEach(func() {
+		os.Chdir(test.GetProjectRoot())
 		os.RemoveAll(repo.Path())
 	})
 
