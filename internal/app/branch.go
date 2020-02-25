@@ -21,6 +21,10 @@ var branchCommand = cli.Command{
 
 		repo, err := di.GetMapper().GetCurrentDirectoryRepo()
 		if err != nil {
+			return err
+		}
+
+		if repo == nil {
 			return errors.New("usage: command must be run from within a repository")
 		}
 
@@ -33,10 +37,12 @@ var branchCommand = cli.Command{
 	BashComplete: func(c *cli.Context) {
 		repo, err := di.GetMapper().GetCurrentDirectoryRepo()
 		if err != nil {
+			di.GetOutput().WriteString(err.Error())
 			return
 		}
 
 		if repo == nil {
+			di.GetOutput().WriteString("Repo not found")
 			return
 		}
 

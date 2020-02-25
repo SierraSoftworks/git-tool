@@ -176,8 +176,7 @@ func (d *Mapper) GetRepo(name string) (models.Repo, error) {
 	service := di.GetConfig().GetService(serviceName)
 
 	if service != nil {
-		r, err := d.GetRepoForService(service, filepath.Join(dirParts[1:]...))
-		return r, err
+		return d.GetRepoForService(service, filepath.Join(dirParts[1:]...))
 	}
 
 	r, err := d.GetFullyQualifiedRepo(name)
@@ -188,6 +187,11 @@ func (d *Mapper) GetRepo(name string) (models.Repo, error) {
 	if r == nil {
 		r, err = d.GetRepoForService(di.GetConfig().GetDefaultService(), name)
 		if r != nil {
+			if r.FullName() != filepath.ToSlash(name) {
+				logrus.WithField("fullName", r.FullName()).WithField("name", name).Debug("Repo full name didn't match provided name")
+				return nil, nil
+			}
+
 			return r, err
 		}
 	}
@@ -208,11 +212,6 @@ func (d *Mapper) GetRepoForService(service models.Service, name string) (models.
 	}
 
 	r := NewRepo(service, strings.Join(dirParts[:fullNameLength], "/"))
-
-	if r.FullName() != filepath.ToSlash(name) {
-		logrus.WithField("fullName", r.FullName()).WithField("name", name).Debug("Repo full name didn't match provided name")
-		return nil, nil
-	}
 
 	return r, nil
 }
@@ -235,7 +234,12 @@ func (d *Mapper) GetFullyQualifiedRepo(name string) (models.Repo, error) {
 		return nil, nil
 	}
 
-	return d.GetRepoForService(service, strings.Join(dirParts[1:], "/"))
+	r, err := d.GetRepoForService(service, strings.Join(dirParts[1:], "/"))
+	if err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
 // GetCurrentDirectoryRepo gets the repo details for the repository open in your

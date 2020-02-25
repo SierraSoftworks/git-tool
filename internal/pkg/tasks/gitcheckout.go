@@ -11,13 +11,13 @@ import (
 // GitCheckout is responsible for checking out a specific branch.
 func GitCheckout(ref string) Task {
 	return &gitCheckout{
-		BranchName: ref,
+		RefName: ref,
 	}
 }
 
 // gitCheckout is responsible for running the equivalent of a `git checkout -b` for a repository.
 type gitCheckout struct {
-	BranchName string
+	RefName string
 }
 
 // ApplyRepo runs the task against a repository
@@ -27,9 +27,24 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 		return errors.Wrap(err, "repo: unable to open git repository")
 	}
 
-	branch, err := gr.Branch(t.BranchName)
-	if err != nil {
+	co := &git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(t.RefName),
+		Keep:   true,
+	}
+
+	ref, err := gr.Reference(co.Branch, true)
+	if err != nil && err != plumbing.ErrReferenceNotFound {
 		return errors.Wrap(err, "repo: unable to find branch")
+	}
+
+	if ref == nil {
+		head, err := gr.Head()
+		if err != nil {
+			return errors.Wrap(err, "repo: unable to create branch")
+		}
+
+		co.Hash = head.Hash()
+		co.Create = true
 	}
 
 	w, err := gr.Worktree()
@@ -37,11 +52,8 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 		return errors.Wrap(err, "repo: unable to open git worktree")
 	}
 
-	logrus.WithField("repo", r).Debugf("Checking out branch '%s'", t.BranchName)
-	err = w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch.Name),
-		Keep:   true,
-	})
+	logrus.WithField("repo", r).Debugf("Checking out branch '%s'", co.Branch.String())
+	err = w.Checkout(co)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to checkout branch")
