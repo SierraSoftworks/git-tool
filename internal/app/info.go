@@ -29,9 +29,9 @@ var repoInfoCommand = cli.Command{
 		}
 
 		if repo == nil && c.NArg() == 0 {
-			return errors.New("no repository specified")
+			return errors.New("usage: no repository specified")
 		} else if repo == nil {
-			return errors.New("could not find repository")
+			return errors.New("usage: could not find repository")
 		}
 
 		fmt.Fprintln(di.GetOutput(), templates.RepoFullInfo(repo))

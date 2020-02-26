@@ -33,9 +33,9 @@ var openAppCommand = cli.Command{
 		}
 
 		if app == nil && c.NArg() > 0 {
-			return errors.Errorf("no app called %s in your config", c.Args().First())
+			return errors.Errorf("usage: no app called %s in your config", c.Args().First())
 		} else if app == nil {
-			return errors.Errorf("no apps in your config")
+			return errors.Errorf("usage: no apps in your config")
 		}
 
 		logrus.WithField("app", app.Name()).Debug("Found matching app configuration")
@@ -46,9 +46,9 @@ var openAppCommand = cli.Command{
 		}
 
 		if r == nil && len(args) == 0 {
-			return errors.New("no repository specified")
+			return errors.New("usage: no repository specified")
 		} else if r == nil {
-			return errors.New("could not find repository")
+			return errors.New("usage: could not find repository")
 		}
 
 		if !r.Exists() {
@@ -58,7 +58,7 @@ var openAppCommand = cli.Command{
 			err := init.CloneRepository(r)
 			if err != nil {
 				logrus.WithError(err).Error("Failed to clone repository")
-				return errors.New("repository doesn't exist yet, use 'new' to create it")
+				return errors.New("usage: repository doesn't exist yet, use 'new' to create it")
 			}
 		}
 

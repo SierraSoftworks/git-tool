@@ -21,7 +21,7 @@ var newRepoCommand = cli.Command{
 		defer tracing.Exit()
 
 		if c.NArg() == 0 {
-			return errors.New("no repository specified")
+			return errors.New("usage: no repository specified")
 		}
 
 		r, err := di.GetMapper().GetRepo(c.Args().First())
@@ -30,7 +30,7 @@ var newRepoCommand = cli.Command{
 		}
 
 		if r == nil {
-			return errors.New("not a valid repository name")
+			return errors.New("usage: not a valid repository name")
 		}
 
 		init := di.GetInitializer()

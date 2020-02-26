@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/sentry-go/v2"
@@ -41,7 +42,12 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		logrus.WithError(err).Error("Unexpected error occurred")
+		if strings.HasPrefix(err.Error(), "usage: ") {
+			logrus.Error(err.Error()[len("usage: "):])
+			os.Exit(1)
+		}
+
+		logrus.WithError(err).Error()
 		raven.Capture(
 			sentry.ExceptionForError(err),
 			sentry.Level(sentry.Error),
