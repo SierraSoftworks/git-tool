@@ -37,12 +37,10 @@ var branchCommand = cli.Command{
 	BashComplete: func(c *cli.Context) {
 		repo, err := di.GetMapper().GetCurrentDirectoryRepo()
 		if err != nil {
-			di.GetOutput().WriteString(err.Error())
 			return
 		}
 
 		if repo == nil {
-			di.GetOutput().WriteString("Repo not found")
 			return
 		}
 
