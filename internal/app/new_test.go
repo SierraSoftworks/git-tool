@@ -39,7 +39,7 @@ var _ = Describe("gt new", func() {
 		})
 
 		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("no repository specified"))
+			Expect(err.Error()).To(Equal("usage: no repository specified"))
 		})
 
 		It("Should not print any output", func() {
@@ -105,7 +105,7 @@ var _ = Describe("gt new", func() {
 		})
 
 		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("not a valid repository name"))
+			Expect(err.Error()).To(Equal("usage: not a valid repository name"))
 		})
 
 		It("Should not print any output", func() {
