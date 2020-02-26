@@ -26,4 +26,5 @@ type Mapper interface {
 	GetRepoForService(service models.Service, name string) (models.Repo, error)
 	GetFullyQualifiedRepo(name string) (models.Repo, error)
 	GetCurrentDirectoryRepo() (models.Repo, error)
+	GetBranches(r models.Repo) ([]string, error)
 }
