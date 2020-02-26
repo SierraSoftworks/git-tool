@@ -55,7 +55,7 @@ var updateCommand = cli.Command{
 			}
 
 			if targetRelease == nil {
-				return fmt.Errorf("could not find update with provided tag")
+				return fmt.Errorf("usage: could not find update with provided tag")
 			}
 		} else {
 			currentVersion := c.App.Version

@@ -35,9 +35,9 @@ var openScratchCommand = cli.Command{
 		}
 
 		if app == nil && c.NArg() > 0 {
-			return errors.Errorf("no app called %s in your config", c.Args().First())
+			return errors.Errorf("usage: no app called %s in your config", c.Args().First())
 		} else if app == nil {
-			return errors.Errorf("no apps in your config")
+			return errors.Errorf("usage: no apps in your config")
 		}
 
 		logrus.WithField("app", app.Name()).Debug("Found matching app configuration")
