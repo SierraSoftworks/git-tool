@@ -16,10 +16,10 @@ jobs:
             extension: ".exe"
     
     steps:
-    - name: Set up Go 1.13
+    - name: Set up Go 1.14
       uses: actions/setup-go@v1
       with:
-        go-version: 1.13
+        go-version: 1.14
       id: go
 
     - name: Check out code into the Go module directory
@@ -40,13 +40,14 @@ jobs:
         GOARCH: ${{ matrix.arch }}
         
     - name: Create Sentry Release
-      uses: juankaram/sentry-release@master
+      uses: tclindner/sentry-releases-action@v1.0.0
       env:
         SENTRY_ORG: sierra-softworks
         SENTRY_PROJECT: git-tool
-        ENVIRONMENT: ${{ matrix.os }}-${{ matrix.arch }}
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        RELEASE_VERSION: ${{ steps.version.output }}
+      with:
+        environment: ${{ matrix.os }}-${{ matrix.arch }}
+        tagName: ${{ steps.version.output }}
 
     - name: Upload to Release
       uses: JasonEtco/upload-to-release@v0.1.1
