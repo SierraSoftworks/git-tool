@@ -6,8 +6,8 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -48,7 +48,7 @@ var _ = Describe("gt info", func() {
 			})
 
 			It("Should inform the user in the error of why the command failed", func() {
-				Expect(err.Error()).To(Equal("no repository specified"))
+				Expect(err.Error()).To(Equal("usage: no repository specified"))
 			})
 
 			It("Should not print any output", func() {
@@ -103,7 +103,7 @@ var _ = Describe("gt info", func() {
 		})
 
 		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("could not find repository"))
+			Expect(err.Error()).To(Equal("usage: could not find repository"))
 		})
 
 		It("Should not print any output", func() {
