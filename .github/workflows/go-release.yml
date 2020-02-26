@@ -24,16 +24,9 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
-      
-    - name: Fetch latest tags
-      run: git fetch --tags
-
-    - name: Determine version
-      run: git describe --tags
-      id: version
 
     - name: Build
-      run: go build -o bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} -ldflags "-X main.version=$(git describe --tags)" ./cmd/git-tool/main.go
+      run: go build -o bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} -ldflags "-X main.version=${{ github.event.release.tag_name }}" ./cmd/git-tool/main.go
       shell: pwsh
       env:
         GOOS: ${{ matrix.os }}
@@ -47,7 +40,7 @@ jobs:
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       with:
         environment: ${{ matrix.os }}-${{ matrix.arch }}
-        tagName: ${{ steps.version.output }}
+        tagName: ${{ github.event.release.tag_name }}
 
     - name: Upload to Release
       uses: JasonEtco/upload-to-release@v0.1.1
