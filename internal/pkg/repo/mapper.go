@@ -250,11 +250,16 @@ func (d *Mapper) GetCurrentDirectoryRepo() (models.Repo, error) {
 		return nil, errors.Wrap(err, "repo: failed to get current directory")
 	}
 
-	if !strings.HasPrefix(dir, di.GetConfig().DevelopmentDirectory()) {
-		logrus.WithField("path", dir).Debug("Not within the development directory")
+	devDirectory, err := filepath.EvalSymlinks(di.GetConfig().DevelopmentDirectory())
+	if err != nil {
+		devDirectory = di.GetConfig().DevelopmentDirectory()
+	}
+
+	if !strings.HasPrefix(dir, devDirectory) {
+		logrus.WithField("path", dir).WithField("devdir", devDirectory).Debug("Not within the development directory")
 		return nil, nil
 	}
 
-	localDir := strings.Trim(filepath.ToSlash(dir[len(di.GetConfig().DevelopmentDirectory()):]), "/")
+	localDir := strings.Trim(filepath.ToSlash(dir[len(devDirectory):]), "/")
 	return d.GetFullyQualifiedRepo(localDir)
 }
