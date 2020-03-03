@@ -3,139 +3,104 @@ package gitignore_test
 import (
 	"io/ioutil"
 	"os"
+	"strings"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
 	"github.com/SierraSoftworks/git-tool/test"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("GitIgnore", func() {
-	Describe("AddOrUpdate()", func() {
-		var (
-			filePath        string
-			languages       []string
-			originalContent string
-			newContent      string
-			err             error
-		)
+func TestAddOrUpdate(t *testing.T) {
 
-		BeforeEach(func() {
-			filePath = test.GetTestDataPath("ignore", "oldgo.gitignore")
-			languages = []string{}
-			originalContent = ""
-			newContent = ""
-			err = nil
-		})
+	t.Run("New File", func(t *testing.T) {
+		filePath := test.GetTestDataPath("ignore", ".gitignore")
 
-		JustBeforeEach(func() {
-			oc, ferr := ioutil.ReadFile(filePath)
-			if ferr == nil {
-				originalContent = string(oc)
+		fileContent := func(t *testing.T) string {
+			c, err := ioutil.ReadFile(filePath)
+			if os.IsNotExist(err) {
+				return ""
 			}
 
-			err = gitignore.AddOrUpdate(filePath, languages...)
+			require.NoError(t, err, "the test file should be readable")
+			return string(c)
+		}
 
-			oc, ferr = ioutil.ReadFile(filePath)
-			if ferr == nil {
-				newContent = string(oc)
-			}
+		t.Run("No languages", func(t *testing.T) {
+			defer os.RemoveAll(filePath)
+
+			assert.Empty(t, fileContent(t), "the original file should not exist")
+			assert.NoError(t, gitignore.AddOrUpdate(filePath), "it should not throw an error")
+			assert.Empty(t, fileContent(t), "it should not write any new content to the file")
 		})
 
-		AfterEach(func() {
-			ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm)
+		t.Run("Invalid language", func(t *testing.T) {
+			defer os.RemoveAll(filePath)
+
+			assert.Empty(t, fileContent(t), "the original file should not exist")
+			assert.Error(t, gitignore.AddOrUpdate(filePath, "thisisnotareallanguage"), "it should throw an error")
+			assert.Empty(t, fileContent(t), "it should not write any content to the file")
 		})
 
-		Context("With a file which doesn't exist", func() {
-			BeforeEach(func() {
-				filePath = test.GetTestDataPath("ignore", ".gitignore")
-			})
+		t.Run("New language", func(t *testing.T) {
+			defer os.RemoveAll(filePath)
 
-			AfterEach(func() {
-				os.RemoveAll(filePath)
-			})
-
-			Context("With no languages provided", func() {
-				It("Should not report an error", func() {
-					Expect(err).To(BeNil())
-				})
-
-				It("Should not start with any content", func() {
-					Expect(originalContent).To(BeEmpty())
-				})
-
-				It("Should not write any content", func() {
-					Expect(newContent).To(BeEmpty())
-				})
-			})
-
-			Context("With a language provided", func() {
-				BeforeEach(func() {
-					languages = []string{"go"}
-				})
-
-				It("Should not report an error", func() {
-					Expect(err).To(BeNil())
-				})
-
-				It("Should not start with any content", func() {
-					Expect(originalContent).To(BeEmpty())
-				})
-
-				It("Should write the ignore content", func() {
-					Expect(newContent).ToNot(BeEmpty())
-				})
-			})
-
-			Context("With an invalid language provided", func() {
-				BeforeEach(func() {
-					languages = []string{"thisisnotareallanguage"}
-				})
-
-				It("Should report an error", func() {
-					Expect(err).ToNot(BeNil())
-				})
-
-				It("Should not start with any content", func() {
-					Expect(originalContent).To(BeEmpty())
-				})
-
-				It("Should not write any content", func() {
-					Expect(newContent).To(BeEmpty())
-				})
-			})
-		})
-
-		Context("With an old file", func() {
-			BeforeEach(func() {
-				filePath = test.GetTestDataPath("ignore", "oldgo.gitignore")
-			})
-
-			Context("With no languages provided", func() {
-				It("Should not report an error", func() {
-					Expect(err).To(BeNil())
-				})
-
-				It("Should start with some content", func() {
-					Expect(originalContent).ToNot(BeEmpty())
-				})
-
-				It("Should write some new content", func() {
-					Expect(newContent).ToNot(BeEmpty())
-					Expect(newContent).ToNot(Equal(originalContent))
-				})
-			})
-
-			Context("With the same language provided", func() {
-				BeforeEach(func() {
-					languages = []string{"go"}
-				})
-
-				It("Should not report an error", func() {
-					Expect(err).To(BeNil())
-				})
-			})
+			assert.Empty(t, fileContent(t), "the original file should not exist")
+			assert.NoError(t, gitignore.AddOrUpdate(filePath, "go"), "it should not throw an error")
+			assert.NotEmpty(t, fileContent(t), "it should write the language's ignore file")
 		})
 	})
-})
+
+	t.Run("Old File", func(t *testing.T) {
+		filePath := test.GetTestDataPath("ignore", "oldgo.gitignore")
+
+		fileContent := func(t *testing.T) string {
+			c, err := ioutil.ReadFile(filePath)
+			require.NoError(t, err, "the test file should be readable")
+			return string(c)
+		}
+
+		originalContent := strings.TrimSpace(`
+## -------- Managed by Git Tool -------- ##
+## Add any custom rules above this block ##
+## ------------------------------------- ##
+## @languages: go
+
+*.exe
+*.exe~
+*.dll
+
+# End of https://www.gitignore.io/api/go		
+`)
+
+		t.Run("No languages", func(t *testing.T) {
+			require.NoError(t, ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm), "the test file should be restored to the original state")
+
+			assert.NoError(t, gitignore.AddOrUpdate(filePath), "it should not return any errors")
+			newContent := fileContent(t)
+
+			assert.NotEqual(t, originalContent, newContent, "the file should be updated to the latest version")
+		})
+
+		t.Run("Same languages", func(t *testing.T) {
+			require.NoError(t, ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm), "the test file should be restored to the original state")
+
+			assert.NoError(t, gitignore.AddOrUpdate(filePath, "go"), "it should not return any errors")
+			newContent := fileContent(t)
+
+			assert.NotEqual(t, originalContent, newContent, "the file should be updated to the latest version")
+		})
+
+		t.Run("New languages", func(t *testing.T) {
+			require.NoError(t, ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm), "the test file should be restored to the original state")
+
+			assert.NoError(t, gitignore.AddOrUpdate(filePath, "node"), "it should not return any errors")
+			newContent := fileContent(t)
+
+			assert.NotEqual(t, originalContent, newContent, "the file should be updated with the new languages")
+		})
+
+		require.NoError(t, ioutil.WriteFile(filePath, []byte(originalContent), os.ModePerm), "the test file should be restored to the original state")
+	})
+}

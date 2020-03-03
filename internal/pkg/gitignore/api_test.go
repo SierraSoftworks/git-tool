@@ -1,97 +1,47 @@
 package gitignore_test
 
 import (
+	"testing"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("GitIgnore", func() {
-	Describe("List()", func() {
-		var (
-			list    []string
-			listErr error
-		)
+func TestGitIgnoreAPI(t *testing.T) {
+	t.Run("List()", func(t *testing.T) {
+		list, err := gitignore.List()
 
-		BeforeEach(func() {
-			list, listErr = gitignore.List()
-		})
+		require.NoError(t, err, "it should not return an error")
+		assert.Greater(t, len(list), 1, "it should return a list with at least one item in it")
 
-		It("Should not return an error", func() {
-			Expect(listErr).ToNot(HaveOccurred())
-		})
-
-		It("Should return at least one item", func() {
-			Expect(len(list)).To(BeNumerically(">", 0))
-		})
-
-		It("Should split the items in the list correctly", func() {
-			for _, item := range list {
-				Expect(item).ToNot(BeEmpty())
-				Expect(item).ToNot(ContainSubstring(","))
-				Expect(item).ToNot(ContainSubstring("\n"))
-			}
-		})
+		for _, item := range list {
+			assert.NotEmpty(t, item, "items should not be empty strings")
+			assert.NotContains(t, item, ",", "items should not contain commas")
+			assert.NotContains(t, item, "\n", "items should not contain newlines")
+		}
 	})
 
-	Describe("Ignore()", func() {
-		var (
-			langs  []string
-			ignore string
-			err    error
-		)
-
-		BeforeEach(func() {
-			langs = []string{}
+	t.Run("Ignore()", func(t *testing.T) {
+		t.Run("Unrecognized Language", func(t *testing.T) {
+			ignore, err := gitignore.Ignore("thisisnotareallanguage")
+			assert.Error(t, err, "it should return an error")
+			assert.NotEmpty(t, ignore, "it should not return an empty ignore file")
 		})
 
-		JustBeforeEach(func() {
-			ignore, err = gitignore.Ignore(langs...)
+		t.Run("Single Language", func(t *testing.T) {
+			ignore, err := gitignore.Ignore("go")
+			assert.NoError(t, err, "it should not return an error")
+			assert.NotEmpty(t, ignore, "it should return a non-empty ignore file")
+			assert.Contains(t, ignore, ".exe~", "it should return a valid ignore file")
 		})
 
-		Context("With an unrecognized language", func() {
-			BeforeEach(func() {
-				langs = []string{"thisisnotareallanguage"}
-			})
-
-			It("Should return an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-
-			It("Should not return an empty ignore file", func() {
-				Expect(ignore).ToNot(BeEmpty())
-			})
-		})
-
-		Context("With a single language", func() {
-			BeforeEach(func() {
-				langs = []string{"go"}
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).To(BeNil())
-			})
-
-			It("Should return a valid ignore file", func() {
-				Expect(ignore).ToNot(BeEmpty())
-				Expect(ignore).To(ContainSubstring(".exe~"))
-			})
-		})
-
-		Context("With multiple languages", func() {
-			BeforeEach(func() {
-				langs = []string{"go", "node"}
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).To(BeNil())
-			})
-
-			It("Should return a valid ignore file", func() {
-				Expect(ignore).ToNot(BeEmpty())
-				Expect(ignore).To(ContainSubstring(".exe~"))
-				Expect(ignore).To(ContainSubstring("node_modules"))
-			})
+		t.Run("Multiple Languages", func(t *testing.T) {
+			ignore, err := gitignore.Ignore("go", "node")
+			assert.NoError(t, err, "it should not return an error")
+			assert.NotEmpty(t, ignore, "it should return a non-empty ignore file")
+			assert.Contains(t, ignore, ".exe~", "it should return a valid ignore file for the first language")
+			assert.Contains(t, ignore, "node_modules", "it should return a valid ignore file for the second language")
 		})
 	})
-})
+}
