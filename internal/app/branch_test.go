@@ -36,7 +36,7 @@ var _ = Describe("gt branch", func() {
 			tasks.GitInit(),
 			tasks.NewFile("README.md", []byte("# Test Repo")),
 			tasks.GitCommit("Initial Commit", "README.md"),
-			tasks.GitCheckout("master"),
+			tasks.GitCheckout("master", false),
 		).ApplyRepo(repo)
 		if err != nil {
 			return
