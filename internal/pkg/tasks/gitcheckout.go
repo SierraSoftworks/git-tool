@@ -46,7 +46,7 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 			return nil
 		}
 
-		if r.Name().Short() == t.RefName {
+		if r.Name().Short() == t.RefName || r.Name().Short() == "origin/"+t.RefName {
 			if ref == nil {
 				ref = r
 			} else if ref.Name().IsRemote() && !r.Name().IsRemote() {

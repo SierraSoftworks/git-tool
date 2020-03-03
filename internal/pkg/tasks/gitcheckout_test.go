@@ -100,8 +100,10 @@ var _ = Describe("Git Checkout Task", func() {
 						tasks.NewFile("README.md", []byte("# Test Repo")),
 						tasks.GitCommit("Initial Commit", "README.md"),
 						tasks.GitNewRef("refs/remotes/origin/test-branch"),
+						tasks.GitNewRef("refs/remotes/origin/test-branch2"),
 						tasks.NewFile("README.md", []byte("# Test Repo\nWith changes")),
 						tasks.GitCommit("Made changes to README", "README.md"),
+						tasks.GitNewRef("refs/heads/test-branch2"),
 						tasks.GitCheckout("master", false),
 					).ApplyRepo(r)
 				})
@@ -151,7 +153,7 @@ var _ = Describe("Git Checkout Task", func() {
 					})
 				})
 
-				Context("With a branch which exists on a remote", func() {
+				Context("With a branch which exists on origin", func() {
 					BeforeEach(func() {
 						ref = "test-branch"
 					})
@@ -189,6 +191,47 @@ var _ = Describe("Git Checkout Task", func() {
 
 						Expect(head.Hash().String()).ToNot(Equal(master.Hash().String()))
 						Expect(head.Hash().String()).To(Equal(test.Hash().String()))
+					})
+				})
+
+				Context("With a branch which exists both locally and on origin", func() {
+					BeforeEach(func() {
+						ref = "test-branch2"
+					})
+
+					It("should not log anything", func() {
+						Expect(out.GetOperations()).To(BeEmpty())
+					})
+
+					It("Should not return an error", func() {
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("Should still have the local repo folder", func() {
+						Expect(r.Exists()).To(BeTrue())
+					})
+
+					It("Should not create a new branch", func() {
+						branches, err := di.GetMapper().GetBranches(r)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(branches).To(ContainElement(ref))
+					})
+
+					It("Should have the correct ref", func() {
+						gr, err := git.PlainOpen(r.Path())
+						Expect(err).ToNot(HaveOccurred())
+
+						head, err := gr.Head()
+						Expect(err).ToNot(HaveOccurred())
+
+						master, err := gr.Reference("refs/heads/master", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						test, err := gr.Reference("refs/remotes/origin/test-branch2", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(head.Hash().String()).To(Equal(master.Hash().String()))
+						Expect(head.Hash().String()).ToNot(Equal(test.Hash().String()))
 					})
 				})
 
