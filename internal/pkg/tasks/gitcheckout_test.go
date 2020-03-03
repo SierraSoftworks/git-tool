@@ -12,6 +12,7 @@ import (
 	"github.com/SierraSoftworks/git-tool/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 var _ = Describe("Git Checkout Task", func() {
@@ -95,8 +96,12 @@ var _ = Describe("Git Checkout Task", func() {
 					cloneError = tasks.Sequence(
 						tasks.NewFolder(),
 						tasks.GitInit(),
+						tasks.GitRemote("origin"),
 						tasks.NewFile("README.md", []byte("# Test Repo")),
 						tasks.GitCommit("Initial Commit", "README.md"),
+						tasks.GitNewRef("refs/remotes/origin/test-branch"),
+						tasks.NewFile("README.md", []byte("# Test Repo\nWith changes")),
+						tasks.GitCommit("Made changes to README", "README.md"),
 						tasks.GitCheckout("master", false),
 					).ApplyRepo(r)
 				})
@@ -131,6 +136,60 @@ var _ = Describe("Git Checkout Task", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(branches).To(ContainElement(ref))
 					})
+
+					It("Should have the correct ref", func() {
+						gr, err := git.PlainOpen(r.Path())
+						Expect(err).ToNot(HaveOccurred())
+
+						head, err := gr.Head()
+						Expect(err).ToNot(HaveOccurred())
+
+						master, err := gr.Reference("refs/heads/master", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(head.Hash().String()).To(Equal(master.Hash().String()))
+					})
+				})
+
+				Context("With a branch which exists on a remote", func() {
+					BeforeEach(func() {
+						ref = "test-branch"
+					})
+
+					It("should not log anything", func() {
+						Expect(out.GetOperations()).To(BeEmpty())
+					})
+
+					It("Should not return an error", func() {
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("Should still have the local repo folder", func() {
+						Expect(r.Exists()).To(BeTrue())
+					})
+
+					It("Should not create a new branch", func() {
+						branches, err := di.GetMapper().GetBranches(r)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(branches).To(ContainElement(ref))
+					})
+
+					It("Should have the correct ref", func() {
+						gr, err := git.PlainOpen(r.Path())
+						Expect(err).ToNot(HaveOccurred())
+
+						head, err := gr.Head()
+						Expect(err).ToNot(HaveOccurred())
+
+						master, err := gr.Reference("refs/heads/master", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						test, err := gr.Reference("refs/remotes/origin/test-branch", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(head.Hash().String()).ToNot(Equal(master.Hash().String()))
+						Expect(head.Hash().String()).To(Equal(test.Hash().String()))
+					})
 				})
 
 				Context("With a branch which doesn't exist", func() {
@@ -154,6 +213,19 @@ var _ = Describe("Git Checkout Task", func() {
 						branches, err := di.GetMapper().GetBranches(r)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(branches).To(ContainElement(ref))
+					})
+
+					It("Should have the correct ref", func() {
+						gr, err := git.PlainOpen(r.Path())
+						Expect(err).ToNot(HaveOccurred())
+
+						head, err := gr.Head()
+						Expect(err).ToNot(HaveOccurred())
+
+						master, err := gr.Reference("refs/heads/master", true)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(head.Hash().String()).To(Equal(master.Hash().String()))
 					})
 				})
 			})
