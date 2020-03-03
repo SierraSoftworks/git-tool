@@ -9,15 +9,17 @@ import (
 )
 
 // GitCheckout is responsible for checking out a specific branch.
-func GitCheckout(ref string) Task {
+func GitCheckout(ref string, keep bool) Task {
 	return &gitCheckout{
 		RefName: ref,
+		Keep:    keep,
 	}
 }
 
 // gitCheckout is responsible for running the equivalent of a `git checkout -b` for a repository.
 type gitCheckout struct {
 	RefName string
+	Keep    bool
 }
 
 // ApplyRepo runs the task against a repository
@@ -29,13 +31,31 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 
 	co := &git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(t.RefName),
-		Keep:   true,
+		Keep:   t.Keep,
 	}
 
-	ref, err := gr.Reference(co.Branch, true)
-	if err != nil && err != plumbing.ErrReferenceNotFound {
-		return errors.Wrap(err, "repo: unable to find branch")
+	refs, err := gr.References()
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to gather references")
 	}
+
+	var ref *plumbing.Reference
+
+	refs.ForEach(func(r *plumbing.Reference) error {
+		if r.Type() == plumbing.SymbolicReference {
+			return nil
+		}
+
+		if r.Name().Short() == t.RefName {
+			if ref == nil {
+				ref = r
+			} else if ref.Name().IsRemote() && !r.Name().IsRemote() {
+				ref = r
+			}
+		}
+
+		return nil
+	})
 
 	if ref == nil {
 		head, err := gr.Head()
@@ -44,6 +64,9 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 		}
 
 		co.Hash = head.Hash()
+		co.Create = true
+	} else if ref.Name().IsRemote() {
+		co.Hash = ref.Hash()
 		co.Create = true
 	}
 

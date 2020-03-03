@@ -32,7 +32,7 @@ var branchCommand = cli.Command{
 			return errors.New("usage: command requires a branch to be provided")
 		}
 
-		return tasks.GitCheckout(c.Args().First()).ApplyRepo(repo)
+		return tasks.GitCheckout(c.Args().First(), false).ApplyRepo(repo)
 	},
 	BashComplete: func(c *cli.Context) {
 		repo, err := di.GetMapper().GetCurrentDirectoryRepo()

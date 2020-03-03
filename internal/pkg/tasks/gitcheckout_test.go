@@ -43,7 +43,7 @@ var _ = Describe("Git Checkout Task", func() {
 	Describe("GitCheckout()", func() {
 		Context("when applied to a repo", func() {
 			JustBeforeEach(func() {
-				err = tasks.GitCheckout(ref).ApplyRepo(r)
+				err = tasks.GitCheckout(ref, false).ApplyRepo(r)
 			})
 
 			Context("which doesn't exist locally", func() {
@@ -97,7 +97,7 @@ var _ = Describe("Git Checkout Task", func() {
 						tasks.GitInit(),
 						tasks.NewFile("README.md", []byte("# Test Repo")),
 						tasks.GitCommit("Initial Commit", "README.md"),
-						tasks.GitCheckout("master"),
+						tasks.GitCheckout("master", false),
 					).ApplyRepo(r)
 				})
 
