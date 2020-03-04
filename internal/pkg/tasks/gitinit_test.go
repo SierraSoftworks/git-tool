@@ -3,147 +3,79 @@ package tasks_test
 import (
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tasks"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("Git Init Task", func() {
-	var (
-		out *mocks.Output
-		r   models.Repo
-		sp  models.Scratchpad
-		cfg *mocks.Config
-		err error
-	)
+func TestGitInit(t *testing.T) {
+	cfg := mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetLauncher(di.DefaultLauncher())
+	di.SetMapper(&repo.Mapper{})
+	di.SetInitializer(&repo.Initializer{})
+	di.SetConfig(cfg)
 
-	BeforeEach(func() {
-		cfg = mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetLauncher(di.DefaultLauncher())
-		di.SetMapper(&repo.Mapper{})
-		di.SetInitializer(&repo.Initializer{})
-		di.SetConfig(cfg)
+	task := tasks.GitInit()
 
-		r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-		sp = repo.NewScratchpad("2019w15")
-	})
+	t.Run("Repo", func(t *testing.T) {
+		t.Run("Missing", func(t *testing.T) {
+			r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
+			defer os.RemoveAll(r.Path())
+			out.Reset()
 
-	AfterEach(func() {
-		os.Chdir(test.GetProjectRoot())
-	})
-
-	Describe("GitInit()", func() {
-		Context("when applied to a repo", func() {
-			JustBeforeEach(func() {
-				err = tasks.GitInit().ApplyRepo(r)
-			})
-
-			Context("which doesn't exist", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(r.Path())
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("Should have created the repository folder", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("Should have initialized the repository", func() {
-					Expect(r.Valid()).To(BeTrue())
-				})
-			})
-			
-			Context("which does exist", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test2")
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(filepath.Join(r.Path(), ".git"))
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("Should have created the repository folder", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("Should have initialized the repository", func() {
-					Expect(r.Valid()).To(BeTrue())
-				})
-			})
+			assert.NoError(t, task.ApplyRepo(r), "it should not return an error")
+			assert.Empty(t, out.GetOperations(), "it should not log anything")
+			assert.True(t, r.Exists(), "it should have created the repository folder")
+			assert.True(t, r.Valid(), "it should have initialized the repository")
 		})
 
-		Context("when applied to a scratchpad", func() {
-			JustBeforeEach(func() {
-				err = tasks.GitInit().ApplyScratchpad(sp)
-			})
+		t.Run("Uninitialized", func(t *testing.T) {
+			r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
+			defer os.RemoveAll(filepath.Join(r.Path(), ".git"))
+			out.Reset()
 
-			Context("which doesn't exist", func() {
-				BeforeEach(func() {
-					sp = repo.NewScratchpad("2019w28")
-				})
+			assert.NoError(t, task.ApplyRepo(r), "it should return an error")
+			assert.Empty(t, out.GetOperations(), "it should not log anything")
+			assert.True(t, r.Exists(), "the repository folder should still exist")
+			assert.True(t, r.Valid(), "it should have initialized the repository")
+		})
 
-				AfterEach(func() {
-					os.RemoveAll(sp.Path())
-				})
+		t.Run("Valid Repo", func(t *testing.T) {
+			r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test4")
+			defer os.RemoveAll(r.Path())
 
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+			require.NoError(t, tasks.Sequence(
+				tasks.NewFolder(),
+				tasks.GitInit(),
+				tasks.GitRemote("origin"),
+				tasks.NewFile("README.md", []byte("# Test Repo")),
+				tasks.GitCommit("Initial Commit", "README.md"),
+				tasks.GitCheckout("master", false),
+			).ApplyRepo(r), "the repository should be setup correctly for the test")
 
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("Should not have created the scratchpad folder", func() {
-					Expect(sp.Exists()).To(BeFalse())
-				})
-			})
-			
-			Context("which does exist", func() {
-				BeforeEach(func() {
-					sp = repo.NewScratchpad("2019w27")
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("Should have left the scratchpad folder in place", func() {
-					Expect(sp.Exists()).To(BeTrue())
-				})
-			})
+			assert.NoError(t, task.ApplyRepo(r), "it should return an error")
+			assert.Empty(t, out.GetOperations(), "it should not log anything")
+			assert.True(t, r.Exists(), "the repository folder should still exist")
+			assert.True(t, r.Valid(), "the repository should still be valid")
 		})
 	})
-})
+
+	t.Run("Scratchpad", func(t *testing.T) {
+		sp := repo.NewScratchpad("2019w28")
+		defer os.RemoveAll(sp.Path())
+		out.Reset()
+
+		require.NoError(t, task.ApplyScratchpad(sp), "it should not return an error")
+		assert.Empty(t, out.GetOperations(), "it should not log anything")
+		assert.False(t, sp.Exists(), "it should not have created the scratchpad folder")
+	})
+}
