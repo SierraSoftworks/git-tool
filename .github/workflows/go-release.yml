@@ -43,8 +43,9 @@ jobs:
         tagName: ${{ github.event.release.tag_name }}
 
     - name: Upload to Release
-      uses: JasonEtco/upload-to-release@v0.1.1
+      uses: Shopify/upload-to-release
       with:
-        args: "bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} application/octet-stream"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        path: "bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        content-type: application/octet-stream
