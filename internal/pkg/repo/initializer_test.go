@@ -35,7 +35,7 @@ func TestInitializer(t *testing.T) {
 			reset()
 
 			sp := repo.NewScratchpad("2019w15")
-			require.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
+			assert.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
 			assert.Empty(t, out.GetOperations(), "it should not log anything")
 			assert.True(t, sp.Exists(), "it should leave the directory in place")
 		})
@@ -46,7 +46,7 @@ func TestInitializer(t *testing.T) {
 			sp := repo.NewScratchpad("2019w01")
 			defer os.RemoveAll(sp.Path())
 
-			require.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
+			assert.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
 			assert.Empty(t, out.GetOperations(), "it should not log anything")
 			assert.True(t, sp.Exists(), "it should create the directory")
 		})
@@ -67,7 +67,7 @@ func TestInitializer(t *testing.T) {
 			assert.True(t, r.Exists(), "the repo should exist to start with")
 			assert.False(t, r.Valid(), "the repo should not be valid to start with")
 
-			require.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
+			assert.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
 			assert.Empty(t, out.GetOperations(), "it should not have logged anything")
 			assert.True(t, r.Exists(), "the repo should exist")
 			assert.True(t, r.Valid(), "the repo should be initialized")
@@ -86,7 +86,7 @@ func TestInitializer(t *testing.T) {
 
 			assert.False(t, r.Exists(), "the repo should not exist to start with")
 
-			require.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
+			assert.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
 			assert.Empty(t, out.GetOperations(), "it should not have logged anything")
 			assert.True(t, r.Exists(), "the repo should exist")
 			assert.True(t, r.Valid(), "the repo should be initialized")
@@ -110,7 +110,7 @@ func TestInitializer(t *testing.T) {
 				assert.True(t, r.Exists(), "the repo should exist to start with")
 				assert.False(t, r.Valid(), "the repo should not be valid to start with")
 
-				require.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
+				assert.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
 				assert.Empty(t, out.GetOperations(), "it should not have logged anything")
 				assert.True(t, r.Exists(), "the repo should exist")
 				assert.False(t, r.Valid(), "the repo should not have modified the repo")
@@ -131,7 +131,7 @@ func TestInitializer(t *testing.T) {
 
 				assert.False(t, r.Exists(), "the repo should not exist to start with")
 
-				require.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
+				assert.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
 				assert.NotEmpty(t, out.GetOperations(), "it should log the clone progress")
 				assert.True(t, r.Exists(), "the repo should exist")
 				assert.True(t, r.Valid(), "the repo should be valid")
