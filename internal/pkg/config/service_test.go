@@ -2,28 +2,24 @@ package config_test
 
 import (
 	"path/filepath"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
 	testmodels "github.com/SierraSoftworks/git-tool/test/models"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("Service", func() {
-	getConfig := func() di.Config {
-		cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
-		Expect(err).To(BeNil())
-		Expect(cfg).ToNot(BeNil())
+func TestService(t *testing.T) {
+	cfg, err := config.Load(test.GetTestDataPath("config.valid.yml"))
+	require.NoError(t, err, "it should not return an error when loading the config")
+	require.NotNil(t, cfg, "it should not return a nil config")
 
-		return cfg
-	}
+	t.Run("github.com", func(t *testing.T) {
+		svc := cfg.GetService("github.com")
 
-	getRepo := func(svc models.Service) models.Repo {
-		r := &testmodels.TestRepo{
+		repo := &testmodels.TestRepo{
 			ModelFullName: "sierrasoftworks/test1",
 			ModelService:  svc,
 			ModelPath:     filepath.Join(test.GetTestPath(), svc.Domain(), "sierrasoftworks", "test1"),
@@ -31,111 +27,72 @@ var _ = Describe("Service", func() {
 			ModelExists:   false,
 		}
 
-		return r
-	}
-
-	Describe("Domain()", func() {
-		It("Should return the correct domain name when requested", func() {
-			Expect(getConfig().GetService("github.com").Domain()).To(Equal("github.com"))
-		})
+		if assert.NotNil(t, svc, "it should have github.com as a service") {
+			assert.Equal(t, "github.com", svc.Domain(), "it should have the correct domain")
+			assert.Equal(t, "*/*", svc.DirectoryGlob(), "it should have the correct directory glob for github.com")
+			assert.Equal(t, "https://github.com/sierrasoftworks/test1", svc.Website(repo), "it should generate the correct web URL")
+			assert.Equal(t, "git@github.com:sierrasoftworks/test1.git", svc.GitURL(repo), "it should generate the correct git+ssh URL")
+			assert.Equal(t, "https://github.com/sierrasoftworks/test1.git", svc.HttpURL(repo), "it should generate the correct git+http URL")
+		}
 	})
 
-	Describe("DirectoryGlob()", func() {
-		It("Should return the correct domain name when requested", func() {
-			Expect(getConfig().GetService("github.com").DirectoryGlob()).To(Equal("*/*"))
-			Expect(getConfig().GetService("dev.azure.com").DirectoryGlob()).To(Equal("*/*/*"))
-		})
+	t.Run("gitlab.com", func(t *testing.T) {
+		svc := cfg.GetService("gitlab.com")
+
+		repo := &testmodels.TestRepo{
+			ModelFullName: "sierrasoftworks/test1",
+			ModelService:  svc,
+			ModelPath:     filepath.Join(test.GetTestPath(), svc.Domain(), "sierrasoftworks", "test1"),
+			ModelValid:    false,
+			ModelExists:   false,
+		}
+
+		if assert.NotNil(t, svc, "it should have gitlab.com as a service") {
+			assert.Equal(t, "gitlab.com", svc.Domain(), "it should have the correct domain")
+			assert.Equal(t, "*/*", svc.DirectoryGlob(), "it should have the correct directory glob for gitlab.com")
+			assert.Equal(t, "https://gitlab.com/sierrasoftworks/test1", svc.Website(repo), "it should generate the correct web URL")
+			assert.Equal(t, "git@gitlab.com:sierrasoftworks/test1.git", svc.GitURL(repo), "it should generate the correct git+ssh URL")
+			assert.Equal(t, "https://gitlab.com/sierrasoftworks/test1.git", svc.HttpURL(repo), "it should generate the correct git+http URL")
+		}
 	})
 
-	Context("github.com", func() {
-		It("Should render the website address correctly", func() {
-			svc := getConfig().GetService("github.com")
-			repo := getRepo(svc)
+	t.Run("bitbucket.org", func(t *testing.T) {
+		svc := cfg.GetService("bitbucket.org")
 
-			Expect(svc.Website(repo)).To(Equal("https://github.com/sierrasoftworks/test1"))
-		})
+		repo := &testmodels.TestRepo{
+			ModelFullName: "sierrasoftworks/test1",
+			ModelService:  svc,
+			ModelPath:     filepath.Join(test.GetTestPath(), svc.Domain(), "sierrasoftworks", "test1"),
+			ModelValid:    false,
+			ModelExists:   false,
+		}
 
-		It("Should render the Git HTTP URL correctly", func() {
-			svc := getConfig().GetService("github.com")
-			repo := getRepo(svc)
-
-			Expect(svc.HttpURL(repo)).To(Equal("https://github.com/sierrasoftworks/test1.git"))
-		})
-
-		It("Should render the Git SSH URL correctly", func() {
-			svc := getConfig().GetService("github.com")
-			repo := getRepo(svc)
-
-			Expect(svc.GitURL(repo)).To(Equal("git@github.com:sierrasoftworks/test1.git"))
-		})
+		if assert.NotNil(t, svc, "it should have bitbucket.org as a service") {
+			assert.Equal(t, "bitbucket.org", svc.Domain(), "it should have the correct domain")
+			assert.Equal(t, "*/*", svc.DirectoryGlob(), "it should have the correct directory glob for bitbucket.org")
+			assert.Equal(t, "https://bitbucket.org/sierrasoftworks/test1", svc.Website(repo), "it should generate the correct web URL")
+			assert.Equal(t, "git@bitbucket.org:sierrasoftworks/test1.git", svc.GitURL(repo), "it should generate the correct git+ssh URL")
+			assert.Equal(t, "https://bitbucket.org/sierrasoftworks/test1.git", svc.HttpURL(repo), "it should generate the correct git+http URL")
+		}
 	})
 
-	Context("gitlab.com", func() {
-		It("Should render the website address correctly", func() {
-			svc := getConfig().GetService("gitlab.com")
-			repo := getRepo(svc)
+	t.Run("dev.azure.com", func(t *testing.T) {
+		svc := cfg.GetService("dev.azure.com")
 
-			Expect(svc.Website(repo)).To(Equal("https://gitlab.com/sierrasoftworks/test1"))
-		})
+		repo := &testmodels.TestRepo{
+			ModelFullName: "sierrasoftworks/tests/test1",
+			ModelService:  svc,
+			ModelPath:     filepath.Join(test.GetTestPath(), svc.Domain(), "sierrasoftworks", "tests", "test1"),
+			ModelValid:    false,
+			ModelExists:   false,
+		}
 
-		It("Should render the Git HTTP URL correctly", func() {
-			svc := getConfig().GetService("gitlab.com")
-			repo := getRepo(svc)
-
-			Expect(svc.HttpURL(repo)).To(Equal("https://gitlab.com/sierrasoftworks/test1.git"))
-		})
-
-		It("Should render the Git SSH URL correctly", func() {
-			svc := getConfig().GetService("gitlab.com")
-			repo := getRepo(svc)
-
-			Expect(svc.GitURL(repo)).To(Equal("git@gitlab.com:sierrasoftworks/test1.git"))
-		})
+		if assert.NotNil(t, svc, "it should have dev.azure.com as a service") {
+			assert.Equal(t, "dev.azure.com", svc.Domain(), "it should have the correct domain")
+			assert.Equal(t, "*/*/*", svc.DirectoryGlob(), "it should have the correct directory glob for dev.azure.com")
+			assert.Equal(t, "https://dev.azure.com/sierrasoftworks/tests/_git/test1", svc.Website(repo), "it should generate the correct web URL")
+			assert.Equal(t, "git@ssh.dev.azure.com:v3/sierrasoftworks/tests/test1.git", svc.GitURL(repo), "it should generate the correct git+ssh URL")
+			assert.Equal(t, "https://dev.azure.com/sierrasoftworks/tests/_git/test1", svc.HttpURL(repo), "it should generate the correct git+http URL")
+		}
 	})
-
-	Context("bitbucket.org", func() {
-		It("Should render the website address correctly", func() {
-			svc := getConfig().GetService("bitbucket.org")
-			repo := getRepo(svc)
-
-			Expect(svc.Website(repo)).To(Equal("https://bitbucket.org/sierrasoftworks/test1"))
-		})
-
-		It("Should render the Git HTTP URL correctly", func() {
-			svc := getConfig().GetService("bitbucket.org")
-			repo := getRepo(svc)
-
-			Expect(svc.HttpURL(repo)).To(Equal("https://bitbucket.org/sierrasoftworks/test1.git"))
-		})
-
-		It("Should render the Git SSH URL correctly", func() {
-			svc := getConfig().GetService("bitbucket.org")
-			repo := getRepo(svc)
-
-			Expect(svc.GitURL(repo)).To(Equal("git@bitbucket.org:sierrasoftworks/test1.git"))
-		})
-	})
-
-	Context("dev.azure.com", func() {
-		It("Should render the website address correctly", func() {
-			svc := getConfig().GetService("dev.azure.com")
-			repo := getRepo(svc)
-
-			Expect(svc.Website(repo)).To(Equal("https://dev.azure.com/sierrasoftworks/_git/test1"))
-		})
-
-		It("Should render the Git HTTP URL correctly", func() {
-			svc := getConfig().GetService("dev.azure.com")
-			repo := getRepo(svc)
-
-			Expect(svc.HttpURL(repo)).To(Equal("https://dev.azure.com/sierrasoftworks/_git/test1"))
-		})
-
-		It("Should render the Git SSH URL correctly", func() {
-			svc := getConfig().GetService("dev.azure.com")
-			repo := getRepo(svc)
-
-			Expect(svc.GitURL(repo)).To(Equal("git@ssh.dev.azure.com:v3/sierrasoftworks/test1.git"))
-		})
-	})
-})
+}
