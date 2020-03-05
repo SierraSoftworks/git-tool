@@ -123,7 +123,7 @@ func TestConfig(t *testing.T) {
 				},
 			})
 
-			assert.Equal(t, cfg.GetServices(), config.Default().GetServices(), "it should not have introduced any new services")
+			assert.Equal(t, config.Default().GetServices(), cfg.GetServices(), "it should not have introduced any new services")
 			assert.Len(t, cfg.GetApps(), len(config.Default().GetApps())+1, "it should have introduced a new app")
 			assert.NotNil(t, cfg.GetApp("test"), "it should have added the test app")
 		})
@@ -141,7 +141,7 @@ func TestConfig(t *testing.T) {
 				},
 			})
 
-			assert.Equal(t, cfg.GetApps(), config.Default().GetApps(), "it should not have introduced any new apps")
+			assert.Equal(t, config.Default().GetApps(), cfg.GetApps(), "it should not have introduced any new apps")
 			assert.Len(t, cfg.GetServices(), len(config.Default().GetServices())+1, "it should have added a new service")
 			assert.NotNil(t, cfg.GetService("test.example.com"), "it should have added the test service")
 		})

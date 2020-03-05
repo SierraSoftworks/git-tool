@@ -13,6 +13,8 @@ import (
 )
 
 func TestAddOrUpdate(t *testing.T) {
+	assert.Fail(t, "this is a test")
+	assert.Fail(t, "this is another test")
 
 	t.Run("New File", func(t *testing.T) {
 		filePath := test.GetTestDataPath("ignore", ".gitignore")

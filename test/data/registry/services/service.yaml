@@ -1,0 +1,12 @@
+---
+name: Test Service
+description: This is a test service.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      domain: test.example.com
+      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      pattern: "*/*"

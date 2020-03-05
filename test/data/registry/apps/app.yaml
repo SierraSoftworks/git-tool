@@ -1,0 +1,13 @@
+---
+name: Test App
+description: This is a test app.
+version: 1.0.0
+configs:
+  - platform: any
+    app:
+      name: test
+      command: echo
+      args:
+        - "Hello $USER"
+      environment:
+        - "USER=test"
