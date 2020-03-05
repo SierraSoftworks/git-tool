@@ -1,55 +1,56 @@
 package app_test
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt services", func() {
-	var out *mocks.Output
+func TestServices(t *testing.T) {
+	cmd := "services"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-	})
+	/*----- Setup -----*/
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("services")).ToNot(BeNil())
-	})
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 
-	It("Should print out the list of services which have been configured", func() {
-		Expect(runApp("services")).To(BeNil())
+	/*----- Tests -----*/
 
-		Expect(out.GetOperations()).To(HaveLen(len(di.GetConfig().GetServices())))
-	})
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
 
-	It("Should print out every service", func() {
-		Expect(runApp("services")).To(BeNil())
+	t.Run("gt "+cmd, func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd), "it should not return an error") {
+			assert.Len(t, out.GetOperations(), len(di.GetConfig().GetServices()), "it should print out every configured app")
 
-		for _, svc := range di.GetConfig().GetServices() {
-			Expect(out.GetOperations()).To(ContainElement(svc.Domain() + "\n"))
+			for _, svc := range di.GetConfig().GetServices() {
+				assert.Containsf(t, out.GetOperations(), svc.Domain()+"\n", "it should print out the '%s' service", svc.Domain())
+			}
 		}
 	})
 
-	Context("Root autocompletion", func() {
-		It("Should appear in the completions list", func() {
-			Expect(runApp("complete", "gt")).To(BeNil())
+	t.Run("Auto Completion", func(t *testing.T) {
 
-			Expect(out.GetOperations()).To(ContainElement("services\n"))
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
+
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
+		})
+
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
+
+			assert.Empty(t, out.GetOperations(), "it should not print any completion suggestions")
 		})
 	})
-
-	Context("Command autocompletion", func() {
-		It("Should return an empty completions list", func() {
-			Expect(runApp("complete", "gt services ")).To(BeNil())
-
-			Expect(out.GetOperations()).To(BeEmpty())
-		})
-	})
-})
+}

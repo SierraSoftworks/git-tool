@@ -1,49 +1,53 @@
 package app_test
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt config", func() {
-	var out *mocks.Output
+func TestConfig(t *testing.T) {
+	cmd := "config"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	/*----- Setup -----*/
+
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd), "it should not return an error") {
+			assert.Len(t, out.GetOperations(), 1, "it should print out the config")
+		}
 	})
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("config")).ToNot(BeNil())
-	})
+	t.Run("Auto Completion", func(t *testing.T) {
 
-	It("Should print out the current configuration file", func() {
-		Expect(runApp("config")).ToNot(HaveOccurred())
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
 
-		Expect(out.GetOperations()).To(HaveLen(1))
-		Expect(out.GetOperations()[0]).To(ContainSubstring("apps:"))
-		Expect(out.GetOperations()[0]).To(ContainSubstring("services:"))
-	})
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
+		})
 
-	Context("Root autocompletion", func() {
-		It("Should appear in the completions list", func() {
-			Expect(runApp("complete", "gt")).ToNot(HaveOccurred())
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-			Expect(out.GetOperations()).To(ContainElement("config\n"))
+			assert.Contains(t, out.GetOperations(), "list\n", "it should have 'list' as a sub command")
+			assert.Contains(t, out.GetOperations(), "add\n", "it should have 'add' as a sub command")
 		})
 	})
-
-	Context("Command autocompletion", func() {
-		It("Should return a non-empty completions list", func() {
-			Expect(runApp("complete", "gt config ")).ToNot(HaveOccurred())
-
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-		})
-	})
-})
+}

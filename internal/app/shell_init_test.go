@@ -1,98 +1,73 @@
 package app_test
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt shell-init", func() {
-	var out *mocks.Output
+func TestShellInit(t *testing.T) {
+	cmd := "shell-init"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	/*----- Setup -----*/
+
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd), "it should not return an error") {
+			assert.Len(t, out.GetOperations(), len(autocomplete.GetInitScriptShells()), "it should print out the list of shell providers")
+		}
 	})
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("shell-init")).ToNot(BeNil())
-	})
+	for _, shell := range autocomplete.GetInitScriptShells() {
+		shell := shell
 
-	It("Should print out the list of shells if there is no shell provided", func() {
-		Expect(runApp("shell-init")).To(BeNil())
-
-		Expect(out.GetOperations()).To(HaveLen(len(autocomplete.GetInitScriptShells())))
-	})
-
-	It("Should print out nothing if the shell is not found", func() {
-		Expect(runApp("shell-init", "unrecognized")).To(BeNil())
-
-		Expect(out.GetOperations()).To(BeEmpty())
-	})
-
-	Context("bash", func() {
-		It("should return the bash init script", func() {
-			Expect(runApp("shell-init", "bash")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("bash")))
+		t.Run("gt "+cmd+" "+shell, func(t *testing.T) {
+			out.Reset()
+			if assert.NoError(t, runApp(cmd, shell), "it should not return an error") {
+				assert.Contains(t, out.GetOperations(), autocomplete.GetInitScript(shell), "it should print the init script")
+			}
 		})
 
-		It("should return the full bash init script", func() {
-			Expect(runApp("shell-init", "bash", "--full")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("bash")))
+		t.Run("gt "+cmd+" "+shell+" --full", func(t *testing.T) {
+			out.Reset()
+			if assert.NoError(t, runApp(cmd, shell, "--full"), "it should not return an error") {
+				assert.Contains(t, out.GetOperations(), autocomplete.GetFullInitScript(shell), "it should print the full init script")
+			}
 		})
-	})
+	}
 
-	Context("powershell", func() {
-		It("should return the powershell init script", func() {
-			Expect(runApp("shell-init", "powershell")).To(BeNil())
+	t.Run("Auto Completion", func(t *testing.T) {
 
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("powershell")))
-		})
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
 
-		It("should return the full powershell init script", func() {
-			Expect(runApp("shell-init", "powershell", "--full")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("powershell")))
-		})
-	})
-
-	Context("zsh", func() {
-		It("should return the zsh init script", func() {
-			Expect(runApp("shell-init", "zsh")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetInitScript("zsh")))
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
 		})
 
-		It("should return the full zsh init script", func() {
-			Expect(runApp("shell-init", "zsh", "--full")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement(autocomplete.GetFullInitScript("zsh")))
-		})
-	})
-
-	Context("Root completion", func() {
-		It("Should appear in the completions list", func() {
-			Expect(runApp("complete", "shell-init")).To(BeNil())
-
-			Expect(out.GetOperations()).To(ContainElement("shell-init\n"))
-		})
-	})
-
-	Context("Command autocompletion", func() {
-		It("Should return the list of shells", func() {
-			Expect(runApp("complete", "gt shell-init ")).To(BeNil())
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
 			for _, shell := range autocomplete.GetInitScriptShells() {
-				Expect(out.GetOperations()).To(ContainElement(shell + "\n"))
+				assert.Contains(t, out.GetOperations(), shell+"\n", "it should print a completion entry for each shell")
 			}
 		})
 	})
-})
+}

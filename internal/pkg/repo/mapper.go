@@ -255,11 +255,39 @@ func (d *Mapper) GetCurrentDirectoryRepo() (models.Repo, error) {
 		devDirectory = di.GetConfig().DevelopmentDirectory()
 	}
 
-	if !strings.HasPrefix(dir, devDirectory) {
+	if !d.inDevDirectory(devDirectory, dir) {
 		logrus.WithField("path", dir).WithField("devdir", devDirectory).Debug("Not within the development directory")
 		return nil, nil
 	}
 
 	localDir := strings.Trim(filepath.ToSlash(dir[len(devDirectory):]), "/")
 	return d.GetFullyQualifiedRepo(localDir)
+}
+
+func (d *Mapper) inDevDirectory(devDirectory, path string) bool {
+	// Quick check for guaranteed misses
+	if !strings.HasPrefix(strings.ToLower(path), strings.ToLower(devDirectory)) {
+		logrus.WithField("devdir", devDirectory).WithField("path", path).Debug("Dev directory match failed case-insensitive comparison")
+		return false
+	}
+
+	devStat, err := os.Stat(devDirectory)
+	if err != nil {
+		if os.IsNotExist(err) {
+			logrus.WithField("path", devDirectory).Error("Development directory does not exist")
+			return false
+		}
+
+		logrus.WithError(err).Debug("Failed to stat development directory")
+		return false
+	}
+
+	pathStat, err := os.Stat(path[:len(devDirectory)])
+	if err != nil {
+		logrus.WithField("path", path[:len(devDirectory)]).WithError(err).Debug("Failed to open dev directory in repo path")
+		return false
+	}
+
+	logrus.WithField("devdir", devDirectory).WithField("path", path[:len(devDirectory)]).Debug("Comparing dev directory paths using os.SameFile")
+	return os.SameFile(devStat, pathStat)
 }
