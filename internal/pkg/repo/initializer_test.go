@@ -125,7 +125,7 @@ func TestInitializer(t *testing.T) {
 					HttpTransport: true,
 				})
 
-				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "git-fixtures/basic")
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/licenses")
 				os.RemoveAll(r.Path())
 				defer os.RemoveAll(r.Path())
 
