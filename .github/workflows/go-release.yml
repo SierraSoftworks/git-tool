@@ -47,5 +47,5 @@ jobs:
       with:
         name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
         path: "bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
         content-type: application/octet-stream
