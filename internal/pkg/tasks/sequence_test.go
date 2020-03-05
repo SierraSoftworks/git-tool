@@ -1,153 +1,81 @@
 package tasks_test
 
 import (
-	"os"
+	"testing"
 
-	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tasks"
 	"github.com/SierraSoftworks/git-tool/pkg/models"
-	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("Sequenced Tasks", func() {
-	var (
-		out    *mocks.Output
-		launch *mocks.Launcher
-		r      models.Repo
-		sp     models.Scratchpad
-		cfg    *mocks.Config
-		err    error
-	)
+func TestSequence(t *testing.T) {
+	r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
+	sp := repo.NewScratchpad("2019w15")
 
-	BeforeEach(func() {
-		cfg = mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-		out = &mocks.Output{}
-		launch = &mocks.Launcher{}
-		di.SetOutput(out)
-		di.SetLauncher(launch)
-		di.SetMapper(&repo.Mapper{})
-		di.SetInitializer(&repo.Initializer{})
-		di.SetConfig(cfg)
+	t.Run("No Tasks", func(t *testing.T) {
+		seq := tasks.Sequence()
+		require.NotNil(t, seq, "it should return a task")
 
-		r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-		sp = repo.NewScratchpad("2019w15")
+		assert.NoError(t, seq.ApplyRepo(r), "it should not return an error when applied to a repo")
+		assert.NoError(t, seq.ApplyScratchpad(sp), "it should not return an error when applied to a scratchpad")
 	})
 
-	AfterEach(func() {
-		os.Chdir(test.GetProjectRoot())
-	})
-
-	Describe("Sequence()", func() {
-		Context("When called with no tasks", func() {
-			It("Should return a task", func() {
-				Expect(tasks.Sequence()).ToNot(BeNil())
-			})
-
-			Context("when applied to a repo", func() {
-				BeforeEach(func() {
-					err = tasks.Sequence().ApplyRepo(r)
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-			})
-
-			Context("when applied to a scratchpad", func() {
-				BeforeEach(func() {
-					err = tasks.Sequence().ApplyScratchpad(sp)
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-			})
-		})
-
-		Context("When called with a sequence of tasks", func() {
+	t.Run("With Tasks", func(t *testing.T) {
+		t.Run("On a Repo", func(t *testing.T) {
 			var (
 				firstCalled  = false
 				secondCalled = false
 			)
 
-			BeforeEach(func() {
-				err = nil
-				firstCalled = false
+			seq := tasks.Sequence(&TestTask{
+				OnRepo: func(rr models.Repo) error {
+					firstCalled = true
+					assert.False(t, secondCalled, "the second task should not be called before the first")
+					assert.Equal(t, r, rr, "the correct repository should be passed to the task")
+					return nil
+				},
+			}, &TestTask{
+				OnRepo: func(rr models.Repo) error {
+					secondCalled = true
+					assert.True(t, firstCalled, "the first task should be called before the second")
+					assert.Equal(t, r, rr, "the correct repository should be passed to the task")
+					return nil
+				},
+			})
+
+			assert.NoError(t, seq.ApplyRepo(r), "it should not return an error")
+			assert.True(t, firstCalled, "it should have called the first task")
+			assert.True(t, secondCalled, "it should have called the second task")
+		})
+
+		t.Run("On a Scratchpad", func(t *testing.T) {
+			var (
+				firstCalled  = false
 				secondCalled = false
+			)
+
+			seq := tasks.Sequence(&TestTask{
+				OnScratchpad: func(ssp models.Scratchpad) error {
+					firstCalled = true
+					assert.False(t, secondCalled, "the second task should not be called before the first")
+					assert.Equal(t, sp, ssp, "the correct scratchpad should be passed to the task")
+					return nil
+				},
+			}, &TestTask{
+				OnScratchpad: func(ssp models.Scratchpad) error {
+					secondCalled = true
+					assert.True(t, firstCalled, "the first task should be called before the second")
+					assert.Equal(t, sp, ssp, "the correct scratchpad should be passed to the task")
+					return nil
+				},
 			})
 
-			Context("when applied to a repo", func() {
-				BeforeEach(func() {
-					t := tasks.Sequence(&TestTask{
-						OnRepo: func(rr models.Repo) error {
-							firstCalled = true
-							Expect(secondCalled).To(BeFalse())
-							Expect(rr).To(Equal(r))
-							return nil
-						},
-					}, &TestTask{
-						OnRepo: func(rr models.Repo) error {
-							secondCalled = true
-							Expect(firstCalled).To(BeTrue())
-							Expect(rr).To(Equal(r))
-							return nil
-						},
-					})
-					
-					err = t.ApplyRepo(r)
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("Should have called the first task", func() {
-					Expect(firstCalled).To(BeTrue())
-				})
-
-				It("Should have called the second task", func() {
-					Expect(secondCalled).To(BeTrue())
-				})
-			})
-
-			Context("when applied to a scratchpad", func() {
-				BeforeEach(func() {
-					t := tasks.Sequence(&TestTask{
-						OnScratchpad: func(ss models.Scratchpad) error {
-							firstCalled = true
-							Expect(secondCalled).To(BeFalse())
-							Expect(ss).To(Equal(sp))
-							return nil
-						},
-					}, &TestTask{
-						OnScratchpad: func(ss models.Scratchpad) error {
-							secondCalled = true
-							Expect(firstCalled).To(BeTrue())
-							Expect(ss).To(Equal(sp))
-							return nil
-						},
-					})
-
-					err = t.ApplyScratchpad(sp)
-				})
-
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("Should have called the first task", func() {
-					Expect(firstCalled).To(BeTrue())
-				})
-
-				It("Should have called the second task", func() {
-					Expect(secondCalled).To(BeTrue())
-				})
-			})
+			assert.NoError(t, seq.ApplyScratchpad(sp), "it should not return an error")
+			assert.True(t, firstCalled, "it should have called the first task")
+			assert.True(t, secondCalled, "it should have called the second task")
 		})
 	})
-})
+}

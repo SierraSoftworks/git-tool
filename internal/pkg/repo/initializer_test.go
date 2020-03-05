@@ -3,279 +3,148 @@ package repo_test
 import (
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("Initializer", func() {
-	var (
-		out    *mocks.Output
-		launch *mocks.Launcher
-		r      models.Repo
-		sp     models.Scratchpad
-		cfg    *mocks.Config
-		err    error
-	)
+func TestInitializer(t *testing.T) {
+	cfg := mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	require.NotNil(t, cfg, "we should have a config")
+	out := &mocks.Output{}
 
-	BeforeEach(func() {
-		cfg = mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-		out = &mocks.Output{}
-		launch = &mocks.Launcher{}
-		di.SetOutput(out)
-		di.SetLauncher(launch)
-		di.SetMapper(&repo.Mapper{})
-		di.SetInitializer(&repo.Initializer{})
-		di.SetConfig(cfg)
-	})
+	di.SetConfig(cfg)
+	di.SetOutput(out)
+	di.SetLauncher(di.DefaultLauncher())
+	di.SetInitializer(&repo.Initializer{})
+	di.SetMapper(&repo.Mapper{})
 
-	AfterEach(func() {
-		os.Chdir(test.GetProjectRoot())
-	})
+	reset := func() {
+		cfg.Reset(config.DefaultForDirectory(test.GetTestPath("devdir")))
+		out.Reset()
+	}
 
-	Describe("CreateScratchpad()", func() {
-		Context("when the directory exists", func() {
-			BeforeEach(func() {
-				sp = repo.NewScratchpad("2019w15")
-				err = di.GetInitializer().CreateScratchpad(sp)
-			})
+	t.Run("CreateScratchpad()", func(t *testing.T) {
+		t.Run("Existing", func(t *testing.T) {
+			reset()
 
-			It("should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should not log anything", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("should leave the directory in place", func() {
-				Expect(sp.Exists()).To(BeTrue())
-			})
+			sp := repo.NewScratchpad("2019w15")
+			assert.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
+			assert.Empty(t, out.GetOperations(), "it should not log anything")
+			assert.True(t, sp.Exists(), "it should leave the directory in place")
 		})
 
-		Context("when the directory doesn't exist", func() {
-			BeforeEach(func() {
-				sp = repo.NewScratchpad("2019w01")
-				err = di.GetInitializer().CreateScratchpad(sp)
-			})
+		t.Run("New", func(t *testing.T) {
+			reset()
 
-			AfterEach(func() {
-				os.RemoveAll(sp.Path())
-			})
+			sp := repo.NewScratchpad("2019w01")
+			defer os.RemoveAll(sp.Path())
 
-			It("should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should not log anything", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("should create the directory", func() {
-				s := repo.NewScratchpad("2019w15")
-				Expect(s.Exists()).To(BeTrue())
-			})
+			assert.NoError(t, di.GetInitializer().CreateScratchpad(sp), "it should not return an error")
+			assert.Empty(t, out.GetOperations(), "it should not log anything")
+			assert.True(t, sp.Exists(), "it should create the directory")
 		})
 	})
 
-	Describe("CreateRepository()", func() {
-		BeforeEach(func() {
+	t.Run("CreateRepository()", func(t *testing.T) {
+		t.Run("Existing", func(t *testing.T) {
+			reset()
+
 			cfg.SetFeatures(&config.Features{
 				NativeClone:  false,
 				CreateRemote: false,
 			})
+
+			r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test2")
+			defer os.RemoveAll(filepath.Join(r.Path(), ".git"))
+
+			assert.True(t, r.Exists(), "the repo should exist to start with")
+			assert.False(t, r.Valid(), "the repo should not be valid to start with")
+
+			assert.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
+			assert.Empty(t, out.GetOperations(), "it should not have logged anything")
+			assert.True(t, r.Exists(), "the repo should exist")
+			assert.True(t, r.Valid(), "the repo should be initialized")
 		})
 
-		Context("when the repo doesn't exist", func() {
-			BeforeEach(func() {
-				r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
-				err = di.GetInitializer().CreateRepository(r)
+		t.Run("New", func(t *testing.T) {
+			reset()
+
+			cfg.SetFeatures(&config.Features{
+				NativeClone:  false,
+				CreateRemote: false,
 			})
 
-			AfterEach(func() {
+			r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
+			defer os.RemoveAll(r.Path())
+
+			assert.False(t, r.Exists(), "the repo should not exist to start with")
+
+			assert.NoError(t, di.GetInitializer().CreateRepository(r), "it should not return an error")
+			assert.Empty(t, out.GetOperations(), "it should not have logged anything")
+			assert.True(t, r.Exists(), "the repo should exist")
+			assert.True(t, r.Valid(), "the repo should be initialized")
+		})
+	})
+
+	t.Run("CloneRepository()", func(t *testing.T) {
+		runTest := func(t *testing.T, nativeClone bool) {
+			t.Run("Existing", func(t *testing.T) {
+				reset()
+
+				cfg.SetFeatures(&config.Features{
+					NativeClone:   nativeClone,
+					CreateRemote:  false,
+					HttpTransport: true,
+				})
+
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
+				defer os.RemoveAll(filepath.Join(r.Path(), ".git"))
+
+				assert.True(t, r.Exists(), "the repo should exist to start with")
+				assert.False(t, r.Valid(), "the repo should not be valid to start with")
+
+				assert.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
+				assert.Empty(t, out.GetOperations(), "it should not have logged anything")
+				assert.True(t, r.Exists(), "the repo should exist")
+				assert.False(t, r.Valid(), "the repo should not have modified the repo")
+			})
+
+			t.Run("New", func(t *testing.T) {
+				reset()
+
+				cfg.SetFeatures(&config.Features{
+					NativeClone:   nativeClone,
+					CreateRemote:  false,
+					HttpTransport: true,
+				})
+
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/licenses")
 				os.RemoveAll(r.Path())
-			})
+				defer os.RemoveAll(r.Path())
 
-			It("should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
+				assert.False(t, r.Exists(), "the repo should not exist to start with")
 
-			It("should not log anything", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
+				assert.NoError(t, di.GetInitializer().CloneRepository(r), "it should not return an error")
+				assert.NotEmpty(t, out.GetOperations(), "it should log the clone progress")
+				assert.True(t, r.Exists(), "the repo should exist")
+				assert.True(t, r.Valid(), "the repo should be valid")
 
-			It("should have created the repo", func() {
-				Expect(r.Exists()).To(BeTrue())
 			})
+		}
 
-			It("should have initialized the repo", func() {
-				Expect(r.Valid()).To(BeTrue())
-			})
+		t.Run("Integrated Cloning", func(t *testing.T) {
+			runTest(t, false)
 		})
 
-		Context("when the repo exists", func() {
-			BeforeEach(func() {
-				r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test2")
-				err = di.GetInitializer().CreateRepository(r)
-			})
-
-			AfterEach(func() {
-				os.RemoveAll(filepath.Join(r.Path(), ".git"))
-			})
-
-			It("should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should not log anything", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("should have created the repo", func() {
-				Expect(r.Exists()).To(BeTrue())
-			})
-
-			It("should have initialized the repo", func() {
-				Expect(r.Valid()).To(BeTrue())
-			})
+		t.Run("Native Cloning", func(t *testing.T) {
+			runTest(t, true)
 		})
 	})
-
-	Describe("CloneRepository()", func() {
-		Context("when using integrated cloning", func() {
-			BeforeEach(func() {
-				cfg.SetFeatures(&config.Features{
-					NativeClone:   false,
-					CreateRemote:  false,
-					HttpTransport: true,
-				})
-			})
-
-			Context("when the repo already exists", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-					err = di.GetInitializer().CloneRepository(r)
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(filepath.Join(r.Path(), ".git"))
-				})
-
-				It("should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("should have created the repo", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("should not have modified the repo", func() {
-					Expect(r.Valid()).To(BeFalse())
-				})
-			})
-
-			Context("when the repo doesn't exist", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/git-tool")
-					err = di.GetInitializer().CloneRepository(r)
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(r.Path())
-				})
-
-				It("should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should log the clone progress", func() {
-					Expect(out.GetOperations()).ToNot(BeEmpty())
-				})
-
-				It("should have created the repo", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("should have a valid repo", func() {
-					Expect(r.Valid()).To(BeTrue())
-				})
-			})
-		})
-
-		Context("when using native cloning", func() {
-			BeforeEach(func() {
-				cfg.SetFeatures(&config.Features{
-					NativeClone:   true,
-					CreateRemote:  false,
-					HttpTransport: true,
-				})
-
-				di.SetLauncher(di.DefaultLauncher())
-			})
-
-			Context("when the repo already exists", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-					err = di.GetInitializer().CloneRepository(r)
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(filepath.Join(r.Path(), ".git"))
-				})
-
-				It("should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
-
-				It("should have created the repo", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("should not have modified the repo", func() {
-					Expect(r.Valid()).To(BeFalse())
-				})
-			})
-
-			Context("when the repo doesn't exist", func() {
-				BeforeEach(func() {
-					r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/git-tool")
-					err = di.GetInitializer().CloneRepository(r)
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(r.Path())
-				})
-
-				It("should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should log the clone progress", func() {
-					Expect(out.GetOperations()).ToNot(BeEmpty())
-				})
-
-				It("should have created the repo", func() {
-					Expect(r.Exists()).To(BeTrue())
-				})
-
-				It("should have a valid repo", func() {
-					Expect(r.Valid()).To(BeTrue())
-				})
-			})
-		})
-	})
-})
+}

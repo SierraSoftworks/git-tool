@@ -8,10 +8,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var repoInfoCommand = cli.Command{
+var repoInfoCommand = &cli.Command{
 	Name: "info",
 	Aliases: []string{
 		"i",
@@ -46,7 +46,7 @@ var repoInfoCommand = cli.Command{
 			return
 		}
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 
 		cmp.RepoAliases()
 		cmp.DefaultServiceRepos()

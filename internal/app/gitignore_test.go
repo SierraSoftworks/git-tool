@@ -1,105 +1,68 @@
 package app_test
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt ignore", func() {
-	var (
-		out *mocks.Output
-		err error
-	)
+func TestGitIgnore(t *testing.T) {
+	cmd := "ignore"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	/*----- Setup -----*/
+
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd), "it should not return an error") {
+			assert.Contains(t, out.GetOperations(), " - csharp\n", "it should print out a list of valid languages")
+		}
 	})
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("ignore")).ToNot(BeNil())
+	t.Run("gt "+cmd+" go", func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd, "go"), "it should not return an error") {
+			assert.Len(t, out.GetOperations(), 1, "it should print only the ignore file")
+			assert.Contains(t, out.GetOperations()[0], ".exe~", "it should print the ignore file itself")
+		}
 	})
 
-	Context("With no arguments", func() {
-		BeforeEach(func() {
-			err = runApp("ignore")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should return the list of valid languages", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement(" - csharp\n"))
-			Expect(out.GetOperations()).To(ContainElement(" - go\n"))
-		})
+	t.Run("gt "+cmd+" go node", func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd, "go", "node"), "it should not return an error") {
+			assert.Len(t, out.GetOperations(), 1, "it should print only the ignore file")
+			assert.Contains(t, out.GetOperations()[0], ".exe~", "it should print the ignore file itself")
+			assert.Contains(t, out.GetOperations()[0], "node_modules", "it should merge the ignore files")
+		}
 	})
 
-	Context("With a single language provided", func() {
-		BeforeEach(func() {
-			err = runApp("ignore", "go")
+	t.Run("Auto Completion", func(t *testing.T) {
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
+
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
 		})
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-		It("Should return the ignore file", func() {
-			Expect(out.GetOperations()).To(HaveLen(1))
-			Expect(out.GetOperations()[0]).To(ContainSubstring(".exe~"))
+			assert.Contains(t, out.GetOperations(), "csharp\n", "it should print out a list of valid languages")
 		})
 	})
-
-	Context("With multiple languages provided", func() {
-		BeforeEach(func() {
-			err = runApp("ignore", "go", "node")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should return the ignore files", func() {
-			Expect(out.GetOperations()).To(HaveLen(1))
-			Expect(out.GetOperations()[0]).To(ContainSubstring(".exe~"))
-			Expect(out.GetOperations()[0]).To(ContainSubstring("node_modules"))
-		})
-	})
-
-	Context("Root autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should appear in the completions list", func() {
-			Expect(out.GetOperations()).To(ContainElement("ignore\n"))
-		})
-	})
-
-	Context("Command autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt ignore ")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should return a completion list with the list of valid languages", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("csharp\n"))
-			Expect(out.GetOperations()).To(ContainElement("go\n"))
-		})
-	})
-})
+}

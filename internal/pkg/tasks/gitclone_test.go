@@ -2,157 +2,106 @@ package tasks_test
 
 import (
 	"os"
+	"path/filepath"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tasks"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("Git Clone Task", func() {
-	var (
-		out *mocks.Output
-		r   models.Repo
-		sp  models.Scratchpad
-		cfg *mocks.Config
-		err error
-	)
+func TestGitClone(t *testing.T) {
+	cfg := mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetLauncher(di.DefaultLauncher())
+	di.SetMapper(&repo.Mapper{})
+	di.SetInitializer(&repo.Initializer{})
+	di.SetConfig(cfg)
 
-	BeforeEach(func() {
-		cfg = mocks.NewConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetLauncher(di.DefaultLauncher())
-		di.SetMapper(&repo.Mapper{})
-		di.SetInitializer(&repo.Initializer{})
-		di.SetConfig(cfg)
+	task := tasks.GitClone()
 
-		r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-		sp = repo.NewScratchpad("2019w15")
-	})
-
-	AfterEach(func() {
-		os.Chdir(test.GetProjectRoot())
-	})
-
-	Describe("GitClone()", func() {
-		runCloneTests := func() {
-			Context("when applied to a repo", func() {
-				JustBeforeEach(func() {
-					err = tasks.GitClone().ApplyRepo(r)
-				})
-
-				Context("which doesn't exist remotely", func() {
-					BeforeEach(func() {
-						r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test3")
-					})
-
-					AfterEach(func() {
-						os.RemoveAll(r.Path())
-					})
-
-					It("Should return an error", func() {
-						Expect(err).To(HaveOccurred())
-					})
-
-					It("Should not have created the repo folder", func() {
-						Expect(r.Exists()).To(BeFalse())
-					})
-				})
-
-				Context("which doesn't exist locally", func() {
-					BeforeEach(func() {
-						r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/licenses")
-					})
-
-					AfterEach(func() {
-						os.RemoveAll(r.Path())
-					})
-
-					It("should log the clone progress", func() {
-						Expect(out.GetOperations()).ToNot(BeEmpty())
-					})
-
-					It("Should not return an error", func() {
-						Expect(err).ToNot(HaveOccurred())
-					})
-
-					It("Should have created the repo folder", func() {
-						Expect(r.Exists()).To(BeTrue())
-					})
-				})
-
-				Context("which exists locally", func() {
-					BeforeEach(func() {
-						r = repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
-					})
-
-					It("should not log anything", func() {
-						Expect(out.GetOperations()).To(BeEmpty())
-					})
-
-					It("Should not return an error", func() {
-						Expect(err).ToNot(HaveOccurred())
-					})
-
-					It("Should still have the local repo folder", func() {
-						Expect(r.Exists()).To(BeTrue())
-					})
-				})
+	t.Run("Repo", func(t *testing.T) {
+		runTests := func(t *testing.T, nativeClone bool) {
+			cfg.SetFeatures(&config.Features{
+				NativeClone:   false,
+				CreateRemote:  false,
+				HttpTransport: true,
 			})
 
-			Context("when applied to a scratchpad", func() {
-				JustBeforeEach(func() {
-					sp = repo.NewScratchpad("2019w28")
-					err = tasks.GitClone().ApplyScratchpad(sp)
-				})
+			t.Run("Empty", func(t *testing.T) {
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "git-fixtures/empty")
+				defer os.RemoveAll(r.Path())
+				out.Reset()
 
-				AfterEach(func() {
-					os.RemoveAll(sp.Path())
-				})
+				assert.Error(t, task.ApplyRepo(r), "it should return an error")
+				assert.Empty(t, out.GetOperations(), "it should not log anything")
+				assert.False(t, r.Exists(), "it should not have created the repository folder")
+			})
 
-				It("Should not return an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+			t.Run("Missing", func(t *testing.T) {
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "git-fixtures/basic")
+				defer os.RemoveAll(r.Path())
+				out.Reset()
 
-				It("should not log anything", func() {
-					Expect(out.GetOperations()).To(BeEmpty())
-				})
+				assert.NoError(t, task.ApplyRepo(r), "it should not return an error")
+				assert.NotEmpty(t, out.GetOperations(), "it should log the cloning progress")
+				assert.True(t, r.Exists(), "it should have created the repository folder")
+				assert.True(t, r.Valid(), "it should have initialized the repository")
+			})
 
-				It("Should not have created the scratchpad folder", func() {
-					Expect(sp.Exists()).To(BeFalse())
-				})
+			t.Run("Uninitialized", func(t *testing.T) {
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test1")
+				defer os.RemoveAll(filepath.Join(r.Path(), ".git"))
+				out.Reset()
+
+				assert.NoError(t, task.ApplyRepo(r), "it should return an error")
+				assert.Empty(t, out.GetOperations(), "it should not log anything")
+				assert.True(t, r.Exists(), "the repository folder should still exist")
+				assert.False(t, r.Valid(), "it should not have initialized the repository")
+			})
+
+			t.Run("Valid Repo", func(t *testing.T) {
+				r := repo.NewRepo(di.GetConfig().GetService("github.com"), "sierrasoftworks/test4")
+				defer os.RemoveAll(r.Path())
+
+				require.NoError(t, tasks.Sequence(
+					tasks.NewFolder(),
+					tasks.GitInit(),
+					tasks.GitRemote("origin"),
+					tasks.NewFile("README.md", []byte("# Test Repo")),
+					tasks.GitCommit("Initial Commit", "README.md"),
+					tasks.GitCheckout("master", false),
+				).ApplyRepo(r), "the repository should be setup correctly for the test")
+
+				assert.NoError(t, task.ApplyRepo(r), "it should return an error")
+				assert.Empty(t, out.GetOperations(), "it should not log anything")
+				assert.True(t, r.Exists(), "the repository folder should still exist")
+				assert.True(t, r.Valid(), "the repository should still be valid")
 			})
 		}
 
-		Context("when using integrated cloning", func() {
-			BeforeEach(func() {
-				cfg.SetFeatures(&config.Features{
-					NativeClone:   false,
-					CreateRemote:  false,
-					HttpTransport: true,
-				})
-			})
-
-			runCloneTests()
+		t.Run("Integrated Cloning", func(t *testing.T) {
+			runTests(t, false)
 		})
 
-		Context("when using native cloning", func() {
-			BeforeEach(func() {
-				cfg.SetFeatures(&config.Features{
-					NativeClone:   true,
-					CreateRemote:  false,
-					HttpTransport: true,
-				})
-			})
-
-			runCloneTests()
+		t.Run("Native Cloning", func(t *testing.T) {
+			runTests(t, true)
 		})
-
 	})
-})
+
+	t.Run("Scratchpad", func(t *testing.T) {
+		sp := repo.NewScratchpad("2019w28")
+		defer os.RemoveAll(sp.Path())
+		out.Reset()
+
+		require.NoError(t, task.ApplyScratchpad(sp), "it should not return an error")
+		assert.Empty(t, out.GetOperations(), "it should not log anything")
+		assert.False(t, sp.Exists(), "it should not have created the scratchpad folder")
+	})
+}

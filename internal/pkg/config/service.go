@@ -58,13 +58,7 @@ func (s *service) getTemplate(tmpl string, r models.Repo) (string, error) {
 	}
 
 	buf := bytes.NewBuffer([]byte{})
-	if err := t.Execute(buf, struct {
-		Service models.Service
-		Repo    models.Repo
-	}{
-		Service: r.Service(),
-		Repo:    r,
-	}); err != nil {
+	if err := t.Execute(buf, r.TemplateContext()); err != nil {
 		return "", err
 	}
 

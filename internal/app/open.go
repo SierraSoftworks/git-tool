@@ -7,10 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var openAppCommand = cli.Command{
+var openAppCommand = &cli.Command{
 	Name: "open",
 	Aliases: []string{
 		"run",
@@ -23,13 +23,13 @@ var openAppCommand = cli.Command{
 		tracing.Enter("/app/command/open")
 		defer tracing.Exit()
 
-		args := c.Args()
+		args := c.Args().Slice()
 
 		app := di.GetConfig().GetApp(c.Args().First())
 		if app == nil {
 			app = di.GetConfig().GetDefaultApp()
 		} else {
-			args = cli.Args(c.Args().Tail())
+			args = c.Args().Tail()
 		}
 
 		if app == nil && c.NArg() > 0 {
@@ -40,7 +40,12 @@ var openAppCommand = cli.Command{
 
 		logrus.WithField("app", app.Name()).Debug("Found matching app configuration")
 
-		r, err := di.GetMapper().GetBestRepo(args.First())
+		firstArg := ""
+		if len(args) > 0 {
+			firstArg = args[0]
+		}
+
+		r, err := di.GetMapper().GetBestRepo(firstArg)
 		if err != nil {
 			return err
 		}
@@ -75,7 +80,7 @@ var openAppCommand = cli.Command{
 		tracing.Enter("/app/complete/open")
 		defer tracing.Exit()
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 
 		if c.NArg() == 0 {
 			cmp.Apps()

@@ -1,87 +1,33 @@
 package autocomplete_test
 
 import (
-	"fmt"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 )
 
-var _ = Describe("Init", func() {
-	Describe("GetInitScript()", func() {
-		cases := []struct {
-			Shell    string
-			HasValue bool
-		}{
-			{"powershell", true},
-			{"bash", true},
-			{"zsh", true},
-			{"cmd", false},
-			{"fish", false},
+func TestInitScripts(t *testing.T) {
+	cases := []struct {
+		Shell    string
+		HasValue bool
+	}{
+		{"powershell", true},
+		{"bash", true},
+		{"zsh", true},
+		{"cmd", false},
+		{"fish", false},
+	}
+
+	for _, tc := range cases {
+		if tc.HasValue {
+			assert.NotEmptyf(t, autocomplete.GetInitScript(tc.Shell), "GetInitScript('%s') should return the init script", tc.Shell)
+			assert.NotEmptyf(t, autocomplete.GetFullInitScript(tc.Shell), "GetFullInitScript('%s') should return the init script", tc.Shell)
+			assert.Containsf(t, autocomplete.GetInitScriptShells(), tc.Shell, "GetInitScriptShells() should contain '%s'", tc.Shell)
+		} else {
+			assert.Emptyf(t, autocomplete.GetInitScript(tc.Shell), "GetInitScript('%s') should not return an init script", tc.Shell)
+			assert.Emptyf(t, autocomplete.GetFullInitScript(tc.Shell), "GetFullInitScript('%s') should not return an init script", tc.Shell)
+			assert.NotContainsf(t, autocomplete.GetInitScriptShells(), tc.Shell, "GetInitScriptShells() should not contain '%s'", tc.Shell)
 		}
-
-		for _, tc := range cases {
-			shell := tc.Shell
-			expected := tc.HasValue
-
-			Context(fmt.Sprintf("GetInitScript('%s') -> %v", tc.Shell, tc.HasValue), func() {
-				if expected {
-					It("Should have an init script", func() {
-						Expect(autocomplete.GetInitScript(shell)).ToNot(BeEmpty())
-					})
-				} else {
-					It("Should not have an init script", func() {
-						Expect(autocomplete.GetInitScript(shell)).To(BeEmpty())
-					})
-				}
-			})
-		}
-	})
-
-	Describe("GetInitScriptFull()", func() {
-		cases := []struct {
-			Shell    string
-			HasValue bool
-		}{
-			{"powershell", true},
-			{"bash", true},
-			{"zsh", true},
-			{"cmd", false},
-			{"fish", false},
-		}
-
-		for _, tc := range cases {
-			shell := tc.Shell
-			expected := tc.HasValue
-
-			Context(fmt.Sprintf("GetFullInitScript('%s') -> %v", tc.Shell, tc.HasValue), func() {
-				if expected {
-					It("Should have an init script", func() {
-						Expect(autocomplete.GetInitScript(shell)).ToNot(BeEmpty())
-					})
-				} else {
-					It("Should not have an init script", func() {
-						Expect(autocomplete.GetInitScript(shell)).To(BeEmpty())
-					})
-				}
-			})
-		}
-	})
-
-	Describe("GetInitScriptShells()", func() {
-		cases := []string{
-			"powershell",
-			"bash",
-			"zsh",
-		}
-
-		for _, tc := range cases {
-			shell := tc
-
-			It(fmt.Sprintf("Should contain %s", shell), func() {
-				Expect(autocomplete.GetInitScriptShells()).To(ContainElement(shell))
-			})
-		}
-	})
-})
+	}
+}

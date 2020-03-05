@@ -1,7 +1,9 @@
 package app_test
 
 import (
+	"fmt"
 	"os"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
@@ -9,135 +11,72 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt info", func() {
-	var (
-		out *mocks.Output
-		err error
-	)
+func TestInfo(t *testing.T) {
+	cmd := "info"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-	})
+	/*----- Setup -----*/
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("info")).ToNot(BeNil())
-	})
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 
-	Context("With no arguments", func() {
-		BeforeEach(func() {
-			os.Chdir(test.GetProjectRoot())
+	repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
+	require.NoError(t, err, "we should be able to get the test repo")
+	require.NotNil(t, repo, "we should be able to get the test repo")
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		t.Run("Outside Repo", func(t *testing.T) {
+			out.Reset()
+			assert.Error(t, runApp(cmd), "it should return an error if you're not in the repo's directory")
 		})
 
-		AfterEach(func() {
-			os.Chdir(test.GetProjectRoot())
-		})
+		t.Run("Inside Repo", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, os.Chdir(repo.Path()), "we should be able to switch to the repo")
+			defer os.Chdir(test.GetProjectRoot())
 
-		JustBeforeEach(func() {
-			err = runApp("info")
-		})
-
-		Context("When not in a repository's directory", func() {
-			It("Should return an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-
-			It("Should inform the user in the error of why the command failed", func() {
-				Expect(err.Error()).To(Equal("usage: no repository specified"))
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-		})
-
-		Context("When in a repository's directory", func() {
-			BeforeEach(func() {
-				os.Chdir(test.GetTestPath("devdir", "github.com", "sierrasoftworks", "test1"))
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should print information about the repository", func() {
-				Expect(out.GetOperations()).To(HaveLen(1))
-
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out.GetOperations()[0]).To(Equal(templates.RepoFullInfo(repo) + "\n"))
-			})
+			if assert.NoError(t, runApp(cmd), "it should not return an error") {
+				assert.Contains(t, out.GetOperations(), templates.RepoFullInfo(repo)+"\n", "it should print the repo's full info")
+			}
 		})
 	})
 
-	Context("With a repository provided", func() {
-		BeforeEach(func() {
-			err = runApp("info", "github.com/sierrasoftworks/test1")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should print information about the repository", func() {
-			Expect(out.GetOperations()).To(HaveLen(1))
-
-			repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out.GetOperations()[0]).To(Equal(templates.RepoFullInfo(repo) + "\n"))
-		})
+	t.Run("gt "+cmd+" existing_repo", func(t *testing.T) {
+		out.Reset()
+		if assert.NoError(t, runApp(cmd, templates.RepoQualifiedName(repo)), "it should not return an error") {
+			assert.Contains(t, out.GetOperations(), templates.RepoFullInfo(repo)+"\n", "it should print the repo's full info")
+		}
 	})
 
-	Context("With a bad repository name provided", func() {
-		BeforeEach(func() {
-			err = runApp("info", "badhubgit.orgcom/sierrasoftworks/missing")
-		})
+	t.Run("gt "+cmd+" invalid_repo", func(t *testing.T) {
+		out.Reset()
+		assert.Error(t, runApp(cmd, "invalidreponame"), "it should return an error")
 
-		It("Should return an error", func() {
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("usage: could not find repository"))
-		})
-
-		It("Should not print any output", func() {
-			Expect(out.GetOperations()).To(BeEmpty())
-		})
+		assert.Empty(t, out.GetOperations(), "it should not print any other output")
 	})
 
-	Context("Root autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt")
+	t.Run("Auto Completion", func(t *testing.T) {
+
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
+
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
 		})
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-		It("Should appear in the completions list", func() {
-			Expect(out.GetOperations()).To(ContainElement("info\n"))
+			assert.Contains(t, out.GetOperations(), "github.com/sierrasoftworks/test1\n", "it should print a list of repos")
 		})
 	})
-
-	Context("Command autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt info ")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should return a completion list with the list of known repositories", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("github.com/sierrasoftworks/test1\n"))
-			Expect(out.GetOperations()).To(ContainElement("github.com/sierrasoftworks/test2\n"))
-		})
-	})
-})
+}

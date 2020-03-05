@@ -2,216 +2,150 @@ package app_test
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt scratch", func() {
-	var (
-		out    *mocks.Output
-		launch *mocks.Launcher
-		init   *mocks.Initializer
-		err    error
-	)
+func TestScratch(t *testing.T) {
+	cmd := "scratch"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		launch = &mocks.Launcher{}
-		init = &mocks.Initializer{}
-		di.SetOutput(out)
-		di.SetLauncher(launch)
-		di.SetInitializer(init)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	/*----- Setup -----*/
+
+	out := &mocks.Output{}
+	init := &mocks.Initializer{}
+	launch := &mocks.Launcher{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	di.SetInitializer(init)
+	defer di.SetInitializer(&repo.Initializer{})
+	di.SetLauncher(launch)
+	defer di.SetLauncher(di.DefaultLauncher())
+
+	reset := func() {
+		out.Reset()
+		launch.Reset()
+		init.Reset()
+	}
+
+	year, week := time.Now().UTC().ISOWeek()
+	yearweek := fmt.Sprintf("%dw%d", year, week)
+	sp, err := di.GetMapper().GetScratchpad(yearweek)
+	require.NoError(t, err, "we should be able to get the current scratchpad")
+	require.NotNil(t, sp, "the current scratchpad should not be nil")
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		reset()
+
+		if assert.NoError(t, runApp(cmd), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+			assert.Contains(t, init.MockCalls, struct {
+				Function string
+				Target   models.Target
+			}{
+				Function: "CreateScratchpad",
+				Target:   sp,
+			}, "it should attempt to create the scratchpad")
+
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, sp.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the scratchpad directory")
+		}
 	})
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("open")).ToNot(BeNil())
+	t.Run("gt "+cmd+" app", func(t *testing.T) {
+		reset()
+
+		if assert.NoError(t, runApp(cmd, "shell"), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+			assert.Contains(t, init.MockCalls, struct {
+				Function string
+				Target   models.Target
+			}{
+				Function: "CreateScratchpad",
+				Target:   sp,
+			}, "it should attempt to create the scratchpad")
+
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, sp.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the scratchpad directory")
+		}
 	})
 
-	Context("With no arguments", func() {
-		year, week := time.Now().UTC().ISOWeek()
-		currentScratchpad := fmt.Sprintf("%dw%d", year, week)
+	t.Run("gt "+cmd+" new_sp", func(t *testing.T) {
+		reset()
 
-		Context("When the scratchpad doesn't exist", func() {
-			BeforeEach(func() {
-				err = runApp("scratch")
-			})
+		if assert.NoError(t, runApp(cmd, sp.Name()), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+			assert.Contains(t, init.MockCalls, struct {
+				Function string
+				Target   models.Target
+			}{
+				Function: "CreateScratchpad",
+				Target:   sp,
+			}, "it should attempt to create the scratchpad")
 
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should create the scratchpad", func() {
-				repo, err := di.GetMapper().GetScratchpad(currentScratchpad)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(init.MockCalls).ToNot(BeEmpty())
-				Expect(init.MockCalls[0].Function).To(Equal("CreateScratchpad"))
-				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
-			})
-
-			It("Should launch the default app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the scratch directory", func() {
-				repo, err := di.GetMapper().GetScratchpad(currentScratchpad)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, sp.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the scratchpad directory")
+		}
 	})
 
-	Context("With a week provided", func() {
-		Context("When the scratchpad doesn't exist", func() {
-			BeforeEach(func() {
-				err = runApp("scratch", "2019w22")
-			})
+	t.Run("gt "+cmd+" app existing_sp", func(t *testing.T) {
+		reset()
 
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
+		sp := repo.NewScratchpad("2019w15")
+		if assert.NoError(t, runApp(cmd, "shell", sp.Name()), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+			assert.Empty(t, init.MockCalls, "it should not attempt to re-create the scratchpad")
 
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should clone the repository", func() {
-				repo, err := di.GetMapper().GetScratchpad("2019w22")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(init.MockCalls).ToNot(BeEmpty())
-				Expect(init.MockCalls[0].Function).To(Equal("CreateScratchpad"))
-				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
-			})
-
-			It("Should launch the default app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the scratch directory", func() {
-				repo, err := di.GetMapper().GetScratchpad("2019w22")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
-		})
-
-		Context("When the scratchpad already exists", func() {
-			BeforeEach(func() {
-				err = runApp("scratch", "2019w15")
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should not re-create the scratchpad", func() {
-				Expect(init.MockCalls).To(BeEmpty())
-			})
-
-			It("Should launch the default app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the scratch directory", func() {
-				repo, err := di.GetMapper().GetScratchpad("2019w15")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, sp.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the scratchpad directory")
+		}
 	})
 
-	Context("With an app and scratchpad provided", func() {
-		BeforeEach(func() {
-			err = runApp("scratch", "shell", "2019w16")
-		})
+	t.Run("gt "+cmd+" existing_sp", func(t *testing.T) {
+		reset()
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		sp := repo.NewScratchpad("2019w15")
+		if assert.NoError(t, runApp(cmd, sp.Name()), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+			assert.Empty(t, init.MockCalls, "it should not attempt to re-create the scratchpad")
 
-		It("Should not print any output", func() {
-			Expect(out.GetOperations()).To(BeEmpty())
-		})
-
-		It("Should launch the specified app", func() {
-			Expect(launch.GetCommands()).ToNot(BeEmpty())
-			Expect(launch.GetCommands()).To(HaveLen(1))
-			Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-		})
-
-		It("Should launch the app in the repo's directory", func() {
-			repo, err := di.GetMapper().GetScratchpad("2019w16")
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(launch.GetCommands()).ToNot(BeEmpty())
-			Expect(launch.GetCommands()).To(HaveLen(1))
-			Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, sp.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the scratchpad directory")
+		}
 	})
 
-	Context("Root autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt")
+	t.Run("Auto Completion", func(t *testing.T) {
+
+		t.Run("App-Level", func(t *testing.T) {
+			reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
+
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
 		})
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		t.Run("Command-Level", func(t *testing.T) {
+			reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-		It("Should appear in the completions list", func() {
-			Expect(out.GetOperations()).To(ContainElement("scratch\n"))
+			assert.Contains(t, out.GetOperations(), "2019w15\n", "it should print a list of the scratchpads")
 		})
 	})
-
-	Context("Command autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt scratch ")
-		})
-
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("Should return a completion list with the list of known apps", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("shell\n"))
-		})
-
-		It("Should return a completion list with the list of known scratchpads", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("2019w15\n"))
-			Expect(out.GetOperations()).To(ContainElement("2019w16\n"))
-		})
-	})
-})
+}

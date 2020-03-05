@@ -1,84 +1,71 @@
 package app_test
 
 import (
+	"fmt"
 	"os"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tasks"
-	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt branch", func() {
-	var (
-		out  *mocks.Output
-		repo models.Repo
-		err  error
-	)
+func TestBranch(t *testing.T) {
+	cmd := "branch"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		di.SetOutput(out)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	/*----- Setup -----*/
 
-		repo, err = di.GetMapper().GetFullyQualifiedRepo("github.com/sierrasoftworks/branch_test_repo")
-		if err != nil {
-			return
-		}
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
 
-		err = tasks.Sequence(
-			tasks.NewFolder(),
-			tasks.GitInit(),
-			tasks.NewFile("README.md", []byte("# Test Repo")),
-			tasks.GitCommit("Initial Commit", "README.md"),
-			tasks.GitCheckout("master", false),
-		).ApplyRepo(repo)
-		if err != nil {
-			return
-		}
+	repo, err := di.GetMapper().GetFullyQualifiedRepo("github.com/sierrasoftworks/branch_test_repo")
+	require.NoError(t, err, "no error should be thrown when creating the test repo")
+	require.NoError(t, tasks.Sequence(
+		tasks.NewFolder(),
+		tasks.GitInit(),
+		tasks.NewFile("README.md", []byte("# Test Repo")),
+		tasks.GitCommit("Initial Commit", "README.md"),
+		tasks.GitCheckout("master", false),
+	).ApplyRepo(repo), "no error should be thrown when initializing the test repo")
+	require.NoError(t, os.Chdir(repo.Path()), "no error should be thrown when cd-ing into the repo")
 
-		err = os.Chdir(repo.Path())
-		if err != nil {
-			return
-		}
-	})
-
-	It("Should not encounter any errors setting up the environment", func() {
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterEach(func() {
+	defer func() {
 		os.Chdir(test.GetProjectRoot())
 		os.RemoveAll(repo.Path())
+	}()
+
+	cwd, err := os.Getwd()
+	require.NoError(t, err, "there should not be an error getting the current working directory")
+	require.Equal(t, repo.Path(), cwd, "the current directory should be in the test repo")
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		out.Reset()
+		assert.Error(t, runApp(cmd), "it should return an error when called with no args")
 	})
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("branch")).ToNot(BeNil())
-	})
+	t.Run("Auto Completion", func(t *testing.T) {
+		t.Run("App-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
 
-	It("Should return an error if no arguments are provided", func() {
-		Expect(runApp("branch")).To(HaveOccurred())
-	})
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
+		})
 
-	Context("Root autocompletion", func() {
-		It("Should appear in the completions list", func() {
-			Expect(runApp("complete", "gt ")).ToNot(HaveOccurred())
+		t.Run("Command-Level", func(t *testing.T) {
+			out.Reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-			Expect(out.GetOperations()).To(ContainElement("branch\n"))
+			assert.Contains(t, out.GetOperations(), "master\n", "it should print out the list of branch names")
 		})
 	})
-
-	Context("Command autocompletion", func() {
-		It("Should return a list of branches", func() {
-			Expect(runApp("complete", "gt branch ")).ToNot(HaveOccurred())
-
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("master\n"))
-		})
-	})
-})
+}

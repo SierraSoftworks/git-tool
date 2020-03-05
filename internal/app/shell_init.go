@@ -5,10 +5,11 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
-	"github.com/urfave/cli"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
+	"github.com/urfave/cli/v2"
 )
 
-var shellInitCommand = cli.Command{
+var shellInitCommand = &cli.Command{
 	Name:        "shell-init",
 	Usage:       "Emits the script needed to configure your shell for use with Git-Tool.",
 	Subcommands: cli.Commands{},
@@ -23,16 +24,23 @@ var shellInitCommand = cli.Command{
 
 		return nil
 	},
+	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/shell-init")
+		defer tracing.Exit()
+
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
+		cmp.Fixed(autocomplete.GetInitScriptShells()...)
+	},
 }
 
 func init() {
 	for _, shell := range autocomplete.GetInitScriptShells() {
 		shell := shell
-		shellInitCommand.Subcommands = append(shellInitCommand.Subcommands, cli.Command{
+		shellInitCommand.Subcommands = append(shellInitCommand.Subcommands, &cli.Command{
 			Name:        shell,
 			Description: fmt.Sprintf("Prints the initialization script for %s", shell),
 			Flags: []cli.Flag{
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:   "full",
 					Hidden: true,
 				},

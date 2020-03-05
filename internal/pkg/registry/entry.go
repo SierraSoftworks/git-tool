@@ -36,7 +36,7 @@ func (e *EntryConfig) IsCompatible() bool {
 type EntryApp struct {
 	Name        string   `json:"name" yaml:"name"`
 	Command     string   `json:"command" yaml:"command"`
-	Arguments   []string `json:"arguments" yaml:"arguments"`
+	Arguments   []string `json:"args" yaml:"args"`
 	Environment []string `json:"environment" yaml:"environment"`
 }
 

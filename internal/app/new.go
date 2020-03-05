@@ -5,10 +5,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var newRepoCommand = cli.Command{
+var newRepoCommand = &cli.Command{
 	Name: "new",
 	Aliases: []string{
 		"create",
@@ -49,7 +49,7 @@ var newRepoCommand = cli.Command{
 			return
 		}
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 
 		cmp.DefaultServiceNamespaces()
 		cmp.AllServiceNamespaces()

@@ -4,14 +4,14 @@ import (
 	"strings"
 
 	"github.com/kballard/go-shellquote"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var completeCommand = cli.Command{
+var completeCommand = &cli.Command{
 	Name:  "complete",
 	Usage: "Generates autocomplete suggestions for the provided command.",
 	Flags: []cli.Flag{
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "position",
 			Usage: "The position of the cursor when the completion is requested",
 			Value: -1,
@@ -41,7 +41,7 @@ var completeCommand = cli.Command{
 			return err
 		}
 
-		args = append([]string{args[0], "--bash-completion-filter", filter, "--config", c.GlobalString("config")}, args[1:]...)
+		args = append([]string{args[0], "--bash-completion-filter", filter, "--config", c.String("config")}, args[1:]...)
 
 		return c.App.Run(append(args, "--generate-bash-completion"))
 	},

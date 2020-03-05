@@ -6,10 +6,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tasks"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var branchCommand = cli.Command{
+var branchCommand = &cli.Command{
 	Name: "branch",
 	Aliases: []string{
 		"b",
@@ -35,6 +35,9 @@ var branchCommand = cli.Command{
 		return tasks.GitCheckout(c.Args().First(), false).ApplyRepo(repo)
 	},
 	BashComplete: func(c *cli.Context) {
+		tracing.Enter("/app/complete/branch")
+		defer tracing.Exit()
+
 		repo, err := di.GetMapper().GetCurrentDirectoryRepo()
 		if err != nil {
 			return
@@ -49,7 +52,7 @@ var branchCommand = cli.Command{
 			return
 		}
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 		cmp.Fixed(branches...)
 	},
 }

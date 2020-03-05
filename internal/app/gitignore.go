@@ -7,10 +7,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/gitignore"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var getGitignoreCommand = cli.Command{
+var getGitignoreCommand = &cli.Command{
 	Name: "gitignore",
 	Aliases: []string{
 		"ignore",

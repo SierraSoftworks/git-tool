@@ -6,10 +6,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var configListCommand = cli.Command{
+var configListCommand = &cli.Command{
 	Name:  "list",
 	Usage: "Lists the available configuration templates from the registry.",
 	Aliases: []string{

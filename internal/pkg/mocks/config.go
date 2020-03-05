@@ -17,15 +17,21 @@ type Config struct {
 }
 
 func NewConfig(base di.Config) *Config {
-	return &Config{
-		directory:    base.DevelopmentDirectory(),
-		scratchpads:  base.ScratchDirectory(),
-		services:     base.GetServices(),
-		applications: base.GetApps(),
-		aliases:      base.GetAliases(),
-		features:     base.GetFeatures(),
-		updates:      []registry.EntryConfig{},
-	}
+	cfg := &Config{}
+
+	cfg.Reset(base)
+
+	return cfg
+}
+
+func (c *Config) Reset(base di.Config) {
+	c.directory = base.DevelopmentDirectory()
+	c.scratchpads = base.ScratchDirectory()
+	c.services = base.GetServices()
+	c.applications = base.GetApps()
+	c.aliases = base.GetAliases()
+	c.features = base.GetFeatures()
+	c.updates = []registry.EntryConfig{}
 }
 
 func (c *Config) DevelopmentDirectory() string {

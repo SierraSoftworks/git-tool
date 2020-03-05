@@ -10,10 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var openScratchCommand = cli.Command{
+var openScratchCommand = &cli.Command{
 	Name: "scratch",
 	Aliases: []string{
 		"s",
@@ -25,13 +25,13 @@ var openScratchCommand = cli.Command{
 		tracing.Enter("/app/command/scratch")
 		defer tracing.Exit()
 
-		args := c.Args()
+		args := c.Args().Slice()
 
 		app := di.GetConfig().GetApp(c.Args().First())
 		if app == nil {
 			app = di.GetConfig().GetDefaultApp()
 		} else {
-			args = cli.Args(c.Args().Tail())
+			args = c.Args().Tail()
 		}
 
 		if app == nil && c.NArg() > 0 {
@@ -42,7 +42,11 @@ var openScratchCommand = cli.Command{
 
 		logrus.WithField("app", app.Name()).Debug("Found matching app configuration")
 
-		name := args.First()
+		name := ""
+		if len(args) > 0 {
+			name = args[0]
+		}
+
 		if name == "" {
 			year, week := time.Now().ISOWeek()
 			name = fmt.Sprintf("%dw%d", year, week)
@@ -72,7 +76,7 @@ var openScratchCommand = cli.Command{
 		tracing.Enter("/app/complete/scratch")
 		defer tracing.Exit()
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 
 		if c.NArg() == 0 {
 			cmp.Apps()

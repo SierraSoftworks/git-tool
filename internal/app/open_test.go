@@ -1,289 +1,194 @@
 package app_test
 
 import (
+	"fmt"
 	"os"
+	"testing"
 
 	"github.com/SierraSoftworks/git-tool/internal/app"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/config"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/mocks"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/repo"
+	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
+	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/SierraSoftworks/git-tool/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ = Describe("gt open", func() {
-	var (
-		out    *mocks.Output
-		launch *mocks.Launcher
-		init   *mocks.Initializer
-		err    error
-	)
+func TestOpen(t *testing.T) {
+	cmd := "open"
 
-	BeforeEach(func() {
-		out = &mocks.Output{}
-		launch = &mocks.Launcher{}
-		init = &mocks.Initializer{}
-		di.SetOutput(out)
-		di.SetLauncher(launch)
-		di.SetInitializer(init)
-		di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
-	})
+	/*----- Setup -----*/
 
-	AfterEach(func() {
-		os.Chdir(test.GetProjectRoot())
-	})
+	out := &mocks.Output{}
+	init := &mocks.Initializer{}
+	launch := &mocks.Launcher{}
+	di.SetOutput(out)
+	di.SetConfig(config.DefaultForDirectory(test.GetTestPath("devdir")))
+	di.SetInitializer(init)
+	defer di.SetInitializer(&repo.Initializer{})
+	di.SetLauncher(launch)
+	defer di.SetLauncher(di.DefaultLauncher())
 
-	It("Should be registered with the CLI", func() {
-		Expect(app.NewApp().Command("open")).ToNot(BeNil())
-	})
+	existingRepo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
+	require.NoError(t, err, "we should be able to get the test repo")
+	require.NotNil(t, existingRepo, "we should be able to get the test repo")
 
-	Context("With no arguments", func() {
-		JustBeforeEach(func() {
-			err = runApp("open")
+	newRepo, err := di.GetMapper().GetRepo("github.com/git-fixtures/empty")
+	require.NoError(t, err, "we should be able to get the test repo")
+	require.NotNil(t, newRepo, "we should be able to get the test repo")
+
+	reset := func() {
+		out.Reset()
+		launch.Reset()
+		init.Reset()
+	}
+
+	/*----- Tests -----*/
+
+	require.NotNil(t, app.NewApp().Command(cmd), "the command should be registered with the app")
+
+	t.Run("gt "+cmd, func(t *testing.T) {
+		t.Run("Outside Repo", func(t *testing.T) {
+			reset()
+
+			assert.Error(t, runApp(cmd), "it should return a usage error")
+			assert.Empty(t, out.GetOperations(), "it should not print any extra info")
 		})
 
-		Context("When not in a repository directory", func() {
-			It("Should return an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
+		t.Run("Inside Repo", func(t *testing.T) {
+			reset()
 
-			It("Should inform the user in the error of why the command failed", func() {
-				Expect(err.Error()).To(Equal("usage: no repository specified"))
-			})
+			require.NoError(t, os.Chdir(existingRepo.Path()), "we should be able to switch to the repo")
+			defer os.Chdir(test.GetProjectRoot())
 
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-		})
-
-		Context("When in a repository directory", func() {
-			BeforeEach(func() {
-				os.Chdir(test.GetTestPath("devdir", "github.com", "sierrasoftworks", "test1"))
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should launch the specified app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the repo's directory", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
+			if assert.NoError(t, runApp(cmd), "it should not return an error") {
+				assert.Empty(t, out.GetOperations(), "it should not print any extra info")
+				assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+				assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+				assert.Equal(t, existingRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+			}
 		})
 	})
 
-	Context("With a repository provided", func() {
-		Context("When the repository doesn't exist locally", func() {
-			BeforeEach(func() {
-				err = runApp("open", "github.com/sierrasoftworks/licenses")
-			})
+	t.Run("gt "+cmd+" app", func(t *testing.T) {
+		t.Run("Outside Repo", func(t *testing.T) {
+			reset()
 
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should clone the repository", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/licenses")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(init.MockCalls).ToNot(BeEmpty())
-				Expect(init.MockCalls[0].Function).To(Equal("CloneRepository"))
-				Expect(init.MockCalls[0].Target.Path()).To(Equal(repo.Path()))
-			})
-
-			It("Should launch the default app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the repo's directory", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/licenses")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
+			assert.Error(t, runApp(cmd, "shell"), "it should return a usage error")
+			assert.Empty(t, out.GetOperations(), "it should not print any extra info")
 		})
 
-		Context("When the repository exists locally", func() {
-			BeforeEach(func() {
-				err = runApp("open", "github.com/sierrasoftworks/test1")
-			})
+		t.Run("Inside Repo", func(t *testing.T) {
+			reset()
 
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
+			require.NoError(t, os.Chdir(existingRepo.Path()), "we should be able to switch to the repo")
+			defer os.Chdir(test.GetProjectRoot())
 
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should launch the default app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the repo's directory", func() {
-				repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
+			if assert.NoError(t, runApp(cmd, "shell"), "it should not return an error") {
+				assert.Empty(t, out.GetOperations(), "it should not print any extra info")
+				assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+				assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+				assert.Equal(t, existingRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+			}
 		})
 	})
 
-	Context("With an app provided", func() {
-		JustBeforeEach(func() {
-			err = runApp("open", "shell")
-		})
+	t.Run("gt "+cmd+" existing_repo", func(t *testing.T) {
+		reset()
 
-		Context("When not in a repository directory", func() {
-			It("Should return an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
+		if assert.NoError(t, runApp(cmd, templates.RepoQualifiedName(existingRepo)), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
 
-			It("Should inform the user in the error of why the command failed", func() {
-				Expect(err.Error()).To(Equal("usage: no repository specified"))
-			})
+			assert.Empty(t, init.MockCalls, "it should not attempt to clone the repo")
 
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-		})
-
-		Context("When in a repository directory", func() {
-			BeforeEach(func() {
-				os.Chdir(test.GetTestPath("devdir", "dev.azure.com", "sierrasoftworks", "opensource", "test1"))
-			})
-
-			It("Should not return an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("Should not print any output", func() {
-				Expect(out.GetOperations()).To(BeEmpty())
-			})
-
-			It("Should launch the specified app", func() {
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-			})
-
-			It("Should launch the app in the repo's directory", func() {
-				repo, err := di.GetMapper().GetRepo("dev.azure.com/sierrasoftworks/opensource/test1")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(launch.GetCommands()).ToNot(BeEmpty())
-				Expect(launch.GetCommands()).To(HaveLen(1))
-				Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-			})
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, existingRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+		}
 	})
 
-	Context("With an app and repository provided", func() {
-		BeforeEach(func() {
-			err = runApp("open", "shell", "github.com/sierrasoftworks/test1")
-		})
+	t.Run("gt "+cmd+" new_repo", func(t *testing.T) {
+		reset()
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		if assert.NoError(t, runApp(cmd, templates.RepoQualifiedName(newRepo)), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
 
-		It("Should not print any output", func() {
-			Expect(out.GetOperations()).To(BeEmpty())
-		})
+			assert.Contains(t, init.MockCalls, struct {
+				Function string
+				Target   models.Target
+			}{
+				Function: "CloneRepository",
+				Target:   newRepo,
+			}, "it should attempt to clone the repository")
 
-		It("Should launch the specified app", func() {
-			Expect(launch.GetCommands()).ToNot(BeEmpty())
-			Expect(launch.GetCommands()).To(HaveLen(1))
-			Expect(launch.GetCommands()[0].Args[0]).To(Equal("bash"))
-		})
-
-		It("Should launch the app in the repo's directory", func() {
-			repo, err := di.GetMapper().GetRepo("github.com/sierrasoftworks/test1")
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(launch.GetCommands()).ToNot(BeEmpty())
-			Expect(launch.GetCommands()).To(HaveLen(1))
-			Expect(launch.GetCommands()[0].Dir).To(Equal(repo.Path()))
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, newRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+		}
 	})
 
-	Context("With a bad repository name provided", func() {
-		BeforeEach(func() {
-			err = runApp("open", "badhubgit.orgcom/sierrasoftworks/missing")
-		})
+	t.Run("gt "+cmd+" app existing_repo", func(t *testing.T) {
+		reset()
 
-		It("Should return an error", func() {
-			Expect(err).To(HaveOccurred())
-		})
+		if assert.NoError(t, runApp(cmd, "shell", templates.RepoQualifiedName(existingRepo)), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
 
-		It("Should inform the user in the error of why the command failed", func() {
-			Expect(err.Error()).To(Equal("usage: could not find repository"))
-		})
+			assert.Empty(t, init.MockCalls, "it should not attempt to clone the repo")
 
-		It("Should not print any output", func() {
-			Expect(out.GetOperations()).To(BeEmpty())
-		})
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, existingRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+		}
 	})
 
-	Context("Root autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt")
-		})
+	t.Run("gt "+cmd+" app new_repo", func(t *testing.T) {
+		reset()
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		if assert.NoError(t, runApp(cmd, "shell", templates.RepoQualifiedName(newRepo)), "it should not return an error") {
+			assert.Empty(t, out.GetOperations(), "it should not print any extra output")
 
-		It("Should appear in the completions list", func() {
-			Expect(out.GetOperations()).To(ContainElement("open\n"))
-		})
+			assert.Contains(t, init.MockCalls, struct {
+				Function string
+				Target   models.Target
+			}{
+				Function: "CloneRepository",
+				Target:   newRepo,
+			}, "it should attempt to clone the repository")
+
+			assert.Len(t, launch.GetCommands(), 1, "it should have run a command")
+			assert.Equal(t, "bash", launch.GetCommands()[0].Args[0], "it should have tried to launch the default app")
+			assert.Equal(t, newRepo.Path(), launch.GetCommands()[0].Dir, "it should have tried to launch the app in the repo directory")
+		}
 	})
 
-	Context("Command autocompletion", func() {
-		BeforeEach(func() {
-			err = runApp("complete", "gt open ")
+	t.Run("gt "+cmd+" bad_repo", func(t *testing.T) {
+		reset()
+
+		assert.Error(t, runApp(cmd, "bad_repo_name"), "it should return an error")
+		assert.Empty(t, out.GetOperations(), "it should not print any extra output")
+
+		assert.Empty(t, init.MockCalls, "it should not attempt to clone the repo")
+
+		assert.Len(t, launch.GetCommands(), 0, "it should not attempt to run a command")
+	})
+
+	t.Run("Auto Completion", func(t *testing.T) {
+
+		t.Run("App-Level", func(t *testing.T) {
+			reset()
+			require.NoError(t, runApp("complete", "gt"), "no error should be thrown")
+
+			assert.Contains(t, out.GetOperations(), cmd+"\n", "it should print the command name")
 		})
 
-		It("Should not return an error", func() {
-			Expect(err).ToNot(HaveOccurred())
-		})
+		t.Run("Command-Level", func(t *testing.T) {
+			reset()
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-		It("Should return a completion list with the list of known apps", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("shell\n"))
-		})
-
-		It("Should return a completion list with the list of known repositories", func() {
-			Expect(out.GetOperations()).ToNot(BeEmpty())
-			Expect(out.GetOperations()).To(ContainElement("github.com/sierrasoftworks/test1\n"))
-			Expect(out.GetOperations()).To(ContainElement("github.com/sierrasoftworks/test2\n"))
+			assert.Contains(t, out.GetOperations(), "github.com/sierrasoftworks/test1\n", "it should print a list of known repositories")
 		})
 	})
-})
+}

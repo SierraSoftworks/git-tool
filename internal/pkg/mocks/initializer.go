@@ -45,3 +45,11 @@ func (i *Initializer) CreateScratchpad(r models.Scratchpad) error {
 
 	return i.MockError
 }
+
+func (i *Initializer) Reset() {
+	i.MockCalls = []struct {
+		Function string
+		Target   models.Target
+	}{}
+	i.MockError = nil
+}

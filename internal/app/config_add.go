@@ -2,21 +2,22 @@ package app
 
 import (
 	"fmt"
+
 	"github.com/SierraSoftworks/git-tool/internal/pkg/autocomplete"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var configAddCommand = cli.Command{
+var configAddCommand = &cli.Command{
 	Name:  "add",
 	Usage: "Adds a configuration template from the registry to your config file.",
 	Action: func(c *cli.Context) error {
 		tracing.Enter("/app/command/config/add")
 		defer tracing.Exit()
 
-		if c.GlobalString("config") == "" {
+		if c.String("config") == "" {
 			return errors.New("usage: you must set the GITTOOL_CONFIG environment variable or pass the --config argument")
 		}
 
@@ -40,7 +41,7 @@ var configAddCommand = cli.Command{
 				}
 			}
 
-			return di.GetConfig().Save(c.GlobalString("config"))
+			return di.GetConfig().Save(c.String("config"))
 		}
 
 		return nil
@@ -49,7 +50,7 @@ var configAddCommand = cli.Command{
 		tracing.Enter("/app/complete/config/add")
 		defer tracing.Exit()
 
-		cmp := autocomplete.NewCompleter(c.GlobalString("bash-completion-filter"))
+		cmp := autocomplete.NewCompleter(c.String("bash-completion-filter"))
 
 		if c.NArg() == 0 {
 			cmp.Fixed("apps/", "services/")
