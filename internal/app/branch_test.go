@@ -63,7 +63,7 @@ func TestBranch(t *testing.T) {
 
 		t.Run("Command-Level", func(t *testing.T) {
 			out.Reset()
-			require.NoError(t, runApp("--verbose", "complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
+			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
 			assert.Contains(t, out.GetOperations(), "master\n", "it should print out the list of branch names")
 		})

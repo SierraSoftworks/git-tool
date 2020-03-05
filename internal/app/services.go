@@ -5,10 +5,10 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var listServicesCommand = cli.Command{
+var listServicesCommand = &cli.Command{
 	Name:  "services",
 	Usage: "Lists the services which are known to host git repos.",
 	Action: func(c *cli.Context) error {

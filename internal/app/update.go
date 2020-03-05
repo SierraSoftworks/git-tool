@@ -9,16 +9,16 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/SierraSoftworks/update-go"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 var updateManager update.Manager
 
-var updateCommand = cli.Command{
+var updateCommand = &cli.Command{
 	Name:  "update",
 	Usage: "Updates git-tool to the latest available version.",
 	Flags: []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name: "list",
 		},
 	},

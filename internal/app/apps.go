@@ -5,10 +5,10 @@ import (
 
 	"github.com/SierraSoftworks/git-tool/internal/pkg/di"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var listAppsCommand = cli.Command{
+var listAppsCommand = &cli.Command{
 	Name:  "apps",
 	Usage: "Lists the applications which can be launched with the open command.",
 	Action: func(c *cli.Context) error {

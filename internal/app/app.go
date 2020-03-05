@@ -14,7 +14,7 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 	"github.com/SierraSoftworks/update-go"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func init() {
@@ -28,7 +28,12 @@ func NewApp() *cli.App {
 	app := cli.NewApp()
 
 	app.Name = "gt"
-	app.Author = "Benjamin Pannell <benjamin@pannell.dev>"
+	app.Authors = []*cli.Author{
+		&cli.Author{
+			Name:  "Benjamin Pannell",
+			Email: "benjamin@pannell.dev",
+		},
+	}
 	app.Copyright = "Copyright © Sierra Softworks 2019"
 	app.Usage = "Manage your git repositories"
 	app.Version = "0.0.0-dev"
@@ -37,7 +42,7 @@ func NewApp() *cli.App {
 
 	app.Description = "A tool which helps manage your local git repositories and development folders."
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		repoInfoCommand,
 		openAppCommand,
 		newRepoCommand,
@@ -54,21 +59,23 @@ func NewApp() *cli.App {
 	}
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "config,c",
-			EnvVar: "GITTOOL_CONFIG",
-			Usage:  "specify the path to your configuration file",
+		&cli.StringFlag{
+			Name:      "config",
+			Aliases:   []string{"c"},
+			EnvVars:   []string{"GITTOOL_CONFIG"},
+			Usage:     "specify the path to your configuration file",
+			TakesFile: true,
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "verbose",
 			Usage: "enable verbose logging",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:   "bash-completion-filter",
 			Usage:  "A filter used to select matches for the local argument",
 			Hidden: true,
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:   "update-resume-internal",
 			Usage:  "Internal flag used to coordinate update operations",
 			Hidden: true,
@@ -98,19 +105,19 @@ func NewApp() *cli.App {
 			return updateManager.Continue(ctx)
 		}
 
-		if c.GlobalString("config") != "" {
+		if c.String("config") != "" {
 			tracing.Transition("/app/before/loadConfig")
-			logrus.WithField("config_path", c.GlobalString("config")).Debug("Loading configuration file")
-			cfgResult, err := config.Load(c.GlobalString("config"))
+			logrus.WithField("config_path", c.String("config")).Debug("Loading configuration file")
+			cfgResult, err := config.Load(c.String("config"))
 			if err != nil {
 				return err
 			}
 
-			logrus.WithField("config_path", c.GlobalString("config")).Debug("Loaded configuration file")
+			logrus.WithField("config_path", c.String("config")).Debug("Loaded configuration file")
 			di.SetConfig(cfgResult)
 		}
 
-		if c.GlobalBool("verbose") {
+		if c.Bool("verbose") {
 			logrus.SetLevel(logrus.DebugLevel)
 		}
 
@@ -121,7 +128,7 @@ func NewApp() *cli.App {
 		tracing.Enter("/app/complete/")
 		defer tracing.Exit()
 
-		filter := c.GlobalString("bash-completion-filter")
+		filter := c.String("bash-completion-filter")
 
 		for _, cmd := range c.App.Commands {
 			for _, name := range cmd.Names() {

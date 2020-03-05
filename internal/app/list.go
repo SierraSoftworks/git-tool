@@ -8,10 +8,10 @@ import (
 	"github.com/SierraSoftworks/git-tool/internal/pkg/templates"
 	"github.com/SierraSoftworks/git-tool/internal/pkg/tracing"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var listReposCommand = cli.Command{
+var listReposCommand = &cli.Command{
 	Name: "list",
 	Aliases: []string{
 		"ls",
@@ -20,12 +20,12 @@ var listReposCommand = cli.Command{
 	Usage:     "Lists the repositories in your local development environment.",
 	ArgsUsage: "[filter]",
 	Flags: []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "quiet,q",
 			Usage: "show only the fully qualified repository names",
 		},
 
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "full",
 			Usage: "show all available information about each repository",
 		},
