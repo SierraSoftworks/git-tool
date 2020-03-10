@@ -1,2 +1,2 @@
 #! /usr/bin/env bash
-go run github.com/onsi/ginkgo/ginkgo watch ./...
+go run github.com/cortesi/modd/cmd/modd -f ./scripts/modd.conf
