@@ -99,6 +99,18 @@ func TestGitCheckout(t *testing.T) {
 				assert.Equal(t, testBranch.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
 			})
 
+			t.Run("Explicit Remote Branch", func(t *testing.T) {
+				out.Reset()
+
+				require.NoError(t, tasks.GitCheckout("origin/test-branch", false).ApplyRepo(r), "it should not return any errors")
+				assert.Empty(t, out.GetOperations(), "it should not log anything")
+				assert.True(t, r.Exists(), "the repository folder should still exist")
+
+				head, err := gr.Head()
+				require.NoError(t, err, "we should be able to get the HEAD hash of the repo")
+				assert.Equal(t, testBranch.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
+			})
+
 			t.Run("Local and Remote Branch", func(t *testing.T) {
 				out.Reset()
 
@@ -109,6 +121,18 @@ func TestGitCheckout(t *testing.T) {
 				head, err := gr.Head()
 				require.NoError(t, err, "we should be able to get the HEAD hash of the repo")
 				assert.Equal(t, master.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
+			})
+
+			t.Run("Explicit Remote Branch with Local Copy", func(t *testing.T) {
+				out.Reset()
+
+				require.NoError(t, tasks.GitCheckout("origin/test-branch2", false).ApplyRepo(r), "it should not return any errors")
+				assert.Empty(t, out.GetOperations(), "it should not log anything")
+				assert.True(t, r.Exists(), "the repository folder should still exist")
+
+				head, err := gr.Head()
+				require.NoError(t, err, "we should be able to get the HEAD hash of the repo")
+				assert.Equal(t, testBranch.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
 			})
 
 			t.Run("New Branch", func(t *testing.T) {
