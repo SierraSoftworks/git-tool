@@ -1,6 +1,8 @@
 package tasks
 
 import (
+	"strings"
+
 	"github.com/SierraSoftworks/git-tool/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -29,33 +31,31 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 		return errors.Wrap(err, "repo: unable to open git repository")
 	}
 
+	w, err := gr.Worktree()
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to open git worktree")
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to get status of git worktree")
+	}
+
+	if !status.IsClean() {
+		return errors.Wrap(err, "usage: cannot change branches, workspace is not clean")
+	}
+
 	co := &git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(t.RefName),
 		Keep:   t.Keep,
 	}
 
-	refs, err := gr.References()
+	branchRefs, err := t.getBranchReferences(gr)
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to gather references")
+		return err
 	}
 
-	var ref *plumbing.Reference
-
-	refs.ForEach(func(r *plumbing.Reference) error {
-		if r.Type() == plumbing.SymbolicReference {
-			return nil
-		}
-
-		if r.Name().Short() == t.RefName || r.Name().Short() == "origin/"+t.RefName {
-			if ref == nil {
-				ref = r
-			} else if ref.Name().IsRemote() && !r.Name().IsRemote() {
-				ref = r
-			}
-		}
-
-		return nil
-	})
+	ref := branchRefs[co.Branch.Short()]
 
 	if ref == nil {
 		head, err := gr.Head()
@@ -70,9 +70,13 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 		co.Create = true
 	}
 
-	w, err := gr.Worktree()
-	if err != nil {
-		return errors.Wrap(err, "repo: unable to open git worktree")
+	refCheck, err := gr.Reference(co.Branch, false)
+	if err != nil && err != plumbing.ErrReferenceNotFound {
+		return errors.Wrap(err, "repo: unable to validate branch name")
+	}
+
+	if refCheck != nil {
+		co.Create = false
 	}
 
 	logrus.WithField("repo", r).Debugf("Checking out branch '%s'", co.Branch.String())
@@ -88,4 +92,40 @@ func (t *gitCheckout) ApplyRepo(r models.Repo) error {
 // ApplyScratchpad runs the task against a scratchpad
 func (t *gitCheckout) ApplyScratchpad(r models.Scratchpad) error {
 	return nil
+}
+
+func (t *gitCheckout) getBranchReferences(gr *git.Repository) (map[string]*plumbing.Reference, error) {
+	refs, err := gr.References()
+	if err != nil {
+		return nil, errors.Wrap(err, "repo: unable to gather references")
+	}
+
+	branchRefs := map[string]*plumbing.Reference{}
+
+	refs.ForEach(func(r *plumbing.Reference) error {
+		if r.Type() == plumbing.SymbolicReference {
+			return nil
+		}
+
+		if !r.Name().IsBranch() && !r.Name().IsRemote() {
+			return nil
+		}
+
+		if r.Name().IsTag() || r.Name().IsNote() {
+			return nil
+		}
+
+		branchRefs[r.Name().Short()] = r
+
+		if r.Name().IsRemote() {
+			branchName := strings.SplitN(r.Name().Short(), "/", 2)[1]
+			if _, ok := branchRefs[branchName]; !ok {
+				branchRefs[branchName] = r
+			}
+		}
+
+		return nil
+	})
+
+	return branchRefs, nil
 }
