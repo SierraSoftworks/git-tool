@@ -11,6 +11,7 @@ import (
 )
 
 func TestServices(t *testing.T) {
+	//Setup
 	out := &mocks.Output{}
 	di.SetOutput(out)
 	di.SetConfig(config.Default())
@@ -21,6 +22,7 @@ func TestServices(t *testing.T) {
 
 		c.Services()
 		assert.Contains(t, out.GetOperations(), "github.com\n", "it should print out the default services")
+		assert.Contains(t, out.GetOperations(), "dev.azure.com\n", "it should print out the default services")
 	})
 
 	t.Run("With a matching filter", func(t *testing.T) {
@@ -29,6 +31,7 @@ func TestServices(t *testing.T) {
 
 		c.Services()
 		assert.Contains(t, out.GetOperations(), "github.com\n", "it should print out the default services")
+		assert.NotContains(t, out.GetOperations(), "dev.azure.com\n", "it should print out the default services")
 	})
 
 	t.Run("With a filter that doesn't match", func(t *testing.T) {
@@ -36,6 +39,38 @@ func TestServices(t *testing.T) {
 		c := autocomplete.NewCompleter("nomatch")
 
 		c.Services()
+		assert.Empty(t, out.GetOperations(), "it should not print out any services")
+	})
+}
+
+func TestServicePrefixes(t *testing.T) {
+	//Setup
+	out := &mocks.Output{}
+	di.SetOutput(out)
+	di.SetConfig(config.Default())
+
+	t.Run("With no filter", func(t *testing.T) {
+		out.Reset()
+		c := autocomplete.NewCompleter("")
+
+		c.ServicePrefixes()
+
+		assert.Contains(t, out.GetOperations(), "github.com/\n", "it should print out the default services")
+	})
+
+	t.Run("With a matching filter", func(t *testing.T) {
+		out.Reset()
+		c := autocomplete.NewCompleter("github")
+
+		c.ServicePrefixes()
+		assert.Contains(t, out.GetOperations(), "github.com/\n", "it should print out the default services")
+	})
+
+	t.Run("With a filter that doesn't match", func(t *testing.T) {
+		out.Reset()
+		c := autocomplete.NewCompleter("nomatch")
+
+		c.ServicePrefixes()
 		assert.Empty(t, out.GetOperations(), "it should not print out any services")
 	})
 }
