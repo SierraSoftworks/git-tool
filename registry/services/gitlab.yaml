@@ -1,0 +1,12 @@
+---
+name: GitLab
+description: Adds support for managing GitLab repositories through Git-Tool.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      domain: gitlab.com
+      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      pattern: "*/*"

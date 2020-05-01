@@ -1,0 +1,51 @@
+name: Build Release
+on:
+  release:
+    types: [published]
+jobs:
+    
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [windows, linux, freebsd, darwin]
+        arch: [amd64, "386"]
+        include:
+          - os: windows
+            extension: ".exe"
+    
+    steps:
+    - name: Set up Go 1.14
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Build
+      run: go build -o bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} -ldflags "-X main.version=${{ github.event.release.tag_name }}" ./cmd/git-tool/main.go
+      shell: pwsh
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: ${{ matrix.arch }}
+        
+    - name: Create Sentry Release
+      uses: tclindner/sentry-releases-action@v1.0.0
+      env:
+        SENTRY_ORG: sierra-softworks
+        SENTRY_PROJECT: git-tool
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      with:
+        environment: ${{ matrix.os }}-${{ matrix.arch }}
+        tagName: ${{ github.event.release.tag_name }}
+
+    - name: Upload to Release
+      uses: Shopify/upload-to-release@1.0.0
+      with:
+        name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        path: "bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        content-type: application/octet-stream

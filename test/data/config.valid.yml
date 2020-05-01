@@ -1,0 +1,42 @@
+---
+directory: C:\\dev
+services:
+  - domain: github.com
+    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+    default: true
+    pattern: "*/*"
+  - domain: gitlab.com
+    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+    pattern: "*/*"
+  - domain: bitbucket.org
+    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+    pattern: "*/*"
+  - domain: dev.azure.com
+    website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
+    gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git"
+    pattern: "*/*/*"
+apps:
+  - name: shell
+    command: sh
+    default: true
+  - name: code
+    command: code.cmd
+    args:
+      - .
+  - name: make
+    command: make
+    args:
+      - build
+    environment:
+      - CI_SERVER=0
+      - REPO={{ .Repo.FullName }}
+      - GITHOST={{ .Service.Domain }}
+aliases:
+  gt: github.com/SierraSoftworks/git-tool

@@ -1,0 +1,10 @@
+{
+    "go.formatTool": "goimports",
+    "cSpell.words": [
+        "canonicalize",
+        "subcommand",
+        "subcommands",
+        "urfave",
+        "zalando"
+    ]
+}

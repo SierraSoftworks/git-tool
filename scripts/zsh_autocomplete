@@ -1,0 +1,7 @@
+_gittool_zsh_autocomplete() {
+  local completions=("$(git-tool complete "$words")")
+
+  reply=( "${(ps:\n:)completions}" )
+}
+
+compdef _gittool_zsh_autocomplete gt git-tool

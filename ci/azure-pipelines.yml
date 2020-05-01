@@ -1,0 +1,63 @@
+pool:
+  name: Hosted Ubuntu 1604
+
+variables:
+    "Go.Version": "1.12.6"
+
+steps:
+- task: GitVersion@5
+  displayName: 'Run GitVersion'
+  inputs:
+    updateAssemblyInfo: true
+
+- task: GoTool@0
+  displayName: 'Use Go $(Go.Version)'
+  inputs:
+    version: "$(Go.Version)"
+
+- script: |
+    go version
+    go get -v -t -d ./...
+    go run github.com/axw/gocov/gocov --help > /dev/null || echo "Installed gocov"
+    go run github.com/AlekSi/gocov-xml --help > /dev/null || echo "Installed gocov-xml"
+    go run github.com/matm/gocov-html --help > /dev/null || echo "Installed gocov-html"
+  displayName: 'Get Go Dependencies'
+
+- script: |
+    TERM=sh go test -v -coverprofile=coverage.txt -covermode count ./...
+    go run github.com/axw/gocov/gocov convert coverage.txt > coverage.json
+    go run github.com/AlekSi/gocov-xml < coverage.json > coverage.xml
+    mkdir coverage
+    go run github.com/matm/gocov-html < coverage.json > coverage/index.html
+  displayName: 'Run Tests'
+
+- task: PublishTestResults@2
+  inputs:
+    testRunner: JUnit
+    testResultsFiles: $(System.DefaultWorkingDirectory)/**/junit.xml
+    
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: Cobertura 
+    summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverage.xml
+    reportDirectory: $(System.DefaultWorkingDirectory)/**/coverage
+
+- task: PowerShell@2
+  displayName: 'Build Variants'
+  inputs:
+    targetType: filePath
+    filePath: './ci/build-all.ps1'
+    arguments: '-Version $(GitVersion.FullSemVer)'
+
+- task: CopyFiles@2
+  displayName: 'Staging Directory copy'
+  inputs:
+    SourceFolder: bin
+    Contents: 'git-tool-*'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    CleanTargetFolder: true
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop/Git-Tool'
+  inputs:
+    ArtifactName: 'drop/Git-Tool'

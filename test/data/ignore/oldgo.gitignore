@@ -1,0 +1,10 @@
+## -------- Managed by Git Tool -------- ##
+## Add any custom rules above this block ##
+## ------------------------------------- ##
+## @languages: go
+
+*.exe
+*.exe~
+*.dll
+
+# End of https://www.gitignore.io/api/go
