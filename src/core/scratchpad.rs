@@ -3,8 +3,8 @@ use super::Target;
 
 #[derive(Debug, Clone)]
 pub struct Scratchpad {
-    full_name: Rc<String>,
-    path: Rc<path::PathBuf>,
+    full_name: String,
+    path: path::PathBuf,
 }
 
 impl Target for Scratchpad {
@@ -22,9 +22,9 @@ impl Target for Scratchpad {
 }
 
 impl Scratchpad {
-    pub fn new(full_name: &str, path: Rc<path::PathBuf>) -> Self {
+    pub fn new(full_name: &str, path: path::PathBuf) -> Self {
         Self {
-            full_name: Rc::new(full_name.to_string()),
+            full_name: full_name.to_string(),
             path
         }
     }

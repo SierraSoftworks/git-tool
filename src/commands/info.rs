@@ -56,16 +56,22 @@ impl Command for InfoCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config};
-    use clap::ArgMatches;
+    use super::core::{Core, Config, Repo, MockResolver};
 
     #[tokio::test]
     async fn run() {
-        let args = ArgMatches::default();
-        let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Arc::new(Core::builder().with_config(&cfg).build());
-
         let cmd = InfoCommand{};
+
+        let args = cmd.app().get_matches_from(vec!["info", "repo"]);
+
+        let cfg = Config::from_str("directory: /dev").unwrap();let mut resolver = MockResolver::default();
+        resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
+
+        let core = Arc::new(Core::builder()
+            .with_config(&cfg)
+            .with_resolver(Arc::new(resolver))
+            .build());
+
 
         match cmd.run(core, &args).await {
             Ok(_) => {},

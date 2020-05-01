@@ -24,3 +24,8 @@ pub use service::Service;
 pub use scratchpad::Scratchpad;
 pub use target::Target;
 pub use resolver::Resolver;
+
+#[cfg(test)]
+pub use launcher::{MockLaunch, MockLauncher};
+#[cfg(test)]
+pub use resolver::MockResolver;

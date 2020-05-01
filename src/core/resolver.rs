@@ -1,6 +1,5 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
-use std::sync::Arc;
-use std::{rc::Rc, env};
+use std::env;
 use glob::glob;
 use crate::search;
 
@@ -17,11 +16,11 @@ pub trait Resolver {
 }
 
 pub struct FileSystemResolver {
-    config: Arc<Config>,
+    config: Config,
 }
 
 impl FileSystemResolver {
-    pub fn new(config: Arc<Config>) -> Self{
+    pub fn new(config: Config) -> Self{
         Self {
             config
         }
@@ -39,7 +38,7 @@ impl Resolver for FileSystemResolver {
                 if let Some(name) = dir_info.file_name().to_str() {
                     scratchpads.push(Scratchpad::new(
                         name, 
-                        Rc::new(dir_info.path().to_path_buf())));
+                        dir_info.path().to_path_buf()));
                 }
             }
         }
@@ -50,7 +49,7 @@ impl Resolver for FileSystemResolver {
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name.clone(), 
-            Rc::new(self.config.get_scratch_directory().join(name.clone()))))
+            self.config.get_scratch_directory().join(name.clone())))
     }
 
     fn get_current_repo(&self) -> Result<Repo, Error> {
@@ -76,7 +75,7 @@ impl Resolver for FileSystemResolver {
         }
 
         match dir.strip_prefix(&dev_dir) {
-            Ok(relative_path) => repo_from_relative_path(self.config.as_ref(), &relative_path.to_path_buf()),
+            Ok(relative_path) => repo_from_relative_path(&self.config, &relative_path.to_path_buf()),
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.", 
                 format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display()).as_str(),
@@ -207,6 +206,88 @@ fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::Pa
 }
 
 #[cfg(test)]
+pub struct MockResolver {
+    repo: Option<Repo>,
+    repos: Vec<Repo>,
+    scratchpads: Vec<Scratchpad>,
+    error: Option<Error>
+}
+
+#[cfg(test)]
+impl MockResolver {
+    pub fn set_repo(&mut self, repo: Repo) {
+        self.repo = Some(repo)
+    }
+
+    pub fn set_repos(&mut self, repos: Vec<Repo>) {
+        self.repos = repos
+    }
+}
+
+#[cfg(test)]
+impl Default for MockResolver {
+    fn default() -> Self {
+        Self {
+            repo: None,
+            repos: Vec::new(),
+            scratchpads: Vec::new(),
+            error: None
+        }
+    }
+}
+
+#[cfg(test)]
+impl Resolver for MockResolver {
+    fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
+        match self.error.clone() {
+            Some(err) => Err(err),
+            None => Ok(self.scratchpads.clone())
+        }
+    }
+    fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
+        Ok(Scratchpad::new(
+            name.clone(), 
+            std::path::PathBuf::from(name.clone())))
+    }
+
+    fn get_current_repo(&self) -> Result<Repo, Error> {
+        match self.repo.clone() {
+            Some(repo) => Ok(repo),
+            None => Err(errors::user(
+                "Current directory is not a valid repository.",
+                "Make sure that you are currently within a repository contained within your development directory."))
+        }
+    }
+
+    fn get_repo(&self, _path: &std::path::PathBuf) -> Result<Repo, Error> {
+        match self.repo.clone() {
+            Some(repo) => Ok(repo),
+            None => Err(errors::user(
+                "Current directory is not a valid repository.",
+                "Make sure that you are currently within a repository contained within your development directory."))
+        }
+    }
+
+    fn get_repos(&self) -> Result<Vec<Repo>, Error> {
+        match self.error.clone() {
+            Some(err) => Err(err),
+            None => Ok(self.repos.clone())
+        }
+    }
+
+    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
+        match self.error.clone() {
+            Some(err) => Err(err),
+            None => Ok(self.repos.iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
+        }
+    }
+    fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
+        let path = std::path::PathBuf::from(name);
+        self.get_repo(&path)
+    }
+}
+
+#[cfg(test)]
 mod tests {
-    
+
 }

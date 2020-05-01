@@ -16,21 +16,19 @@ impl Core {
 }
 
 pub struct CoreBuilder {
-    config: Arc<Config>,
-    file_source: Arc<dyn FileSource + Sync + Send>,
-    launcher: Arc<dyn Launcher + Sync + Send>,
-    resolver: Arc<dyn Resolver + Sync + Send>
+    config: Config,
+    file_source: Option<Arc<dyn FileSource + Sync + Send>>,
+    launcher: Option<Arc<dyn Launcher + Sync + Send>>,
+    resolver: Option<Arc<dyn Resolver + Sync + Send>>
 }
 
 impl Default for CoreBuilder {
     fn default() -> Self {
-        let cfg = Arc::new(Config::default());
-
         Self {
-            config: cfg.clone(),
-            file_source: Arc::new(super::files::FileSystemSource{}),
-            launcher: Arc::new(super::launcher::TokioLauncher{}),
-            resolver: Arc::new(super::resolver::FileSystemResolver::new(cfg.clone()))
+            config: Config::default(),
+            file_source: None,
+            launcher: None,
+            resolver: None
         }
     }
 }
@@ -44,19 +42,19 @@ impl std::convert::Into<Core> for CoreBuilder {
 impl CoreBuilder {
     pub fn build(&self) -> Core {
         Core {
-            config: self.config.clone(),
-            file_source: self.file_source.clone(),
-            launcher: self.launcher.clone(),
-            resolver: self.resolver.clone()
+            config: Arc::new(self.config.clone()),
+            file_source: self.file_source.clone().unwrap_or(Arc::new(super::files::FileSystemSource{})),
+            launcher: self.launcher.clone().unwrap_or(Arc::new(super::launcher::TokioLauncher{})),
+            resolver: self.resolver.clone().unwrap_or(Arc::new(super::resolver::FileSystemResolver::new(self.config.clone())))
         }
     }
 
-    pub fn with_config(&mut self, config: &Config) -> &Self {
-        self.config = Arc::new(config.clone());
+    pub fn with_config(&mut self, config: &Config) -> &mut Self {
+        self.config = config.clone();
         self
     }
 
-    pub fn with_config_file(&mut self, cfg_file: &str) -> Result<&Self, Error> {
+    pub fn with_config_file(&mut self, cfg_file: &str) -> Result<&mut Self, Error> {
         let f = std::fs::File::open(cfg_file)?;
 
         let cfg = Config::from_reader(f)?;
@@ -65,20 +63,20 @@ impl CoreBuilder {
     }
     
     #[cfg(test)]
-    pub fn with_file_source(&mut self, file_source: Arc<dyn FileSource + Send + Sync>) -> &Self {
-        self.file_source = file_source;
+    pub fn with_file_source(&mut self, file_source: Arc<dyn FileSource + Send + Sync>) -> &mut Self {
+        self.file_source = Some(file_source);
         self
     }
     
     #[cfg(test)]
-    pub fn with_launcher(&mut self, launcher: Arc<dyn Launcher + Send + Sync>) -> &Self {
-        self.launcher = launcher;
+    pub fn with_launcher(&mut self, launcher: Arc<dyn Launcher + Send + Sync>) -> &mut Self {
+        self.launcher = Some(launcher);
         self
     }
     
     #[cfg(test)]
-    pub fn with_resolver(&mut self, resolver: Arc<dyn Resolver + Send + Sync>) -> &Self {
-        self.resolver = resolver;
+    pub fn with_resolver(&mut self, resolver: Arc<dyn Resolver + Send + Sync>) -> &mut Self {
+        self.resolver = Some(resolver);
         self
     }
 }

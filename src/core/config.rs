@@ -29,12 +29,12 @@ pub struct Config {
 impl Config {
     pub fn extend(&self, other: Self) -> Self {
         let mut into = self.clone();
-        let mut from = other.clone();
+        let from = other.clone();
 
         if !from.dev_directory.is_empty() { into.dev_directory = from.dev_directory.clone(); }
         if !from.scratch_directory.is_empty() { into.scratch_directory = from.scratch_directory.clone(); }
-        into.services.append(from.services.as_mut());
-        into.apps.append(from.apps.as_mut());
+        if !from.services.is_empty() { into.services = from.services.clone(); }
+        if !from.apps.is_empty() { into.apps = from.apps.clone(); }
         into.features = from.features;
         
         for (k, v) in from.aliases.iter() {
@@ -156,6 +156,49 @@ mod tests {
             Ok(cfg) => {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
                 assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/scratch"));
+
+                match cfg.get_service("github.com") {
+                    Some(_) => {},
+                    None => panic!("The default services should be present.")
+                }
+                
+                match cfg.get_app("shell") {
+                    Some(_) => {},
+                    None => panic!("The default apps should be present.")
+                }
+            },
+            Err(e) => {
+                panic!(e.message())
+            }
+        }
+    }
+    
+    #[test]
+    fn load_from_string_with_new_apps() {
+        match Config::from_str("
+directory: /test/dev
+
+apps:
+    - name: test-app
+      command: test
+") {
+            Ok(cfg) => {
+                assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
+
+                match cfg.get_service("github.com") {
+                    Some(_) => {},
+                    None => panic!("The default services should be present.")
+                }
+                
+                match cfg.get_app("test-app") {
+                    Some(_) => {},
+                    None => panic!("The new apps should be present.")
+                }
+                
+                match cfg.get_app("shell") {
+                    Some(_) => panic!("The default apps should not be present."),
+                    None => {},
+                }
             },
             Err(e) => {
                 panic!(e.message())
