@@ -1,0 +1,23 @@
+name: Test Changes
+on: [push, pull_request]
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1.0.6
+
+    - name: Check out code
+      uses: actions/checkout@v1
+        
+    - name: Run tests
+      uses: actions-rs/cargo@v1.0.1
+      with:
+        command: test
+      
+#     - name: Upload code coverage
+#       uses: codecov/codecov-action@v1.0.5
+#       with:
+#         token: ${{ secrets.CODECOV_TOKEN }}
+#         file: ./coverage.txt
