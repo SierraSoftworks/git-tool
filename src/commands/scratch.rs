@@ -132,6 +132,7 @@ apps:
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
+                assert_eq!(launch.app.get_name(), "test-app");
                 assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w01"));
                 assert_eq!(status, 5);
             },
@@ -159,12 +160,6 @@ apps:
 ").unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        
-        {
-            let mut status = launcher.status.lock().await;
-            *status = 5;
-        }
-
         let resolver = MockResolver::default();
 
         let core = Arc::new(Core::builder()
@@ -175,13 +170,13 @@ apps:
 
 
         match cmd.run(core, &args).await {
-            Ok(status) => {
+            Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
+                assert_eq!(launch.app.get_name(), "test-app");
                 assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w01"));
-                assert_eq!(status, 5);
             },
             Err(err) => {
                 panic!(err.message())
@@ -207,12 +202,6 @@ apps:
 ").unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        
-        {
-            let mut status = launcher.status.lock().await;
-            *status = 5;
-        }
-
         let resolver = MockResolver::default();
 
         let core = Arc::new(Core::builder()
@@ -223,17 +212,94 @@ apps:
 
 
         match cmd.run(core, &args).await {
-            Ok(status) => {
+            Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
+                assert_eq!(launch.app.get_name(), "test-app");
                 assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
-                assert_eq!(status, 5);
             },
             Err(err) => {
                 panic!(err.message())
             }
+        }
+    }
+    
+    #[tokio::test]
+    async fn run_app_and_scratchpad() {
+        let cmd = ScratchCommand{};
+
+        let args = cmd.app().get_matches_from(vec!["scratch", "test-app", "2020w07"]);
+
+        let cfg = Config::from_str("
+directory: /dev
+scratchpads: /dev/scratch
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+").unwrap();
+
+        let launcher = Arc::new(MockLauncher::default());
+        let resolver = MockResolver::default();
+
+        let core = Arc::new(Core::builder()
+            .with_config(&cfg)
+            .with_launcher(launcher.clone())
+            .with_resolver(Arc::new(resolver))
+            .build());
+
+
+        match cmd.run(core, &args).await {
+            Ok(_) => {
+                let launches = launcher.launches.lock().await;
+                assert_eq!(launches.len(), 1);
+                
+                let launch = &launches[0];
+                assert_eq!(launch.app.get_name(), "test-app");
+                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
+            },
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+    }
+    
+    #[tokio::test]
+    async fn run_unknown_app() {
+        let cmd = ScratchCommand{};
+
+        let args = cmd.app().get_matches_from(vec!["scratch", "unknown-app", "2020w07"]);
+
+        let cfg = Config::from_str("
+directory: /dev
+scratchpads: /dev/scratch
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+").unwrap();
+
+        let launcher = Arc::new(MockLauncher::default());
+        let resolver = MockResolver::default();
+
+        let core = Arc::new(Core::builder()
+            .with_config(&cfg)
+            .with_launcher(launcher.clone())
+            .with_resolver(Arc::new(resolver))
+            .build());
+
+
+        match cmd.run(core, &args).await {
+            Ok(_) => {
+                panic!("It should not launch an app.");
+            },
+            Err(_) => {}
         }
     }
 }
