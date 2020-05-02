@@ -310,6 +310,7 @@ mod tests {
     use super::super::Target;
     use super::{Config, Resolver, FileSystemResolver};
     use std::path;
+    use chrono::prelude::*;
 
     #[test]
     fn get_scratchpads() {
@@ -339,6 +340,18 @@ mod tests {
 
         let example = resolver.get_scratchpad("2019w10").unwrap();
         assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w10"));
+    }
+
+    #[test]
+    fn get_current_scratchpad() {
+        let resolver = get_resolver();
+
+        let time = Local::now();
+        let name = time.format("%Yw%V").to_string();
+
+        let example = resolver.get_current_scratchpad().unwrap();
+        assert_eq!(example.get_name(), name);
+        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join(name));
     }
 
     fn get_dev_dir() -> path::PathBuf {
