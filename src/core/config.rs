@@ -113,9 +113,30 @@ impl Default for Config {
                 Arc::new(service::Service::builder()
                     .with_domain("github.com")
                     .with_pattern("*/*")
-                    .with_website("https://github.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}")
-                    .with_git_url("git@github.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}.git")
-                    .with_http_url("https://github.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}.git")
+                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
+                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
+                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
+                    .into()),
+                Arc::new(service::Service::builder()
+                    .with_domain("gitlab.com")
+                    .with_pattern("*/*")
+                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
+                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
+                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
+                    .into()),
+                Arc::new(service::Service::builder()
+                    .with_domain("bitbucket.org")
+                    .with_pattern("*/*")
+                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
+                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
+                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
+                    .into()),
+                Arc::new(service::Service::builder()
+                    .with_domain("dev.azure.com")
+                    .with_pattern("*/*/*")
+                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}")
+                    .with_git_url("git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git")
+                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}.git")
                     .into()),
             ],
             aliases: HashMap::new(),
