@@ -1,6 +1,5 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
 use std::env;
-use glob::glob;
 use chrono::prelude::*;
 use crate::search;
 
@@ -74,8 +73,8 @@ impl Resolver for FileSystemResolver {
 
     fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
         let dev_dir = self.config.get_dev_directory().canonicalize()?;
-        let dir = if path.is_absolute() { path.canonicalize()? } else { self.config.get_dev_directory().join(path).canonicalize()? };
-
+        let dir = if path.is_absolute() { path.clone() } else { dev_dir.join(path) };
+        
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
             return Err(errors::user(
                 "Current directory is not a valid repository.",
@@ -100,7 +99,7 @@ impl Resolver for FileSystemResolver {
         }
 
         let all_repos = self.get_repos()?;
-        let repos: Vec<&Repo> = all_repos.iter().filter(|r| search::matches(r.get_full_name().as_str(), name)).collect();
+        let repos: Vec<&Repo> = all_repos.iter().filter(|r| search::matches((r.get_domain() + r.get_full_name().as_str()).as_str(), name)).collect();
 
         match repos.len() {
             0 => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again.")),
@@ -135,33 +134,20 @@ impl Resolver for FileSystemResolver {
     }
 
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
+        if !svc.get_pattern().split("/").all(|p| p == "*") {
+            return Err(errors::user(
+                format!("The glob pattern used for the '{}' service was invalid.", svc.get_domain()).as_str(),
+                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."))
+        }
+
         let path = self.config.get_dev_directory().join(svc.get_domain());
 
-        let mut repos = vec![];
-
-        match glob(path.join(svc.get_pattern()).to_str().unwrap()) {
-            Ok(entries) => {
-                for entry in entries  {
-                    match entry {
-                        Ok(path) => {
-                            if path.is_dir() {
-                                match self.get_repo(&path) {
-                                    Ok(repo) => repos.push(repo),
-                                    Err(e) => { return Err(e) }
-                                }
-                            }
-                        },
-                        Err(_) => {}
-                    }
-                }
-            },
-            Err(e) => {
-                return Err(errors::user_with_internal(
-                    format!("The glob pattern used for the '{}' service was invalid.", svc.get_domain()).as_str(),
-                    "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again.",
-                    e))
-            }
-        }
+        let repos = get_child_directories(&path, svc.get_pattern().as_str())
+            .iter()
+            .map(|p| self.get_repo(p))
+            .filter(|r| r.is_ok())
+            .map(|r| r.unwrap())
+            .collect();
 
         Ok(repos)
     }
@@ -173,7 +159,7 @@ fn service_from_relative_path<'a>(config: &'a Config, relative_path: &std::path:
             format!("The path '{}' used to resolve a repo was not relative.", relative_path.display()).as_str(),
             "Please report this issue to us on GitHub, including the command you ran, so that we can troubleshoot the problem."))
     }
-    
+
     let mut components = relative_path.components();
     match components.next() {
         Some(std::path::Component::Normal(name)) => {
@@ -188,7 +174,6 @@ fn service_from_relative_path<'a>(config: &'a Config, relative_path: &std::path:
             format!("The path '{}' used to resolve a repo did not start with a service domain name.", relative_path.display()).as_str(),
             "Make sure that your repository starts with the name of a service, such as 'github.com/sierrasoftworks/git-tool'."))
     }
-    
 }
 
 fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::PathBuf) -> Result<Repo, Error> {
@@ -209,8 +194,47 @@ fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::Pa
             format!("The service '{}' requires a repository name in the form '{}', but we got '{}'.", svc.get_domain(), svc.get_pattern(), relative_path.display()).as_str(),
             "Make sure that your repository is correctly named for the service you are using."))
     } else {
-        Ok(Repo::new(name_parts.join("/").as_str(), config.get_dev_directory().join(relative_path)))
+        Ok(Repo::new(name_parts.join("/").as_str(), to_native_path(config.get_dev_directory().join(relative_path))))
     }
+}
+
+fn to_native_path(path: std::path::PathBuf) -> std::path::PathBuf {
+    let mut output = std::path::PathBuf::new();
+    output.extend(path.components().flat_map(|c| match c {
+        std::path::Component::Normal(n) => n.to_str().unwrap().split("/").map(|p| std::path::Component::Normal(p.as_ref())).collect(),
+        _ => vec![c]
+    }));
+
+    output
+}
+
+fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
+    let depth = pattern.split("/").count();
+    
+    get_directory_tree_to_depth(from, depth)
+}
+
+fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
+    if depth == 0 {
+        return vec![from.clone()]
+    }
+
+    from.read_dir()
+        .map(|dirs| dirs
+            .map(|dir| match dir {
+                    Ok(d) => {
+                        match d.file_type() {
+                            Ok(ft) => if ft.is_dir() { Some(d.path()) } else { None },
+                            Err(_) => None
+                        }
+                    },
+                    Err(_) => None
+                })
+                .filter(|d| d.is_some())
+                .map(|d| d.unwrap())
+                .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
+                .collect())
+                .unwrap()
 }
 
 #[cfg(test)]
@@ -354,8 +378,84 @@ mod tests {
         assert_eq!(example.get_path(), get_dev_dir().join("scratch").join(name));
     }
 
+    #[test]
+    fn get_repos() {
+        let resolver = get_resolver();
+
+        let results = resolver.get_repos().unwrap();
+        assert_eq!(results.len(), 6);
+
+        let example = results.iter().find(|r| r.get_full_name() == "sierrasoftworks/test1").unwrap();
+        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+    }
+
+    #[test]
+    fn get_repos_for() {
+        let resolver = get_resolver();
+
+        let svc = resolver.config.get_service("github.com").unwrap();
+
+        let results = resolver.get_repos_for(svc).unwrap();
+        assert_eq!(results.len(), 4);
+
+        let example = results.iter().find(|r| r.get_full_name() == "sierrasoftworks/test1").unwrap();
+        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+    }
+
+    #[test]
+    fn get_best_repo() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_best_repo("ghspt1").unwrap();
+        assert_eq!(example.get_full_name(), "spartan563/test1");
+    }
+
+    #[test]
+    fn get_repo_exists() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test1")).unwrap();
+        assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
+        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+    }
+
+    #[test]
+    fn get_repo_exists_absolute() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_repo(&get_dev_dir().join("github.com/sierrasoftworks/test1")).unwrap();
+        assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
+        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+    }
+
+    #[test]
+    fn get_repo_new() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test3")).unwrap();
+        assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
+        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test3"));
+    }
+
+    #[test]
+    fn to_native_path() {
+        assert_eq!(super::to_native_path(get_dev_dir().join("github.com/sierrasoftworks")), get_dev_dir().join("github.com").join("sierrasoftworks"));
+    }
+
+    #[test]
+    fn get_child_directories() {
+        let children = super::get_child_directories(&get_dev_dir().join("github.com"), "*/*");
+
+        assert_eq!(children.len(), 4);
+
+        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("sierrasoftworks").join("test1")));
+        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("sierrasoftworks").join("test2")));
+        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("spartan563").join("test1")));
+        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("spartan563").join("test2")));
+    }
+
     fn get_dev_dir() -> path::PathBuf {
-        let file = path::PathBuf::from(file!());
+        let file = path::PathBuf::from(file!()).canonicalize().unwrap();
         file.parent().unwrap()
             .parent().unwrap()
             .parent().unwrap()

@@ -2,7 +2,6 @@ extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
 extern crate tokio;
-extern crate glob;
 extern crate chrono;
 
 use clap::{Arg, App, ArgMatches};
