@@ -136,7 +136,10 @@ apps:
             Ok(status) => {
                 assert_eq!(status, 5);
                 let launches = launcher.launches.lock().await;
-                assert!(launches.len() > 0);
+                assert!(launches.len() == 1);
+
+                let launch = &launches[0];
+                assert_eq!(launch.target_path, std::path::PathBuf::from("/test"))
             },
             Err(err) => {
                 panic!(err.message())

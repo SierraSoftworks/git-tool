@@ -9,6 +9,7 @@ use async_trait::async_trait;
 mod ignore;
 mod info;
 mod open;
+mod scratch;
 
 #[async_trait]
 pub trait Command {
@@ -22,5 +23,6 @@ pub fn commands() -> Vec<Arc<dyn Command>> {
         Arc::new(info::InfoCommand{}),
         Arc::new(ignore::IgnoreCommand{}),
         Arc::new(open::OpenCommand{}),
+        Arc::new(scratch::ScratchCommand{}),
     ]
 }

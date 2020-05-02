@@ -6,6 +6,7 @@ use super::Target;
 
 #[cfg(test)]
 use tokio::sync::Mutex;
+#[cfg(test)]
 use std::sync::Arc;
 
 #[async_trait]

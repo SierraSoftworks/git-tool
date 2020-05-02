@@ -1,11 +1,13 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
 use std::env;
 use glob::glob;
+use chrono::prelude::*;
 use crate::search;
 
 pub trait Resolver {
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
+    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error>;
 
     fn get_current_repo(&self) -> Result<Repo, Error>;
     fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error>;
@@ -50,6 +52,12 @@ impl Resolver for FileSystemResolver {
         Ok(Scratchpad::new(
             name.clone(), 
             self.config.get_scratch_directory().join(name.clone())))
+    }
+
+    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
+        let time = Local::now();
+
+        self.get_scratchpad(time.format("%Yw%V").to_string().as_str())
     }
 
     fn get_current_repo(&self) -> Result<Repo, Error> {
@@ -210,6 +218,7 @@ pub struct MockResolver {
     repo: Option<Repo>,
     repos: Vec<Repo>,
     scratchpads: Vec<Scratchpad>,
+    current_date: DateTime<Local>,
     error: Option<Error>
 }
 
@@ -222,6 +231,10 @@ impl MockResolver {
     pub fn set_repos(&mut self, repos: Vec<Repo>) {
         self.repos = repos
     }
+
+    pub fn set_scratchpads(&mut self, scratchpads: Vec<Scratchpad>) {
+        self.scratchpads = scratchpads
+    }
 }
 
 #[cfg(test)]
@@ -231,6 +244,7 @@ impl Default for MockResolver {
             repo: None,
             repos: Vec::new(),
             scratchpads: Vec::new(),
+            current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
             error: None
         }
     }
@@ -247,7 +261,11 @@ impl Resolver for MockResolver {
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name.clone(), 
-            std::path::PathBuf::from(name.clone())))
+            std::path::PathBuf::from("/dev/scratch").join(name.clone())))
+    }
+
+    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
+        self.get_scratchpad(self.current_date.format("%Yw%V").to_string().as_str())
     }
 
     fn get_current_repo(&self) -> Result<Repo, Error> {
