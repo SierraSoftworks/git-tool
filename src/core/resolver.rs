@@ -320,11 +320,38 @@ mod tests {
         assert!(results.iter().any(|r| r.get_name() == "2019w15"));
         assert!(results.iter().any(|r| r.get_name() == "2019w16"));
         assert!(results.iter().any(|r| r.get_name() == "2019w27"));
+
+        let example = results.iter().find(|r| r.get_name() == "2019w15").unwrap();
+        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w15"));
+    }
+
+    #[test]
+    fn get_scratchpad_existing() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_scratchpad("2019w15").unwrap();
+        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w15"));
+    }
+
+    #[test]
+    fn get_scratchpad_new() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_scratchpad("2019w10").unwrap();
+        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w10"));
+    }
+
+    fn get_dev_dir() -> path::PathBuf {
+        let file = path::PathBuf::from(file!());
+        file.parent().unwrap()
+            .parent().unwrap()
+            .parent().unwrap()
+            .join("test")
+            .join("devdir")
     }
 
     fn get_resolver() -> FileSystemResolver {
-        let file = path::PathBuf::from(file!());
-        let dev_dir = file.parent().unwrap().parent().unwrap().parent().unwrap().join("test").join("devdir");
+        let dev_dir = get_dev_dir();
 
         let config = Config::from_str(format!("
 directory: '{}'
