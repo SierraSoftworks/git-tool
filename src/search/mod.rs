@@ -20,3 +20,39 @@ pub fn matches(value: &str, sequence: &str) -> bool {
         None => true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn match_empty_sequence() {
+        assert!(matches("", ""));
+        assert!(matches("test", ""));
+    }
+
+    #[test]
+    fn match_exact() {
+        assert!(matches("test", "test"));
+        assert!(!matches("test", "bucket"));
+    }
+
+    #[test]
+    fn match_substring() {
+        assert!(matches("test", "tes"));
+        assert!(matches("test", "est"));
+        assert!(!matches("test", "set"));
+    }
+
+    #[test]
+    fn match_ordering() {
+        assert!(matches("test", "tst"));
+        assert!(matches("test", "st"));
+        assert!(!matches("test", "se"));
+    }
+
+    #[test]
+    fn match_too_long() {
+        assert!(!matches("test", "testing"));
+    }
+}
