@@ -247,4 +247,40 @@ bin/
             Err(e) => panic!(e.message())
         }
     }
+
+    #[tokio::test]
+    async fn add_or_update_existing_same_langs() {
+        match add_or_update("
+## -------- Managed by Git Tool -------- ##
+## Add any custom rules above this block ##
+## ------------------------------------- ##
+## @languages: go,rust
+/test
+", vec!["rust"]).await {
+            Ok(result) => {
+                assert!(result.contains("## @languages: go,rust\n"));
+                assert!(result.contains("/target/\n"));
+                assert!(!result.contains("/test\n"));
+            },
+            Err(e) => panic!(e.message())
+        }
+    }
+
+    #[tokio::test]
+    async fn add_or_update_existing_new_langs() {
+        match add_or_update("
+## -------- Managed by Git Tool -------- ##
+## Add any custom rules above this block ##
+## ------------------------------------- ##
+## @languages: go
+/test
+", vec!["rust"]).await {
+            Ok(result) => {
+                assert!(result.contains("## @languages: go,rust\n"));
+                assert!(result.contains("/target/\n"));
+                assert!(!result.contains("/test\n"));
+            },
+            Err(e) => panic!(e.message())
+        }
+    }
 }
