@@ -84,7 +84,9 @@ impl Command for ScratchCommand {
             }
         }
         
-        Ok(0)
+        Err(errors::system(
+            "We got ourselves into an unexpected state and weren't able to open your scratchpad.",
+            "Please open a bug report with us on GitHub explaining what you were doing when this happened."))
     }
 }
 
