@@ -5,9 +5,6 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1.0.6
-
     - name: Check out code
       uses: actions/checkout@v1
         
