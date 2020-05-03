@@ -77,3 +77,68 @@ impl Launcher for MockLauncher {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::Scratchpad;
+    use std::path::PathBuf;
+
+    #[tokio::test]
+    #[cfg(windows)]
+    async fn run_app_windows() {
+        let a: app::App = app::App::builder()
+            .with_name("test")
+            .with_command("powershell.exe")
+            .with_args(vec![
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "exit $env:TEST_CODE"
+            ])
+            .with_environment(vec!["TEST_CODE=123"])
+            .into();
+
+        let test_dir = PathBuf::from(file!())
+            .parent()
+            .and_then(|f| f.parent())
+            .and_then(|f| f.parent())
+            .and_then(|f| Some(f.join("test")))
+            .unwrap();
+
+        let t = Scratchpad::new("test", test_dir);
+
+        let launcher = TokioLauncher{};
+
+        let result = launcher.run(&a, &t).await.unwrap();
+        assert_eq!(result, 123);
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn run_app_linux() {
+        let a: app::App = app::App::builder()
+            .with_name("test")
+            .with_command("sh")
+            .with_args(vec![
+                "-c",
+                "exit $TEST_CODE"
+            ])
+            .with_environment(vec!["TEST_CODE=123"])
+            .into();
+
+        let test_dir = PathBuf::from(file!())
+            .parent()
+            .and_then(|f| f.parent())
+            .and_then(|f| f.parent())
+            .and_then(|f| Some(f.join("test")))
+            .unwrap();
+
+        let t = Scratchpad::new("test", test_dir);
+
+        let launcher = TokioLauncher{};
+
+        let result = launcher.run(&a, &t).await.unwrap();
+        assert_eq!(result, 123);
+    }
+}
