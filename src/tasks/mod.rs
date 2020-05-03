@@ -8,6 +8,7 @@ mod sequence;
 mod new_folder;
 
 pub use sequence::Sequence;
+pub use new_folder::NewFolder;
 
 #[async_trait]
 pub trait Task {

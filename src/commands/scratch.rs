@@ -1,6 +1,5 @@
 use clap::{App, SubCommand, Arg, ArgMatches};
-use super::Command;
-use super::core;
+use super::{Command, core, core::Target, tasks, tasks::Task};
 use super::super::errors;
 use super::async_trait;
 use std::sync::Arc;
@@ -79,6 +78,11 @@ impl Command for ScratchCommand {
 
         if let Some(scratchpad) = scratchpad {
             if let Some(app) = app {
+                if !scratchpad.exists() {
+                    let task = tasks::NewFolder{};
+                    task.apply_scratchpad(&scratchpad).await?;
+                }
+
                 let status = core.launcher.run(app, &scratchpad).await?;
                 return Ok(status)
             }
@@ -302,6 +306,60 @@ apps:
                 panic!("It should not launch an app.");
             },
             Err(_) => {}
+        }
+    }
+    
+    #[tokio::test]
+    async fn run_new_scratchpad() {
+        let cmd = ScratchCommand{};
+
+        let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
+
+        let dev_dir = std::path::PathBuf::from(file!())
+            .parent()
+            .and_then(|f| f.parent())
+            .and_then(|f| f.parent())
+            .and_then(|f| Some(f.join("test")))
+            .and_then(|f| Some(f.join("devdir")))
+            .unwrap();
+
+        let cfg = Config::from_str(format!("
+directory: {}
+scratchpads: {}
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+", dev_dir.display(), dev_dir.join("scratch").display()).as_str()).unwrap();
+
+        let launcher = Arc::new(MockLauncher::default());
+        let resolver = MockResolver::default();
+
+        let core = Arc::new(Core::builder()
+            .with_config(&cfg)
+            .with_launcher(launcher.clone())
+            .with_resolver(Arc::new(resolver))
+            .build());
+
+
+        match cmd.run(core, &args).await {
+            Ok(_) => {
+                let launches = launcher.launches.lock().await;
+                assert_eq!(launches.len(), 1);
+
+                let launch = &launches[0];
+                assert_eq!(launch.app.get_name(), "test-app");
+                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
+
+                assert_eq!(launch.target_path.exists(), true);
+
+                std::fs::remove_dir(launch.target_path.clone()).unwrap();
+            },
+            Err(err) => {
+                panic!(err.message())
+            }
         }
     }
 }

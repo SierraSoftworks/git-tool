@@ -2,6 +2,7 @@ use std::sync::Arc;
 use clap::{App, ArgMatches};
 use std::vec::Vec;
 use super::core;
+use super::tasks;
 use super::errors;
 use super::online;
 use async_trait::async_trait;
