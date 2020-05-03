@@ -5,6 +5,9 @@ use async_trait::async_trait;
 use tokio::sync::Mutex;
 
 mod sequence;
+mod new_folder;
+
+pub use sequence::Sequence;
 
 #[async_trait]
 pub trait Task {

@@ -1,11 +1,11 @@
 use super::{core, Task, async_trait};
 use std::sync::Arc;
 
-pub struct SequenceTask {
+pub struct Sequence {
     tasks: Vec<Arc<dyn Task + Send + Sync>>
 }
 
-impl SequenceTask {
+impl Sequence {
     fn new(tasks: Vec<Arc<dyn Task + Send + Sync>>) -> Self{
         Self {
             tasks
@@ -14,7 +14,7 @@ impl SequenceTask {
 }
 
 #[async_trait]
-impl Task for SequenceTask {
+impl Task for Sequence {
     async fn apply_repo(&self, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(repo).await?;
@@ -40,7 +40,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_sequence() {
-        let seq = SequenceTask::new(vec![]);
+        let seq = Sequence::new(vec![]);
         let repo = get_repo();
         let scratch = get_scratch();
 
@@ -52,7 +52,7 @@ mod tests {
     async fn test_repo() {
         let task1 = Arc::new(TestTask::default());
         let task2 = Arc::new(TestTask::default());
-        let seq = SequenceTask::new(vec![
+        let seq = Sequence::new(vec![
             task1.clone(),
             task2.clone()
         ]);
@@ -72,7 +72,7 @@ mod tests {
     async fn test_scratchpad() {
         let task1 = Arc::new(TestTask::default());
         let task2 = Arc::new(TestTask::default());
-        let seq = SequenceTask::new(vec![
+        let seq = Sequence::new(vec![
             task1.clone(),
             task2.clone()
         ]);
