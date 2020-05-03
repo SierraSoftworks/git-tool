@@ -89,4 +89,22 @@ mod tests {
         assert_eq!(render("{{ .Target.Name }}", (&scratch).into()).unwrap(), "2020w07");
         assert_eq!(render("{{ .Target.Path }}", (&scratch).into()).unwrap(), "/test/scratch/2020w07");
     }
+
+    #[test]
+    fn render_invalid_syntax() {
+        let scratch = Scratchpad::new(
+            "2020w07", 
+            PathBuf::from("/test/scratch/2020w07"));
+
+        render("{{ .Target.Name", (&scratch).into()).unwrap_err();
+    }
+
+    #[test]
+    fn render_invalid_field() {
+        let scratch = Scratchpad::new(
+            "2020w07", 
+            PathBuf::from("/test/scratch/2020w07"));
+
+        render("{{ .Target.UnknownField }}", (&scratch).into()).unwrap_err();
+    }
 }
