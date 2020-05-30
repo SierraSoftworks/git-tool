@@ -1,12 +1,12 @@
 ---
 name: PowerShell
-description: Launches the powershell instance within a project directory.
+description: Launches a powershell instance within a project directory.
 version: 1.0.0
 configs:
   - platform: windows
     app:
-      name: ps
-      command: powershell.exe
+      name: pwsh
+      command: pwsh.exe
       args:
         - "-NoExit"
         - "-Command"
