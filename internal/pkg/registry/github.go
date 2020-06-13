@@ -25,7 +25,7 @@ func (s *githubSource) GetEntries() ([]string, error) {
 
 	cl := github.NewClient(nil)
 
-	tree, _, err := cl.Git.GetTree(ctx, "sierrasoftworks", "git-tool", "master", true)
+	tree, _, err := cl.Git.GetTree(ctx, "sierrasoftworks", "git-tool", "main", true)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *githubSource) GetEntry(id string) (*Entry, error) {
 
 	cl := github.NewClient(nil)
 
-	file, _, _, err := cl.Repositories.GetContents(ctx, "sierrasoftworks", "git-tool", path.Join("registry", fmt.Sprintf("%s.yaml", id)), &github.RepositoryContentGetOptions{Ref: "master"})
+	file, _, _, err := cl.Repositories.GetContents(ctx, "sierrasoftworks", "git-tool", path.Join("registry", fmt.Sprintf("%s.yaml", id)), &github.RepositoryContentGetOptions{Ref: "main"})
 	if err != nil {
 		return nil, errors.Wrap(err, "registry: could not find entry")
 	}

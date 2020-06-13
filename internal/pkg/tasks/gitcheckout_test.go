@@ -32,7 +32,7 @@ func TestGitCheckout(t *testing.T) {
 			defer os.RemoveAll(r.Path())
 			out.Reset()
 
-			assert.Error(t, tasks.GitCheckout("master", false).ApplyRepo(r), "it should return an error")
+			assert.Error(t, tasks.GitCheckout("main", false).ApplyRepo(r), "it should return an error")
 			assert.Empty(t, out.GetOperations(), "it should not log anything")
 			assert.False(t, r.Exists(), "it should not create the repository folder")
 		})
@@ -42,7 +42,7 @@ func TestGitCheckout(t *testing.T) {
 			defer os.RemoveAll(filepath.Join(r.Path(), ".git"))
 			out.Reset()
 
-			assert.Error(t, tasks.GitCheckout("master", false).ApplyRepo(r), "it should return an error")
+			assert.Error(t, tasks.GitCheckout("main", false).ApplyRepo(r), "it should return an error")
 			assert.Empty(t, out.GetOperations(), "it should not log anything")
 			assert.True(t, r.Exists(), "the repository folder should still exist")
 			assert.False(t, r.Valid(), "it should not initialize the repository folder")
@@ -63,14 +63,14 @@ func TestGitCheckout(t *testing.T) {
 				tasks.NewFile("README.md", []byte("# Test Repo\nWith changes")),
 				tasks.GitCommit("Made changes to README", "README.md"),
 				tasks.GitNewRef("refs/heads/test-branch2"),
-				tasks.GitCheckout("master", false),
+				tasks.GitCheckout("main", false),
 			).ApplyRepo(r), "the repository should be setup correctly for the test")
 
 			gr, err := git.PlainOpen(r.Path())
 			require.NoError(t, err, "we should be able to read the git repo")
 
-			master, err := gr.Reference("refs/heads/master", true)
-			require.NoError(t, err, "we should be able to get the 'master' ref of the repo")
+			main, err := gr.Reference("refs/heads/main", true)
+			require.NoError(t, err, "we should be able to get the 'main' ref of the repo")
 
 			testBranch, err := gr.Reference("refs/remotes/origin/test-branch", true)
 			require.NoError(t, err, "we should be able to get the 'test-branch' ref of the repo")
@@ -78,13 +78,13 @@ func TestGitCheckout(t *testing.T) {
 			t.Run("Local Branch", func(t *testing.T) {
 				out.Reset()
 
-				require.NoError(t, tasks.GitCheckout("master", false).ApplyRepo(r), "it should not return any errors")
+				require.NoError(t, tasks.GitCheckout("main", false).ApplyRepo(r), "it should not return any errors")
 				assert.Empty(t, out.GetOperations(), "it should not log anything")
 				assert.True(t, r.Exists(), "the repository folder should still exist")
 
 				head, err := gr.Head()
 				require.NoError(t, err, "we should be able to get the HEAD hash of the repo")
-				assert.Equal(t, master.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
+				assert.Equal(t, main.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
 			})
 
 			t.Run("Remote Branch", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestGitCheckout(t *testing.T) {
 
 				head, err := gr.Head()
 				require.NoError(t, err, "we should be able to get the HEAD hash of the repo")
-				assert.Equal(t, master.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
+				assert.Equal(t, main.Hash().String(), head.Hash().String(), "it should have the correct branch checked out")
 			})
 
 			t.Run("Explicit Remote Branch with Local Copy", func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestGitCheckout(t *testing.T) {
 		defer os.RemoveAll(sp.Path())
 		out.Reset()
 
-		require.NoError(t, tasks.GitCheckout("master", true).ApplyScratchpad(sp), "it should not return an error")
+		require.NoError(t, tasks.GitCheckout("main", true).ApplyScratchpad(sp), "it should not return an error")
 		assert.Empty(t, out.GetOperations(), "it should not log anything")
 		assert.False(t, sp.Exists(), "it should not have created the scratchpad folder")
 	})

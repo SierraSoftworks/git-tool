@@ -49,9 +49,9 @@ func TestGetBranches(t *testing.T) {
 			tasks.GitNewRef("refs/remotes/origin/test-branch"),
 			tasks.NewFile("README.md", []byte("# Test Repo\nWith changes")),
 			tasks.GitCommit("Made changes to README", "README.md"),
-			tasks.GitNewRef("refs/remotes/origin/master"),
+			tasks.GitNewRef("refs/remotes/origin/main"),
 			tasks.GitNewRef("refs/heads/test-branch2"),
-			tasks.GitCheckout("master", false),
+			tasks.GitCheckout("main", false),
 		).ApplyRepo(r), "we should be able to setup the test repo")
 
 		branches, err := di.GetMapper().GetBranches(r)
@@ -60,8 +60,8 @@ func TestGetBranches(t *testing.T) {
 
 		assert.Contains(t, branches, "test-branch2", "it should contain a branch which exists locally")
 		assert.Contains(t, branches, "test-branch", "it should contain a branch which exists remotely")
-		assert.Contains(t, branches, "master", "it should contain a branch which exists both locally and remotely")
-		assert.Contains(t, branches, "origin/master", "it should contain remote branch names")
+		assert.Contains(t, branches, "main", "it should contain a branch which exists both locally and remotely")
+		assert.Contains(t, branches, "origin/main", "it should contain remote branch names")
 		assert.Contains(t, branches, "origin/test-branch", "it should contain remote branch names")
 	})
 }

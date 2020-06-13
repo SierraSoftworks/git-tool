@@ -59,7 +59,7 @@ func TestGitInit(t *testing.T) {
 				tasks.GitRemote("origin"),
 				tasks.NewFile("README.md", []byte("# Test Repo")),
 				tasks.GitCommit("Initial Commit", "README.md"),
-				tasks.GitCheckout("master", false),
+				tasks.GitCheckout("main", false),
 			).ApplyRepo(r), "the repository should be setup correctly for the test")
 
 			assert.NoError(t, task.ApplyRepo(r), "it should return an error")

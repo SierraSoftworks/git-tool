@@ -30,7 +30,7 @@ func TestConfigAdd(t *testing.T) {
 		tasks.GitInit(),
 		tasks.NewFile("README.md", []byte("# Test Repo")),
 		tasks.GitCommit("Initial Commit", "README.md"),
-		tasks.GitCheckout("master", false),
+		tasks.GitCheckout("main", false),
 	).ApplyRepo(repo), "no error should be thrown when initializing the test repo")
 	require.NoError(t, os.Chdir(repo.Path()), "no error should be thrown when cd-ing into the repo")
 

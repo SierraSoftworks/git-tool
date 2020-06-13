@@ -31,7 +31,7 @@ func TestBranch(t *testing.T) {
 		tasks.GitInit(),
 		tasks.NewFile("README.md", []byte("# Test Repo")),
 		tasks.GitCommit("Initial Commit", "README.md"),
-		tasks.GitCheckout("master", false),
+		tasks.GitCheckout("main", false),
 	).ApplyRepo(repo), "no error should be thrown when initializing the test repo")
 	require.NoError(t, os.Chdir(repo.Path()), "no error should be thrown when cd-ing into the repo")
 
@@ -65,7 +65,7 @@ func TestBranch(t *testing.T) {
 			out.Reset()
 			require.NoError(t, runApp("complete", fmt.Sprintf("gt %s ", cmd)), "no error should be thrown")
 
-			assert.Contains(t, out.GetOperations(), "master\n", "it should print out the list of branch names")
+			assert.Contains(t, out.GetOperations(), "main\n", "it should print out the list of branch names")
 		})
 	})
 }
