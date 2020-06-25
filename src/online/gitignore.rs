@@ -29,7 +29,7 @@ pub async fn add_or_update(content: &str, new_languages: Vec<&str>) -> Result<St
 pub async fn list() -> Result<Vec<String>, Error> {
     let client = Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
 
-    let uri = "https://gitignore.io/api/list".parse()?;
+    let uri = "https://www.toptal.com/developers/gitignore/api/list".parse()?;
     let response = client.get(uri).await?;
 
     if !response.status().is_success() {
@@ -47,7 +47,7 @@ pub async fn ignore(langs: Vec<&str>) -> Result<String, Error> {
 
     let client = Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
 
-    let uri = format!("https://gitignore.io/api/{}", langs.join(",")).parse()?;
+    let uri = format!("https://www.toptal.com/developers/gitignore/api/{}", langs.join(",")).parse()?;
     let response = client.get(uri).await?;
 
     if response.status() == StatusCode::NOT_FOUND {
