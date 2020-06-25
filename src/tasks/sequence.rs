@@ -1,12 +1,23 @@
 use super::{core, Task, async_trait};
 use std::sync::Arc;
 
+#[macro_export]
+macro_rules! sequence {
+    [$($task:expr),+] => {
+        crate::tasks::Sequence::new(
+            vec![
+                $(std::sync::Arc::new($task)),+
+            ]
+        )
+    };
+}
+
 pub struct Sequence {
     tasks: Vec<Arc<dyn Task + Send + Sync>>
 }
 
 impl Sequence {
-    fn new(tasks: Vec<Arc<dyn Task + Send + Sync>>) -> Self{
+    pub fn new(tasks: Vec<Arc<dyn Task + Send + Sync>>) -> Self{
         Self {
             tasks
         }
