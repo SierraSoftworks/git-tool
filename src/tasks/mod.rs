@@ -6,9 +6,11 @@ use tokio::sync::Mutex;
 
 mod sequence;
 mod new_folder;
+mod git_init;
 
 pub use sequence::Sequence;
 pub use new_folder::NewFolder;
+pub use git_init::GitInit;
 
 #[async_trait]
 pub trait Task {
