@@ -99,6 +99,10 @@ impl Config {
         None
     }
 
+    pub fn get_services(&self) -> core::slice::Iter<Arc<service::Service>> {
+        self.services.iter()
+    }
+
     pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
         for svc in self.services.iter(){
             if svc.get_domain() == domain {

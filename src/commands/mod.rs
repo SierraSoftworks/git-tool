@@ -12,6 +12,7 @@ mod ignore;
 mod info;
 mod open;
 mod scratch;
+mod services;
 
 #[async_trait]
 pub trait Command {
@@ -27,5 +28,6 @@ pub fn commands() -> Vec<Arc<dyn Command>> {
         Arc::new(ignore::IgnoreCommand{}),
         Arc::new(open::OpenCommand{}),
         Arc::new(scratch::ScratchCommand{}),
+        Arc::new(services::ServicesCommand{}),
     ]
 }
