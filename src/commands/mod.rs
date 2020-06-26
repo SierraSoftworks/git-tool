@@ -10,6 +10,7 @@ use async_trait::async_trait;
 mod apps;
 mod ignore;
 mod info;
+mod new;
 mod open;
 mod scratch;
 mod services;

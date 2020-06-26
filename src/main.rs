@@ -7,13 +7,13 @@ extern crate chrono;
 use clap::{Arg, App, ArgMatches};
 use std::sync::Arc;
 
-mod commands;
+#[macro_use] mod tasks;
 mod core;
 mod errors;
+mod search;
 mod git;
 mod online;
-mod search;
-mod tasks;
+mod commands;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

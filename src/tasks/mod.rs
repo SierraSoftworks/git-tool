@@ -4,7 +4,19 @@ use async_trait::async_trait;
 #[cfg(test)]
 use tokio::sync::Mutex;
 
-#[macro_use] mod sequence;
+mod sequence;
+
+#[macro_export]
+macro_rules! sequence {
+    [$($task:expr),+] => {
+        crate::tasks::Sequence::new(
+            vec![
+                $(std::sync::Arc::new($task)),+
+            ]
+        )
+    };
+}
+
 mod new_folder;
 mod git_init;
 mod git_checkout;
@@ -14,6 +26,7 @@ pub use sequence::Sequence;
 pub use new_folder::NewFolder;
 pub use git_init::GitInit;
 pub use git_checkout::GitCheckout;
+pub use git_remote::GitRemote;
 
 #[async_trait]
 pub trait Task {

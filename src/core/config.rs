@@ -103,6 +103,10 @@ impl Config {
         self.services.iter()
     }
 
+    pub fn get_default_service(&self) -> Option<&service::Service> {
+        self.services.first().map(|f| f.as_ref())
+    }
+
     pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
         for svc in self.services.iter(){
             if svc.get_domain() == domain {
