@@ -1,15 +1,15 @@
-use super::{core, Task};
+use super::*;
 use crate::{core::Target, git};
 
 pub struct GitInit { }
 
 #[async_trait::async_trait]
-impl Task for GitInit {
-    async fn apply_repo(&self, _core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitInit {
+    async fn apply_repo(&self, _core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_init(&repo.get_path()).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }

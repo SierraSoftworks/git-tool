@@ -1,8 +1,6 @@
 use clap::{App, SubCommand, Arg, ArgMatches};
 use super::Command;
-use super::core;
-use super::super::errors;
-use super::async_trait;
+use super::*;
 use crate::core::Target;
 use crate::tasks::*;
 
@@ -10,7 +8,6 @@ pub struct OpenCommand {
 
 }
 
-#[async_trait]
 impl Command for OpenCommand {
     fn name(&self) -> String {
         String::from("open")
@@ -32,8 +29,12 @@ New applications can be configured either by making changes to your configuratio
                     .help("The name of the repository to open.")
                     .index(2))
     }
-    
-    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+}
+
+
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for OpenCommand {    
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut repo: Option<core::Repo> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
 
@@ -133,14 +134,14 @@ apps:
 
         let temp = TempDir::new("gt-commands-open").unwrap();
         
-        let mut resolver = MockResolver::default();
+        let mut resolver = MockResolver::from(cfg.clone());
         resolver.set_repo(Repo::new("github.com/git-fixtures/basic", temp.path().join("repo").into()));
-        
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
             .build();
+        
 
         match cmd.run(&core, &args).await {
             Ok(status) => {

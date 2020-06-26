@@ -53,7 +53,7 @@ async fn run<'a>(matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
-        core_builder.with_config_file(cfg_file)?;
+        core_builder = core_builder.with_config_file(cfg_file)?;
     }
 
     let core = Arc::new(core_builder.build());

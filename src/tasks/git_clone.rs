@@ -1,4 +1,4 @@
-use super::{core, Task};
+use super::*;
 use crate::{core::Target, git, errors};
 
 pub struct GitClone {
@@ -6,8 +6,8 @@ pub struct GitClone {
 }
 
 #[async_trait::async_trait]
-impl Task for GitClone {
-    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
+    async fn apply_repo(&self, core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         if repo.exists() {
             return Ok(())
         }
@@ -24,7 +24,7 @@ impl Task for GitClone {
         git::git_clone(&repo.get_path(), &url).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }

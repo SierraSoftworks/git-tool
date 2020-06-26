@@ -1,13 +1,12 @@
 use clap::{App, SubCommand, Arg, ArgMatches};
-use super::{Command, core, core::Target, tasks, tasks::Task};
-use super::super::errors;
+use super::{Command, core::Target, tasks, tasks::Task};
+use super::*;
 use super::async_trait;
 
 pub struct ScratchCommand {
 
 }
 
-#[async_trait]
 impl Command for ScratchCommand {
     fn name(&self) -> String {
         String::from("scratch")
@@ -25,8 +24,11 @@ impl Command for ScratchCommand {
                     .help("The name of the scratchpad to open.")
                     .index(2))
     }
-    
-    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+}
+
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ScratchCommand {
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut scratchpad: Option<core::Scratchpad> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
 
@@ -96,7 +98,7 @@ impl Command for ScratchCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, MockResolver, MockLauncher};
+    use super::core::{Core, Config, MockLauncher};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -105,16 +107,17 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["scratch"]);
 
-        let cfg = Config::from_str("
-directory: /dev
-scratchpads: /dev/scratch
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
+directory: {}
+scratchpads: {}
 
 apps:
   - name: test-app
     command: test
     args:
         - '{{ .Target.Name }}'
-").unwrap();
+", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
         
@@ -123,12 +126,10 @@ apps:
             *status = 5;
         }
 
-        let resolver = MockResolver::default();
-
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
 
 
@@ -139,7 +140,7 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w01"));
+                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w01"));
                 assert_eq!(status, 5);
             },
             Err(err) => {
@@ -154,24 +155,24 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "test-app"]);
 
-        let cfg = Config::from_str("
-directory: /dev
-scratchpads: /dev/scratch
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
+directory: {}
+scratchpads: {}
 
 apps:
   - name: test-app
     command: test
     args:
         - '{{ .Target.Name }}'
-").unwrap();
+", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        let resolver = MockResolver::default();
 
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
 
 
@@ -182,7 +183,7 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w01"));
+                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w01"));
             },
             Err(err) => {
                 panic!(err.message())
@@ -196,26 +197,25 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
-        let cfg = Config::from_str("
-directory: /dev
-scratchpads: /dev/scratch
+        let launcher = Arc::new(MockLauncher::default());
+
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
+directory: {}
+scratchpads: {}
 
 apps:
   - name: test-app
     command: test
     args:
         - '{{ .Target.Name }}'
-").unwrap();
-
-        let launcher = Arc::new(MockLauncher::default());
-        let resolver = MockResolver::default();
+        ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
@@ -224,7 +224,7 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
+                assert_eq!(launch.target_path, core.config.get_scratch_directory().join("2020w07"));
             },
             Err(err) => {
                 panic!(err.message())
@@ -238,24 +238,24 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "test-app", "2020w07"]);
 
-        let cfg = Config::from_str("
-directory: /dev
-scratchpads: /dev/scratch
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
+directory: {}
+scratchpads: {}
 
 apps:
   - name: test-app
     command: test
     args:
         - '{{ .Target.Name }}'
-").unwrap();
+", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        let resolver = MockResolver::default();
 
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
 
 
@@ -266,7 +266,7 @@ apps:
                 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
+                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w07"));
             },
             Err(err) => {
                 panic!(err.message())
@@ -280,24 +280,24 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "unknown-app", "2020w07"]);
 
-        let cfg = Config::from_str("
-directory: /dev
-scratchpads: /dev/scratch
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
+directory: {}
+scratchpads: {}
 
 apps:
   - name: test-app
     command: test
     args:
         - '{{ .Target.Name }}'
-").unwrap();
+", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        let resolver = MockResolver::default();
 
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
 
 
@@ -315,15 +315,8 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
-        let dev_dir = std::path::PathBuf::from(file!())
-            .parent()
-            .and_then(|f| f.parent())
-            .and_then(|f| f.parent())
-            .and_then(|f| Some(f.join("test")))
-            .and_then(|f| Some(f.join("devdir")))
-            .unwrap();
-
-        let cfg = Config::from_str(format!("
+        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
 
@@ -332,15 +325,14 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", dev_dir.display(), dev_dir.join("scratch").display()).as_str()).unwrap();
+", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
         let launcher = Arc::new(MockLauncher::default());
-        let resolver = MockResolver::default();
 
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver()
             .build();
 
 
@@ -351,7 +343,7 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/dev/scratch/2020w07"));
+                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w07"));
 
                 assert_eq!(launch.target_path.exists(), true);
 

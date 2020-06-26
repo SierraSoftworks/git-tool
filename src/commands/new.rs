@@ -7,7 +7,6 @@ pub struct NewCommand {
 
 }
 
-#[async_trait]
 impl Command for NewCommand {
     fn name(&self) -> String {
         String::from("new")
@@ -24,8 +23,12 @@ impl Command for NewCommand {
                     .help("The name of the repository to create.")
                     .index(1))
     }
-    
-    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+}
+
+
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for NewCommand {    
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
             None => Err(errors::user(

@@ -1,12 +1,12 @@
-use super::{core, Task, async_trait};
+use super::*;
 use std::sync::Arc;
 
-pub struct Sequence {
-    tasks: Vec<Arc<dyn Task + Send + Sync>>
+pub struct Sequence<F: FileSource, L: Launcher, R: Resolver> {
+    tasks: Vec<Arc<dyn Task<F, L, R> + Send + Sync>>
 }
 
-impl Sequence {
-    pub fn new(tasks: Vec<Arc<dyn Task + Send + Sync>>) -> Self{
+impl<F: FileSource, L: Launcher, R: Resolver> Sequence<F, L, R> {
+    pub fn new(tasks: Vec<Arc<dyn Task<F, L, R> + Send + Sync>>) -> Self{
         Self {
             tasks
         }
@@ -14,8 +14,8 @@ impl Sequence {
 }
 
 #[async_trait]
-impl Task for Sequence {
-    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for Sequence<F, L, R> {
+    async fn apply_repo(&self, core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(core, repo).await?;
         }
@@ -23,7 +23,7 @@ impl Task for Sequence {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, core: &core::Core<F, L, R>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_scratchpad(core, scratch).await?;
         }

@@ -1,4 +1,4 @@
-use super::{core, Task};
+use super::*;
 use crate::{errors, core::Target, git};
 
 pub struct GitRemote {
@@ -14,8 +14,8 @@ impl Default for GitRemote {
 }
 
 #[async_trait::async_trait]
-impl Task for GitRemote {
-    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitRemote {
+    async fn apply_repo(&self, core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         let service = core.config.get_service(&repo.get_domain()).ok_or(
             errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
@@ -28,7 +28,7 @@ impl Task for GitRemote {
         git::git_remote_add(&repo.get_path(), &self.name, &url).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }

@@ -5,7 +5,6 @@ pub struct ServicesCommand {
 
 }
 
-#[async_trait]
 impl Command for ServicesCommand {
     fn name(&self) -> String {
         String::from("services")
@@ -16,7 +15,11 @@ impl Command for ServicesCommand {
             .about("list services which can be used with Git-Tool")
             .after_help("Gets the list of services that you have added to your configuration file. These services are responsible for hosting your Git repositories.")
     }
-    async fn run<'a>(&self, core: &crate::core::Core, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+}
+
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ServicesCommand {
+    async fn run<'a>(&self, core: &crate::core::Core<F, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
         for svc in core.config.get_services() {
             println!("{}", svc.get_domain());
         }
@@ -32,16 +35,14 @@ mod tests {
 
     #[tokio::test]
     async fn run() {
-        let cmd = ServicesCommand{};
-
-        let args = cmd.app().get_matches_from(vec!["services"]);
-
+        let args = ArgMatches::default();
+        
         let cfg = Config::default();
         let core = Core::builder()
-            .with_config(&cfg)
-            .build();
-
-
+        .with_config(&cfg)
+        .build();
+        
+        let cmd = ServicesCommand{};
         match cmd.run(&core, &args).await {
             Ok(_) => {},
             Err(err) => {

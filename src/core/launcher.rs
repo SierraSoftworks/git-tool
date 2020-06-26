@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use tokio::process::Command;
 use super::app;
 use super::Error;
-use super::Target;
+use super::{Config, Target};
 
 #[cfg(test)]
 use tokio::sync::Mutex;
@@ -10,11 +10,17 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 
 #[async_trait]
-pub trait Launcher {
+pub trait Launcher: Send + Sync + From<Config> {
     async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
 }
 
 pub struct TokioLauncher {}
+
+impl From<Config> for TokioLauncher {
+    fn from(_: Config) -> Self {
+        Self{}
+    }
+}
 
 #[async_trait]
 impl Launcher for TokioLauncher {
@@ -31,6 +37,7 @@ impl Launcher for TokioLauncher {
 }
 
 #[cfg(test)]
+#[derive(Default)]
 pub struct MockLauncher {
     pub launches: Arc<Mutex<Vec<MockLaunch>>>,
     pub status: Arc<Mutex<i32>>,
@@ -38,13 +45,9 @@ pub struct MockLauncher {
 }
 
 #[cfg(test)]
-impl Default for MockLauncher {
-    fn default() -> Self {
-        Self {
-            launches: Arc::new(Mutex::new(Vec::new())),
-            status: Arc::new(Mutex::new(0)),
-            error: Arc::new(Mutex::new(None))
-        }
+impl From<Config> for MockLauncher {
+    fn from(_: Config) -> Self {
+        Default::default()
     }
 }
 

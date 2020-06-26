@@ -1,7 +1,6 @@
 use clap::{App, Arg, SubCommand, ArgMatches};
 use super::Command;
-use super::core;
-use super::errors;
+use super::*;
 use super::online::gitignore;
 use super::async_trait;
 
@@ -9,7 +8,6 @@ pub struct IgnoreCommand {
 
 }
 
-#[async_trait]
 impl Command for IgnoreCommand {
     fn name(&self) -> String {
         String::from("ignore")
@@ -32,8 +30,11 @@ impl Command for IgnoreCommand {
                     .multiple(true)
                     .index(1))
     }
+}
     
-    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for IgnoreCommand {
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.occurrences_of("language") {
             0 => {
                 let languages = gitignore::list().await?;
@@ -65,7 +66,7 @@ impl Command for IgnoreCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config};
+    use super::core::{Config};
     use clap::ArgMatches;
 
     #[tokio::test]

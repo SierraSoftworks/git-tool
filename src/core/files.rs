@@ -1,17 +1,25 @@
-use std::sync::RwLock;
-use std::collections::HashMap;
 use super::Error;
 use tokio::prelude::*;
 use async_trait::async_trait;
-use super::errors::{user, system_with_internal};
+use super::Config;
+#[cfg(test)] use std::sync::{Arc, RwLock};
+#[cfg(test)] use std::collections::HashMap;
+#[cfg(test)] use super::errors::{user, system_with_internal};
 
 #[async_trait]
-pub trait FileSource {
+pub trait FileSource: Send + Sync + From<Config> + Clone {
     async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error>;
     async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error>;
 }
 
+#[derive(Copy, Clone)]
 pub struct FileSystemSource {}
+
+impl From<Config> for FileSystemSource {
+    fn from(_: Config) -> Self {
+        Self{}
+    }
+}
 
 #[async_trait]
 impl FileSource for FileSystemSource {
@@ -33,11 +41,24 @@ impl FileSource for FileSystemSource {
     }
 }
 
+#[cfg(test)]
+#[derive(Clone)]
 pub struct TestFileSource {
-    files: RwLock<HashMap<std::path::PathBuf, String>>,
+    files: Arc<RwLock<HashMap<std::path::PathBuf, String>>>,
     error: Option<Error>,
 }
 
+#[cfg(test)]
+impl From<Config> for TestFileSource {
+    fn from(_: Config) -> Self {
+        Self{
+            files: Arc::new(RwLock::new(HashMap::new())),
+            error: None
+        }
+    }
+}
+
+#[cfg(test)]
 #[async_trait]
 impl FileSource for TestFileSource {
     async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error> {

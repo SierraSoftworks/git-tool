@@ -7,7 +7,6 @@ pub struct InfoCommand {
 
 }
 
-#[async_trait]
 impl Command for InfoCommand {
     fn name(&self) -> String {
         String::from("info")
@@ -23,8 +22,12 @@ impl Command for InfoCommand {
                     .help("The name of the repository to get information about.")
                     .index(1))
     }
-    
-    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+}
+
+
+#[async_trait]
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for InfoCommand {    
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
             None => core.resolver.get_current_repo()?
@@ -53,8 +56,7 @@ impl Command for InfoCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, Repo, MockResolver};
-    use std::sync::Arc;
+    use super::core::{Config, Repo, MockResolver};
 
     #[tokio::test]
     async fn run() {
@@ -63,7 +65,7 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["info", "repo"]);
 
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let mut resolver = MockResolver::default();
+        let mut resolver = MockResolver::from(cfg.clone());
         resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
 
         let core = Core::builder()

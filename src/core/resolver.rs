@@ -1,9 +1,9 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
-use std::env;
+use std::{sync::RwLock, env};
 use chrono::prelude::*;
 use crate::search;
 
-pub trait Resolver {
+pub trait Resolver: Send + Sync + From<Config> {
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
     fn get_current_scratchpad(&self) -> Result<Scratchpad, Error>;
@@ -20,8 +20,8 @@ pub struct FileSystemResolver {
     config: Config,
 }
 
-impl FileSystemResolver {
-    pub fn new(config: Config) -> Self{
+impl From<Config> for FileSystemResolver {
+    fn from(config: Config) -> Self {
         Self {
             config
         }
@@ -245,53 +245,55 @@ fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<s
 
 #[cfg(test)]
 pub struct MockResolver {
-    repo: Option<Repo>,
-    repos: Vec<Repo>,
-    scratchpads: Vec<Scratchpad>,
+    config: Config,
+    repo: RwLock<Option<Repo>>,
+    repos: RwLock<Vec<Repo>>,
+    scratchpads: RwLock<Vec<Scratchpad>>,
     current_date: DateTime<Local>,
-    error: Option<Error>
+    error: RwLock<Option<Error>>
+}
+
+#[cfg(test)]
+impl From<Config> for MockResolver {
+    fn from(cfg: Config) -> Self {
+        Self {
+            config: cfg.clone(),
+            repo: RwLock::new(None),
+            repos: RwLock::new(Vec::new()),
+            scratchpads: RwLock::new(Vec::new()),
+            current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
+            error: RwLock::new(None)
+        }
+    }
 }
 
 #[cfg(test)]
 impl MockResolver {
     pub fn set_repo(&mut self, repo: Repo) {
-        self.repo = Some(repo)
+        *(self.repo.write().expect("to be able to set the repo")) = Some(repo)
     }
 
     pub fn set_repos(&mut self, repos: Vec<Repo>) {
-        self.repos = repos
+        *(self.repos.write().expect("to be able to set the repos")) = repos
     }
 
     pub fn set_scratchpads(&mut self, scratchpads: Vec<Scratchpad>) {
-        self.scratchpads = scratchpads
-    }
-}
-
-#[cfg(test)]
-impl Default for MockResolver {
-    fn default() -> Self {
-        Self {
-            repo: None,
-            repos: Vec::new(),
-            scratchpads: Vec::new(),
-            current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
-            error: None
-        }
+        *(self.scratchpads.write().expect("to be able to set the scratchpads")) = scratchpads
     }
 }
 
 #[cfg(test)]
 impl Resolver for MockResolver {
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-        match self.error.clone() {
+        match self.error.read().expect("to be able to read the error").clone() {
             Some(err) => Err(err),
-            None => Ok(self.scratchpads.clone())
+            None => Ok(self.scratchpads.read().expect("to be able to read the scratchpads").clone())
         }
     }
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name.clone(), 
-            std::path::PathBuf::from("/dev/scratch").join(name.clone())))
+            self.config.get_scratch_directory().join(name.clone())))
     }
 
     fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
@@ -299,7 +301,7 @@ impl Resolver for MockResolver {
     }
 
     fn get_current_repo(&self) -> Result<Repo, Error> {
-        match self.repo.clone() {
+        match self.repo.read().expect("to be able to read the repo").clone() {
             Some(repo) => Ok(repo),
             None => Err(errors::user(
                 "Current directory is not a valid repository.",
@@ -308,7 +310,7 @@ impl Resolver for MockResolver {
     }
 
     fn get_repo(&self, _path: &std::path::PathBuf) -> Result<Repo, Error> {
-        match self.repo.clone() {
+        match self.repo.read().expect("to be able to read the repo").clone() {
             Some(repo) => Ok(repo),
             None => Err(errors::user(
                 "Current directory is not a valid repository.",
@@ -317,16 +319,16 @@ impl Resolver for MockResolver {
     }
 
     fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-        match self.error.clone() {
+        match self.error.read().expect("to be able to read the error").clone() {
             Some(err) => Err(err),
-            None => Ok(self.repos.clone())
+            None => Ok(self.repos.read().expect("to be able to read the repos").clone())
         }
     }
 
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-        match self.error.clone() {
+        match self.error.read().expect("to be able to read the error").clone() {
             Some(err) => Err(err),
-            None => Ok(self.repos.iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
+            None => Ok((*self.repos.read().expect("to be able to read the repos")).iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
         }
     }
     fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
@@ -486,6 +488,6 @@ mod tests {
 directory: '{}'
             ", dev_dir.display())).unwrap();
 
-        FileSystemResolver::new(config)
+        FileSystemResolver::from(config)
     }
 }

@@ -1,10 +1,10 @@
-use super::{core, Task, core::Target};
+use super::{*, core::Target};
 
 pub struct NewFolder {}
 
 #[async_trait::async_trait]
-impl Task for NewFolder {
-    async fn apply_repo(&self, _core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for NewFolder {
+    async fn apply_repo(&self, _core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
         std::fs::create_dir_all(path)?;
@@ -12,7 +12,7 @@ impl Task for NewFolder {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(path)?;
