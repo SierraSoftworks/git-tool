@@ -3,6 +3,8 @@ use super::Command;
 use super::core;
 use super::super::errors;
 use super::async_trait;
+use crate::core::Target;
+use crate::tasks::*;
 
 pub struct OpenCommand {
 
@@ -83,6 +85,12 @@ New applications can be configured either by making changes to your configuratio
         }
 
         if let Some(repo) = repo {
+            if !repo.exists() {
+                sequence![
+                    GitClone{}
+                ].apply_repo(core, &repo).await?;
+            }
+
             if let Some(app) = app {
                 let status = core.launcher.run(app, &repo).await?;
                 return Ok(status)
@@ -98,6 +106,8 @@ mod tests {
     use super::*;
     use super::core::{Core, Config, Repo, MockResolver, MockLauncher};
     use std::sync::Arc;
+    use crate::test::get_dev_dir;
+    use tempdir::TempDir;
 
     #[tokio::test]
     async fn run() {
@@ -122,15 +132,16 @@ apps:
             *status = 5;
         }
 
+        let temp = TempDir::new("gt-commands-open").unwrap();
+        
         let mut resolver = MockResolver::default();
-        resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
-
+        resolver.set_repo(Repo::new("github.com/git-fixtures/basic", temp.path().join("repo").into()));
+        
         let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
@@ -139,7 +150,7 @@ apps:
                 assert!(launches.len() == 1);
 
                 let launch = &launches[0];
-                assert_eq!(launch.target_path, std::path::PathBuf::from("/test"))
+                assert_eq!(launch.target_path, temp.path().join("repo"))
             },
             Err(err) => {
                 panic!(err.message())

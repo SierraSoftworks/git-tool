@@ -1,21 +1,17 @@
 use super::{core, Task};
-use crate::{errors, core::Target, git};
+use crate::{core::Target, git, errors};
 
-pub struct GitRemote {
-    pub name: String,
-}
-
-impl Default for GitRemote {
-    fn default() -> Self {
-        Self {
-            name: "origin".into()
-        }
-    }
+pub struct GitClone {
+    
 }
 
 #[async_trait::async_trait]
-impl Task for GitRemote {
+impl Task for GitClone {
     async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+        if repo.exists() {
+            return Ok(())
+        }
+
         let service = core.config.get_service(&repo.get_domain()).ok_or(
             errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
@@ -25,7 +21,7 @@ impl Task for GitRemote {
         // TODO: This should support a feature flag for HTTP/Git URL usage
         let url = service.get_git_url(repo)?;
 
-        git::git_remote_add(&repo.get_path(), &self.name, &url).await
+        git::git_clone(&repo.get_path(), &url).await
     }
 
     async fn apply_scratchpad(&self, _core: &core::Core, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
@@ -36,40 +32,30 @@ impl Task for GitRemote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{test::get_dev_dir, tasks::GitInit};
+    use crate::test::{get_dev_dir};
     use tempdir::TempDir;
 
     #[tokio::test]
-    async fn test_repo() {
-        let temp = TempDir::new("gt-tasks-remote").unwrap();
+    async fn test_repo_basic() {
+        let temp = TempDir::new("gt-tasks-clone").unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote", 
+            "github.com/git-fixtures/basic", 
             temp.path().join("repo").into());
 
         let core = get_core();
-        let result = sequence![
-            GitInit{},
-            GitRemote{
-                name: "origin".into()
-            }
-        ].apply_repo(&core, &repo).await;
+        GitClone{}.apply_repo(&core, &repo).await.unwrap();
         assert!(repo.valid());
-
-        std::fs::remove_dir_all(repo.get_path()).unwrap();
-        result.unwrap();
     }
 
     #[tokio::test]
     async fn test_scratch() {
-        let temp = TempDir::new("gt-tasks-remote").unwrap();
+        let temp = TempDir::new("gt-tasks-clone").unwrap();
         let scratch = core::Scratchpad::new(
             "2019w15", 
             temp.path().join("scratch").into());
 
         let core = get_core();
-        let task = GitRemote{
-            name: "origin".into(),
-        };
+        let task = GitClone{};
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);
