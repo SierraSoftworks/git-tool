@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use std::vec::Vec;
-use std::{path::{Path, PathBuf}, sync::Arc};
+use std::{path, sync::Arc};
 
 use super::app;
 use super::features;
@@ -45,7 +45,7 @@ impl Config {
     }
 
     #[cfg(test)]
-    pub fn for_dev_directory(dir: &Path) -> Self {
+    pub fn for_dev_directory(dir: &path::Path) -> Self {
         Self {
             dev_directory: dir.to_str().unwrap_or("").to_string(),
             scratch_directory: dir.join("scratch").to_str().unwrap_or("").to_string(),
@@ -69,16 +69,16 @@ impl Config {
             e))
     }
     
-    pub fn get_dev_directory(&self) -> PathBuf {
-        PathBuf::from(self.dev_directory.as_str())
+    pub fn get_dev_directory(&self) -> path::PathBuf {
+        path::PathBuf::from(self.dev_directory.as_str())
     }
 
-    pub fn get_scratch_directory(&self) -> PathBuf {
+    pub fn get_scratch_directory(&self) -> path::PathBuf {
         if self.scratch_directory.is_empty() {
             return self.get_dev_directory().join("scratch")
         }
 
-        PathBuf::from(self.scratch_directory.as_str())
+        path::PathBuf::from(self.scratch_directory.as_str())
     }
 
     pub fn get_apps(&self) -> core::slice::Iter<Arc<app::App>> {

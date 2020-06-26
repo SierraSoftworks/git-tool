@@ -24,7 +24,7 @@ pub trait Command {
 
 #[async_trait]
 pub trait CommandRun<F: FileSource = DefaultFileSource, L: Launcher = DefaultLauncher, R: Resolver = DefaultResolver> : Command {
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
+    async fn run<'a>(&self, core: &Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
 }
 
 pub fn commands() -> Vec<Arc<dyn CommandRun<DefaultFileSource, DefaultLauncher, DefaultResolver>>> {

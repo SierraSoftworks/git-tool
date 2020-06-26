@@ -1,7 +1,8 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
-use std::{sync::RwLock, env};
+use std::env;
 use chrono::prelude::*;
 use crate::search;
+#[cfg(test)] use std::sync::RwLock;
 
 pub trait Resolver: Send + Sync + From<Config> {
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
