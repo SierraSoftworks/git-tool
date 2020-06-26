@@ -4,7 +4,7 @@ pub struct NewFolder {}
 
 #[async_trait::async_trait]
 impl Task for NewFolder {
-    async fn apply_repo(&self, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
         std::fs::create_dir_all(path)?;
@@ -12,7 +12,7 @@ impl Task for NewFolder {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(path)?;
@@ -31,11 +31,12 @@ mod tests {
             "github.com/sierrasoftworks/test1", 
             get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
 
+        let core = get_core();
         let task = NewFolder{};
         
         assert_eq!(repo.get_path().exists(), true);
 
-        task.apply_repo(&repo).await.unwrap();
+        task.apply_repo(&core, &repo).await.unwrap();
         assert_eq!(repo.get_path().exists(), true);
     }
 
@@ -45,11 +46,12 @@ mod tests {
             "github.com/sierrasoftworks/test3", 
             get_dev_dir().join("github.com").join("sierrasoftworks").join("test3"));
 
+        let core = get_core();
         let task = NewFolder{};
         
         assert_eq!(repo.get_path().exists(), false);
 
-        task.apply_repo(&repo).await.unwrap();
+        task.apply_repo(&core, &repo).await.unwrap();
         assert_eq!(repo.get_path().exists(), true);
 
         std::fs::remove_dir(repo.get_path()).unwrap();
@@ -61,11 +63,12 @@ mod tests {
             "2019w15", 
             get_dev_dir().join("scratch").join("2019w15"));
 
+        let core = get_core();
         let task = NewFolder{};
         
         assert_eq!(scratch.get_path().exists(), true);
 
-        task.apply_scratchpad(&scratch).await.unwrap();
+        task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().exists(), true);
     }
 
@@ -75,14 +78,21 @@ mod tests {
             "2019w19", 
             get_dev_dir().join("scratch").join("2019w19"));
 
+        let core = get_core();
         let task = NewFolder{};
         
         assert_eq!(scratch.get_path().exists(), false);
 
-        task.apply_scratchpad(&scratch).await.unwrap();
+        task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().exists(), true);
 
         std::fs::remove_dir(scratch.get_path()).unwrap();
+    }
+
+    fn get_core() -> core::Core {
+        core::Core::builder()
+            .with_config(&core::Config::for_dev_directory(get_dev_dir().as_path()))
+            .build()
     }
 
     fn get_dev_dir() -> std::path::PathBuf {

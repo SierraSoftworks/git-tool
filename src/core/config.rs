@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use std::vec::Vec;
-use std::{path::PathBuf, sync::Arc};
+use std::{path::{Path, PathBuf}, sync::Arc};
 
 use super::app;
 use super::features;
@@ -42,6 +42,15 @@ impl Config {
         }
 
         into
+    }
+
+    #[cfg(test)]
+    pub fn for_dev_directory(dir: &Path) -> Self {
+        Self {
+            dev_directory: dir.to_str().unwrap_or("").to_string(),
+            scratch_directory: dir.join("scratch").to_str().unwrap_or("").to_string(),
+            ..Default::default()
+        }
     }
 
     #[cfg(test)]

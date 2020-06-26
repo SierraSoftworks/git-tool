@@ -1,14 +1,31 @@
 use super::{core, Task};
-use crate::{core::Target, git};
+use crate::{errors, core::Target, git};
 
-pub struct GitCheckout {
-    pub branch: String,
+pub struct GitRemote {
+    pub name: String,
+}
+
+impl Default for GitRemote {
+    fn default() -> Self {
+        Self {
+            name: "origin".into()
+        }
+    }
 }
 
 #[async_trait::async_trait]
-impl Task for GitCheckout {
-    async fn apply_repo(&self, _core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
-        git::git_checkout(&repo.get_path(), &self.branch).await
+impl Task for GitRemote {
+    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
+        let service = core.config.get_service(&repo.get_domain()).ok_or(
+            errors::user(
+                &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with git-tool config add service/{}", repo.get_domain()))
+        )?;
+
+        // TODO: This should support a feature flag for HTTP/Git URL usage
+        let url = service.get_git_url(repo)?;
+
+        git::git_remote_add(&repo.get_path(), &self.name, &url).await
     }
 
     async fn apply_scratchpad(&self, _core: &core::Core, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
@@ -24,24 +41,20 @@ mod tests {
     #[tokio::test]
     async fn test_repo() {
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-checkout", 
-            get_dev_dir().join("github.com").join("sierrasoftworks").join("test-git-checkout"));
+            "github.com/sierrasoftworks/test-git-remote", 
+            get_dev_dir().join("github.com").join("sierrasoftworks").join("test-git-remote"));
 
         let core = get_core();
         let result = sequence![
             GitInit{},
-            GitCheckout{
-                branch: "test".into()
+            GitRemote{
+                name: "origin".into()
             }
         ].apply_repo(&core, &repo).await;
-
         assert!(repo.valid());
-
-        let current_branch_result = git::git_current_branch(&repo.get_path()).await;
 
         std::fs::remove_dir_all(repo.get_path()).unwrap();
         result.unwrap();
-        assert_eq!(current_branch_result.unwrap(), "test");
     }
 
     #[tokio::test]
@@ -51,8 +64,8 @@ mod tests {
             get_dev_dir().join("scratch").join("2019w15"));
 
         let core = get_core();
-        let task = GitCheckout{
-            branch: "test".into(),
+        let task = GitRemote{
+            name: "origin".into(),
         };
         assert_eq!(scratch.get_path().exists(), true);
 

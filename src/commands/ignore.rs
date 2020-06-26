@@ -4,7 +4,6 @@ use super::core;
 use super::errors;
 use super::online::gitignore;
 use super::async_trait;
-use std::sync::Arc;
 
 pub struct IgnoreCommand {
 
@@ -34,7 +33,7 @@ impl Command for IgnoreCommand {
                     .index(1))
     }
     
-    async fn run<'a>(&self, core: Arc<core::Core>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.occurrences_of("language") {
             0 => {
                 let languages = gitignore::list().await?;
@@ -73,11 +72,11 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Arc::new(Core::builder().with_config(&cfg).build());
+        let core = Core::builder().with_config(&cfg).build();
 
         let cmd = IgnoreCommand{};
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {},
             Err(err) => {
                 panic!(err.message())

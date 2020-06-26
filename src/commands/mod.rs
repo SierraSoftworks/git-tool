@@ -16,7 +16,7 @@ mod scratch;
 pub trait Command {
     fn name(&self) -> String;
     fn app<'a, 'b>(&self) -> App<'a, 'b>;
-    async fn run<'a>(&self, core: Arc<core::Core>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
+    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
 }
 
 pub fn commands() -> Vec<Arc<dyn Command>> {

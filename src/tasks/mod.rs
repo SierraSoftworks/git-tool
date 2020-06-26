@@ -8,6 +8,7 @@ use tokio::sync::Mutex;
 mod new_folder;
 mod git_init;
 mod git_checkout;
+mod git_remote;
 
 pub use sequence::Sequence;
 pub use new_folder::NewFolder;
@@ -16,8 +17,8 @@ pub use git_checkout::GitCheckout;
 
 #[async_trait]
 pub trait Task {
-    async fn apply_repo(&self, repo: &core::Repo) -> Result<(), core::Error>;
-    async fn apply_scratchpad(&self, scratch: &core::Scratchpad) -> Result<(), core::Error>;
+    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error>;
+    async fn apply_scratchpad(&self, core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error>;
 }
 
 #[cfg(test)]
@@ -42,7 +43,7 @@ impl Default for TestTask {
 #[cfg(test)]
 #[async_trait]
 impl Task for TestTask {
-    async fn apply_repo(&self, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
         let mut r = self.ran_repo.lock().await;
 
         *r = Some(repo.clone());
@@ -55,7 +56,7 @@ impl Task for TestTask {
         }
     }
 
-    async fn apply_scratchpad(&self, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         let mut s = self.ran_scratchpad.lock().await;
 
         *s = Some(scratch.clone());

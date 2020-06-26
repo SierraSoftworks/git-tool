@@ -3,7 +3,6 @@ use super::Command;
 use super::core;
 use super::super::errors;
 use super::async_trait;
-use std::sync::Arc;
 
 pub struct OpenCommand {
 
@@ -32,7 +31,7 @@ New applications can be configured either by making changes to your configuratio
                     .index(2))
     }
     
-    async fn run<'a>(&self, core: Arc<core::Core>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut repo: Option<core::Repo> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
 
@@ -98,6 +97,7 @@ New applications can be configured either by making changes to your configuratio
 mod tests {
     use super::*;
     use super::core::{Core, Config, Repo, MockResolver, MockLauncher};
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run() {
@@ -125,14 +125,14 @@ apps:
         let mut resolver = MockResolver::default();
         resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(status) => {
                 assert_eq!(status, 5);
                 let launches = launcher.launches.lock().await;

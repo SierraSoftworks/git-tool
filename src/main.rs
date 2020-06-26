@@ -10,6 +10,7 @@ use std::sync::Arc;
 mod commands;
 mod core;
 mod errors;
+mod git;
 mod online;
 mod search;
 mod tasks;
@@ -57,7 +58,7 @@ async fn run<'a>(matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
 
     for cmd in commands::commands().iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
-            let status = cmd.run(core.clone(), cmd_matches).await?;
+            let status = cmd.run(&core, cmd_matches).await?;
             return Ok(status);
         }
     }

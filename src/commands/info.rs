@@ -4,7 +4,6 @@ use super::core;
 use super::core::Target;
 use super::super::errors;
 use super::async_trait;
-use std::sync::Arc;
 
 pub struct InfoCommand {
 
@@ -27,7 +26,7 @@ impl Command for InfoCommand {
                     .index(1))
     }
     
-    async fn run<'a>(&self, core: Arc<core::Core>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
             None => core.resolver.get_current_repo()?
@@ -57,6 +56,7 @@ impl Command for InfoCommand {
 mod tests {
     use super::*;
     use super::core::{Core, Config, Repo, MockResolver};
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run() {
@@ -67,13 +67,13 @@ mod tests {
         let cfg = Config::from_str("directory: /dev").unwrap();let mut resolver = MockResolver::default();
         resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {},
             Err(err) => {
                 panic!(err.message())

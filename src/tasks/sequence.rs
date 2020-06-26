@@ -26,17 +26,17 @@ impl Sequence {
 
 #[async_trait]
 impl Task for Sequence {
-    async fn apply_repo(&self, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &core::Core, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
-            task.apply_repo(repo).await?;
+            task.apply_repo(core, repo).await?;
         }
 
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, core: &core::Core, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
-            task.apply_scratchpad(scratch).await?;
+            task.apply_scratchpad(core, scratch).await?;
         }
 
         Ok(())
@@ -54,9 +54,10 @@ mod tests {
         let seq = Sequence::new(vec![]);
         let repo = get_repo();
         let scratch = get_scratch();
+        let core = get_core();
 
-        seq.apply_repo(&repo).await.unwrap();
-        seq.apply_scratchpad(&scratch).await.unwrap();
+        seq.apply_repo(&core, &repo).await.unwrap();
+        seq.apply_scratchpad(&core, &scratch).await.unwrap();
     }
 
     #[tokio::test]
@@ -69,8 +70,9 @@ mod tests {
         ]);
 
         let repo = get_repo();
+        let core = get_core();
 
-        seq.apply_repo(&repo).await.unwrap();
+        seq.apply_repo(&core, &repo).await.unwrap();
 
         for task in vec![task1.clone(), task2.clone()] {
             let r = task.ran_repo.lock().await;
@@ -89,14 +91,21 @@ mod tests {
         ]);
 
         let scratch = get_scratch();
+        let core = get_core();
 
-        seq.apply_scratchpad(&scratch).await.unwrap();
+        seq.apply_scratchpad(&core, &scratch).await.unwrap();
 
         for task in vec![task1.clone(), task2.clone()] {
             let s = task.ran_scratchpad.lock().await;
             let ran_scratch = s.clone().unwrap();
             assert_eq!(ran_scratch.get_name(), "2020w07");
         }
+    }
+
+    fn get_core() -> core::Core {
+        core::Core::builder()
+            .with_config(&core::Config::from_str("directory: /dev").unwrap())
+            .build()
     }
 
     fn get_repo() -> core::Repo {

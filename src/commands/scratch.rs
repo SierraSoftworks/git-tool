@@ -2,7 +2,6 @@ use clap::{App, SubCommand, Arg, ArgMatches};
 use super::{Command, core, core::Target, tasks, tasks::Task};
 use super::super::errors;
 use super::async_trait;
-use std::sync::Arc;
 
 pub struct ScratchCommand {
 
@@ -27,7 +26,7 @@ impl Command for ScratchCommand {
                     .index(2))
     }
     
-    async fn run<'a>(&self, core: Arc<core::Core>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, core: &core::Core, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut scratchpad: Option<core::Scratchpad> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
 
@@ -80,7 +79,7 @@ impl Command for ScratchCommand {
             if let Some(app) = app {
                 if !scratchpad.exists() {
                     let task = tasks::NewFolder{};
-                    task.apply_scratchpad(&scratchpad).await?;
+                    task.apply_scratchpad(&core, &scratchpad).await?;
                 }
 
                 let status = core.launcher.run(app, &scratchpad).await?;
@@ -98,6 +97,7 @@ impl Command for ScratchCommand {
 mod tests {
     use super::*;
     use super::core::{Core, Config, MockResolver, MockLauncher};
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run_no_args() {
@@ -125,14 +125,14 @@ apps:
 
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(status) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
@@ -168,14 +168,14 @@ apps:
         let launcher = Arc::new(MockLauncher::default());
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
@@ -210,14 +210,14 @@ apps:
         let launcher = Arc::new(MockLauncher::default());
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
@@ -252,14 +252,14 @@ apps:
         let launcher = Arc::new(MockLauncher::default());
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
@@ -294,14 +294,14 @@ apps:
         let launcher = Arc::new(MockLauncher::default());
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {
                 panic!("It should not launch an app.");
             },
@@ -337,14 +337,14 @@ apps:
         let launcher = Arc::new(MockLauncher::default());
         let resolver = MockResolver::default();
 
-        let core = Arc::new(Core::builder()
+        let core = Core::builder()
             .with_config(&cfg)
             .with_launcher(launcher.clone())
             .with_resolver(Arc::new(resolver))
-            .build());
+            .build();
 
 
-        match cmd.run(core, &args).await {
+        match cmd.run(&core, &args).await {
             Ok(_) => {
                 let launches = launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
