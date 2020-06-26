@@ -1,9 +1,7 @@
 use clap::{App, SubCommand, ArgMatches, Arg};
-use super::Command;
-use super::core;
+use super::*;
 use super::core::Target;
 use super::super::errors;
-use super::async_trait;
 
 pub struct InfoCommand {
 
@@ -64,7 +62,8 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["info", "repo"]);
 
-        let cfg = Config::from_str("directory: /dev").unwrap();let mut resolver = MockResolver::default();
+        let cfg = Config::from_str("directory: /dev").unwrap();
+        let mut resolver = MockResolver::default();
         resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
 
         let core = Core::builder()

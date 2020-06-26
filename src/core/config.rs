@@ -81,6 +81,10 @@ impl Config {
         PathBuf::from(self.scratch_directory.as_str())
     }
 
+    pub fn get_apps(&self) -> core::slice::Iter<Arc<app::App>> {
+        self.apps.iter()
+    }
+
     pub fn get_default_app(&self) -> Option<&app::App> {
         self.apps.first().map(|f| f.as_ref())
     }

@@ -7,6 +7,7 @@ use super::errors;
 use super::online;
 use async_trait::async_trait;
 
+mod apps;
 mod ignore;
 mod info;
 mod open;
@@ -21,6 +22,7 @@ pub trait Command {
 
 pub fn commands() -> Vec<Arc<dyn Command>> {
     vec![
+        Arc::new(apps::AppsCommand{}),
         Arc::new(info::InfoCommand{}),
         Arc::new(ignore::IgnoreCommand{}),
         Arc::new(open::OpenCommand{}),
