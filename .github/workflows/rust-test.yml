@@ -32,9 +32,8 @@ jobs:
         RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off'
         
     - name: Collect code coverage
-      uses: actions-rs/tarpaulin@v0.1.0
-      with:
-        args: --out Lcov
+      id: coverage
+      uses: actions-rs/grcov@v0.1.5
     
     - name: Upload code coverage
       uses: codecov/codecov-action@v1.0.5
