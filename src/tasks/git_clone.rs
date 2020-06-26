@@ -19,7 +19,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
         )?;
 
         // TODO: This should support a feature flag for HTTP/Git URL usage
-        let url = service.get_git_url(repo)?;
+        let url = service.get_http_url(repo)?;
 
         git::git_clone(&repo.get_path(), &url).await
     }
