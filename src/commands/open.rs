@@ -106,7 +106,6 @@ mod tests {
     use super::*;
     use super::core::{Core, Config, Repo, MockResolver, MockLauncher};
     use std::sync::Arc;
-    use crate::test::get_dev_dir;
     use tempdir::TempDir;
 
     #[tokio::test]
