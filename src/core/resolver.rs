@@ -83,7 +83,7 @@ impl Resolver for FileSystemResolver {
         }
 
         match dir.strip_prefix(&dev_dir) {
-            Ok(relative_path) => repo_from_relative_path(&self.config, &relative_path.to_path_buf()),
+            Ok(relative_path) => repo_from_relative_path(&self.config, &relative_path.to_path_buf(), false),
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.", 
                 &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display()),
@@ -92,9 +92,9 @@ impl Resolver for FileSystemResolver {
     }
 
     fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
-        let true_name = self.config.get_alias(name).unwrap_or(name.to_string());
+        let true_name = std::path::PathBuf::from(self.config.get_alias(name).unwrap_or(name.to_string()));
 
-        match self.get_repo(&std::path::PathBuf::from(true_name)) {
+        match self.get_repo(&true_name) {
             Ok(repo) => return Ok(repo),
             Err(_) => {}
         }
@@ -103,7 +103,12 @@ impl Resolver for FileSystemResolver {
         let repos: Vec<&Repo> = all_repos.iter().filter(|r| search::matches(&(r.get_domain() + &r.get_full_name()), name)).collect();
 
         match repos.len() {
-            0 => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again.")),
+            0 => {
+                match repo_from_relative_path(&self.config, &true_name, true) {
+                    Ok(repo) => Ok(repo.clone()),
+                    Err(e) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
+                }
+            },
             1 => Ok((*repos.first().unwrap()).clone()),
             _ => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
         }
@@ -178,7 +183,7 @@ fn service_from_relative_path<'a>(config: &'a Config, relative_path: &std::path:
     }
 }
 
-fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::PathBuf) -> Result<Repo, Error> {
+fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::PathBuf, fallback_to_default: bool) -> Result<Repo, Error> {
     if !relative_path.is_relative() {
         return Err(errors::system(
             &format!("The path '{}' used to resolve a repo was not relative.", relative_path.display()),
@@ -191,7 +196,7 @@ fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::Pa
     
     let mut true_path = relative_path.to_path_buf();
 
-    if !relative_path.starts_with(svc.get_domain()) {
+    if fallback_to_default && !relative_path.starts_with(svc.get_domain()) {
         name_parts.insert(0, svc.get_domain().clone());
         true_path = std::path::PathBuf::from(&svc.get_domain()).join(relative_path);
     }
@@ -451,10 +456,10 @@ mod tests {
     }
 
     #[test]
-    fn get_repo_default_service() {
+    fn get_best_repo_default_service() {
         let resolver = get_resolver();
 
-        let example = resolver.get_repo(&path::PathBuf::from("sierrasoftworks/test3")).unwrap();
+        let example = resolver.get_best_repo("sierrasoftworks/test3").unwrap();
         assert_eq!(example.get_domain(), "github.com");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test3"));
