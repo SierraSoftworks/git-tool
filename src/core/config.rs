@@ -49,6 +49,9 @@ impl Config {
         Self {
             dev_directory: dir.to_str().unwrap().to_string(),
             scratch_directory: dir.join("scratch").to_str().unwrap().to_string(),
+            features: features::Features::builder()
+                .with_use_http_transport(true)
+                .build(),
             ..Default::default()
         }
     }
@@ -128,6 +131,10 @@ impl Config {
 
     pub fn get_alias(&self, name: &str) -> Option<String> {
         self.aliases.get(name).map(|r| r.clone())
+    }
+
+    pub fn get_features(&self) -> &features::Features {
+        &self.features
     }
 }
 

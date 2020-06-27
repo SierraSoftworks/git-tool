@@ -18,8 +18,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
         )?;
 
-        // TODO: This should support a feature flag for HTTP/Git URL usage
-        let url = service.get_http_url(repo)?;
+        let url = if core.config.get_features().use_http_transport() { service.get_http_url(repo)? } else { service.get_git_url(repo)? };
 
         git::git_clone(&repo.get_path(), &url).await
     }
