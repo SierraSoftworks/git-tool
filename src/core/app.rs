@@ -4,9 +4,9 @@ use serde::{Serialize, Deserialize};
 pub struct App {
     name: String,
     command: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if="Vec::is_empty")]
     args: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if="Vec::is_empty")]
     environment: Vec<String>,
 }
 

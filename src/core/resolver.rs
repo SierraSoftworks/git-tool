@@ -106,7 +106,7 @@ impl Resolver for FileSystemResolver {
             0 => {
                 match repo_from_relative_path(&self.config, &true_name, true) {
                     Ok(repo) => Ok(repo.clone()),
-                    Err(e) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
+                    Err(_) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
                 }
             },
             1 => Ok((*repos.first().unwrap()).clone()),

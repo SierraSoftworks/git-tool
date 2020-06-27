@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use crate::core::{Core, Launcher, Resolver, FileSource, DefaultFileSource, DefaultLauncher, DefaultResolver};
 
 mod apps;
+mod config;
 mod ignore;
 mod info;
 mod list;
@@ -31,6 +32,7 @@ pub trait CommandRun<F: FileSource = DefaultFileSource, L: Launcher = DefaultLau
 pub fn commands() -> Vec<Arc<dyn CommandRun<DefaultFileSource, DefaultLauncher, DefaultResolver>>> {
     vec![
         Arc::new(apps::AppsCommand{}),
+        Arc::new(config::ConfigCommand{}),
         Arc::new(info::InfoCommand{}),
         Arc::new(ignore::IgnoreCommand{}),
         Arc::new(list::ListCommand{}),
