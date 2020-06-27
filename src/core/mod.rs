@@ -28,10 +28,3 @@ pub use resolver::Resolver;
 pub type DefaultFileSource = files::FileSystemSource;
 pub type DefaultLauncher = launcher::TokioLauncher;
 pub type DefaultResolver = resolver::FileSystemResolver;
-
-#[cfg(test)]
-pub use files::TestFileSource;
-#[cfg(test)]
-pub use launcher::{MockLaunch, MockLauncher};
-#[cfg(test)]
-pub use resolver::MockResolver;

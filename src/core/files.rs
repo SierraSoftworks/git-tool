@@ -2,12 +2,10 @@ use super::Error;
 use tokio::prelude::*;
 use async_trait::async_trait;
 use super::Config;
-#[cfg(test)] use std::sync::{Arc, RwLock};
-#[cfg(test)] use std::collections::HashMap;
-#[cfg(test)] use super::errors::{user, system_with_internal};
+use std::sync::Arc;
 
 #[async_trait]
-pub trait FileSource: Send + Sync + From<Config> + Clone {
+pub trait FileSource: Send + Sync + From<Arc<Config>> + Clone {
     async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error>;
     async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error>;
 }
@@ -15,8 +13,8 @@ pub trait FileSource: Send + Sync + From<Config> + Clone {
 #[derive(Copy, Clone)]
 pub struct FileSystemSource {}
 
-impl From<Config> for FileSystemSource {
-    fn from(_: Config) -> Self {
+impl From<Arc<Config>> for FileSystemSource {
+    fn from(_: Arc<Config>) -> Self {
         Self{}
     }
 }
@@ -42,54 +40,59 @@ impl FileSource for FileSystemSource {
 }
 
 #[cfg(test)]
-#[derive(Clone)]
-pub struct TestFileSource {
-    files: Arc<RwLock<HashMap<std::path::PathBuf, String>>>,
-    error: Option<Error>,
-}
+pub mod mocks {
+    use super::*;
+    use std::sync::RwLock;
+    use std::collections::HashMap;
+    use crate::errors::{user, system_with_internal};
 
-#[cfg(test)]
-impl From<Config> for TestFileSource {
-    fn from(_: Config) -> Self {
-        Self{
-            files: Arc::new(RwLock::new(HashMap::new())),
-            error: None
-        }
+    #[derive(Clone)]
+    pub struct TestFileSource {
+        files: Arc<RwLock<HashMap<std::path::PathBuf, String>>>,
+        error: Option<Error>,
     }
-}
 
-#[cfg(test)]
-#[async_trait]
-impl FileSource for TestFileSource {
-    async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error> {
-        if let Some(err) = self.error.as_ref() {
-            Err(err.clone())
-        } else {
-            match self.files.read() {
-                Ok(f) => {
-                    match f.get(path) {
-                        Some(content) => Ok(content.clone()),
-                        None => Err(user("File not found.", "Check that the file path is correct and try again."))
-                    }
-                },
-                Err(err) => {
-                    Err(system_with_internal("Unable to read files.", "Please check the inner exception and try again.", err))
-                }
+    impl From<Arc<Config>> for TestFileSource {
+        fn from(_: Arc<Config>) -> Self {
+            Self{
+                files: Arc::new(RwLock::new(HashMap::new())),
+                error: None
             }
         }
     }
 
-    async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error> {
-        if let Some(err) = self.error.as_ref() {
-            Err(err.clone())
-        } else {
-            match self.files.write() {
-                Ok(mut f) => {
-                    f.insert(path.to_path_buf(), content.clone());
-                    Ok(())
-                },
-                Err(err) => {
-                    Err(system_with_internal("Unable to read files.", "Please check the inner exception and try again.", err))
+    #[async_trait]
+    impl FileSource for TestFileSource {
+        async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error> {
+            if let Some(err) = self.error.as_ref() {
+                Err(err.clone())
+            } else {
+                match self.files.read() {
+                    Ok(f) => {
+                        match f.get(path) {
+                            Some(content) => Ok(content.clone()),
+                            None => Err(user("File not found.", "Check that the file path is correct and try again."))
+                        }
+                    },
+                    Err(err) => {
+                        Err(system_with_internal("Unable to read files.", "Please check the inner exception and try again.", err))
+                    }
+                }
+            }
+        }
+
+        async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error> {
+            if let Some(err) = self.error.as_ref() {
+                Err(err.clone())
+            } else {
+                match self.files.write() {
+                    Ok(mut f) => {
+                        f.insert(path.to_path_buf(), content.clone());
+                        Ok(())
+                    },
+                    Err(err) => {
+                        Err(system_with_internal("Unable to read files.", "Please check the inner exception and try again.", err))
+                    }
                 }
             }
         }

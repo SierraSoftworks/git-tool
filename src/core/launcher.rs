@@ -3,21 +3,18 @@ use tokio::process::Command;
 use super::app;
 use super::Error;
 use super::{Config, Target};
-
-#[cfg(test)]
-use tokio::sync::Mutex;
-#[cfg(test)]
 use std::sync::Arc;
 
+
 #[async_trait]
-pub trait Launcher: Send + Sync + From<Config> {
+pub trait Launcher: Send + Sync + From<Arc<Config>> {
     async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
 }
 
 pub struct TokioLauncher {}
 
-impl From<Config> for TokioLauncher {
-    fn from(_: Config) -> Self {
+impl From<Arc<Config>> for TokioLauncher {
+    fn from(_: Arc<Config>) -> Self {
         Self{}
     }
 }
@@ -37,45 +34,48 @@ impl Launcher for TokioLauncher {
 }
 
 #[cfg(test)]
-#[derive(Default)]
-pub struct MockLauncher {
-    pub launches: Arc<Mutex<Vec<MockLaunch>>>,
-    pub status: i32,
-    pub error: Option<Error>
-}
+pub mod mocks {
+    use super::*;
+    use tokio::sync::Mutex;
 
-#[cfg(test)]
-impl From<Config> for MockLauncher {
-    fn from(_: Config) -> Self {
-        Default::default()
+    #[derive(Default)]
+    pub struct MockLauncher {
+        pub launches: Arc<Mutex<Vec<MockLaunch>>>,
+        pub status: i32,
+        pub error: Option<Error>
     }
-}
 
-#[cfg(test)]
-pub struct MockLaunch {
-    pub app: app::App,
-    pub target_path: std::path::PathBuf
-}
+    impl From<Arc<Config>> for MockLauncher {
+        fn from(_: Arc<Config>) -> Self {
+            Default::default()
+        }
+    }
 
-#[cfg(test)]
-#[async_trait]
-impl Launcher for MockLauncher {
-    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
-        let mut launches = self.launches.lock().await;
+    pub struct MockLaunch {
+        pub app: app::App,
+        pub target_path: std::path::PathBuf
+    }
 
-        launches.push(MockLaunch{
-            app: a.clone(),
-            target_path: std::path::PathBuf::from(t.get_path())
-        });
+    #[async_trait]
+    impl Launcher for MockLauncher {
+        async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
+            let mut launches = self.launches.lock().await;
 
-        match self.error.clone() {
-            Some(e) => Err(e),
-            None => {
-                Ok(self.status)
+            launches.push(MockLaunch{
+                app: a.clone(),
+                target_path: std::path::PathBuf::from(t.get_path())
+            });
+
+            match self.error.clone() {
+                Some(e) => Err(e),
+                None => {
+                    Ok(self.status)
+                }
             }
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
