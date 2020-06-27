@@ -2,6 +2,7 @@ use clap::{App, SubCommand, ArgMatches};
 use super::Command;
 use super::*;
 use super::async_trait;
+use online::registry::Registry;
 
 pub struct ConfigCommand {
 
@@ -17,13 +18,34 @@ impl Command for ConfigCommand {
             .version("1.0")
             .about("manage your Git-Tool configuration file")
             .help_message("This tool allows you to easily make changes to your Git-Tool config file.")
+
+            .subcommand(SubCommand::with_name("list")
+                .version("1.0")
+                .alias("ls")
+                .about("list available config templates")
+                .help_message("Gets the list of config templates which are available through the Git-Tool registry."))
     }
 }
     
 #[async_trait]
 impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ConfigCommand {
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, _matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        core.config.to_writer(std::io::stdout())?;
+    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+        match matches.subcommand() {
+            ("list", Some(_args)) => {
+                let registry = crate::online::GitHubRegistry::from(core.config.clone());
+
+                let entries = registry.get_entries().await?;
+                for entry in entries {
+                    println!("{}", entry);
+                }
+            },
+            ("add", Some(_args)) => {
+                println!("This has not yet been implemented");
+            },
+            _ => {
+                core.config.to_writer(std::io::stdout())?;
+            }
+        }
 
         Ok(0)
     }

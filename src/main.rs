@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate base64;
 extern crate gtmpl;
 extern crate hyper;
 extern crate tokio;

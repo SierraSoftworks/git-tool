@@ -3,6 +3,8 @@ use std::fmt;
 mod std_io;
 mod hyper;
 mod utf8;
+mod base64;
+mod serde;
 
 #[derive(Debug, Clone)]
 pub struct Error {
