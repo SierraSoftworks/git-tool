@@ -22,9 +22,11 @@ impl Command for ListCommand {
                 .help("A filter which limits the repositories that are returned.")
                 .index(1))
             .arg(Arg::with_name("quiet")
+                .long("quiet")
                 .short("q")
                 .help("Prints only the name of the repository."))
             .arg(Arg::with_name("full")
+                .long("full")
                 .help("Prints detailed information about each repository.")
                 .conflicts_with("quiet"))
                 
@@ -46,10 +48,15 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ListComman
 
         let repos = core.resolver.get_repos()?;
 
+        let mut first = true;
         for repo in repos.iter().filter(|r| search::matches(&format!("{}/{}", r.get_domain(), r.get_full_name()), filter)) {
             if quiet {
                 println!("{}/{}", repo.get_domain(), repo.get_full_name());
             } else if full {
+                if !first {
+                    println!("---");
+                }
+
                 println!("
 Name:           {name}
 Namespace:      {namespace}
@@ -77,6 +84,8 @@ URLs:
                     None => println!("{}/{}", repo.get_domain(), repo.get_full_name())
                 };
             }
+
+            first = false;
         }
 
         Ok(0)
