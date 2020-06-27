@@ -40,8 +40,8 @@ impl Launcher for TokioLauncher {
 #[derive(Default)]
 pub struct MockLauncher {
     pub launches: Arc<Mutex<Vec<MockLaunch>>>,
-    pub status: Arc<Mutex<i32>>,
-    pub error: Arc<Mutex<Option<Error>>>
+    pub status: i32,
+    pub error: Option<Error>
 }
 
 #[cfg(test)]
@@ -68,14 +68,10 @@ impl Launcher for MockLauncher {
             target_path: std::path::PathBuf::from(t.get_path())
         });
 
-        let err = self.error.lock().await;
-        
-        match err.clone() {
-            Some(e) => Err(e.clone()),
+        match self.error.clone() {
+            Some(e) => Err(e),
             None => {
-                let status = self.status.lock().await;
-
-                Ok(*status)
+                Ok(self.status)
             }
         }
     }

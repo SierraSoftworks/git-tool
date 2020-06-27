@@ -105,8 +105,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for OpenComman
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, Repo, MockResolver, MockLauncher};
-    use std::sync::Arc;
+    use super::core::{Core, Config, Repo};
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -125,28 +124,22 @@ apps:
         - '{{ .Target.Name }}'
 ").unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-        
-        {
-            let mut status = launcher.status.lock().await;
-            *status = 5;
-        }
-
         let temp = TempDir::new("gt-commands-open").unwrap();
-        
-        let mut resolver = MockResolver::from(cfg.clone());
-        resolver.set_repo(Repo::new("github.com/git-fixtures/basic", temp.path().join("repo").into()));
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_resolver(Arc::new(resolver))
+            .with_mock_launcher(|l| {
+                l.status = 5;
+            })
+            .with_mock_resolver(|r| {
+                r.set_repo(Repo::new("github.com/git-fixtures/basic", temp.path().join("repo").into()));
+            })
             .build();
         
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
                 assert_eq!(status, 5);
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert!(launches.len() == 1);
 
                 let launch = &launches[0];

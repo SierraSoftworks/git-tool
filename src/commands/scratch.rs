@@ -98,8 +98,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ScratchCom
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, MockLauncher};
-    use std::sync::Arc;
+    use super::core::{Core, Config};
 
     #[tokio::test]
     async fn run_no_args() {
@@ -119,23 +118,18 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-        
-        {
-            let mut status = launcher.status.lock().await;
-            *status = 5;
-        }
-
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|l| {
+                l.status = 5;
+            })
+            .with_mock_resolver(|_| {})
             .build();
 
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
@@ -167,18 +161,16 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|_| {})
+            .with_mock_resolver(|_| {})
             .build();
 
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
@@ -197,8 +189,6 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
-        let launcher = Arc::new(MockLauncher::default());
-
         let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
@@ -213,13 +203,13 @@ apps:
 
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|_| {})
+            .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
@@ -250,18 +240,16 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|_| {})
+            .with_mock_resolver(|_| {})
             .build();
 
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
                 
                 let launch = &launches[0];
@@ -292,12 +280,10 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|_| {})
+            .with_mock_resolver(|_| {})
             .build();
 
 
@@ -327,18 +313,15 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let launcher = Arc::new(MockLauncher::default());
-
         let core = Core::builder()
             .with_config(&cfg)
-            .with_launcher(launcher.clone())
-            .with_mock_resolver()
+            .with_mock_launcher(|_| {})
+            .with_mock_resolver(|_| {})
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = launcher.launches.lock().await;
+                let launches = core.launcher.launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];

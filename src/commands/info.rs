@@ -56,7 +56,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for InfoComman
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Config, Repo, MockResolver};
+    use super::core::{Config, Repo};
 
     #[tokio::test]
     async fn run() {
@@ -65,12 +65,12 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["info", "repo"]);
 
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let mut resolver = MockResolver::from(cfg.clone());
-        resolver.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
 
         let core = Core::builder()
             .with_config(&cfg)
-            .with_resolver(Arc::new(resolver))
+            .with_mock_resolver(|r| {
+                r.set_repo(Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test")));
+            })
             .build();
 
 

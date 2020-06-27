@@ -73,43 +73,45 @@ where F : FileSource, L : Launcher, R: Resolver {
     }
     
     #[cfg(test)]
-    pub fn with_file_source<F2: FileSource>(self, file_source: Arc<F2>) -> CoreBuilder<F2, L, R> {
+    pub fn with_mock_file_source<S>(self, setup: S) -> CoreBuilder<super::files::TestFileSource, L, R>
+    where S : FnOnce(&mut super::files::TestFileSource) {
+        let mut file_source = super::files::TestFileSource::from(self.config.clone());
+        setup(&mut file_source);
+
         CoreBuilder {
             config: self.config,
-            file_source: Some(file_source),
+            file_source: Some(Arc::new(file_source)),
             launcher: self.launcher,
             resolver: self.resolver
         }
     }
-    
+
     #[cfg(test)]
-    pub fn with_launcher<L2: Launcher>(self, launcher: Arc<L2>) -> CoreBuilder<F, L2, R> {
+    pub fn with_mock_launcher<S>(self, setup: S) -> CoreBuilder<F, super::launcher::MockLauncher, R>
+    where S : FnOnce(&mut super::launcher::MockLauncher) {
+        let mut launcher = super::MockLauncher::from(self.config.clone());
+        setup(&mut launcher);
+
         CoreBuilder {
             config: self.config,
             file_source: self.file_source,
-            launcher: Some(launcher),
+            launcher: Some(Arc::new(launcher)),
             resolver: self.resolver
-        }
-    }
-    
-    #[cfg(test)]
-    pub fn with_resolver<R2: Resolver>(self, resolver: Arc<R2>) -> CoreBuilder<F, L, R2> {
-        CoreBuilder {
-            config: self.config,
-            file_source: self.file_source,
-            launcher: self.launcher,
-            resolver: Some(resolver)
         }
     }
 
     
     #[cfg(test)]
-    pub fn with_mock_resolver(self) -> CoreBuilder<F, L, super::resolver::MockResolver> {
+    pub fn with_mock_resolver<S>(self, setup: S) -> CoreBuilder<F, L, super::resolver::MockResolver>
+    where S : FnOnce(&mut super::resolver::MockResolver) {
+        let mut resolver = super::resolver::MockResolver::from(self.config.clone());
+        setup(&mut resolver);
+
         CoreBuilder {
             config: self.config,
             file_source: self.file_source,
             launcher: self.launcher,
-            resolver: None
+            resolver: Some(Arc::new(resolver))
         }
     }
 }
