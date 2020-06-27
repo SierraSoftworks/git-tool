@@ -74,7 +74,7 @@ impl Resolver for FileSystemResolver {
 
     fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
         let dev_dir = self.config.get_dev_directory().canonicalize()?;
-        let dir = if path.is_absolute() { path.clone() } else { dev_dir.join(path) };
+        let dir = if path.is_absolute() { path.canonicalize()? } else { dev_dir.join(path) };
         
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
             return Err(errors::user(
