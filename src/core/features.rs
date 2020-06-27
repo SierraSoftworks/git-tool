@@ -1,9 +1,16 @@
 use serde::{Serialize, Deserialize};
 
+fn default_as_true() -> bool {
+    true
+}
+
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 pub struct Features {
+    #[serde(default = "default_as_true")]
     native_clone: bool,
+    #[serde(default = "default_as_true")]
     create_remote: bool,
+    #[serde(default)]
     http_transport: bool,
 }
 

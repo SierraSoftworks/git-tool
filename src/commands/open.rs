@@ -122,6 +122,9 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
+
+features:
+  http_transport: true
 ").unwrap();
 
         let temp = TempDir::new("gt-commands-open").unwrap();
