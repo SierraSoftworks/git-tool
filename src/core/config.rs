@@ -47,8 +47,8 @@ impl Config {
     #[cfg(test)]
     pub fn for_dev_directory(dir: &path::Path) -> Self {
         Self {
-            dev_directory: dir.to_str().unwrap_or("").to_string(),
-            scratch_directory: dir.join("scratch").to_str().unwrap_or("").to_string(),
+            dev_directory: dir.to_str().unwrap().to_string(),
+            scratch_directory: dir.join("scratch").to_str().unwrap().to_string(),
             ..Default::default()
         }
     }

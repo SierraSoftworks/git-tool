@@ -33,7 +33,7 @@ mod tests {
             "github.com/sierrasoftworks/test1", 
             temp.path().into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = NewFolder{};
         
         assert_eq!(repo.get_path().exists(), true);
@@ -49,7 +49,7 @@ mod tests {
             "github.com/sierrasoftworks/test3", 
             temp.path().join("repo").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = NewFolder{};
         
         assert_eq!(repo.get_path().exists(), false);
@@ -67,7 +67,7 @@ mod tests {
             "2019w15", 
             temp.path().into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = NewFolder{};
         
         assert_eq!(scratch.get_path().exists(), true);
@@ -83,7 +83,7 @@ mod tests {
             "2019w19", 
             temp.path().join("scratch").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = NewFolder{};
         
         assert_eq!(scratch.get_path().exists(), false);
@@ -94,19 +94,9 @@ mod tests {
         std::fs::remove_dir(scratch.get_path()).unwrap();
     }
 
-    fn get_core() -> core::Core {
+    fn get_core(dir: &std::path::Path) -> core::Core {
         core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(get_dev_dir().as_path()))
+            .with_config(&core::Config::for_dev_directory(dir))
             .build()
-    }
-
-    fn get_dev_dir() -> std::path::PathBuf {
-        std::path::PathBuf::from(file!())
-            .parent()
-            .and_then(|f| f.parent())
-            .and_then(|f| f.parent())
-            .and_then(|f| Some(f.join("test")))
-            .and_then(|f| Some(f.join("devdir")))
-            .unwrap()
     }
 }

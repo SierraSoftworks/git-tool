@@ -19,7 +19,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitCheckout {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tasks::GitInit, test::get_dev_dir};
+    use crate::tasks::GitInit;
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -29,7 +29,7 @@ mod tests {
             "github.com/sierrasoftworks/test-git-checkout", 
             temp.path().join("repo").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         sequence![
             GitInit{},
             GitCheckout{
@@ -48,7 +48,7 @@ mod tests {
             "2019w15", 
             temp.path().join("scratch").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = GitCheckout{
             branch: "test".into(),
         };
@@ -58,9 +58,9 @@ mod tests {
         assert_eq!(scratch.exists(), false);
     }
 
-    fn get_core() -> core::Core {
+    fn get_core(dir: &std::path::Path) -> core::Core {
         core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(get_dev_dir().as_path()))
+            .with_config(&core::Config::for_dev_directory(dir))
             .build()
     }
 }

@@ -32,7 +32,6 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::{get_dev_dir};
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -42,7 +41,7 @@ mod tests {
             "github.com/git-fixtures/basic", 
             temp.path().join("repo").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         GitClone{}.apply_repo(&core, &repo).await.unwrap();
         assert!(repo.valid());
     }
@@ -54,7 +53,7 @@ mod tests {
             "2019w15", 
             temp.path().join("scratch").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = GitClone{};
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
@@ -62,9 +61,9 @@ mod tests {
         assert_eq!(scratch.exists(), false);
     }
 
-    fn get_core() -> core::Core {
+    fn get_core(dir: &std::path::Path) -> core::Core {
         core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(get_dev_dir().as_path()))
+            .with_config(&core::Config::for_dev_directory(dir))
             .build()
     }
 }

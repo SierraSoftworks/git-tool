@@ -56,7 +56,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for NewCommand
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, Target};
+    use super::core::{Core, Config};
 
     #[tokio::test]
     async fn run_partial() {
@@ -64,7 +64,8 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["new", "test/new-repo-partial"]);
 
-        let cfg = Config::for_dev_directory(&get_dev_dir());
+        let temp = tempdir::TempDir::new("gt-command-new").unwrap();
+        let cfg = Config::for_dev_directory(temp.path());
 
         let core = Core::builder()
             .with_config(&cfg)
@@ -73,19 +74,9 @@ mod tests {
         let repo = core.resolver.get_best_repo("github.com/test/new-repo-partial").unwrap();
         assert_eq!(repo.valid(), false);
 
-        let result = cmd.run(&core, &args).await;
+        cmd.run(&core, &args).await.unwrap();
 
-        let valid = repo.valid();
-        std::fs::remove_dir_all(repo.get_path()).unwrap_or_default();
-
-        match result {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
-        }
-
-        assert_eq!(valid, true);
+        assert!(repo.valid());
     }
 
     #[tokio::test]
@@ -94,7 +85,8 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["new", "github.com/test/new-repo-full"]);
 
-        let cfg = Config::for_dev_directory(&get_dev_dir());
+        let temp = tempdir::TempDir::new("gt-command-new").unwrap();
+        let cfg = Config::for_dev_directory(temp.path());
 
         let core = Core::builder()
             .with_config(&cfg)
@@ -103,28 +95,8 @@ mod tests {
         let repo = core.resolver.get_best_repo("github.com/test/new-repo-full").unwrap();
         assert_eq!(repo.valid(), false);
 
-        let result = cmd.run(&core, &args).await;
+        cmd.run(&core, &args).await.unwrap();
 
-        let valid = repo.valid();
-        std::fs::remove_dir_all(repo.get_path()).unwrap_or_default();
-
-        match result {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
-        }
-
-        assert_eq!(valid, true);
-    }
-
-    fn get_dev_dir() -> std::path::PathBuf {
-        std::path::PathBuf::from(file!())
-            .parent()
-            .and_then(|f| f.parent())
-            .and_then(|f| f.parent())
-            .and_then(|f| Some(f.join("test")))
-            .and_then(|f| Some(f.join("devdir")))
-            .unwrap()
+        assert!(repo.valid());
     }
 }

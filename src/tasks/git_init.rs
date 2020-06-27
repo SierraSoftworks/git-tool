@@ -18,7 +18,6 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitInit {
 mod tests {
     use super::*;
     use tempdir::TempDir;
-    use crate::test::get_dev_dir;
 
     #[tokio::test]
     async fn test_repo() {
@@ -27,7 +26,7 @@ mod tests {
             "github.com/sierrasoftworks/test-git-init", 
             temp.path().join("repo").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = GitInit{};
 
         task.apply_repo(&core, &repo).await.unwrap();
@@ -41,7 +40,7 @@ mod tests {
             "2019w15", 
             temp.path().join("scratch").into());
 
-        let core = get_core();
+        let core = get_core(temp.path());
         let task = GitInit{};
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
@@ -49,9 +48,9 @@ mod tests {
         assert_eq!(scratch.exists(), false);
     }
 
-    fn get_core() -> core::Core {
+    fn get_core(dir: &std::path::Path) -> core::Core {
         core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(get_dev_dir().as_path()))
+            .with_config(&core::Config::for_dev_directory(dir))
             .build()
     }
 }

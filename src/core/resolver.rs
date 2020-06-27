@@ -346,6 +346,7 @@ mod tests {
     use super::{Config, Resolver, FileSystemResolver};
     use std::{sync::Arc, path};
     use chrono::prelude::*;
+    use crate::test::get_dev_dir;
 
     #[test]
     fn get_scratchpads() {
@@ -427,16 +428,17 @@ mod tests {
 
         let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test1")).unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1"));
     }
 
     #[test]
     fn get_repo_exists_absolute() {
         let resolver = get_resolver();
+        
 
-        let example = resolver.get_repo(&get_dev_dir().join("github.com/sierrasoftworks/test1")).unwrap();
+        let example = resolver.get_repo(&resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1")).unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1"));
     }
 
     #[test]
@@ -445,7 +447,7 @@ mod tests {
 
         let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test3")).unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test3"));
+        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test3"));
     }
 
     #[test]
@@ -475,21 +477,8 @@ mod tests {
         assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("spartan563").join("test2")));
     }
 
-    fn get_dev_dir() -> path::PathBuf {
-        let file = path::PathBuf::from(file!()).canonicalize().unwrap();
-        file.parent().unwrap()
-            .parent().unwrap()
-            .parent().unwrap()
-            .join("test")
-            .join("devdir")
-    }
-
     fn get_resolver() -> FileSystemResolver {
-        let dev_dir = get_dev_dir();
-
-        let config = Arc::new(Config::from_str(&format!("
-directory: '{}'
-            ", dev_dir.display())).unwrap());
+        let config = Arc::new(Config::for_dev_directory(&get_dev_dir()));
 
         FileSystemResolver::from(config)
     }
