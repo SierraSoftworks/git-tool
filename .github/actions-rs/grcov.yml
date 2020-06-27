@@ -6,4 +6,3 @@ output-file: ./lcov.info
 ignore:
   - "/*"
   - "C:/"
-  - "../*"
