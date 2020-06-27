@@ -20,6 +20,7 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
+          !*.gcda
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Run tests
