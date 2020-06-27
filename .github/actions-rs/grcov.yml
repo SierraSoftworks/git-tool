@@ -1,7 +1,6 @@
-branch: true
+branch: false
 ignore-not-existing: true
 llvm: true
-prefix-dir: /home/user/build/
 output-type: lcov
 output-file: ./lcov.info
 ignore:
