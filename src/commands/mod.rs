@@ -12,6 +12,7 @@ use crate::core::{Core, Launcher, Resolver, FileSource, DefaultFileSource, Defau
 mod apps;
 mod ignore;
 mod info;
+mod list;
 mod new;
 mod open;
 mod scratch;
@@ -32,6 +33,7 @@ pub fn commands() -> Vec<Arc<dyn CommandRun<DefaultFileSource, DefaultLauncher, 
         Arc::new(apps::AppsCommand{}),
         Arc::new(info::InfoCommand{}),
         Arc::new(ignore::IgnoreCommand{}),
+        Arc::new(list::ListCommand{}),
         Arc::new(open::OpenCommand{}),
         Arc::new(scratch::ScratchCommand{}),
         Arc::new(services::ServicesCommand{}),
