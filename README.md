@@ -87,13 +87,7 @@ $env:GITTOOL_CONFIG = "C:\dev\git-tool.yml"
 New-Alias -Name gt -Value "git-tool.exe"
 
 # This sets up autocomplete support for git-tool and "gt"
-Register-ArgumentCompleter -CommandName gt, git-tool, git-tool.exe -ScriptBlock {
-    param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
-
-    git-tool.exe complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-    }
-} -Native
+Invoke-Expression (&git-tool shell-init powershell)
 ```
 
 ##### Linux
@@ -104,21 +98,9 @@ vi ~/.bashrc
 Then add the following:
 
 ```bash
-#! /bin/bash
-
-_gittool_bash_autocomplete() {
-    local word=${COMP_WORDS[COMP_CWORD]}
-
-    local completions
-    completions="$(git-tool complete --position "${COMP_POINT}" "${COMP_LINE}" 2>/dev/null)"
-    if [ $? -ne 0 ]; then
-        completions=""
-    fi
-
-    COMPREPLY=( $(compgen -W "$completions" -- "$word") )
-}
-
-complete -F _gittool_bash_autocomplete gt git-tool
+# ~/.bashrc
+alias gt="git-tool"
+eval "$(git-ignore shell-init bash)"
 ```
 
 ##### MacOS
@@ -129,13 +111,9 @@ vi ~/.zshrc
 Then add the following:
 
 ```zsh
-_gittool_zsh_autocomplete() {
-  local completions=("$(git-tool complete "$words")")
-
-  reply=( "${(ps:\n:)completions}" )
-}
-
-compdef _gittool_zsh_autocomplete gt git-tool
+# ~/.zshrc
+alias gt="git-tool"
+eval "$(git-ignore shell-init zsh)"
 ```
 
 ## Adding new Services
