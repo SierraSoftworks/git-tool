@@ -1,4 +1,4 @@
-use clap::{App, SubCommand, ArgMatches};
+use clap::{App, SubCommand, ArgMatches, Arg};
 use super::Command;
 use super::*;
 use super::async_trait;
@@ -24,6 +24,21 @@ impl Command for ConfigCommand {
                 .alias("ls")
                 .about("list available config templates")
                 .help_message("Gets the list of config templates which are available through the Git-Tool registry."))
+
+            .subcommand(SubCommand::with_name("add")
+                .version("1.0")
+                .about("adds a configuration template to your current config file")
+                .help_message("Adds a configuration template from the Git-Tool online registry to your config file.")
+                .arg(Arg::with_name("config")
+                    .short("c")
+                    .long("config")
+                    .help("the configuration file to update")
+                    .env("GITTOOL_CONFIG")
+                    .takes_value(true))
+                .arg(Arg::with_name("id")
+                    .index(1)
+                    .help("the id of the configuration template you want to add")
+                    .required(true)))
     }
 }
     
@@ -39,8 +54,33 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Confi
                     println!("{}", entry);
                 }
             },
-            ("add", Some(_args)) => {
-                println!("This has not yet been implemented");
+            ("add", Some(args)) => {
+                let id = args.value_of("id").ok_or(errors::user(
+                    "You have not provided an ID for the config template you wish to add.",
+                    ""))?;
+
+                let registry = crate::online::GitHubRegistry::from(core.config.clone());
+                let entry = registry.get_entry(id).await?;
+
+                println!("Applying {}", entry.name);
+                println!("{}", entry.description);
+
+                let mut cfg = core.config.clone();
+                for ec in entry.configs {
+                    if ec.is_compatible() {
+                        cfg = Arc::new(cfg.add(ec));
+                    }
+                }
+
+                match matches.value_of("config") {
+                    Some(path) => {
+                        core.file_source.write(&std::path::PathBuf::from(path), cfg.to_string()?).await?;
+                    },
+                    None => {
+                        println!("{}", cfg.to_string()?);
+                    }
+                }
+                
             },
             _ => {
                 println!("{}", core.config.to_string()?);

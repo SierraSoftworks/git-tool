@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 #[async_trait]
 pub trait FileSource: Send + Sync + From<Arc<Config>> + Clone {
-    async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error>;
-    async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error>;
+    async fn read(&self, path: &std::path::Path) -> Result<String, Error>;
+    async fn write(&self, path: &std::path::Path, content: String) -> Result<(), Error>;
 }
 
 #[derive(Copy, Clone)]
@@ -21,7 +21,7 @@ impl From<Arc<Config>> for FileSystemSource {
 
 #[async_trait]
 impl FileSource for FileSystemSource {
-    async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error> {
+    async fn read(&self, path: &std::path::Path) -> Result<String, Error> {
         let mut file = tokio::fs::File::open(path).await?;
 
         let mut buffer = vec![];
@@ -30,7 +30,7 @@ impl FileSource for FileSystemSource {
         Ok(String::from_utf8(buffer)?)
     }
 
-    async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error> {
+    async fn write(&self, path: &std::path::Path, content: String) -> Result<(), Error> {
         let mut file = tokio::fs::File::create(path).await?;
 
         file.write_all(content.as_bytes()).await?;
@@ -63,7 +63,7 @@ pub mod mocks {
 
     #[async_trait]
     impl FileSource for TestFileSource {
-        async fn read(&self, path: &std::path::PathBuf) -> Result<String, Error> {
+        async fn read(&self, path: &std::path::Path) -> Result<String, Error> {
             if let Some(err) = self.error.as_ref() {
                 Err(err.clone())
             } else {
@@ -81,7 +81,7 @@ pub mod mocks {
             }
         }
 
-        async fn write(&self, path: &std::path::PathBuf, content: String) -> Result<(), Error> {
+        async fn write(&self, path: &std::path::Path, content: String) -> Result<(), Error> {
             if let Some(err) = self.error.as_ref() {
                 Err(err.clone())
             } else {

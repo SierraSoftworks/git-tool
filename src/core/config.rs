@@ -7,6 +7,7 @@ use super::app;
 use super::features;
 use super::service;
 use super::super::errors;
+use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -39,6 +40,26 @@ impl Config {
         
         for (k, v) in from.aliases.iter() {
             into.aliases.insert(k.clone(), v.clone());
+        }
+
+        into
+    }
+
+    pub fn add(&self, template: EntryConfig) -> Self {
+        let mut into = self.clone();
+
+        match template.app {
+            Some(app) => {
+                into.apps.push(Arc::new(app.into()));
+            },
+            None => {}
+        }
+
+        match template.service {
+            Some(svc) => {
+                into.services.push(Arc::new(svc.into()));
+            },
+            None => {}
         }
 
         into
