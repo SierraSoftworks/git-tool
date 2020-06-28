@@ -43,7 +43,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Confi
                 println!("This has not yet been implemented");
             },
             _ => {
-                core.config.to_writer(std::io::stdout())?;
+                println!("{}", core.config.to_string()?);
             }
         }
 

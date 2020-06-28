@@ -72,10 +72,9 @@ impl Config {
             e))
     }
     
-    pub fn to_writer<W>(&self, w: W) -> Result<(), errors::Error>
-        where W: std::io::Write
+    pub fn to_string(&self) -> Result<String, errors::Error>
     {
-        serde_yaml::to_writer(w, self).map_err(|e| errors::system_with_internal(
+        serde_yaml::to_string(self).map_err(|e| errors::system_with_internal(
             "We couldn't serialize your configuration to YAML.",
             "Please report this issue on GitHub so that we can try and resolve it.",
             e))

@@ -19,6 +19,7 @@ mod new;
 mod open;
 mod scratch;
 mod services;
+mod shell_init;
 
 pub trait Command: Send + Sync {
     fn name(&self) -> String;
@@ -47,5 +48,6 @@ pub fn commands<F: FileSource, L: Launcher, R: Resolver>() -> Vec<Arc<dyn Comman
         Arc::new(open::OpenCommand{}),
         Arc::new(scratch::ScratchCommand{}),
         Arc::new(services::ServicesCommand{}),
+        Arc::new(shell_init::ShellInitCommand{})
     ]
 }
