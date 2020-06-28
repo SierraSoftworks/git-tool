@@ -23,6 +23,7 @@ impl Command for ShellInitCommand {
                 .about("prints the initialization script for this shell")
                 .arg(Arg::with_name("full")
                     .long("full")
+                    .help("prints the full initialization script for this shell")
                     .hidden(true)));
         }
 
@@ -35,20 +36,25 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Shell
     async fn run<'a>(&self, _core: &crate::core::Core<F, L, R>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where F: FileSource, L: Launcher, R: Resolver {
 
-        let shell_name = matches.subcommand_name().ok_or(errors::user(
-            "You did not provide the name of the shell you want to configure.",
-            "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."))?;
-
-        let shells = get_shells();
-        let shell = shells.iter().find(|s| s.get_name() == shell_name).ok_or(errors::user(
-            &format!("The shell '{}' is not currently supported by Git-Tool.", shell_name),
-            "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
-        ))?;
-            
-        if matches.is_present("full") {
-            print!("{}", shell.get_long_init());
-        } else {
-            print!("{}", shell.get_short_init());
+        match matches.subcommand() {
+            (name, Some(matches)) => {
+                let shells = get_shells();
+                let shell = shells.iter().find(|s| s.get_name() == name).ok_or(errors::user(
+                    &format!("The shell '{}' is not currently supported by Git-Tool.", name),
+                    "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
+                ))?;
+                    
+                if matches.is_present("full") {
+                    print!("{}", shell.get_long_init());
+                } else {
+                    print!("{}", shell.get_short_init());
+                }
+            },
+            _ => {
+                Err(errors::user(
+                    "You did not provide the name of the shell you want to configure.",
+                    "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."))?;
+            }
         }
 
         Ok(0)
