@@ -18,13 +18,16 @@ impl Command for ServicesCommand {
 }
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ServicesCommand {
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ServicesCommand {
     async fn run<'a>(&self, core: &crate::core::Core<F, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
         for svc in core.config.get_services() {
             println!("{}", svc.get_domain());
         }
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, _core: &Core<F, L, R>, _completer: &Completer, _matches: &ArgMatches<'a>) {
     }
 }
 

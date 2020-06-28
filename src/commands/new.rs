@@ -9,13 +9,14 @@ pub struct NewCommand {
 
 impl Command for NewCommand {
     fn name(&self) -> String {
-        String::from("new")
+        "new".into()
     }
 
     fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+        SubCommand::with_name(&self.name())
             .version("1.0")
             .about("creates a new repository")
+            .alias("new")
             .alias("n")
             .alias("create")
             .after_help("Creates a new repository with the provided name.")
@@ -27,7 +28,7 @@ impl Command for NewCommand {
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for NewCommand {    
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for NewCommand {    
     async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
@@ -50,6 +51,26 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for NewCommand
         tasks.apply_repo(core, &repo).await?;
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+        match core.resolver.get_repos() {
+            Ok(repos) => {
+                let mut namespaces = std::collections::HashSet::new();
+                let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+
+                for repo in repos {
+                    if repo.get_domain() == default_svc {
+                        namespaces.insert(repo.get_domain() + "/");
+                    }
+
+                    namespaces.insert(format!("{}/{}/", repo.get_domain(), repo.get_namespace()));
+                }
+
+                completer.offer_many(namespaces.iter().map(|s| s.as_str()));
+            },
+            _ => {}
+        }
     }
 }
 

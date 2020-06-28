@@ -35,7 +35,7 @@ impl Command for ListCommand {
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ListCommand {
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ListCommand {
     async fn run<'a>(&self, core: &crate::core::Core<F, L, R>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where F: FileSource, L: Launcher, R: Resolver {
         let filter = match matches.value_of("filter") {
@@ -89,6 +89,10 @@ URLs:
         }
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, _core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer_many(vec!["--quiet", "-q", "--full", "-f"]);
     }
 }
 

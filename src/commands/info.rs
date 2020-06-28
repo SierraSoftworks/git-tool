@@ -26,7 +26,7 @@ impl Command for InfoCommand {
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for InfoCommand {    
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for InfoCommand {    
     async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
@@ -50,6 +50,18 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for InfoComman
         }
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+        let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+
+        match core.resolver.get_repos() {
+            Ok(repos) => {
+                completer.offer_many(repos.iter().filter(|r| r.get_domain() == default_svc).map(|r| r.get_full_name()));
+                completer.offer_many(repos.iter().map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())));
+            },
+            _ => {}
+        }
     }
 }
 

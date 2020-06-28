@@ -28,7 +28,7 @@ impl Command for ConfigCommand {
 }
     
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ConfigCommand {
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ConfigCommand {
     async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             ("list", Some(_args)) => {
@@ -48,6 +48,25 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for ConfigComm
         }
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, matches: &ArgMatches<'a>) {
+        match matches.subcommand() {
+            ("list", _) => {
+
+            },
+            ("add", _) => {
+                match online::GitHubRegistry::from(core.config.clone()).get_entries().await {
+                    Ok(entries) => {
+                        completer.offer_many(entries);
+                    },
+                    _ => {}
+                }
+            },
+            _ => {
+                completer.offer_many(vec!["list", "add"]);
+            }
+        }
     }
 }
 

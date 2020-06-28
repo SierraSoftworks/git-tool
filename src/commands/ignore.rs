@@ -33,7 +33,7 @@ impl Command for IgnoreCommand {
 }
     
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for IgnoreCommand {
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for IgnoreCommand {
     async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.occurrences_of("language") {
             0 => {
@@ -60,6 +60,13 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for IgnoreComm
         }
 
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, _core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+        match online::gitignore::list().await {
+            Ok(langs) => completer.offer_many(langs),
+            _ => {}
+        }
     }
 }
 

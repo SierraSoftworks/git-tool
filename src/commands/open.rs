@@ -33,7 +33,7 @@ New applications can be configured either by making changes to your configuratio
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for OpenCommand {    
+impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for OpenCommand {    
     async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut repo: Option<core::Repo> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
@@ -99,6 +99,20 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRun<F, L, R> for OpenComman
         }
         
         Ok(0)
+    }
+
+    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer_many(core.config.get_apps().map(|a| a.get_name()));
+
+        let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+
+        match core.resolver.get_repos() {
+            Ok(repos) => {
+                completer.offer_many(repos.iter().filter(|r| r.get_domain() == default_svc).map(|r| r.get_full_name()));
+                completer.offer_many(repos.iter().map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())));
+            },
+            _ => {}
+        }
     }
 }
 

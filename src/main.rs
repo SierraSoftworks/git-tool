@@ -7,6 +7,7 @@ extern crate chrono;
 
 use clap::{Arg, App, ArgMatches};
 use std::sync::Arc;
+use crate::commands::CommandRunnable;
 
 #[macro_use] mod tasks;
 mod core;
@@ -14,16 +15,19 @@ mod errors;
 mod search;
 mod git;
 mod online;
+mod completion;
 mod commands;
 
 #[cfg(test)] mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = App::new("Git-Tool")
-        .version("2.0.0")
+    let commands = commands::default_commands();
+
+    let mut app = App::new("Git-Tool")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Benjamin Pannell <benjamin@pannell.dev>")
-        .about("")
+        .about("Simplify your Git repository management and stop thinking about folders.")
         .arg(Arg::with_name("config")
                 .short("c")
                 .long("config")
@@ -35,11 +39,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .long("verbose")
                 .help("enable verbose logging")
                 .default_value("false"))
-        .subcommands(commands::commands().into_iter().map(|x| x.app()));
+        .subcommands(commands.iter().map(|x| x.app()));
 
-    let matches = app.get_matches();
+    let matches = app.clone().get_matches();
 
-    match run(matches).await {
+    match run(commands, matches).await {
+        Result::Ok(-1) => {
+            app.print_help()?;
+        },
         Result::Ok(status) => {
             std::process::exit(status);
         },
@@ -48,9 +55,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             std::process::exit(1);
         },
     }
+
+    Ok(())
 }
 
-async fn run<'a>(matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
+async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultFileSource, core::DefaultLauncher, core::DefaultResolver>>>, matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
@@ -59,14 +68,12 @@ async fn run<'a>(matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
 
     let core = Arc::new(core_builder.build());
 
-    for cmd in commands::commands().iter() {
+    for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
             let status = cmd.run(&core, cmd_matches).await?;
             return Ok(status);
         }
     }
 
-    return Err(errors::user(
-        "We did not recognize the command you provided.",
-        "Please run `git-tool --help` and ensure you are using a supported command."))
+    Ok(-1)
 }
