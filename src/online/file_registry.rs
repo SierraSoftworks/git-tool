@@ -47,7 +47,7 @@ impl Registry for FileRegistry {
     }
 
     async fn get_entry(&self, id: &str) -> Result<Entry, Error> {
-        let contents = read_to_string(self.path.join(to_native_path(PathBuf::from(format!("{}.yaml", id)))))?;
+        let contents = read_to_string(self.path.join(to_native_path(format!("{}.yaml", id))))?;
 
         Ok(serde_yaml::from_str(&contents)?)
     }

@@ -456,11 +456,6 @@ mod tests {
     }
 
     #[test]
-    fn to_native_path() {
-        assert_eq!(super::to_native_path(get_dev_dir().join("github.com/sierrasoftworks")), get_dev_dir().join("github.com").join("sierrasoftworks"));
-    }
-
-    #[test]
     fn get_child_directories() {
         let children = super::get_child_directories(&get_dev_dir().join("github.com"), "*/*");
 
