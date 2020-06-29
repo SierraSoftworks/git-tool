@@ -1,7 +1,7 @@
 use super::{Config, Scratchpad, Error, Service, Repo, errors};
 use std::env;
 use chrono::prelude::*;
-use crate::search;
+use crate::{fs::to_native_path, search};
 use std::sync::Arc;
 
 pub trait Resolver: Send + Sync + From<Arc<Config>> {
@@ -208,16 +208,6 @@ fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::Pa
     } else {
         Ok(Repo::new(&name_parts.join("/"), to_native_path(config.get_dev_directory().join(true_path))))
     }
-}
-
-fn to_native_path(path: std::path::PathBuf) -> std::path::PathBuf {
-    let mut output = std::path::PathBuf::new();
-    output.extend(path.components().flat_map(|c| match c {
-        std::path::Component::Normal(n) => n.to_str().unwrap().split("/").map(|p| std::path::Component::Normal(p.as_ref())).collect(),
-        _ => vec![c]
-    }));
-
-    output
 }
 
 fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {

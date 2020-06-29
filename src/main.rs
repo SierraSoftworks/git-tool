@@ -12,6 +12,7 @@ use crate::commands::CommandRunnable;
 #[macro_use] mod tasks;
 mod core;
 mod errors;
+mod fs;
 mod search;
 mod git;
 mod online;
