@@ -34,7 +34,10 @@ impl<'a> std::convert::Into<Value> for &Repo {
                 "Namespace" => Value::String(self.get_namespace()),
                 "Domain" => Value::String(self.get_domain()),
                 "Exists" => Value::Bool(self.exists()),
-                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default()))
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
+                "Service" => Value::Object(map!{
+                    "Domain" => Value::String(self.get_domain())
+                })
             }),
             "Service" => Value::Object(map!{
                 "Domain" => Value::String(self.get_domain())
@@ -51,7 +54,9 @@ impl std::convert::Into<Value> for &Scratchpad {
                 "Name" => Value::String(self.get_name()),
                 "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
                 "Exists" => Value::Bool(self.exists())
-            })
+            }),
+            "Repo" => Value::NoValue,
+            "Service" => Value::NoValue
         })
         
     }
@@ -88,6 +93,24 @@ mod tests {
 
         assert_eq!(render("{{ .Target.Name }}", (&scratch).into()).unwrap(), "2020w07");
         assert_eq!(render("{{ .Target.Path }}", (&scratch).into()).unwrap(), "/test/scratch/2020w07");
+    }
+
+    #[test]
+    fn render_advanced_repo() {
+        let repo = Repo::new(
+            "github.com/sierrasoftworks/git-tool", 
+            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"));
+
+        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&repo).into()).unwrap(), "github.com/sierrasoftworks/git-tool");
+    }
+
+    #[test]
+    fn render_advanced_scratchpad() {
+        let scratch = Scratchpad::new(
+            "2020w07", 
+            PathBuf::from("/test/scratch/2020w07"));
+
+        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&scratch).into()).unwrap(), "2020w07");
     }
 
     #[test]
