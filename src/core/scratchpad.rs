@@ -21,7 +21,7 @@ impl Target for Scratchpad {
         self.path.is_dir()
     }
 
-    fn template_context(&self, config: &Config) -> Value {
+    fn template_context(&self, _config: &Config) -> Value {
         self.into()
     }
 }
