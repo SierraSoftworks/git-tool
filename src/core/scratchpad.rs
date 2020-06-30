@@ -1,5 +1,6 @@
 use std::path;
-use super::Target;
+use super::{Config, Target};
+use gtmpl::Value;
 
 #[derive(Debug, Clone)]
 pub struct Scratchpad {
@@ -18,6 +19,10 @@ impl Target for Scratchpad {
 
     fn exists(&self) -> bool {
         self.path.is_dir()
+    }
+
+    fn template_context(&self, config: &Config) -> Value {
+        self.into()
     }
 }
 

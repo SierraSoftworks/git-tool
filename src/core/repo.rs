@@ -1,5 +1,6 @@
 use std::{path};
-pub use super::Target;
+pub use super::{Config, Target, templates::repo_context};
+use gtmpl::Value;
 
 #[derive(Debug, Clone)]
 pub struct Repo {
@@ -20,6 +21,10 @@ impl Target for Repo {
 
     fn exists(&self) -> bool {
         self.path.is_dir()
+    }
+
+    fn template_context(&self, config: &Config) -> Value {
+        repo_context(config, self)
     }
 }
 

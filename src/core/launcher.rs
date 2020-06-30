@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use tokio::process::Command;
 use super::app;
 use super::Error;
-use super::{Config, Target};
+use super::{Config, Target, templates::{render_list, render}};
 use std::sync::Arc;
 
 
@@ -11,21 +11,32 @@ pub trait Launcher: Send + Sync + From<Arc<Config>> {
     async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
 }
 
-pub struct TokioLauncher {}
+pub struct TokioLauncher {
+    config: Arc<Config>
+}
 
 impl From<Arc<Config>> for TokioLauncher {
-    fn from(_: Arc<Config>) -> Self {
-        Self{}
+    fn from(config: Arc<Config>) -> Self {
+        Self{
+            config: config.clone()
+        }
     }
 }
 
 #[async_trait]
 impl Launcher for TokioLauncher {
     async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
-        let status = Command::new(a.get_command())
-            .args(a.get_args())
+        let context = t.template_context(&self.config);
+
+        let program = render(a.get_command(), context.clone())?;
+        let args = render_list(a.get_args(), context.clone())?;
+        let env_args = render_list(a.get_environment(), context.clone())?;
+        let env_arg_tuples = env_args.iter().map(|i| i.split("=").collect()).map(|i: Vec<&str>| (i[0], i[1]));
+
+        let status = Command::new(program)
+            .args(args)
             .current_dir(t.get_path())
-            .envs(a.get_environment().iter().map(|i| i.split("=").collect()).map(|i: Vec<&str>| (i[0], i[1])))
+            .envs(env_arg_tuples)
             .spawn()?
             .await?;
 
@@ -81,7 +92,7 @@ pub mod mocks {
 mod tests {
     use super::*;
     use super::super::Scratchpad;
-    use std::path::PathBuf;
+    use crate::test::get_dev_dir;
 
     #[tokio::test]
     #[cfg(windows)]
@@ -95,19 +106,14 @@ mod tests {
                 "-Command",
                 "exit $env:TEST_CODE"
             ])
-            .with_environment(vec!["TEST_CODE=123"])
+            .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
             .into();
 
-        let test_dir = PathBuf::from(file!())
-            .parent()
-            .and_then(|f| f.parent())
-            .and_then(|f| f.parent())
-            .and_then(|f| Some(f.join("test")))
-            .unwrap();
+        let test_dir = get_dev_dir().join("test");
+        let t = Scratchpad::new("123", test_dir);
 
-        let t = Scratchpad::new("test", test_dir);
-
-        let launcher = TokioLauncher{};
+        let config = Arc::new(Config::default());
+        let launcher = TokioLauncher::from(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
@@ -123,17 +129,11 @@ mod tests {
                 "-c",
                 "exit $TEST_CODE"
             ])
-            .with_environment(vec!["TEST_CODE=123"])
+            .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
             .into();
-
-        let test_dir = PathBuf::from(file!())
-            .parent()
-            .and_then(|f| f.parent())
-            .and_then(|f| f.parent())
-            .and_then(|f| Some(f.join("test")))
-            .unwrap();
-
-        let t = Scratchpad::new("test", test_dir);
+        
+            let test_dir = get_dev_dir().join("test");
+            let t = Scratchpad::new("123", test_dir);
 
         let launcher = TokioLauncher{};
 
