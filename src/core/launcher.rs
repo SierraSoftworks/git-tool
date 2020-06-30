@@ -109,7 +109,7 @@ mod tests {
             .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
             .into();
 
-        let test_dir = get_dev_dir().join("test");
+        let test_dir = get_dev_dir();
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
@@ -132,10 +132,11 @@ mod tests {
             .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
             .into();
         
-            let test_dir = get_dev_dir().join("test");
-            let t = Scratchpad::new("123", test_dir);
+        let test_dir = get_dev_dir();
+        let t = Scratchpad::new("123", test_dir);
 
-        let launcher = TokioLauncher{};
+        let config = Arc::new(Config::default());
+        let launcher = TokioLauncher::from(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
