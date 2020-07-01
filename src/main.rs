@@ -1,9 +1,9 @@
-extern crate clap;
 extern crate base64;
+extern crate chrono;
+extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
 extern crate tokio;
-extern crate chrono;
 
 use clap::{Arg, App, ArgMatches};
 use std::sync::Arc;
@@ -18,6 +18,7 @@ mod git;
 mod online;
 mod completion;
 mod commands;
+mod update;
 
 #[cfg(test)] mod test;
 
@@ -40,6 +41,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .long("verbose")
                 .help("enable verbose logging")
                 .default_value("false"))
+        .arg(Arg::with_name("update-resume-internal")
+            .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
+            .takes_value(true)
+            .hidden(true))
         .subcommands(commands.iter().map(|x| x.app()));
 
     let matches = app.clone().get_matches();
