@@ -3,8 +3,8 @@ use super::{*, core::Target};
 pub struct NewFolder {}
 
 #[async_trait::async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for NewFolder {
-    async fn apply_repo(&self, _core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> Task<K, L, R> for NewFolder {
+    async fn apply_repo(&self, _core: &core::Core<K, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
         std::fs::create_dir_all(path)?;
@@ -12,7 +12,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for NewFolder {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(path)?;

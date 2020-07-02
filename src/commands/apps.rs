@@ -19,9 +19,9 @@ impl Command for AppsCommand {
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for AppsCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<F, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where F: FileSource, L: Launcher, R: Resolver {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for AppsCommand {
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+    where K: KeyChain, L: Launcher, R: Resolver {
         for app in core.config.get_apps() {
             println!("{}", app.get_name());
         }
@@ -29,7 +29,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for AppsC
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<F, L, R>, _completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &Core<K, L, R>, _completer: &Completer, _matches: &ArgMatches<'a>) {
         
     }
 }

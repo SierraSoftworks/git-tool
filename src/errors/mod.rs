@@ -5,6 +5,7 @@ mod hyper;
 mod utf8;
 mod base64;
 mod serde;
+mod keyring;
 
 #[derive(Debug, Clone)]
 pub struct Error {

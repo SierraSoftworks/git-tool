@@ -24,14 +24,14 @@ impl Command for CompleteCommand {
 }
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for CompleteCommand {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for CompleteCommand {
     async fn run<'a>(
         &self,
-        core: &crate::core::Core<F, L, R>,
+        core: &crate::core::Core<K, L, R>,
         matches: &clap::ArgMatches<'a>,
     ) -> Result<i32, crate::core::Error>
     where
-        F: FileSource,
+        K: KeyChain,
         L: Launcher,
         R: Resolver,
     {
@@ -41,7 +41,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Compl
 
         let args = matches.value_of("args").unwrap_or_default();
 
-        let commands = super::commands::<F, L, R>();
+        let commands = super::commands::<K, L, R>();
         let (cmd, filter) = self
             .extract_command_and_filter(args, position)
             .unwrap_or_default();
@@ -55,7 +55,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Compl
 
     async fn complete<'a>(
         &self,
-        _core: &Core<F, L, R>,
+        _core: &Core<K, L, R>,
         completer: &Completer,
         _matches: &ArgMatches<'a>,
     ) {
@@ -97,11 +97,11 @@ impl CompleteCommand {
         Some((cmd, filter))
     }
 
-    fn get_responsible_command<F: FileSource, L: Launcher, R: Resolver>(
+    fn get_responsible_command<K: KeyChain, L: Launcher, R: Resolver>(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<F, L, R>>>,
+        commands: &Vec<Arc<dyn CommandRunnable<K, L, R>>>,
         args: &str,
-    ) -> Option<(Arc<dyn CommandRunnable<F, L, R>>, ArgMatches)> {
+    ) -> Option<(Arc<dyn CommandRunnable<K, L, R>>, ArgMatches)> {
         match self.get_completion_matches(commands, args) {
             Ok(complete_matches) => {
                 for cmd in commands.iter() {
@@ -116,10 +116,10 @@ impl CompleteCommand {
         None
     }
 
-    async fn offer_completions<F: FileSource, L: Launcher, R: Resolver>(
+    async fn offer_completions<K: KeyChain, L: Launcher, R: Resolver>(
         &self,
-        core: &Core<F, L, R>,
-        commands: &Vec<Arc<dyn CommandRunnable<F, L, R>>>,
+        core: &Core<K, L, R>,
+        commands: &Vec<Arc<dyn CommandRunnable<K, L, R>>>,
         args: &str,
         completer: &Completer,
     ) {
@@ -135,9 +135,9 @@ impl CompleteCommand {
         }
     }
 
-    fn get_completion_matches<F: FileSource, L: Launcher, R: Resolver>(
+    fn get_completion_matches<K: KeyChain, L: Launcher, R: Resolver>(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<F, L, R>>>,
+        commands: &Vec<Arc<dyn CommandRunnable<K, L, R>>>,
         args: &str,
     ) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)

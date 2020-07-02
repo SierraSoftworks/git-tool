@@ -28,8 +28,8 @@ impl Command for NewCommand {
 
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for NewCommand {    
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for NewCommand {    
+    async fn run<'a>(&self, core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver.get_best_repo(name)?,
             None => Err(errors::user(
@@ -53,7 +53,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for NewCo
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, core: &Core<K, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
         match core.resolver.get_repos() {
             Ok(repos) => {
                 let mut namespaces = std::collections::HashSet::new();

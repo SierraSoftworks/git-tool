@@ -1,29 +1,29 @@
 
 use std::sync::Arc;
-use super::{FileSource, Config, Launcher, Error, Resolver};
+use super::{Config, Launcher, Error, Resolver, KeyChain};
 
-pub struct Core<F = super::DefaultFileSource, L = super::DefaultLauncher, R = super::DefaultResolver>
-where F : FileSource, L : Launcher, R: Resolver
+pub struct Core<K = super::DefaultKeyChain, L = super::DefaultLauncher, R = super::DefaultResolver>
+where K: KeyChain, L : Launcher, R: Resolver
 {
     pub config: Arc<Config>,
-    pub file_source: Arc<F>,
     pub launcher: Arc<L>,
-    pub resolver: Arc<R>
+    pub resolver: Arc<R>,
+    pub keychain: Arc<K>
 }
 
 impl Core {
-    pub fn builder() -> CoreBuilder<super::DefaultFileSource, super::DefaultLauncher, super::DefaultResolver> {
+    pub fn builder() -> CoreBuilder<super::DefaultKeyChain, super::DefaultLauncher, super::DefaultResolver> {
         CoreBuilder::default()
     }
 }
 
-pub struct CoreBuilder<F = super::DefaultFileSource, L = super::DefaultLauncher, R = super::DefaultResolver>
-where F : FileSource, L : Launcher, R: Resolver
+pub struct CoreBuilder<K = super::DefaultKeyChain, L = super::DefaultLauncher, R = super::DefaultResolver>
+where K: KeyChain, L : Launcher, R: Resolver
 {
     config: Arc<Config>,
-    file_source: Arc<F>,
     launcher: Arc<L>,
-    resolver: Arc<R>
+    resolver: Arc<R>,
+    keychain: Arc<K>
 }
 
 impl Default for CoreBuilder {
@@ -31,28 +31,28 @@ impl Default for CoreBuilder {
         let config = Arc::new(Config::default());
         Self {
             config: config.clone(),
-            file_source: Arc::new(super::DefaultFileSource::from(config.clone())),
             launcher: Arc::new(super::DefaultLauncher::from(config.clone())),
-            resolver: Arc::new(super::DefaultResolver::from(config.clone()))
+            resolver: Arc::new(super::DefaultResolver::from(config.clone())),
+            keychain: Arc::new(super::DefaultKeyChain::from(config.clone()))
         }
     }
 }
 
-impl<F, L, R> std::convert::Into<Core<F, L, R>> for CoreBuilder<F, L, R>
-where F : FileSource, L : Launcher, R: Resolver {
-    fn into(self) -> Core<F, L, R> {
+impl<K, L, R> std::convert::Into<Core<K, L, R>> for CoreBuilder<K, L, R>
+where K : KeyChain, L : Launcher, R: Resolver {
+    fn into(self) -> Core<K, L, R> {
         self.build()
     }
 }
 
-impl<F, L, R> CoreBuilder<F, L, R>
-where F : FileSource, L : Launcher, R: Resolver {
-    pub fn build(&self) -> Core<F, L, R> {
+impl<K, L, R> CoreBuilder<K, L, R>
+where L : Launcher, R: Resolver, K: KeyChain {
+    pub fn build(&self) -> Core<K, L, R> {
         Core {
             config: self.config.clone(),
-            file_source: self.file_source.clone(),
             launcher: self.launcher.clone(),
-            resolver: self.resolver.clone()
+            resolver: self.resolver.clone(),
+            keychain: self.keychain.clone(),
         }
     }
 
@@ -61,9 +61,9 @@ where F : FileSource, L : Launcher, R: Resolver {
 
         Self {
             config: c.clone(),
-            file_source: Arc::new(F::from(c.clone())),
             launcher: Arc::new(L::from(c.clone())),
-            resolver: Arc::new(R::from(c.clone()))
+            resolver: Arc::new(R::from(c.clone())),
+            keychain: Arc::new(K::from(c.clone()))
         }
     }
 
@@ -72,47 +72,33 @@ where F : FileSource, L : Launcher, R: Resolver {
 
         Ok(self.with_config(&cfg))
     }
-    
-    #[cfg(test)]
-    pub fn with_mock_file_source<S>(self, setup: S) -> CoreBuilder<super::files::mocks::TestFileSource, L, R>
-    where S : FnOnce(&mut super::files::mocks::TestFileSource) {
-        let mut file_source = super::files::mocks::TestFileSource::from(self.config.clone());
-        setup(&mut file_source);
-
-        CoreBuilder {
-            config: self.config,
-            file_source: Arc::new(file_source),
-            launcher: self.launcher,
-            resolver: self.resolver
-        }
-    }
 
     #[cfg(test)]
-    pub fn with_mock_launcher<S>(self, setup: S) -> CoreBuilder<F, super::launcher::mocks::MockLauncher, R>
+    pub fn with_mock_launcher<S>(self, setup: S) -> CoreBuilder<K, super::launcher::mocks::MockLauncher, R>
     where S : FnOnce(&mut super::launcher::mocks::MockLauncher) {
         let mut launcher = super::launcher::mocks::MockLauncher::from(self.config.clone());
         setup(&mut launcher);
 
         CoreBuilder {
             config: self.config,
-            file_source: self.file_source,
             launcher: Arc::new(launcher),
-            resolver: self.resolver
+            resolver: self.resolver,
+            keychain: self.keychain
         }
     }
 
     
     #[cfg(test)]
-    pub fn with_mock_resolver<S>(self, setup: S) -> CoreBuilder<F, L, super::resolver::mocks::MockResolver>
+    pub fn with_mock_resolver<S>(self, setup: S) -> CoreBuilder<K, L, super::resolver::mocks::MockResolver>
     where S : FnOnce(&mut super::resolver::mocks::MockResolver) {
         let mut resolver = super::resolver::mocks::MockResolver::from(self.config.clone());
         setup(&mut resolver);
 
         CoreBuilder {
             config: self.config,
-            file_source: self.file_source,
             launcher: self.launcher,
-            resolver: Arc::new(resolver)
+            resolver: Arc::new(resolver),
+            keychain: self.keychain
         }
     }
 }

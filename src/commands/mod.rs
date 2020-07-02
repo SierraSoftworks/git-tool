@@ -10,7 +10,7 @@ use std::vec::Vec;
 use crate::{
     completion::Completer,
     core::{
-        Core, DefaultFileSource, DefaultLauncher, DefaultResolver, FileSource, Launcher, Resolver,
+        Core, DefaultKeyChain, DefaultLauncher, DefaultResolver, KeyChain, Launcher, Resolver,
     },
 };
 
@@ -35,30 +35,30 @@ pub trait Command: Send + Sync {
 
 #[async_trait]
 pub trait CommandRunnable<
-    F: FileSource = DefaultFileSource,
+    K: KeyChain = DefaultKeyChain,
     L: Launcher = DefaultLauncher,
     R: Resolver = DefaultResolver,
 >: Command
 {
     async fn run<'a>(
         &self,
-        core: &Core<F, L, R>,
+        core: &Core<K, L, R>,
         matches: &ArgMatches<'a>,
     ) -> Result<i32, errors::Error>;
     async fn complete<'a>(
         &self,
-        core: &Core<F, L, R>,
+        core: &Core<K, L, R>,
         completer: &Completer,
         matches: &ArgMatches<'a>,
     );
 }
 
 pub fn default_commands(
-) -> Vec<Arc<dyn CommandRunnable<DefaultFileSource, DefaultLauncher, DefaultResolver>>> {
+) -> Vec<Arc<dyn CommandRunnable<DefaultKeyChain, DefaultLauncher, DefaultResolver>>> {
     commands()
 }
 
-pub fn commands<F: FileSource, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandRunnable<F, L, R>>>
+pub fn commands<K: KeyChain, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandRunnable<K, L, R>>>
 {
     vec![
         Arc::new(apps::AppsCommand{}),

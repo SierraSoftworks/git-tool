@@ -6,8 +6,8 @@ pub struct GitClone {
 }
 
 #[async_trait::async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
-    async fn apply_repo(&self, core: &core::Core<F, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> Task<K, L, R> for GitClone {
+    async fn apply_repo(&self, core: &core::Core<K, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
         if repo.exists() {
             return Ok(())
         }
@@ -23,7 +23,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> Task<F, L, R> for GitClone {
         git::git_clone(&repo.get_path(), &url).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<F, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }

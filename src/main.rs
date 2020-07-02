@@ -3,6 +3,7 @@ extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
+extern crate keyring;
 extern crate tokio;
 
 use clap::{Arg, App, ArgMatches};
@@ -66,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     Ok(())
 }
 
-async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultFileSource, core::DefaultLauncher, core::DefaultResolver>>>, matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
+async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultKeyChain, core::DefaultLauncher, core::DefaultResolver>>>, matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {

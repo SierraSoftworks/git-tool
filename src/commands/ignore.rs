@@ -33,8 +33,8 @@ impl Command for IgnoreCommand {
 }
     
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for IgnoreCommand {
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for IgnoreCommand {
+    async fn run<'a>(&self, core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.occurrences_of("language") {
             0 => {
                 let languages = gitignore::list().await?;
@@ -48,21 +48,20 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Ignor
 
                 let ignore_path = std::path::PathBuf::from(matches.value_of("path").unwrap_or(".gitignore"));
 
-                match core.file_source.read(&ignore_path).await {
-                    Ok(content) => original_content = content,
-                    Err(_) => {}
+                if let Ok(content) = tokio::fs::read_to_string(&ignore_path).await {
+                    original_content = content;
                 }
 
                 let content = gitignore::add_or_update(original_content.as_str(), matches.values_of("language").unwrap_or_default().collect()).await?;
 
-                core.file_source.write(&ignore_path, content).await?;
+                tokio::fs::write(&ignore_path, content).await?;
             }
         }
 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &Core<K, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
         match online::gitignore::list().await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}

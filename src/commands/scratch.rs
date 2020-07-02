@@ -27,8 +27,8 @@ impl Command for ScratchCommand {
 }
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ScratchCommand {
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for ScratchCommand {
+    async fn run<'a>(&self, core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut scratchpad: Option<core::Scratchpad> = None;
         let mut app: Option<&core::App> = core.config.get_default_app();
 
@@ -94,7 +94,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Scrat
             "Please open a bug report with us on GitHub explaining what you were doing when this happened."))
     }
 
-    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, core: &Core<K, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
         completer.offer_many(core.config.get_apps().map(|a| a.get_name()));
 
         match core.resolver.get_scratchpads() {

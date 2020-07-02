@@ -37,8 +37,8 @@ impl Command for ConfigCommand {
 }
     
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ConfigCommand {
-    async fn run<'a>(&self, core: &core::Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for ConfigCommand {
+    async fn run<'a>(&self, core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             ("list", Some(_args)) => {
                 let registry = crate::online::GitHubRegistry::from(core.config.clone());
@@ -68,7 +68,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Confi
 
                 match cfg.get_config_file() {
                     Some(path) => {
-                        core.file_source.write(&path, cfg.to_string()?).await?;
+                        tokio::fs::write(&path, cfg.to_string()?).await?;
                     },
                     None => {
                         println!("{}", cfg.to_string()?);
@@ -83,7 +83,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Confi
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, core: &Core<K, L, R>, completer: &Completer, matches: &ArgMatches<'a>) {
         match matches.subcommand() {
             ("list", _) => {
 

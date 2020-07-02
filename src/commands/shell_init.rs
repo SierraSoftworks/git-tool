@@ -32,9 +32,9 @@ impl Command for ShellInitCommand {
 }
 
 #[async_trait]
-impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for ShellInitCommand {
-    async fn run<'a>(&self, _core: &crate::core::Core<F, L, R>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where F: FileSource, L: Launcher, R: Resolver {
+impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for ShellInitCommand {
+    async fn run<'a>(&self, _core: &crate::core::Core<K, L, R>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+    where K: KeyChain, L: Launcher, R: Resolver {
 
         match matches.subcommand() {
             (name, Some(matches)) => {
@@ -60,7 +60,7 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Shell
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<F, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &Core<K, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
         let shells = get_shells();
         completer.offer_many(shells.iter().map(|s| s.get_name()));
     }
