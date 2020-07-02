@@ -29,12 +29,6 @@ impl Command for ConfigCommand {
                 .version("1.0")
                 .about("adds a configuration template to your current config file")
                 .help_message("Adds a configuration template from the Git-Tool online registry to your config file.")
-                .arg(Arg::with_name("config")
-                    .short("c")
-                    .long("config")
-                    .help("the configuration file to update")
-                    .env("GITTOOL_CONFIG")
-                    .takes_value(true))
                 .arg(Arg::with_name("id")
                     .index(1)
                     .help("the id of the configuration template you want to add")
@@ -72,15 +66,14 @@ impl<F: FileSource, L: Launcher, R: Resolver> CommandRunnable<F, L, R> for Confi
                     }
                 }
 
-                match matches.value_of("config") {
+                match cfg.get_config_file() {
                     Some(path) => {
-                        core.file_source.write(&std::path::PathBuf::from(path), cfg.to_string()?).await?;
+                        core.file_source.write(&path, cfg.to_string()?).await?;
                     },
                     None => {
                         println!("{}", cfg.to_string()?);
                     }
                 }
-                
             },
             _ => {
                 println!("{}", core.config.to_string()?);
