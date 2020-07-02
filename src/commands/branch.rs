@@ -128,7 +128,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => panic!("This command should not have succeeded"),
-            Err(e) => {}
+            _ => {}
         }
     }
 }

@@ -74,7 +74,7 @@ pub mod mocks {
     impl KeyChain for MockKeyChain {
         fn get_token(&self, service: &str) -> Result<String, Error> {
             self.tokens.lock()
-                .map_err(|e| errors::system(
+                .map_err(|_| errors::system(
                     "Could not read the token from the keychain due to a poisoned lock.",
                     "Please restart the application and try again."))
                 .and_then(|t| t.get(service).map(|o| o.clone()).ok_or(errors::user(
@@ -84,7 +84,7 @@ pub mod mocks {
 
         fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
             self.tokens.lock()
-                .map_err(|e| errors::system(
+                .map_err(|_| errors::system(
                     "Could not read the token from the keychain due to a poisoned lock.",
                     "Please restart the application and try again."))
                 .map(|mut t| t.insert(service.to_string(), token.to_string()).unwrap_or_default())
@@ -93,7 +93,7 @@ pub mod mocks {
 
         fn remove_token(&self, service: &str) -> Result<(), Error> {
             self.tokens.lock()
-                .map_err(|e| errors::system(
+                .map_err(|_| errors::system(
                     "Could not read the token from the keychain due to a poisoned lock.",
                     "Please restart the application and try again."))
                 .map(|mut t| t.remove(service).unwrap_or_default())
