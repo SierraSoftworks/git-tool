@@ -74,10 +74,18 @@ async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultFileSource, 
 
     let core = Arc::new(core_builder.build());
 
+    // Legacy update interoperability for compatibility with the Golang implementation
+    if let Some(state) = matches.value_of("update-resume-internal") {
+        if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
+            let matches = cmd.app().get_matches_from(vec!["update", "--state", state]);
+
+            return cmd.run(&core, &matches).await;
+        }
+    }
+
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
-            let status = cmd.run(&core, cmd_matches).await?;
-            return Ok(status);
+            return cmd.run(&core, cmd_matches).await;
         }
     }
 
