@@ -15,17 +15,11 @@ impl Command for BranchCommand {
     fn app<'a, 'b>(&self) -> App<'a, 'b> {
         SubCommand::with_name(self.name().as_str())
             .version("1.0")
+            .alias("b")
+            .alias("br")
             .about("checkout a specific branch from the current repository")
             .help_message(
                 "This tool checks out a branch with the given name from the current repository.",
-            )
-            .subcommand(
-                SubCommand::with_name("branch")
-                    .version("1.0")
-                    .alias("b")
-                    .alias("br")
-                    .about("checkout an existing branch or create a new branch")
-                    .help_message("Checkout the specified branch for the current repository."),
             )
             .arg(
                 Arg::with_name("branch")
