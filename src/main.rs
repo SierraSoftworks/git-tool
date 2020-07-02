@@ -42,6 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .help("enable verbose logging")
                 .default_value("false"))
         .arg(Arg::with_name("update-resume-internal")
+            .long("update-resume-internal")
             .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
             .takes_value(true)
             .hidden(true))
