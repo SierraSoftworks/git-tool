@@ -1,15 +1,21 @@
-use std::sync::Arc;
-use clap::{App, ArgMatches};
-use std::vec::Vec;
 use super::core;
-use super::tasks;
 use super::errors;
 use super::online;
+use super::tasks;
 use async_trait::async_trait;
+use clap::{App, ArgMatches};
+use std::sync::Arc;
+use std::vec::Vec;
 
-use crate::{completion::Completer, core::{Core, Launcher, Resolver, FileSource, DefaultFileSource, DefaultLauncher, DefaultResolver}};
+use crate::{
+    completion::Completer,
+    core::{
+        Core, DefaultFileSource, DefaultLauncher, DefaultResolver, FileSource, Launcher, Resolver,
+    },
+};
 
 mod apps;
+mod branch;
 mod complete;
 mod config;
 mod ignore;
@@ -28,18 +34,35 @@ pub trait Command: Send + Sync {
 }
 
 #[async_trait]
-pub trait CommandRunnable<F: FileSource = DefaultFileSource, L: Launcher = DefaultLauncher, R: Resolver = DefaultResolver> : Command {
-    async fn run<'a>(&self, core: &Core<F, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
-    async fn complete<'a>(&self, core: &Core<F, L, R>, completer: &Completer, matches: &ArgMatches<'a>);
+pub trait CommandRunnable<
+    F: FileSource = DefaultFileSource,
+    L: Launcher = DefaultLauncher,
+    R: Resolver = DefaultResolver,
+>: Command
+{
+    async fn run<'a>(
+        &self,
+        core: &Core<F, L, R>,
+        matches: &ArgMatches<'a>,
+    ) -> Result<i32, errors::Error>;
+    async fn complete<'a>(
+        &self,
+        core: &Core<F, L, R>,
+        completer: &Completer,
+        matches: &ArgMatches<'a>,
+    );
 }
 
-pub fn default_commands()  -> Vec<Arc<dyn CommandRunnable<DefaultFileSource, DefaultLauncher, DefaultResolver>>> {
+pub fn default_commands(
+) -> Vec<Arc<dyn CommandRunnable<DefaultFileSource, DefaultLauncher, DefaultResolver>>> {
     commands()
 }
 
-pub fn commands<F: FileSource, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandRunnable<F, L, R>>> {
+pub fn commands<F: FileSource, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandRunnable<F, L, R>>>
+{
     vec![
         Arc::new(apps::AppsCommand{}),
+        Arc::new(branch::BranchCommand {}),
         Arc::new(complete::CompleteCommand{}),
         Arc::new(config::ConfigCommand{}),
         Arc::new(info::InfoCommand{}),
