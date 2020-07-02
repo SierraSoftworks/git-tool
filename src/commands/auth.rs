@@ -22,6 +22,10 @@ impl Command for AuthCommand {
                 .long("delete")
                 .short("d")
                 .help("delete any access token associated with the service"))
+                .arg(Arg::with_name("token")
+                    .long("token")
+                    .help("specifies the token to be set (don't use this unless you have to)")
+                    .takes_value(true))
     }
 }
 
@@ -37,10 +41,13 @@ impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for AuthCom
         if matches.is_present("remove-token") {
             core.keychain.remove_token(service)?;
         } else {
-            let token = rpassword::read_password_from_tty(Some("Access Token: ")).map_err(|e| errors::user_with_internal(
-                "Could not read the access token that you entered.",
-                "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
-                e))?;
+            let token = match matches.value_of("token") {
+                Some(token) => token.to_string(),
+                None => rpassword::read_password_from_tty(Some("Access Token: ")).map_err(|e| errors::user_with_internal(
+                    "Could not read the access token that you entered.",
+                    "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
+                    e))?
+            };
 
             core.keychain.set_token(service, &token)?;
         }
@@ -59,17 +66,47 @@ mod tests {
     use super::core::Config;
 
     #[tokio::test]
-    async fn run() {
+    async fn run_store() {
         
         let cfg = Config::default();
         let core = Core::builder()
-        .with_config(&cfg)
-        .build();
+            .with_config(&cfg)
+            .with_mock_keychain(|_| {})
+            .build();
+
+        assert!(core.keychain.get_token("github.com").is_err());
+        
+        let cmd = AuthCommand{};
+        let args = cmd.app().get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
+        match cmd.run(&core, &args).await {
+            Ok(_) => {
+                assert_eq!(core.keychain.get_token("github.com").unwrap(), "12345");
+            },
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn run_delete() {
+        
+        let cfg = Config::default();
+        let core = Core::builder()
+            .with_config(&cfg)
+            .with_mock_keychain(|k| {
+                k.set_token("github.com", "example").unwrap()
+            })
+            .build();
+
+        assert!(core.keychain.get_token("github.com").is_ok());
         
         let cmd = AuthCommand{};
         let args = cmd.app().get_matches_from(vec!["auth", "github.com", "--delete"]);
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
+            Ok(_) => {
+                assert!(core.keychain.get_token("github.com").is_err());
+            },
             Err(err) => {
                 panic!(err.message())
             }

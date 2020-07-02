@@ -74,6 +74,20 @@ where L : Launcher, R: Resolver, K: KeyChain {
     }
 
     #[cfg(test)]
+    pub fn with_mock_keychain<S>(self, setup: S) -> CoreBuilder<super::auth::mocks::MockKeyChain, L, R>
+    where S : FnOnce(&mut super::auth::mocks::MockKeyChain) {
+        let mut keychain = super::auth::mocks::MockKeyChain::from(self.config.clone());
+        setup(&mut keychain);
+
+        CoreBuilder {
+            config: self.config,
+            launcher: self.launcher,
+            resolver: self.resolver,
+            keychain: Arc::new(keychain)
+        }
+    }
+
+    #[cfg(test)]
     pub fn with_mock_launcher<S>(self, setup: S) -> CoreBuilder<K, super::launcher::mocks::MockLauncher, R>
     where S : FnOnce(&mut super::launcher::mocks::MockLauncher) {
         let mut launcher = super::launcher::mocks::MockLauncher::from(self.config.clone());
@@ -87,7 +101,6 @@ where L : Launcher, R: Resolver, K: KeyChain {
         }
     }
 
-    
     #[cfg(test)]
     pub fn with_mock_resolver<S>(self, setup: S) -> CoreBuilder<K, L, super::resolver::mocks::MockResolver>
     where S : FnOnce(&mut super::resolver::mocks::MockResolver) {
