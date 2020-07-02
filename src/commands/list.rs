@@ -99,8 +99,9 @@ URLs:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::Config;
+    use super::core::*;
     use crate::test::get_dev_dir;
+    use std::path::PathBuf;
 
     #[tokio::test]
     async fn run_normal() {
@@ -111,6 +112,52 @@ mod tests {
         let cmd = ListCommand{};
         
         let args = cmd.app().get_matches_from(vec!["list"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {},
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn run_search_full() {
+        let core = Core::builder()
+            .with_mock_resolver(|r| {
+                r.set_repos(vec![
+                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                ])
+            })
+            .build();
+        
+        let cmd = ListCommand{};
+        let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {},
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn run_search_quiet() {
+        let core = Core::builder()
+            .with_mock_resolver(|r| {
+                r.set_repos(vec![
+                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                ])
+            })
+            .build();
+        
+        let cmd = ListCommand{};
+        let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);
 
         match cmd.run(&core, &args).await {
             Ok(_) => {},
