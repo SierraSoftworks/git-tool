@@ -2,9 +2,10 @@ use super::*;
 use std::{process::Command, path::{Path, PathBuf}};
 use crate::errors;
 use itertools::Itertools;
+use std::time::Duration;
 
 #[cfg(windows)]
-use std::{time::Duration, os::windows::process::CommandExt};
+use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
