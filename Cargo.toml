@@ -17,6 +17,7 @@ hyper = "0.13"
 hyper-tls = "0.4"
 itertools = "0.9"
 keyring = "0.9"
+rpassword = "4.0"
 semver = "0.10"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"

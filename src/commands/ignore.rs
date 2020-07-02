@@ -34,7 +34,7 @@ impl Command for IgnoreCommand {
     
 #[async_trait]
 impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for IgnoreCommand {
-    async fn run<'a>(&self, core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, _core: &core::Core<K, L, R>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.occurrences_of("language") {
             0 => {
                 let languages = gitignore::list().await?;

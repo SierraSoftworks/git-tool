@@ -4,6 +4,7 @@ extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
 extern crate keyring;
+extern crate rpassword;
 extern crate tokio;
 
 use clap::{Arg, App, ArgMatches};

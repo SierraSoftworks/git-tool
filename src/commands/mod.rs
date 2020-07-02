@@ -15,6 +15,7 @@ use crate::{
 };
 
 mod apps;
+mod auth;
 mod branch;
 mod complete;
 mod config;
@@ -62,6 +63,7 @@ pub fn commands<K: KeyChain, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandR
 {
     vec![
         Arc::new(apps::AppsCommand{}),
+        Arc::new(auth::AuthCommand{}),
         Arc::new(branch::BranchCommand {}),
         Arc::new(complete::CompleteCommand{}),
         Arc::new(config::ConfigCommand{}),
