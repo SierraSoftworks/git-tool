@@ -11,10 +11,13 @@ use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
+    #[serde(skip)]
+    config_file: Option<path::PathBuf>,
+
     #[serde(rename = "directory")]
-    dev_directory: String,
+    dev_directory: path::PathBuf,
     #[serde(default, rename = "scratchpads")]
-    scratch_directory: String,
+    scratch_directory: Option<path::PathBuf>,
 
     #[serde(default)]
     services: Vec<Arc<service::Service>>,
@@ -32,8 +35,9 @@ impl Config {
         let mut into = self.clone();
         let from = other.clone();
 
-        if !from.dev_directory.is_empty() { into.dev_directory = from.dev_directory.clone(); }
-        if !from.scratch_directory.is_empty() { into.scratch_directory = from.scratch_directory.clone(); }
+        match from.config_file { Some(path) => into.config_file = Some(path.clone()), None => {} }
+        if from.dev_directory.components().count() > 0 { into.dev_directory = from.dev_directory.clone(); }
+        match from.scratch_directory { Some(path) => into.scratch_directory = Some(path.clone()), None => {} }
         if !from.services.is_empty() { into.services = from.services.clone(); }
         if !from.apps.is_empty() { into.apps = from.apps.clone(); }
         into.features = from.features;
@@ -68,8 +72,9 @@ impl Config {
     #[cfg(test)]
     pub fn for_dev_directory(dir: &path::Path) -> Self {
         Self {
-            dev_directory: dir.to_str().unwrap().to_string(),
-            scratch_directory: dir.join("scratch").to_str().unwrap().to_string(),
+            config_file: None,
+            dev_directory: dir.to_path_buf(),
+            scratch_directory: None,
             features: features::Features::builder()
                 .with_use_http_transport(true)
                 .build(),
@@ -83,6 +88,15 @@ impl Config {
             "We couldn't parse your configuration file.", 
             "Please make sure that the YAML in your configuration file is correctly formatted.", 
             e))
+    }
+
+    pub fn from_file(path: &path::Path) -> Result<Self, errors::Error> {
+        let f = std::fs::File::open(path)?;
+
+        let mut cfg = Config::from_reader(f)?;
+        cfg.config_file = Some(path.to_path_buf());
+
+        Ok(cfg)
     }
 
     pub fn from_reader<R>(rdr: R) -> Result<Self, errors::Error>
@@ -101,16 +115,19 @@ impl Config {
             e))
     }
 
-    pub fn get_dev_directory(&self) -> path::PathBuf {
-        path::PathBuf::from(self.dev_directory.as_str())
+    pub fn get_config_file(&self) -> Option<path::PathBuf> {
+        self.config_file.clone()
+    }
+
+    pub fn get_dev_directory(&self) -> &path::Path {
+        &self.dev_directory
     }
 
     pub fn get_scratch_directory(&self) -> path::PathBuf {
-        if self.scratch_directory.is_empty() {
-            return self.get_dev_directory().join("scratch")
+        match self.scratch_directory.clone() {
+            Some(dir) => dir,
+            None => self.get_dev_directory().join("scratch")
         }
-
-        path::PathBuf::from(self.scratch_directory.as_str())
     }
 
     pub fn get_apps(&self) -> core::slice::Iter<Arc<app::App>> {
@@ -160,9 +177,12 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
+        let dev_dir = path::PathBuf::from(std::env::var("DEV_DIRECTORY").unwrap_or_default());
+
         Self {
-            dev_directory: std::env::var("DEV_DIRECTORY").unwrap_or_default(),
-            scratch_directory: Default::default(),
+            config_file: None,
+            dev_directory: dev_dir,
+            scratch_directory: None,
             apps: vec![
                 Arc::new(app::App::builder().with_name("shell").with_command("bash").into()),
             ],

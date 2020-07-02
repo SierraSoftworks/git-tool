@@ -76,6 +76,9 @@ impl CompleteCommand {
         }
 
         match position {
+            Some(position) if position >= cmd.len() => {
+                cmd.extend(std::iter::repeat(' ').take(position - cmd.len()));
+            },
             Some(position) if position < cmd.len() => {
                 cmd = cmd[..position].into();
             }
@@ -199,6 +202,10 @@ mod tests {
             cmd.extract_command_and_filter("git-tool apps ", Some(14)),
             Some(("git-tool apps".to_string(), "".to_string()))
         );
+
+        assert_eq!(cmd.extract_command_and_filter("gt o", Some(5)), Some(("gt o".to_string(), "".to_string())));
+        assert_eq!(cmd.extract_command_and_filter("gt o sie", Some(8)), Some(("gt o".to_string(), "sie".to_string())));
+        assert_eq!(cmd.extract_command_and_filter("gt update", Some(10)), Some(("gt update".to_string(), "".to_string())));
     }
 
     #[test]

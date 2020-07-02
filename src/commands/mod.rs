@@ -26,6 +26,7 @@ mod open;
 mod scratch;
 mod services;
 mod shell_init;
+mod update;
 
 pub trait Command: Send + Sync {
     fn name(&self) -> String;
@@ -60,17 +61,18 @@ pub fn default_commands(
 pub fn commands<F: FileSource, L: Launcher, R: Resolver>() -> Vec<Arc<dyn CommandRunnable<F, L, R>>>
 {
     vec![
-        Arc::new(apps::AppsCommand {}),
+        Arc::new(apps::AppsCommand{}),
         Arc::new(branch::BranchCommand {}),
-        Arc::new(complete::CompleteCommand {}),
-        Arc::new(config::ConfigCommand {}),
-        Arc::new(info::InfoCommand {}),
-        Arc::new(ignore::IgnoreCommand {}),
-        Arc::new(list::ListCommand {}),
-        Arc::new(new::NewCommand {}),
-        Arc::new(open::OpenCommand {}),
-        Arc::new(scratch::ScratchCommand {}),
-        Arc::new(services::ServicesCommand {}),
-        Arc::new(shell_init::ShellInitCommand {}),
+        Arc::new(complete::CompleteCommand{}),
+        Arc::new(config::ConfigCommand{}),
+        Arc::new(info::InfoCommand{}),
+        Arc::new(ignore::IgnoreCommand{}),
+        Arc::new(list::ListCommand{}),
+        Arc::new(new::NewCommand{}),
+        Arc::new(open::OpenCommand{}),
+        Arc::new(scratch::ScratchCommand{}),
+        Arc::new(services::ServicesCommand{}),
+        Arc::new(shell_init::ShellInitCommand{}),
+        Arc::new(update::UpdateCommand{}),
     ]
 }

@@ -1,23 +1,12 @@
 use serde::{Serialize, Deserialize};
 use crate::core::*;
-use std::sync::Arc;
-
-#[cfg(target_os="windows")]
-static OS_NAME: &str = "windows";
-
-#[cfg(target_os="linux")]
-static OS_NAME: &str = "linux";
-
-#[cfg(target_os="macos")]
-static OS_NAME: &str = "darwin";
+use std::{env::consts::OS, sync::Arc};
 
 #[async_trait::async_trait]
 pub trait Registry : Send + Sync + From<Arc<Config>> {
     async fn get_entries(&self) -> Result<Vec<String>, Error>;
     async fn get_entry(&self, id: &str) -> Result<Entry, Error>;
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Entry {
@@ -38,7 +27,7 @@ pub struct EntryConfig {
 
 impl EntryConfig {
     pub fn is_compatible(&self) -> bool {
-        self.platform == "any" || self.platform == OS_NAME
+        self.platform == "any" || self.platform == translate_os_name(OS)
     }
 }
 
@@ -86,6 +75,13 @@ impl Into<Service> for EntryService {
     }
 }
 
+fn translate_os_name(name: &str) -> &str {
+    match name {
+        "macos" => "darwin",
+        _ => name
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,16 +96,16 @@ mod tests {
         assert_eq!(EntryConfig{
             platform: "windows".to_string(),
             ..Default::default()
-        }.is_compatible(), OS_NAME == "windows");
+        }.is_compatible(), OS == "windows");
         
         assert_eq!(EntryConfig{
             platform: "linux".to_string(),
             ..Default::default()
-        }.is_compatible(), OS_NAME == "linux");
+        }.is_compatible(), OS == "linux");
         
         assert_eq!(EntryConfig{
             platform: "darwin".to_string(),
             ..Default::default()
-        }.is_compatible(), OS_NAME == "darwin");
+        }.is_compatible(), OS == "macos");
     }
 }

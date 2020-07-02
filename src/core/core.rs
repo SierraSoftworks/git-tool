@@ -68,9 +68,7 @@ where F : FileSource, L : Launcher, R: Resolver {
     }
 
     pub fn with_config_file(self, cfg_file: &str) -> Result<Self, Error> {
-        let f = std::fs::File::open(cfg_file)?;
-
-        let cfg = Config::from_reader(f)?;
+        let cfg = Config::from_file(&std::path::PathBuf::from(cfg_file))?;
 
         Ok(self.with_config(&cfg))
     }
