@@ -5,6 +5,9 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
+    - name: Install Dependencies
+      run: apt-get install libdbus-1
+      
     - name: Get Rust Nightly
       uses: actions-rs/toolchain@v1
       with:
