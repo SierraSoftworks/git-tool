@@ -93,6 +93,7 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
+            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
             .build();
 
         let repo = core.resolver().get_best_repo("github.com/test/new-repo-partial").unwrap();
@@ -117,6 +118,7 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
+            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
             .build();
 
         let repo = core.resolver().get_best_repo("github.com/test/new-repo-full").unwrap();

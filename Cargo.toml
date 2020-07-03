@@ -14,6 +14,7 @@ clap = { version = "2.33", features = ["yaml"] }
 gtmpl = "0.5"
 http = "0.2"
 hyper = "0.13"
+yup-hyper-mock = "4.0"
 hyper-tls = "0.4"
 itertools = "0.9"
 keyring = "0.9"

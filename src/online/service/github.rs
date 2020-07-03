@@ -1,23 +1,17 @@
 use super::*;
-use hyper::{Body, Client};
+use hyper::Body;
 use http::{Request, Uri, StatusCode};
 use serde::{Serialize, Deserialize};
 use serde::de::DeserializeOwned;
 use crate::errors;
 
 pub struct GitHubService {
-    client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, Body>,
+    
 }
 
 impl Default for GitHubService {
     fn default() -> Self {
-        let https = hyper_tls::HttpsConnector::new();
-        let client = Client::builder()
-            .build(https);
-
-        Self {
-            client,
-        }
+        Self { }
     }
 }
 
@@ -42,7 +36,7 @@ impl<C: Core> OnlineService<C> for GitHubService {
         };
 
         let req_body = serde_json::to_vec(&new_repo)?;
-        self.make_request(core, "POST", uri, Body::from(req_body)).await?;
+        let _new_repo_resp: NewRepoResponse = self.make_request(core, "POST", uri, Body::from(req_body)).await?;
 
         Ok(())
     }
@@ -72,7 +66,7 @@ impl GitHubService {
                 "Please report this error to us by opening a ticket in GitHub.",
                 e))?;
 
-        let resp = self.client.request(req).await?;
+        let resp = core.http_client().request(req).await?;
 
         match resp.status() {
             StatusCode::OK | StatusCode::CREATED => {
@@ -111,4 +105,51 @@ struct NewRepo {
 #[derive(Debug, Deserialize)]
 struct UserProfile {
     pub login: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct NewRepoResponse {
+    pub id: u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::mocks::*;
+
+    #[tokio::test]
+    async fn test_happy_path_user_repo() {
+        let http = NewRepoSuccessFlow::default();
+
+        let core = CoreBuilder::default()
+            .with_mock_keychain(|s| {
+                s.set_token("github.com", "test_token").unwrap();
+            })
+            .with_http_connector(http)
+            .build();
+
+        let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
+        let service = GitHubService::default();
+        service.ensure_created(&core, &repo).await.expect("No error should have been generated");
+    }
+}
+
+#[cfg(test)]
+pub mod mocks {
+    pub type NewRepoSuccessFlow = MockGitHubNewRepoSuccessFlow;
+
+    mock_connector_in_order!(MockGitHubNewRepoSuccessFlow {
+r#"HTTP/1.1 200 OK
+Content-Type: application/vnd.github.v3+json
+Content-Length: 16
+
+{"login":"test"}
+"#
+
+r#"HTTP/1.1 201 Created
+Content-Type: application/vnd.github.v3+json
+Content-Length: 11
+
+{"id":1234}
+"#});
 }

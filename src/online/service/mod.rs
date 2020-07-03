@@ -2,7 +2,7 @@ use crate::core::*;
 use async_trait::async_trait;
 use std::sync::Arc;
 
-mod github;
+pub mod github;
 
 #[async_trait]
 pub trait OnlineService<C: Core>: Send + Sync {
