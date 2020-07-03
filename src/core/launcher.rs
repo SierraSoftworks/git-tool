@@ -53,7 +53,7 @@ pub mod mocks {
     pub struct MockLauncher {
         pub launches: Arc<Mutex<Vec<MockLaunch>>>,
         pub status: i32,
-        pub error: Option<Error>
+        pub return_error: bool
     }
 
     impl From<Arc<Config>> for MockLauncher {
@@ -77,11 +77,10 @@ pub mod mocks {
                 target_path: std::path::PathBuf::from(t.get_path())
             });
 
-            match self.error.clone() {
-                Some(e) => Err(e),
-                None => {
-                    Ok(self.status)
-                }
+            if self.return_error {
+                Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None))
+            } else {
+                Ok(self.status)
             }
         }
     }

@@ -41,7 +41,7 @@ pub trait Task<K: KeyChain, L: Launcher, R: Resolver, O: Output> {
 pub struct TestTask {
     ran_repo: Mutex<Option<core::Repo>>,
     ran_scratchpad: Mutex<Option<core::Scratchpad>>,
-    error: Mutex<Option<core::Error>>
+    error: bool
 }
 
 
@@ -51,7 +51,7 @@ impl Default for TestTask {
         Self {
             ran_repo: Mutex::new(None),
             ran_scratchpad: Mutex::new(None),
-            error: Mutex::new(None)
+            error: false
         }
     }
 }
@@ -64,11 +64,9 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Test
 
         *r = Some(repo.clone());
 
-        let e = self.error.lock().await;
-
-        match e.clone() {
-            Some(err) => Err(err),
-            None => Ok(())
+        match self.error {
+            true => Err(core::Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
+            false => Ok(())
         }
     }
 
@@ -77,11 +75,9 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Test
 
         *s = Some(scratch.clone());
 
-        let e = self.error.lock().await;
-
-        match e.clone() {
-            Some(err) => Err(err),
-            None => Ok(())
+        match self.error {
+            true => Err(core::Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
+            false => Ok(())
         }
     }
 }

@@ -1,7 +1,7 @@
+use super::{Error, system_with_internal, user, user_with_internal};
 use std::{fmt::Debug, convert};
 use http::uri::InvalidUri;
 use hyper::StatusCode;
-use super::{user, user_with_internal, system_with_internal, Error};
 
 impl convert::From<InvalidUri> for Error {
     fn from(err: InvalidUri) -> Self {
@@ -51,7 +51,47 @@ impl<T> convert::From<hyper::Response<T>> for Error
             _ => system_with_internal(
                 format!("We received a {} status code when making a web request.", resp.status()).as_str(),
                 "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
-                resp)
+                HyperResponseError::from(resp))
         }
     }
+}
+
+#[derive(Debug)]
+pub struct HyperResponseError {
+    pub status_code: StatusCode,
+    pub body: Option<String>,
+}
+
+impl HyperResponseError {
+    pub async fn with_body<T>(resp: hyper::Response<T>) -> Self
+    where T : hyper::body::HttpBody
+    {
+        Self {
+            status_code: resp.status(),
+            body: hyper::body::to_bytes(resp.into_body()).await.ok().and_then(|data| String::from_utf8(data.to_vec()).ok())
+        }
+    }
+}
+
+impl<T> From<hyper::Response<T>> for HyperResponseError {
+    fn from(resp: hyper::Response<T>) -> Self {
+        Self {
+            status_code: resp.status(),
+            body: None
+        }
+    }
+}
+
+impl std::fmt::Display for HyperResponseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(body) = self.body.clone() {
+            write!(f, "HTTP {} {}\n{}", self.status_code.as_u16(), self.status_code.canonical_reason().unwrap_or_default(), body)
+        } else {
+            write!(f, "HTTP {} {}", self.status_code.as_u16(), self.status_code.canonical_reason().unwrap_or_default())
+        }
+    }
+}
+
+impl std::error::Error for HyperResponseError {
+
 }

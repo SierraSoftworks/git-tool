@@ -64,12 +64,11 @@ impl Registry for GitHubRegistry {
                     "Please wait until GitHub removes this rate limit before trying again."))
             },
             status => {
-                let body = hyper::body::to_bytes(resp.into_body()).await?;
-                let body_str = String::from_utf8(body.to_vec())?;
+                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
                     &format!("Received an HTTP {} response from GitHub when attempting to list items in the Git-Tool registry.", status),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    body_str))
+                    inner_error))
             }
         }
     }
@@ -95,12 +94,11 @@ impl Registry for GitHubRegistry {
                     "Please wait until GitHub removes this rate limit before trying again."))
             },
             status => {
-                let body = hyper::body::to_bytes(resp.into_body()).await?;
-                let body_str = String::from_utf8(body.to_vec())?;
+                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
                     &format!("Received an HTTP {} response from GitHub when attempting to fetch /registry/{}.yaml.", status, id),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    body_str))
+                    inner_error))
             }
         }
     }

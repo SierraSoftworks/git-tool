@@ -1,64 +1,69 @@
-use std::fmt;
+use std::{fmt, error};
 
 mod std_io;
-mod hyper;
+pub mod hyper;
 mod utf8;
 mod base64;
 mod serde;
 mod keyring;
 
-#[derive(Debug, Clone)]
-pub struct Error {
-    description: String,
-    advice: String,
-    internal: String,
-    is_system: bool,
-}
-
-/// Creates a new `Error` with the provided description, advice and internal error,
-/// indicating whether it is a system-level error or not.
-pub fn new<T>(description: &str, advice: &str, internal: T, is_system: bool) -> Error
-where T : fmt::Debug {
-    Error {
-        description: String::from(description),
-        advice: String::from(advice),
-        internal: format!("{:#?}", internal),
-        is_system,
-    }
+#[derive(Debug)]
+pub enum Error {
+    UserError(String, String, Option<Box<dyn error::Error + Send + Sync>>),
+    SystemError(String, String, Option<Box<dyn error::Error + Send + Sync>>)
 }
 
 pub fn user(description: &str, advice: &str) -> Error {
-    new(description, advice, "", false)
+    Error::UserError(description.to_string(), advice.to_string(), None)
 }
 
 pub fn user_with_internal<T>(description: &str, advice: &str, internal: T) -> Error
-where T : fmt::Debug {
-    new(description, advice, internal, false)
+where T : Into<Box<dyn error::Error + Send + Sync>> {
+    Error::UserError(description.to_string(), advice.to_string(), Some(internal.into()))
 }
 
 pub fn system(description: &str, advice: &str) -> Error {
-    new(description, advice, "", true)
+    Error::SystemError(description.to_string(), advice.to_string(), None)
 }
 
 pub fn system_with_internal<T>(description: &str, advice: &str, internal: T) -> Error
-where T : fmt::Debug {
-    new(description, advice, internal, true)
+where T : Into<Box<dyn error::Error + Send + Sync>> {
+    Error::SystemError(description.to_string(), advice.to_string(), Some(internal.into()))
 }
 
 impl Error {
     pub fn message(&self) -> String {
-        if self.internal.is_empty() || self.internal == "\"\"" {
-            if self.is_system {
-                format!("Whoops! {} (This isn't your fault)\nAdvice: {}", self.description, self.advice)
-            } else {
-                format!("Oh no! {}\nAdvice: {}", self.description, self.advice)
+        match self {
+            Error::UserError(description, advice, None) => {
+                format!("Oh no! {}\nAdvice: {}", description, advice)
+            },
+            Error::UserError(description, advice, Some(internal)) => {
+                format!("Oh no! {}\nAdvice: {}\n\n{}", description, advice, internal)
+            },
+            Error::SystemError(description, advice, None) => {
+                format!("Whoops! {} (This isn't your fault)\nAdvice: {}", description, advice)
+            },
+            Error::SystemError(description, advice, Some(internal)) => {
+                format!("Whoops! {} (This isn't your fault)\nAdvice: {}\n\n{}", description, advice, internal)
             }
-        } else {
-            if self.is_system {
-                format!("Whoops! {} (This isn't your fault)\nAdvice: {}\n\n{}", self.description, self.advice, self.internal)
-            } else {
-                format!("Oh no! {}\nAdvice: {}\n\n{}", self.description, self.advice, self.internal)
-            }
+        }
+    }
+
+    pub fn is_system(&self) -> bool {
+        match self {
+            Error::SystemError(..) => true,
+            _ => false
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::UserError(.., Some(ref err)) | Error::SystemError(_, _, Some(ref err)) => {
+                err.source()
+            },
+            _ => None
         }
     }
 }
@@ -66,5 +71,32 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message())
+    }
+}
+
+pub fn detailed_message(message: &str) -> BasicInternalError {
+    message.into()
+}
+
+#[derive(Debug)]
+pub struct BasicInternalError {
+    message: String
+}
+
+impl From<&str> for BasicInternalError {
+    fn from(s: &str) -> Self {
+        Self {
+            message: s.to_string()
+        }
+    }
+}
+
+impl std::error::Error for BasicInternalError {
+
+}
+
+impl fmt::Display for BasicInternalError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
     }
 }

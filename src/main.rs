@@ -5,27 +5,38 @@ extern crate gtmpl;
 extern crate hyper;
 extern crate keyring;
 extern crate rpassword;
+extern crate sentry;
 extern crate tokio;
 
-use clap::{Arg, App, ArgMatches};
-use std::sync::Arc;
 use crate::commands::CommandRunnable;
+use clap::{App, Arg, ArgMatches};
+use std::sync::Arc;
 
-#[macro_use] mod tasks;
+#[macro_use]
+mod tasks;
+mod commands;
+mod completion;
 mod core;
 mod errors;
 mod fs;
-mod search;
 mod git;
 mod online;
-mod completion;
-mod commands;
+mod search;
 mod update;
 
-#[cfg(test)] mod test;
+#[cfg(test)]
+mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let _guard = sentry::init((
+        "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        }.add_integration(sentry::integrations::log::LogIntegration::default()),
+    ));
+
     let commands = commands::default_commands();
 
     let mut app = App::new("Git-Tool")
@@ -55,20 +66,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match run(commands, matches).await {
         Result::Ok(-1) => {
             app.print_help()?;
-        },
+        }
         Result::Ok(status) => {
             std::process::exit(status);
-        },
+        }
         Result::Err(err) => {
             println!("{}", err.message());
+
+            if err.is_system() {
+                sentry::capture_error(&err);
+            }
+
             std::process::exit(1);
-        },
+        }
     }
 
     Ok(())
 }
 
-async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultKeyChain, core::DefaultLauncher, core::DefaultResolver>>>, matches: ArgMatches<'a>) -> Result<i32, errors::Error> {
+async fn run<'a>(
+    commands: Vec<
+        Arc<
+            dyn CommandRunnable<
+                core::DefaultKeyChain,
+                core::DefaultLauncher,
+                core::DefaultResolver,
+            >,
+        >,
+    >,
+    matches: ArgMatches<'a>,
+) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
@@ -88,6 +115,14 @@ async fn run<'a>(commands: Vec<Arc<dyn CommandRunnable<core::DefaultKeyChain, co
 
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
+            sentry::add_breadcrumb(sentry::Breadcrumb {
+                ty: "default".into(),
+                level: sentry::Level::Info,
+                category: Some("commands".into()),
+                message: Some(format!("Running {}", cmd.name())),
+                ..Default::default()
+            });
+
             return cmd.run(&core, cmd_matches).await;
         }
     }

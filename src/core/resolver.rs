@@ -87,7 +87,7 @@ impl Resolver for FileSystemResolver {
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.", 
                 &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display()),
-                e.to_string()))
+                e))
         }
     }
 
@@ -249,7 +249,7 @@ pub mod mocks {
         repos: Vec<Repo>,
         scratchpads: Vec<Scratchpad>,
         current_date: DateTime<Local>,
-        error: Option<Error>
+        error: bool
     }
 
     impl From<Arc<Config>> for MockResolver {
@@ -260,7 +260,7 @@ pub mod mocks {
                 repos: Vec::new(),
                 scratchpads: Vec::new(),
                 current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
-                error: None
+                error: false
             }
         }
     }
@@ -281,9 +281,9 @@ pub mod mocks {
 
     impl Resolver for MockResolver {
         fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-            match self.error.clone() {
-                Some(err) => Err(err),
-                None => Ok(self.scratchpads.clone())
+            match self.error {
+                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
+                false => Ok(self.scratchpads.clone())
             }
         }
         fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
@@ -315,18 +315,19 @@ pub mod mocks {
         }
 
         fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-            match self.error.clone() {
-                Some(err) => Err(err),
-                None => Ok(self.repos.clone())
+            match self.error {
+                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
+                false => Ok(self.repos.clone())
             }
         }
 
         fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-            match self.error.clone() {
-                Some(err) => Err(err),
-                None => Ok(self.repos.iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
+            match self.error {
+                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
+                false => Ok(self.repos.iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
             }
         }
+        
         fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
             let path = std::path::PathBuf::from(name);
             self.get_repo(&path)
