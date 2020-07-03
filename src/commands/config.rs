@@ -41,9 +41,9 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             ("list", Some(_args)) => {
-                let registry = crate::online::GitHubRegistry::from(core.config());
+                let registry = crate::online::GitHubRegistry;
 
-                let entries = registry.get_entries().await?;
+                let entries = registry.get_entries(core).await?;
                 for entry in entries {
                     writeln!(core.output().writer(), "{}", entry)?;
                 }
@@ -53,8 +53,8 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     "You have not provided an ID for the config template you wish to add.",
                     ""))?;
 
-                let registry = crate::online::GitHubRegistry::from(core.config());
-                let entry = registry.get_entry(id).await?;
+                let registry = crate::online::GitHubRegistry;
+                let entry = registry.get_entry(core, id).await?;
 
                 writeln!(core.output().writer(), "Applying {}", entry.name)?;
                 writeln!(core.output().writer(), "{}", entry.description)?;
@@ -89,7 +89,8 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
             },
             ("add", _) => {
-                match online::GitHubRegistry::from(core.config()).get_entries().await {
+                let registry = online::GitHubRegistry;
+                match registry.get_entries(core).await {
                     Ok(entries) => {
                         completer.offer_many(entries);
                     },

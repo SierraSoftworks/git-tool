@@ -9,9 +9,9 @@ pub use github_registry::GitHubRegistry;
 pub use file_registry::FileRegistry;
 
 #[async_trait::async_trait]
-pub trait Registry<'a> : Send + Sync + From<&'a Config> {
-    async fn get_entries(&self) -> Result<Vec<String>, Error>;
-    async fn get_entry(&self, id: &str) -> Result<Entry, Error>;
+pub trait Registry<C: Core> : Send + Sync {
+    async fn get_entries(&self, core: &C) -> Result<Vec<String>, Error>;
+    async fn get_entry(&self, core: &C, id: &str) -> Result<Entry, Error>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

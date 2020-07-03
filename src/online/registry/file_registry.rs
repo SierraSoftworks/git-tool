@@ -14,15 +14,9 @@ impl FileRegistry {
     }
 }
 
-impl From<&Config> for FileRegistry {
-    fn from(config: &Config) -> Self {
-        Self::new(config.get_dev_directory().join("registry"))
-    }
-}
-
 #[async_trait::async_trait]
-impl<'a> Registry<'a> for FileRegistry {
-    async fn get_entries(&self) -> Result<Vec<String>, Error> {
+impl<C: Core> Registry<C> for FileRegistry {
+    async fn get_entries(&self, _core: &C) -> Result<Vec<String>, Error> {
         let mut entries = Vec::new();
 
         for entry in read_dir(self.path.clone())? {
@@ -46,7 +40,7 @@ impl<'a> Registry<'a> for FileRegistry {
         Ok(entries)
     }
 
-    async fn get_entry(&self, id: &str) -> Result<Entry, Error> {
+    async fn get_entry(&self, _core: &C, id: &str) -> Result<Entry, Error> {
         let contents = read_to_string(self.path.join(to_native_path(format!("{}.yaml", id))))?;
 
         Ok(serde_yaml::from_str(&contents)?)
@@ -61,8 +55,9 @@ mod tests {
     #[tokio::test]
     async fn get_entries() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
+        let core = CoreBuilder::default().build();
 
-        let entries = registry.get_entries().await.unwrap();
+        let entries = registry.get_entries(&core).await.unwrap();
         assert_ne!(entries.len(), 0);
         assert!(entries.iter().any(|i| i == "apps/bash"));
     }
@@ -70,8 +65,9 @@ mod tests {
     #[tokio::test]
     async fn get_entry() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
+        let core = CoreBuilder::default().build();
 
-        let entry = registry.get_entry("apps/bash").await.unwrap();
+        let entry = registry.get_entry(&core, "apps/bash").await.unwrap();
         assert_eq!(entry.name, "Bash");
     }
 }
@@ -84,9 +80,10 @@ mod registry_compliance {
     #[tokio::test]
     async fn registry_validation() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
+        let core = CoreBuilder::default().build();
 
         let mut valid = true;
-        for entry in registry.get_entries().await.unwrap() {
+        for entry in registry.get_entries(&core).await.unwrap() {
             println!("Validating {}", entry);
             match validate_entry(&registry, &entry).await {
                 Ok(v) => {
@@ -103,7 +100,9 @@ mod registry_compliance {
     }
 
     async fn validate_entry(registry: &FileRegistry, name: &str) -> Result<bool, Error> {
-        let entry = registry.get_entry(name).await?;
+        
+        let core = CoreBuilder::default().build();
+        let entry = registry.get_entry(&core, name).await?;
         let mut valid = true;
 
         let is_app = name.starts_with("apps/");

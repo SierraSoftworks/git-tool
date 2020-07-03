@@ -1,29 +1,14 @@
 use super::*;
 use crate::errors;
-use hyper::Client;
 use serde::Deserialize;
 use http::Uri;
 
 
-pub struct GitHubRegistry {
-    client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, hyper::Body>
-}
-
-impl From<&Config> for GitHubRegistry {
-    fn from(_: &Config) -> Self {
-        let https = hyper_tls::HttpsConnector::new();
-        let client = Client::builder()
-            .build(https);
-
-        Self {
-            client,
-        }
-    }
-}
+pub struct GitHubRegistry;
 
 #[async_trait::async_trait]
-impl<'a> Registry<'a> for GitHubRegistry {
-    async fn get_entries(&self) -> Result<Vec<String>, Error> {
+impl<C: Core> Registry<C> for GitHubRegistry {
+    async fn get_entries(&self, core: &C) -> Result<Vec<String>, Error> {
         let uri: Uri = format!("https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true").parse()?;
 
         let req = hyper::Request::get(uri)
@@ -34,7 +19,7 @@ impl<'a> Registry<'a> for GitHubRegistry {
                 "Please report this error to us by opening a ticket in GitHub.",
                 e))?;
 
-        let resp = self.client.request(req).await?;
+        let resp = core.http_client().request(req).await?;
 
         match resp.status() {
             http::StatusCode::OK => {
@@ -71,9 +56,9 @@ impl<'a> Registry<'a> for GitHubRegistry {
         }
     }
 
-    async fn get_entry(&self, id: &str) -> Result<Entry, Error> {
+    async fn get_entry(&self, core: &C, id: &str) -> Result<Entry, Error> {
         let uri = format!("https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{}.yaml", id).parse()?;
-        let resp = self.client.get(uri).await?;
+        let resp = core.http_client().get(uri).await?;
 
         match resp.status() {
             http::StatusCode::OK => {
@@ -121,20 +106,20 @@ mod tests {
 
     #[tokio::test]
     async fn get_entries() {
-        let config = Config::default();
-        let registry = GitHubRegistry::from(&config);
+        let core = CoreBuilder::default().build();
+        let registry = GitHubRegistry;
 
-        let entries = registry.get_entries().await.unwrap();
+        let entries = registry.get_entries(&core).await.unwrap();
         assert_ne!(entries.len(), 0);
         assert!(entries.iter().any(|i| i == "apps/bash"));
     }
     
     #[tokio::test]
     async fn get_entry() {
-        let config = Config::default();
-        let registry = GitHubRegistry::from(&config);
+        let core = CoreBuilder::default().build();
+        let registry = GitHubRegistry;
 
-        let entry = registry.get_entry("apps/bash").await.unwrap();
+        let entry = registry.get_entry(&core, "apps/bash").await.unwrap();
         assert_eq!(entry.name, "Bash");
     }
 }
