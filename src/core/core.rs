@@ -3,16 +3,16 @@ use std::sync::Arc;
 use super::{Config, Launcher, Error, Resolver, KeyChain, Output};
 
 pub trait Core: Send + Sync {
-    type K: KeyChain;
-    type L: Launcher;
-    type R: Resolver;
-    type O: Output;
+    type KeyChain: KeyChain;
+    type Launcher: Launcher;
+    type Resolver: Resolver;
+    type Output: Output;
 
     fn config(&self) -> &Config;
-    fn keychain(&self) -> &Self::K;
-    fn launcher(&self) -> &Self::L;
-    fn resolver(&self) -> &Self::R;
-    fn output(&self) -> &Self::O;
+    fn keychain(&self) -> &Self::KeyChain;
+    fn launcher(&self) -> &Self::Launcher;
+    fn resolver(&self) -> &Self::Resolver;
+    fn output(&self) -> &Self::Output;
 }
 
 pub struct DefaultCore<K = super::DefaultKeyChain, L = super::DefaultLauncher, R = super::DefaultResolver, O = super::DefaultOutput>
@@ -27,28 +27,28 @@ where K: KeyChain, L : Launcher, R: Resolver, O: Output
 
 impl<K, L, R, O> Core for DefaultCore<K, L, R, O>
 where K: KeyChain, L : Launcher, R: Resolver, O: Output {
-    type K = K;
-    type L = L;
-    type R = R;
-    type O = O;
+    type KeyChain = K;
+    type Launcher = L;
+    type Resolver = R;
+    type Output = O;
 
     fn config(&self) -> &Config {
         &self.config
     }
 
-    fn keychain(&self) -> &Self::K {
+    fn keychain(&self) -> &Self::KeyChain {
         &self.keychain
     }
 
-    fn launcher(&self) -> &Self::L {
+    fn launcher(&self) -> &Self::Launcher {
         &self.launcher
     }
 
-    fn resolver(&self) -> &Self::R {
+    fn resolver(&self) -> &Self::Resolver {
         &self.resolver
     }
 
-    fn output(&self) -> &Self::O {
+    fn output(&self) -> &Self::Output {
         &self.output
     }
 }
