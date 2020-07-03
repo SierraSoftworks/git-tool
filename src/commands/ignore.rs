@@ -39,7 +39,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
 
         match matches.occurrences_of("language") {
             0 => {
-                let languages = gitignore::list().await?;
+                let languages = gitignore::list(core).await?;
 
                 for lang in languages {
                     writeln!(output, "{}", lang)?;
@@ -54,7 +54,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
                     original_content = content;
                 }
 
-                let content = gitignore::add_or_update(original_content.as_str(), matches.values_of("language").unwrap_or_default().collect()).await?;
+                let content = gitignore::add_or_update(core, original_content.as_str(), matches.values_of("language").unwrap_or_default().collect()).await?;
 
                 tokio::fs::write(&ignore_path, content).await?;
             }
@@ -63,8 +63,8 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
-        match online::gitignore::list().await {
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        match online::gitignore::list(core).await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}
         }

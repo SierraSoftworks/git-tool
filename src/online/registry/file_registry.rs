@@ -7,6 +7,7 @@ pub struct FileRegistry {
 }
 
 impl FileRegistry {
+    #[allow(dead_code)]
     fn new(path: PathBuf) -> Self {
         Self {
             path
