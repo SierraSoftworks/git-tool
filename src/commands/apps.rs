@@ -19,17 +19,17 @@ impl Command for AppsCommand {
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for AppsCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for AppsCommand {
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where K: KeyChain, L: Launcher, R: Resolver {
         for app in core.config.get_apps() {
-            println!("{}", app.get_name());
+            writeln!(core.output.writer(), "{}", app.get_name())?;
         }
 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R>, _completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, _completer: &Completer, _matches: &ArgMatches<'a>) {
         
     }
 }
@@ -45,8 +45,9 @@ mod tests {
         
         let cfg = Config::default();
         let core = Core::builder()
-        .with_config(&cfg)
-        .build();
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
         
         let cmd = AppsCommand{};
         match cmd.run(&core, &args).await {
@@ -55,5 +56,8 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("shell"), "the output should contain the default app");
     }
 }

@@ -30,10 +30,10 @@ impl Command for BranchCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for BranchCommand {
+impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for BranchCommand {
     async fn run<'a>(
         &self,
-        core: &core::Core<K, L, R>,
+        core: &core::Core<K, L, R, O>,
         matches: &ArgMatches<'a>,
     ) -> Result<i32, errors::Error> {
         let repo = core.resolver.get_current_repo()?;
@@ -59,7 +59,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for BranchC
 
     async fn complete<'a>(
         &self,
-        core: &Core<K, L, R>,
+        core: &Core<K, L, R, O>,
         completer: &Completer,
         _matches: &ArgMatches<'a>,
     ) {

@@ -31,8 +31,8 @@ impl Command for AuthCommand {
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for AuthCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for AuthCommand {
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where K: KeyChain, L: Launcher, R: Resolver {
         let service = matches.value_of("service").ok_or(errors::user(
             "You have not provided the name of the service you wish to authenticate.",
@@ -55,7 +55,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for AuthCom
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
         completer.offer_many(core.config.get_services().map(|s| s.get_domain()));
     }
 }

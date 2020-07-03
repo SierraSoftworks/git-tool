@@ -18,8 +18,8 @@ impl Command for ServicesCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for ServicesCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ServicesCommand {
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
         for svc in core.config.get_services() {
             println!("{}", svc.get_domain());
         }
@@ -27,7 +27,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver> CommandRunnable<K, L, R> for Service
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R>, _completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, _completer: &Completer, _matches: &ArgMatches<'a>) {
     }
 }
 

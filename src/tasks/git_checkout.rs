@@ -6,12 +6,12 @@ pub struct GitCheckout {
 }
 
 #[async_trait::async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver> Task<K, L, R> for GitCheckout {
-    async fn apply_repo(&self, _core: &core::Core<K, L, R>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for GitCheckout {
+    async fn apply_repo(&self, _core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_checkout(&repo.get_path(), &self.branch).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R, O>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }
