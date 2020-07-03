@@ -21,7 +21,7 @@ impl Command for ServicesCommand {
 impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ServicesCommand {
     async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
         let mut output = core.output.writer();
-        
+
         for svc in core.config.get_services() {
             writeln!(output, "{}", svc.get_domain())?;
         }
@@ -45,7 +45,8 @@ mod tests {
         let cfg = Config::default();
         let core = Core::builder()
         .with_config(&cfg)
-        .build();
+            .with_mock_output()
+            .build();
         
         let cmd = ServicesCommand{};
         match cmd.run(&core, &args).await {
@@ -54,5 +55,8 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("github.com\n"), "the output should contain each service");
     }
 }
