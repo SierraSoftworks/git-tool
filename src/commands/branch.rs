@@ -48,8 +48,11 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
             }
             None => {
                 let branches = git::git_branches(&repo.get_path()).await?;
+                let current_branch = git::git_current_branch(&repo.get_path()).await?;
+
                 for branch in branches {
-                    writeln!(core.output().writer(), "{}", branch)?;
+                    let prefix = if branch == current_branch { "* " } else { "  " };
+                    writeln!(core.output().writer(), "{}{}", prefix, branch)?;
                 }
             }
         };
