@@ -39,8 +39,9 @@ impl KeyChain for SystemKeyChain {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
+    #[ignore]
     fn test_keychain() {
         let config = Arc::new(Config::default());
         let keychain = SystemKeyChain::from(config);
