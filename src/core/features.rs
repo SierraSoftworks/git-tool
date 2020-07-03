@@ -12,12 +12,15 @@ pub struct Features {
     create_remote: bool,
     #[serde(default)]
     http_transport: bool,
+    #[serde(default = "default_as_true")]
+    create_remote_private: bool,
 }
 
 impl Features {
     pub fn builder() -> FeaturesBuilder {
         FeaturesBuilder {
             create_remote: true,
+            create_remote_private: true,
             http_transport: false
         }
     }
@@ -26,20 +29,26 @@ impl Features {
         self.http_transport
     }
 
-    pub fn should_create_remote(&self) -> bool {
+    pub fn create_remote(&self) -> bool {
         self.create_remote
+    }
+
+    pub fn create_remote_private(&self) -> bool {
+        self.create_remote_private
     }
 }
 
 pub struct FeaturesBuilder {
     create_remote: bool,
-    http_transport: bool
+    create_remote_private: bool,
+    http_transport: bool,
 }
 
 impl FeaturesBuilder {
     pub fn with_create_remote(self, enabled: bool) -> Self {
         Self {
             create_remote: enabled,
+            create_remote_private: self.create_remote_private,
             http_transport: self.http_transport
         }
     }
@@ -47,6 +56,7 @@ impl FeaturesBuilder {
     pub fn with_use_http_transport(self, enabled: bool) -> Self {
         Self {
             create_remote: self.create_remote,
+            create_remote_private: self.create_remote_private,
             http_transport: enabled
         }
     }
@@ -55,7 +65,8 @@ impl FeaturesBuilder {
         Features {
             create_remote: self.create_remote,
             http_transport: self.http_transport,
-            native_clone: true
+            native_clone: true,
+            create_remote_private: self.create_remote_private
         }
     }
 }
@@ -66,6 +77,7 @@ impl Default for Features {
             native_clone: false,
             create_remote: true,
             http_transport: false,
+            create_remote_private: true
         }
     }
 }

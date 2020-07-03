@@ -46,16 +46,14 @@ mod tests {
             temp.path().join("repo").into());
 
         let core = get_core(temp.path());
-        let result = sequence![
+        
+        sequence![
             GitInit{},
             GitRemote{
                 name: "origin".into()
             }
-        ].apply_repo(&core, &repo).await;
+        ].apply_repo(&core, &repo).await.unwrap();
         assert!(repo.valid());
-
-        std::fs::remove_dir_all(repo.get_path()).unwrap();
-        result.unwrap();
     }
 
     #[tokio::test]

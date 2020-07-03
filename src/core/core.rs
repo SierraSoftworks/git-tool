@@ -9,7 +9,7 @@ where K: KeyChain, L : Launcher, R: Resolver, O: Output
     pub launcher: Arc<L>,
     pub resolver: Arc<R>,
     pub keychain: Arc<K>,
-    pub output: Arc<O>
+    pub output: Arc<O>,
 }
 
 impl Core {

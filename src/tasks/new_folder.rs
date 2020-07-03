@@ -56,8 +56,6 @@ mod tests {
 
         task.apply_repo(&core, &repo).await.unwrap();
         assert_eq!(repo.get_path().exists(), true);
-
-        std::fs::remove_dir(repo.get_path()).unwrap();
     }
 
     #[tokio::test]
@@ -90,8 +88,6 @@ mod tests {
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().exists(), true);
-
-        std::fs::remove_dir(scratch.get_path()).unwrap();
     }
 
     fn get_core(dir: &std::path::Path) -> core::Core {

@@ -2,6 +2,12 @@ use serde::{Serialize, Deserialize};
 use crate::core::*;
 use std::{env::consts::OS, sync::Arc};
 
+mod github_registry;
+mod file_registry;
+
+pub use github_registry::GitHubRegistry;
+pub use file_registry::FileRegistry;
+
 #[async_trait::async_trait]
 pub trait Registry : Send + Sync + From<Arc<Config>> {
     async fn get_entries(&self) -> Result<Vec<String>, Error>;

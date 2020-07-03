@@ -1,6 +1,5 @@
 use super::*;
-use super::registry::*;
-use crate::core::*;
+use crate::errors;
 use std::sync::Arc;
 use hyper::Client;
 use serde::Deserialize;

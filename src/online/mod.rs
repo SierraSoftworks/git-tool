@@ -1,8 +1,8 @@
 pub mod gitignore;
 pub mod registry;
-mod github_registry;
-mod file_registry;
+pub mod service;
 
 use super::errors;
 use super::errors::Error;
-pub use github_registry::GitHubRegistry;
+pub use registry::GitHubRegistry;
+pub use service::{OnlineService, services};

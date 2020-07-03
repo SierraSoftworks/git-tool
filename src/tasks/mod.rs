@@ -18,18 +18,20 @@ macro_rules! sequence {
     };
 }
 
-mod new_folder;
+mod create_remote;
 mod git_checkout;
 mod git_clone;
 mod git_init;
 mod git_remote;
+mod new_folder;
 
 pub use sequence::Sequence;
-pub use new_folder::NewFolder;
+pub use create_remote::CreateRemote;
 pub use git_checkout::GitCheckout;
 pub use git_clone::GitClone;
 pub use git_init::GitInit;
 pub use git_remote::GitRemote;
+pub use new_folder::NewFolder;
 
 #[async_trait]
 pub trait Task<K: KeyChain, L: Launcher, R: Resolver, O: Output> {

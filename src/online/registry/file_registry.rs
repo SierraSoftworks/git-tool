@@ -1,5 +1,5 @@
-use super::registry::*;
-use crate::{core::*, fs::to_native_path};
+use super::*;
+use crate::fs::to_native_path;
 use std::{path::PathBuf, fs::read_to_string, fs::read_dir, sync::Arc};
 
 pub struct FileRegistry {

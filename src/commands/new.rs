@@ -44,8 +44,8 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         let tasks = sequence![
             GitInit{},
             GitRemote{ name: "origin".to_string() },
-            GitCheckout{ branch: "main".to_string() }
-            // TODO: Add a task to initialize the remote repo (GitHub etc.)
+            GitCheckout{ branch: "main".to_string() },
+            CreateRemote { }
         ];
 
         tasks.apply_repo(core, &repo).await?;
@@ -90,6 +90,9 @@ mod tests {
 
         let core = Core::builder()
             .with_config(&cfg)
+            .with_mock_keychain(|s| {
+                s.set_token("github.com", "test_token").unwrap();
+            })
             .build();
 
         let repo = core.resolver.get_best_repo("github.com/test/new-repo-partial").unwrap();
@@ -111,6 +114,9 @@ mod tests {
 
         let core = Core::builder()
             .with_config(&cfg)
+            .with_mock_keychain(|s| {
+                s.set_token("github.com", "test_token").unwrap();
+            })
             .build();
 
         let repo = core.resolver.get_best_repo("github.com/test/new-repo-full").unwrap();
