@@ -4,12 +4,12 @@ use crate::{core::Target, git};
 pub struct GitInit { }
 
 #[async_trait::async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for GitInit {
-    async fn apply_repo(&self, _core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<C: Core> Task<C> for GitInit {
+    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_init(&repo.get_path()).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R, O>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &C, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }
@@ -17,7 +17,9 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for GitI
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::*;
     use tempdir::TempDir;
+    use crate::core;
 
     #[tokio::test]
     async fn test_repo() {
@@ -26,7 +28,9 @@ mod tests {
             "github.com/sierrasoftworks/test-git-init", 
             temp.path().join("repo").into());
 
-        let core = get_core(temp.path());
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
         let task = GitInit{};
 
         task.apply_repo(&core, &repo).await.unwrap();
@@ -40,17 +44,13 @@ mod tests {
             "2019w15", 
             temp.path().join("scratch").into());
 
-        let core = get_core(temp.path());
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
         let task = GitInit{};
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);
         assert_eq!(scratch.exists(), false);
-    }
-
-    fn get_core(dir: &std::path::Path) -> core::Core {
-        core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(dir))
-            .build()
     }
 }

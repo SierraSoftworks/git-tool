@@ -27,10 +27,10 @@ impl Command for ScratchCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ScratchCommand {
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<C: Core> CommandRunnable<C> for ScratchCommand {
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut scratchpad: Option<core::Scratchpad> = None;
-        let mut app: Option<&core::App> = core.config.get_default_app();
+        let mut app: Option<&core::App> = core.config().get_default_app();
 
         match app {
             Some(_) => {},
@@ -42,14 +42,14 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
         match matches.value_of("scratchpad") {
             Some(name) => {
-                scratchpad = Some(core.resolver.get_scratchpad(name)?);
+                scratchpad = Some(core.resolver().get_scratchpad(name)?);
             },
             None => {}
         }
 
         match matches.value_of("app") {
             Some(name) => {
-                match core.config.get_app(name) {
+                match core.config().get_app(name) {
                     Some(a) => {
                         app = Some(a);
                     },
@@ -61,7 +61,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                                     format!("Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{}'.", name).as_str()))
                             },
                             None => {
-                                scratchpad = Some(core.resolver.get_scratchpad(name)?);
+                                scratchpad = Some(core.resolver().get_scratchpad(name)?);
                             }
                         }
                     }
@@ -73,7 +73,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         match scratchpad {
             Some(_) => {},
             None => {
-                scratchpad = Some(core.resolver.get_current_scratchpad()?);
+                scratchpad = Some(core.resolver().get_current_scratchpad()?);
             }
         }
 
@@ -81,10 +81,10 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             if let Some(app) = app {
                 if !scratchpad.exists() {
                     let task = tasks::NewFolder{};
-                    task.apply_scratchpad(&core, &scratchpad).await?;
+                    task.apply_scratchpad(core, &scratchpad).await?;
                 }
 
-                let status = core.launcher.run(app, &scratchpad).await?;
+                let status = core.launcher().run(app, &scratchpad).await?;
                 return Ok(status)
             }
         }
@@ -94,10 +94,10 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             "Please open a bug report with us on GitHub explaining what you were doing when this happened."))
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
-        completer.offer_many(core.config.get_apps().map(|a| a.get_name()));
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
-        match core.resolver.get_scratchpads() {
+        match core.resolver().get_scratchpads() {
             Ok(pads) => {
                 completer.offer_many(pads.iter().map(|p| p.get_name()));
             },
@@ -109,7 +109,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config};
+    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_no_args() {
@@ -129,7 +129,7 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|l| {
                 l.status = 5;
@@ -140,7 +140,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
@@ -172,7 +172,7 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
@@ -181,7 +181,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
@@ -212,7 +212,7 @@ apps:
         - '{{ .Target.Name }}'
         ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
@@ -220,12 +220,12 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, core.config.get_scratch_directory().join("2020w07"));
+                assert_eq!(launch.target_path, core.config().get_scratch_directory().join("2020w07"));
             },
             Err(err) => {
                 panic!(err.message())
@@ -251,7 +251,7 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
@@ -260,7 +260,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
                 
                 let launch = &launches[0];
@@ -291,7 +291,7 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
@@ -324,7 +324,7 @@ apps:
         - '{{ .Target.Name }}'
 ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
@@ -332,7 +332,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
 
                 let launch = &launches[0];

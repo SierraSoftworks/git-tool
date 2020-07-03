@@ -10,17 +10,17 @@ impl Default for CreateRemote {
 }
 
 #[async_trait::async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for CreateRemote {
+impl<C: Core> Task<C> for CreateRemote {
     async fn apply_repo(
         &self,
-        core: &core::Core<K, L, R, O>,
+        core: &C,
         repo: &core::Repo,
     ) -> Result<(), core::Error> {
-        if !core.config.get_features().create_remote() {
+        if !core.config().get_features().create_remote() {
             return Ok(());
         }
 
-        let service = core.config.get_service(&repo.get_domain()).ok_or(
+        let service = core.config().get_service(&repo.get_domain()).ok_or(
             errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
@@ -38,7 +38,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Crea
 
     async fn apply_scratchpad(
         &self,
-        _core: &core::Core<K, L, R, O>,
+        _core: &C,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -48,7 +48,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Crea
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Target;
+    use crate::core::{Target, KeyChain, Config};
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -59,8 +59,8 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
@@ -73,8 +73,8 @@ mod tests {
         let temp = TempDir::new("gt-tasks-create-remote").unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })

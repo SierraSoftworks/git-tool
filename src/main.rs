@@ -4,12 +4,14 @@ extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
 extern crate keyring;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate rpassword;
 extern crate sentry;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
+use crate::core::DefaultCore;
 use clap::{App, Arg, ArgMatches};
 use std::sync::Arc;
 
@@ -35,7 +37,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         sentry::ClientOptions {
             release: sentry::release_name!(),
             ..Default::default()
-        }.add_integration(sentry::integrations::log::LogIntegration::default()),
+        }
+        .add_integration(sentry::integrations::log::LogIntegration::default()),
     ));
 
     let commands = commands::default_commands();
@@ -82,18 +85,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn run<'a>(
-    commands: Vec<
-        Arc<
-            dyn CommandRunnable<
-                core::DefaultKeyChain,
-                core::DefaultLauncher,
-                core::DefaultResolver,
-            >,
-        >,
-    >,
+    commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
     matches: ArgMatches<'a>,
 ) -> Result<i32, errors::Error> {
-    let mut core_builder = core::Core::builder();
+    let mut core_builder = core::CoreBuilder::default();
 
     if let Some(cfg_file) = matches.value_of("config") {
         core_builder = core_builder.with_config_file(cfg_file)?;

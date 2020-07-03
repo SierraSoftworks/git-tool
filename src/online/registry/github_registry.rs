@@ -1,6 +1,5 @@
 use super::*;
 use crate::errors;
-use std::sync::Arc;
 use hyper::Client;
 use serde::Deserialize;
 use http::Uri;
@@ -10,8 +9,8 @@ pub struct GitHubRegistry {
     client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, hyper::Body>
 }
 
-impl From<Arc<Config>> for GitHubRegistry {
-    fn from(_: Arc<Config>) -> Self {
+impl From<&Config> for GitHubRegistry {
+    fn from(_: &Config) -> Self {
         let https = hyper_tls::HttpsConnector::new();
         let client = Client::builder()
             .build(https);
@@ -23,7 +22,7 @@ impl From<Arc<Config>> for GitHubRegistry {
 }
 
 #[async_trait::async_trait]
-impl Registry for GitHubRegistry {
+impl<'a> Registry<'a> for GitHubRegistry {
     async fn get_entries(&self) -> Result<Vec<String>, Error> {
         let uri: Uri = format!("https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true").parse()?;
 
@@ -122,8 +121,8 @@ mod tests {
 
     #[tokio::test]
     async fn get_entries() {
-        let config = Arc::new(Config::default());
-        let registry = GitHubRegistry::from(config.clone());
+        let config = Config::default();
+        let registry = GitHubRegistry::from(&config);
 
         let entries = registry.get_entries().await.unwrap();
         assert_ne!(entries.len(), 0);
@@ -132,8 +131,8 @@ mod tests {
     
     #[tokio::test]
     async fn get_entry() {
-        let config = Arc::new(Config::default());
-        let registry = GitHubRegistry::from(config.clone());
+        let config = Config::default();
+        let registry = GitHubRegistry::from(&config);
 
         let entry = registry.get_entry("apps/bash").await.unwrap();
         assert_eq!(entry.name, "Bash");

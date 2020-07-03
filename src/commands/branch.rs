@@ -2,7 +2,7 @@ use super::super::errors;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
-use crate::{core, git};
+use crate::git;
 use clap::{App, Arg, SubCommand};
 
 pub struct BranchCommand {}
@@ -30,13 +30,13 @@ impl Command for BranchCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for BranchCommand {
+impl<C: Core> CommandRunnable<C> for BranchCommand {
     async fn run<'a>(
         &self,
-        core: &core::Core<K, L, R, O>,
+        core: &C,
         matches: &ArgMatches<'a>,
     ) -> Result<i32, errors::Error> {
-        let repo = core.resolver.get_current_repo()?;
+        let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
             Some(branch) => {
@@ -49,7 +49,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             None => {
                 let branches = git::git_branches(&repo.get_path()).await?;
                 for branch in branches {
-                    writeln!(core.output.writer(), "{}", branch)?;
+                    writeln!(core.output().writer(), "{}", branch)?;
                 }
             }
         };
@@ -59,11 +59,11 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
     async fn complete<'a>(
         &self,
-        core: &Core<K, L, R, O>,
+        core: &C,
         completer: &Completer,
         _matches: &ArgMatches<'a>,
     ) {
-        if let Ok(repo) = core.resolver.get_current_repo() {
+        if let Ok(repo) = core.resolver().get_current_repo() {
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);
             }
@@ -88,8 +88,8 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
             .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
@@ -115,8 +115,8 @@ mod tests {
 
         let temp = TempDir::new("gt-commands-branch").unwrap();
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
             .with_mock_resolver(|r| {
                 r.set_repo(Repo::new(

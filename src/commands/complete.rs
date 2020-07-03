@@ -24,16 +24,14 @@ impl Command for CompleteCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for CompleteCommand {
+impl<C: Core> CommandRunnable<C> for CompleteCommand {
     async fn run<'a>(
         &self,
-        core: &crate::core::Core<K, L, R, O>,
+        core: &C,
         matches: &clap::ArgMatches<'a>,
     ) -> Result<i32, crate::core::Error>
     where
-        K: KeyChain,
-        L: Launcher,
-        R: Resolver,
+        C: Core
     {
         let position: Option<usize> = matches
             .value_of("position")
@@ -41,7 +39,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
         let args = matches.value_of("args").unwrap_or_default();
 
-        let commands = super::commands::<K, L, R, O>();
+        let commands = super::commands::<C>();
         let (cmd, filter) = self
             .extract_command_and_filter(args, position)
             .unwrap_or_default();
@@ -55,7 +53,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
     async fn complete<'a>(
         &self,
-        _core: &Core<K, L, R, O>,
+        _core: &C,
         completer: &Completer,
         _matches: &ArgMatches<'a>,
     ) {
@@ -97,11 +95,11 @@ impl CompleteCommand {
         Some((cmd, filter))
     }
 
-    fn get_responsible_command<K: KeyChain, L: Launcher, R: Resolver, O: Output>(
+    fn get_responsible_command<C: Core>(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<K, L, R, O>>>,
+        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
         args: &str,
-    ) -> Option<(Arc<dyn CommandRunnable<K, L, R, O>>, ArgMatches)> {
+    ) -> Option<(Arc<dyn CommandRunnable<C>>, ArgMatches)> {
         match self.get_completion_matches(commands, args) {
             Ok(complete_matches) => {
                 for cmd in commands.iter() {
@@ -116,10 +114,10 @@ impl CompleteCommand {
         None
     }
 
-    async fn offer_completions<K: KeyChain, L: Launcher, R: Resolver, O: Output>(
+    async fn offer_completions<C: Core>(
         &self,
-        core: &Core<K, L, R, O>,
-        commands: &Vec<Arc<dyn CommandRunnable<K, L, R, O>>>,
+        core: &C,
+        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
         args: &str,
         completer: &Completer,
     ) {
@@ -135,9 +133,9 @@ impl CompleteCommand {
         }
     }
 
-    fn get_completion_matches<K: KeyChain, L: Launcher, R: Resolver, O: Output>(
+    fn get_completion_matches<C: Core>(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<K, L, R, O>>>,
+        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
         args: &str,
     ) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)
@@ -161,7 +159,7 @@ impl CompleteCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
+    use super::core::{CoreBuilder, Config};
     use super::*;
     use crate::test::get_dev_dir;
     use std::sync::Mutex;
@@ -169,7 +167,7 @@ mod tests {
     #[tokio::test]
     async fn run() {
         let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
 
         let cmd = CompleteCommand {};
         let args = cmd
@@ -310,9 +308,9 @@ mod tests {
 
     async fn test_completions(args: &str, filter: &str, contains: Vec<&str>) {
         let cmd = CompleteCommand {};
-        let cmds = commands();
+        let cmds = default_commands();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&Config::for_dev_directory(&get_dev_dir()))
             .build();
 

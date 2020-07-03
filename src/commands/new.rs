@@ -28,10 +28,10 @@ impl Command for NewCommand {
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for NewCommand {    
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<C: Core> CommandRunnable<C> for NewCommand {    
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
-            Some(name) => core.resolver.get_best_repo(name)?,
+            Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
                 "No repository name provided for creation.",
                 "Please provide a repository name when calling this method: git-tool new my/repo"))?
@@ -53,11 +53,11 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
-        match core.resolver.get_repos() {
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        match core.resolver().get_repos() {
             Ok(repos) => {
                 let mut namespaces = std::collections::HashSet::new();
-                let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+                let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();
 
                 for repo in repos {
                     if repo.get_domain() == default_svc {
@@ -77,7 +77,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config};
+    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_partial() {
@@ -88,14 +88,14 @@ mod tests {
         let temp = tempdir::TempDir::new("gt-command-new").unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
             .build();
 
-        let repo = core.resolver.get_best_repo("github.com/test/new-repo-partial").unwrap();
+        let repo = core.resolver().get_best_repo("github.com/test/new-repo-partial").unwrap();
         assert_eq!(repo.valid(), false);
 
         cmd.run(&core, &args).await.unwrap();
@@ -112,14 +112,14 @@ mod tests {
         let temp = tempdir::TempDir::new("gt-command-new").unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
             .build();
 
-        let repo = core.resolver.get_best_repo("github.com/test/new-repo-full").unwrap();
+        let repo = core.resolver().get_best_repo("github.com/test/new-repo-full").unwrap();
         assert_eq!(repo.valid(), false);
 
         cmd.run(&core, &args).await.unwrap();

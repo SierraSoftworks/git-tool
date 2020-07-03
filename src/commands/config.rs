@@ -37,15 +37,15 @@ impl Command for ConfigCommand {
 }
     
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ConfigCommand {
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<C: Core> CommandRunnable<C> for ConfigCommand {
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             ("list", Some(_args)) => {
-                let registry = crate::online::GitHubRegistry::from(core.config.clone());
+                let registry = crate::online::GitHubRegistry::from(core.config());
 
                 let entries = registry.get_entries().await?;
                 for entry in entries {
-                    writeln!(core.output.writer(), "{}", entry)?;
+                    writeln!(core.output().writer(), "{}", entry)?;
                 }
             },
             ("add", Some(args)) => {
@@ -53,16 +53,16 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                     "You have not provided an ID for the config template you wish to add.",
                     ""))?;
 
-                let registry = crate::online::GitHubRegistry::from(core.config.clone());
+                let registry = crate::online::GitHubRegistry::from(core.config());
                 let entry = registry.get_entry(id).await?;
 
-                writeln!(core.output.writer(), "Applying {}", entry.name)?;
-                writeln!(core.output.writer(), "{}", entry.description)?;
+                writeln!(core.output().writer(), "Applying {}", entry.name)?;
+                writeln!(core.output().writer(), "{}", entry.description)?;
 
-                let mut cfg = core.config.clone();
+                let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
-                        cfg = Arc::new(cfg.add(ec));
+                        cfg = cfg.add(ec);
                     }
                 }
 
@@ -71,25 +71,25 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                         tokio::fs::write(&path, cfg.to_string()?).await?;
                     },
                     None => {
-                        writeln!(core.output.writer(), "{}", cfg.to_string()?)?;
+                        writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
                     }
                 }
             },
             _ => {
-                writeln!(core.output.writer(), "{}", core.config.to_string()?)?;
+                writeln!(core.output().writer(), "{}", core.config().to_string()?)?;
             }
         }
 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, core: &C, completer: &Completer, matches: &ArgMatches<'a>) {
         match matches.subcommand() {
             ("list", _) => {
 
             },
             ("add", _) => {
-                match online::GitHubRegistry::from(core.config.clone()).get_entries().await {
+                match online::GitHubRegistry::from(core.config()).get_entries().await {
                     Ok(entries) => {
                         completer.offer_many(entries);
                     },
@@ -106,14 +106,14 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Config};
+    use super::core::{CoreBuilder, Config};
     use clap::ArgMatches;
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();

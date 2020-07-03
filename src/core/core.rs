@@ -2,19 +2,54 @@
 use std::sync::Arc;
 use super::{Config, Launcher, Error, Resolver, KeyChain, Output};
 
-pub struct Core<K = super::DefaultKeyChain, L = super::DefaultLauncher, R = super::DefaultResolver, O = super::DefaultOutput>
-where K: KeyChain, L : Launcher, R: Resolver, O: Output
-{
-    pub config: Arc<Config>,
-    pub launcher: Arc<L>,
-    pub resolver: Arc<R>,
-    pub keychain: Arc<K>,
-    pub output: Arc<O>,
+pub trait Core: Send + Sync {
+    type K: KeyChain;
+    type L: Launcher;
+    type R: Resolver;
+    type O: Output;
+
+    fn config(&self) -> &Config;
+    fn keychain(&self) -> &Self::K;
+    fn launcher(&self) -> &Self::L;
+    fn resolver(&self) -> &Self::R;
+    fn output(&self) -> &Self::O;
 }
 
-impl Core {
-    pub fn builder() -> CoreBuilder<super::DefaultKeyChain, super::DefaultLauncher, super::DefaultResolver, super::DefaultOutput> {
-        CoreBuilder::default()
+pub struct DefaultCore<K = super::DefaultKeyChain, L = super::DefaultLauncher, R = super::DefaultResolver, O = super::DefaultOutput>
+where K: KeyChain, L : Launcher, R: Resolver, O: Output
+{
+    config: Arc<Config>,
+    launcher: Arc<L>,
+    resolver: Arc<R>,
+    keychain: Arc<K>,
+    output: Arc<O>,
+}
+
+impl<K, L, R, O> Core for DefaultCore<K, L, R, O>
+where K: KeyChain, L : Launcher, R: Resolver, O: Output {
+    type K = K;
+    type L = L;
+    type R = R;
+    type O = O;
+
+    fn config(&self) -> &Config {
+        &self.config
+    }
+
+    fn keychain(&self) -> &Self::K {
+        &self.keychain
+    }
+
+    fn launcher(&self) -> &Self::L {
+        &self.launcher
+    }
+
+    fn resolver(&self) -> &Self::R {
+        &self.resolver
+    }
+
+    fn output(&self) -> &Self::O {
+        &self.output
     }
 }
 
@@ -41,17 +76,17 @@ impl Default for CoreBuilder {
     }
 }
 
-impl<K, L, R, O> std::convert::Into<Core<K, L, R, O>> for CoreBuilder<K, L, R, O>
+impl<K, L, R, O> std::convert::Into<DefaultCore<K, L, R, O>> for CoreBuilder<K, L, R, O>
 where K : KeyChain, L : Launcher, R: Resolver, O: Output {
-    fn into(self) -> Core<K, L, R, O> {
+    fn into(self) -> DefaultCore<K, L, R, O> {
         self.build()
     }
 }
 
 impl<K, L, R, O> CoreBuilder<K, L, R, O>
 where L : Launcher, R: Resolver, K: KeyChain, O: Output {
-    pub fn build(&self) -> Core<K, L, R, O> {
-        Core {
+    pub fn build(&self) -> DefaultCore<K, L, R, O> {
+        DefaultCore {
             config: self.config.clone(),
             launcher: self.launcher.clone(),
             resolver: self.resolver.clone(),

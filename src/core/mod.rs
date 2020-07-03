@@ -15,7 +15,7 @@ mod output;
 use super::errors;
 pub use errors::Error;
 
-pub use self::core::Core;
+pub use self::core::{Core, CoreBuilder};
 pub use app::App;
 pub use config::Config;
 pub use launcher::Launcher;
@@ -27,6 +27,7 @@ pub use resolver::Resolver;
 pub use auth::KeyChain;
 pub use output::Output;
 
+pub type DefaultCore = core::DefaultCore;
 pub type DefaultLauncher = launcher::TokioLauncher;
 pub type DefaultResolver = resolver::FileSystemResolver;
 pub type DefaultKeyChain = auth::SystemKeyChain;

@@ -26,12 +26,12 @@ impl Command for InfoCommand {
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for InfoCommand {    
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        let mut output = core.output.writer();
+impl<C: Core> CommandRunnable<C> for InfoCommand {    
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+        let mut output = core.output().writer();
         let repo = match matches.value_of("repo") {
-            Some(name) => core.resolver.get_best_repo(name)?,
-            None => core.resolver.get_current_repo()?
+            Some(name) => core.resolver().get_best_repo(name)?,
+            None => core.resolver().get_current_repo()?
         };
 
 
@@ -40,7 +40,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         writeln!(output, "Service:   {}", repo.get_domain())?;
         writeln!(output, "Path:      {}", repo.get_path().display())?;
 
-        match core.config.get_service(repo.get_domain().as_str()) {
+        match core.config().get_service(repo.get_domain().as_str()) {
             Some(svc) => {
                 writeln!(output, "")?;
                 writeln!(output, "URLs:")?;
@@ -54,10 +54,10 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
-        let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();
 
-        match core.resolver.get_repos() {
+        match core.resolver().get_repos() {
             Ok(repos) => {
                 completer.offer_many(repos.iter().filter(|r| r.get_domain() == default_svc).map(|r| r.get_full_name()));
                 completer.offer_many(repos.iter().map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())));
@@ -70,7 +70,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Config, Repo};
+    use super::core::{CoreBuilder, Config, Repo};
 
     #[tokio::test]
     async fn run() {
@@ -80,7 +80,7 @@ mod tests {
 
         let cfg = Config::from_str("directory: /dev").unwrap();
 
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .with_mock_resolver(|r| {

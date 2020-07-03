@@ -1,6 +1,6 @@
 use super::*;
 use crate::fs::to_native_path;
-use std::{path::PathBuf, fs::read_to_string, fs::read_dir, sync::Arc};
+use std::{path::PathBuf, fs::read_to_string, fs::read_dir};
 
 pub struct FileRegistry {
     path: PathBuf
@@ -14,14 +14,14 @@ impl FileRegistry {
     }
 }
 
-impl From<Arc<Config>> for FileRegistry {
-    fn from(config: Arc<Config>) -> Self {
+impl From<&Config> for FileRegistry {
+    fn from(config: &Config) -> Self {
         Self::new(config.get_dev_directory().join("registry"))
     }
 }
 
 #[async_trait::async_trait]
-impl Registry for FileRegistry {
+impl<'a> Registry<'a> for FileRegistry {
     async fn get_entries(&self) -> Result<Vec<String>, Error> {
         let mut entries = Vec::new();
 

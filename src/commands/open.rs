@@ -33,14 +33,14 @@ New applications can be configured either by making changes to your configuratio
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for OpenCommand {    
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+impl<C: Core> CommandRunnable<C> for OpenCommand {    
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let mut repo: Option<core::Repo> = None;
-        let mut app: Option<&core::App> = core.config.get_default_app();
+        let mut app: Option<&core::App> = core.config().get_default_app();
 
         match matches.value_of("repo") {
             Some(name) => {
-                repo = Some(core.resolver.get_best_repo(name)?);
+                repo = Some(core.resolver().get_best_repo(name)?);
             },
             None => {}
         }
@@ -49,7 +49,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             Some(name) => {
                 match repo {
                     Some(_) => {
-                        app = core.config.get_app(name);
+                        app = core.config().get_app(name);
 
                         match app {
                             Some(_) => {},
@@ -59,7 +59,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                         }
                     }
                     None => {
-                        repo = Some(core.resolver.get_best_repo(name)?);
+                        repo = Some(core.resolver().get_best_repo(name)?);
                     }
                 }
             },
@@ -81,7 +81,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         match repo {
             Some(_) => {}
             None => {
-                repo = Some(core.resolver.get_current_repo()?);
+                repo = Some(core.resolver().get_current_repo()?);
             }
         }
 
@@ -93,7 +93,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             }
 
             if let Some(app) = app {
-                let status = core.launcher.run(app, &repo).await?;
+                let status = core.launcher().run(app, &repo).await?;
                 return Ok(status)
             }
         }
@@ -101,12 +101,12 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
-        completer.offer_many(core.config.get_apps().map(|a| a.get_name()));
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
-        let default_svc = core.config.get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+        let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();
 
-        match core.resolver.get_repos() {
+        match core.resolver().get_repos() {
             Ok(repos) => {
                 completer.offer_many(repos.iter().filter(|r| r.get_domain() == default_svc).map(|r| r.get_full_name()));
                 completer.offer_many(repos.iter().map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())));
@@ -119,7 +119,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config, Repo};
+    use super::core::{CoreBuilder, Config, Repo};
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -142,7 +142,7 @@ features:
 ").unwrap();
 
         let temp = TempDir::new("gt-commands-open").unwrap();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|l| {
                 l.status = 5;
@@ -156,7 +156,7 @@ features:
         match cmd.run(&core, &args).await {
             Ok(status) => {
                 assert_eq!(status, 5);
-                let launches = core.launcher.launches.lock().await;
+                let launches = core.launcher().launches.lock().await;
                 assert!(launches.len() == 1);
 
                 let launch = &launches[0];

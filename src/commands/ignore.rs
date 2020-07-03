@@ -33,9 +33,9 @@ impl Command for IgnoreCommand {
 }
     
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for IgnoreCommand {
-    async fn run<'a>(&self, core: &core::Core<K, L, R, O>, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        let mut output = core.output.writer();
+impl<C: Core> CommandRunnable<C> for IgnoreCommand {
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+        let mut output = core.output().writer();
 
         match matches.occurrences_of("language") {
             0 => {
@@ -63,7 +63,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
         match online::gitignore::list().await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}
@@ -74,14 +74,14 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Config};
+    use super::core::{CoreBuilder, Config};
     use clap::ArgMatches;
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
@@ -95,7 +95,7 @@ mod tests {
             }
         }
 
-        let output = core.output.to_string();
+        let output = core.output().to_string();
         assert!(output.contains("visualstudio"), "the ignore list should be printed");
     }
 }

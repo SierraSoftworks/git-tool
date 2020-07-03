@@ -22,12 +22,12 @@ impl Default for GitHubService {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> OnlineService<K, L, R, O> for GitHubService {
+impl<C: Core> OnlineService<C> for GitHubService {
     fn handles(&self, service: &Service) -> bool {
         service.get_domain() == "github.com"
     }
 
-    async fn ensure_created(&self, core: &Core<K, L, R, O>, repo: &Repo) -> Result<(), Error> {
+    async fn ensure_created(&self, core: &C, repo: &Repo) -> Result<(), Error> {
         let current_user = self.get_user_login(core).await?;
         
         let uri = if repo.get_namespace() == current_user {
@@ -38,7 +38,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> OnlineService<K, L, R, O>
 
         let new_repo = NewRepo {
             name: repo.get_name(),
-            private: core.config.get_features().create_remote_private()
+            private: core.config().get_features().create_remote_private()
         };
 
         let req_body = serde_json::to_vec(&new_repo)?;
@@ -49,7 +49,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> OnlineService<K, L, R, O>
 }
 
 impl GitHubService {
-    async fn get_user_login<K: KeyChain, L: Launcher, R: Resolver, O: Output>(&self, core: &Core<K, L, R, O>) -> Result<String, Error> {
+    async fn get_user_login<C: Core>(&self, core: &C) -> Result<String, Error> {
         let uri: Uri = "https://api.github.com/user".parse()?;
 
         let user: UserProfile = self.make_request(core, "GET", uri, Body::empty()).await?;
@@ -57,8 +57,8 @@ impl GitHubService {
         Ok(user.login)
     }
 
-    async fn make_request<K: KeyChain, L: Launcher, R: Resolver, O: Output, T: DeserializeOwned>(&self, core: &Core<K, L, R, O>, method: &str, uri: Uri, body: Body) -> Result<T, Error> {
-        let token = core.keychain.get_token("github.com")?;
+    async fn make_request<C: Core, T: DeserializeOwned>(&self, core: &C, method: &str, uri: Uri, body: Body) -> Result<T, Error> {
+        let token = core.keychain().get_token("github.com")?;
 
         let req = Request::builder()
             .uri(uri)

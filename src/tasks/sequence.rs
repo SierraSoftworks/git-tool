@@ -1,12 +1,12 @@
 use super::*;
 use std::sync::Arc;
 
-pub struct Sequence<K: KeyChain, L: Launcher, R: Resolver, O: Output> {
-    tasks: Vec<Arc<dyn Task<K, L, R, O> + Send + Sync>>
+pub struct Sequence<C: Core> {
+    tasks: Vec<Arc<dyn Task<C> + Send + Sync>>
 }
 
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Sequence<K, L, R, O> {
-    pub fn new(tasks: Vec<Arc<dyn Task<K, L, R, O> + Send + Sync>>) -> Self{
+impl<C: Core> Sequence<C> {
+    pub fn new(tasks: Vec<Arc<dyn Task<C> + Send + Sync>>) -> Self{
         Self {
             tasks
         }
@@ -14,8 +14,8 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Sequence<K, L, R, O> {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Sequence<K, L, R, O> {
-    async fn apply_repo(&self, core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<C: Core> Task<C> for Sequence<C> {
+    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(core, repo).await?;
         }
@@ -23,7 +23,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Sequ
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, core: &core::Core<K, L, R, O>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_scratchpad(core, scratch).await?;
         }
@@ -35,15 +35,17 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Sequ
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::*;
     use super::super::TestTask;
-    use super::core::Target;
 
     #[tokio::test]
     async fn test_empty_sequence() {
         let seq = Sequence::new(vec![]);
         let repo = get_repo();
         let scratch = get_scratch();
-        let core = get_core();
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .build();
 
         seq.apply_repo(&core, &repo).await.unwrap();
         seq.apply_scratchpad(&core, &scratch).await.unwrap();
@@ -59,7 +61,9 @@ mod tests {
         ]);
 
         let repo = get_repo();
-        let core = get_core();
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .build();
 
         seq.apply_repo(&core, &repo).await.unwrap();
 
@@ -80,7 +84,9 @@ mod tests {
         ]);
 
         let scratch = get_scratch();
-        let core = get_core();
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .build();
 
         seq.apply_scratchpad(&core, &scratch).await.unwrap();
 
@@ -89,12 +95,6 @@ mod tests {
             let ran_scratch = s.clone().unwrap();
             assert_eq!(ran_scratch.get_name(), "2020w07");
         }
-    }
-
-    fn get_core() -> core::Core {
-        core::Core::builder()
-            .with_config(&core::Config::from_str("directory: /dev").unwrap())
-            .build()
     }
 
     fn get_repo() -> core::Repo {

@@ -18,32 +18,32 @@ impl Command for ServicesCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ServicesCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
-        let mut output = core.output.writer();
+impl<C: Core> CommandRunnable<C> for ServicesCommand {
+    async fn run<'a>(&self, core: &C, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+        let mut output = core.output().writer();
 
-        for svc in core.config.get_services() {
+        for svc in core.config().get_services() {
             writeln!(output, "{}", svc.get_domain())?;
         }
 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, _completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::{Core, Config};
+    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
         
         let cfg = Config::default();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
         .with_config(&cfg)
             .with_mock_output()
             .build();
@@ -56,7 +56,7 @@ mod tests {
             }
         }
 
-        let output = core.output.to_string();
+        let output = core.output().to_string();
         assert!(output.contains("github.com\n"), "the output should contain each service");
     }
 }

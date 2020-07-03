@@ -1,5 +1,5 @@
 use super::core;
-use super::core::{KeyChain, Launcher, Resolver, Output};
+use super::core::Core;
 use async_trait::async_trait;
 
 #[cfg(test)]
@@ -34,9 +34,9 @@ pub use git_remote::GitRemote;
 pub use new_folder::NewFolder;
 
 #[async_trait]
-pub trait Task<K: KeyChain, L: Launcher, R: Resolver, O: Output> {
-    async fn apply_repo(&self, core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error>;
-    async fn apply_scratchpad(&self, core: &core::Core<K, L, R, O>, scratch: &core::Scratchpad) -> Result<(), core::Error>;
+pub trait Task<C: Core> {
+    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error>;
+    async fn apply_scratchpad(&self, core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error>;
 }
 
 #[cfg(test)]
@@ -60,8 +60,8 @@ impl Default for TestTask {
 
 #[cfg(test)]
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for TestTask {
-    async fn apply_repo(&self, _core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error> {
+impl<C: Core> Task<C> for TestTask {
+    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         let mut r = self.ran_repo.lock().await;
 
         *r = Some(repo.clone());
@@ -72,7 +72,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for Test
         }
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R, O>, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error> {
         let mut s = self.ran_scratchpad.lock().await;
 
         *s = Some(scratch.clone());

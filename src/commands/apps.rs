@@ -19,17 +19,16 @@ impl Command for AppsCommand {
 
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for AppsCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where K: KeyChain, L: Launcher, R: Resolver {
-        for app in core.config.get_apps() {
-            writeln!(core.output.writer(), "{}", app.get_name())?;
+impl<C: Core> CommandRunnable<C> for AppsCommand {
+    async fn run<'a>(&self, core: &C, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+        for app in core.config().get_apps() {
+            writeln!(core.output().writer(), "{}", app.get_name())?;
         }
 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, _completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {
         
     }
 }
@@ -37,14 +36,14 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::Config;
+    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
         
         let cfg = Config::default();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
@@ -57,7 +56,7 @@ mod tests {
             }
         }
 
-        let output = core.output.to_string();
+        let output = core.output().to_string();
         assert!(output.contains("shell"), "the output should contain the default app");
     }
 }

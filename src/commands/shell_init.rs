@@ -32,10 +32,10 @@ impl Command for ShellInitCommand {
 }
 
 #[async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ShellInitCommand {
-    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where K: KeyChain, L: Launcher, R: Resolver {
-        let mut output = core.output.writer();
+impl<C: Core> CommandRunnable<C> for ShellInitCommand {
+    async fn run<'a>(&self, core: &C, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+    where C: Core {
+        let mut output = core.output().writer();
 
         match matches.subcommand() {
             (name, Some(matches)) => {
@@ -61,7 +61,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &Core<K, L, R, O>, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
         let shells = get_shells();
         completer.offer_many(shells.iter().map(|s| s.get_name()));
     }
@@ -70,13 +70,13 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::core::Config;
+    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
         
         let cfg = Config::default();
-        let core = Core::builder()
+        let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
@@ -91,7 +91,7 @@ mod tests {
             }
         }
 
-        let output = core.output.to_string();
+        let output = core.output().to_string();
         assert!(output.contains("Invoke-Expression"), "the output should include the setup script");
     }
 }

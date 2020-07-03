@@ -14,20 +14,20 @@ impl Default for GitRemote {
 }
 
 #[async_trait::async_trait]
-impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for GitRemote {
-    async fn apply_repo(&self, core: &core::Core<K, L, R, O>, repo: &core::Repo) -> Result<(), core::Error> {
-        let service = core.config.get_service(&repo.get_domain()).ok_or(
+impl<C: Core> Task<C> for GitRemote {
+    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+        let service = core.config().get_service(&repo.get_domain()).ok_or(
             errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
         )?;
 
-        let url = if core.config.get_features().use_http_transport() { service.get_http_url(repo)? } else { service.get_git_url(repo)? };
+        let url = if core.config().get_features().use_http_transport() { service.get_http_url(repo)? } else { service.get_git_url(repo)? };
 
         git::git_remote_add(&repo.get_path(), &self.name, &url).await
     }
 
-    async fn apply_scratchpad(&self, _core: &core::Core<K, L, R, O>, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(&self, _core: &C, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
         Ok(())
     }
 }
@@ -35,6 +35,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> Task<K, L, R, O> for GitR
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::*;
     use crate::tasks::GitInit;
     use tempdir::TempDir;
 
@@ -45,7 +46,9 @@ mod tests {
             "github.com/sierrasoftworks/test-git-remote", 
             temp.path().join("repo").into());
 
-        let core = get_core(temp.path());
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
         
         sequence![
             GitInit{},
@@ -63,7 +66,10 @@ mod tests {
             "2019w15", 
             temp.path().join("scratch").into());
 
-        let core = get_core(temp.path());
+        let core = core::CoreBuilder::default()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
+
         let task = GitRemote{
             name: "origin".into(),
         };
@@ -71,11 +77,5 @@ mod tests {
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);
         assert_eq!(scratch.exists(), false);
-    }
-
-    fn get_core(dir: &std::path::Path) -> core::Core {
-        core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(dir))
-            .build()
     }
 }
