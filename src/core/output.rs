@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::io::{stdout, Write};
 
 pub trait Output: From<Arc<Config>> + Send + Sync {
-    fn writer(&self) -> Box<dyn Write>;
+    fn writer(&self) -> Box<dyn Write + Send>;
 }
 
 pub struct StdoutOutput {
@@ -11,7 +11,7 @@ pub struct StdoutOutput {
 }
 
 impl Output for StdoutOutput {
-    fn writer(&self) -> Box<dyn Write> {
+    fn writer(&self) -> Box<dyn Write + Send> {
         Box::new(stdout())
     }
 }
@@ -40,7 +40,7 @@ pub mod mocks {
     }
 
     impl Output for MockOutput {
-        fn writer(&self) -> Box<dyn Write> {
+        fn writer(&self) -> Box<dyn Write + Send> {
             Box::new(MockOutputWriter{
                 write_to: self.written_data.clone()
             })

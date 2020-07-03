@@ -33,8 +33,9 @@ impl Command for ShellInitCommand {
 
 #[async_trait]
 impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ShellInitCommand {
-    async fn run<'a>(&self, _core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where K: KeyChain, L: Launcher, R: Resolver {
+        let mut output = core.output.writer();
 
         match matches.subcommand() {
             (name, Some(matches)) => {
@@ -45,9 +46,9 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                 ))?;
                     
                 if matches.is_present("full") {
-                    print!("{}", shell.get_long_init());
+                    write!(output, "{}", shell.get_long_init())?;
                 } else {
-                    print!("{}", shell.get_short_init());
+                    write!(output, "{}", shell.get_short_init())?;
                 }
             },
             _ => {
@@ -76,8 +77,9 @@ mod tests {
         
         let cfg = Config::default();
         let core = Core::builder()
-        .with_config(&cfg)
-        .build();
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
         
         let cmd = ShellInitCommand{};
         let args = cmd.app().get_matches_from(vec!["shell-init", "powershell"]);
@@ -88,5 +90,8 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("Invoke-Expression"), "the output should include the setup script");
     }
 }

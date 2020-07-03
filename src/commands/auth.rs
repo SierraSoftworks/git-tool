@@ -71,6 +71,7 @@ mod tests {
         let cfg = Config::default();
         let core = Core::builder()
             .with_config(&cfg)
+            .with_mock_output()
             .with_mock_keychain(|_| {})
             .build();
 
@@ -94,6 +95,7 @@ mod tests {
         let cfg = Config::default();
         let core = Core::builder()
             .with_config(&cfg)
+            .with_mock_output()
             .with_mock_keychain(|k| {
                 k.set_token("github.com", "example").unwrap()
             })

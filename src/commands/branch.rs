@@ -49,7 +49,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
             None => {
                 let branches = git::git_branches(&repo.get_path()).await?;
                 for branch in branches {
-                    println!("{}", branch);
+                    writeln!(core.output.writer(), "{}", branch)?;
                 }
             }
         };
@@ -90,6 +90,7 @@ mod tests {
 
         let core = core::Core::builder()
             .with_config(&core::Config::for_dev_directory(temp.path()))
+            .with_mock_output()
             .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
 
@@ -116,6 +117,7 @@ mod tests {
 
         let core = core::Core::builder()
             .with_config(&core::Config::for_dev_directory(temp.path()))
+            .with_mock_output()
             .with_mock_resolver(|r| {
                 r.set_repo(Repo::new(
                     "example.com/test/cmd-branch",

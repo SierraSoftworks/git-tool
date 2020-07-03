@@ -38,6 +38,8 @@ impl Command for ListCommand {
 impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ListCommand {
     async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where K: KeyChain, L: Launcher, R: Resolver {
+        let mut output = core.output.writer();
+
         let filter = match matches.value_of("filter") {
             Some(name) => name,
             None => ""
@@ -51,13 +53,13 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
         let mut first = true;
         for repo in repos.iter().filter(|r| search::matches(&format!("{}/{}", r.get_domain(), r.get_full_name()), filter)) {
             if quiet {
-                println!("{}/{}", repo.get_domain(), repo.get_full_name());
+                writeln!(output, "{}/{}", repo.get_domain(), repo.get_full_name())?;
             } else if full {
                 if !first {
-                    println!("---");
+                    writeln!(output, "---")?;
                 }
 
-                println!("
+                writeln!(output, "
 Name:           {name}
 Namespace:      {namespace}
 Service:        {domain}
@@ -65,23 +67,23 @@ Path:           {path}",
                 name=repo.get_name(),
                 namespace=repo.get_namespace(),
                 domain=repo.get_domain(),
-                path=repo.get_path().display());
+                path=repo.get_path().display())?;
 
                 match core.config.get_service(&repo.get_domain()) {
-                    Some(svc) => println!("
+                    Some(svc) => writeln!(output, "
 URLs:
   - Website:    {website}
   - Git SSH:    {git_ssh}
   - Git HTTP:   {git_http}", 
                 website=svc.get_website(&repo)?,
                 git_ssh=svc.get_git_url(&repo)?,
-                git_http=svc.get_http_url(&repo)?),
+                git_http=svc.get_http_url(&repo)?)?,
                     None => {}
                 };
             } else {
                 match core.config.get_service(&repo.get_domain()) {
-                    Some(svc) => println!("{}/{} ({})", repo.get_domain(), repo.get_full_name(), svc.get_website(&repo)?),
-                    None => println!("{}/{}", repo.get_domain(), repo.get_full_name())
+                    Some(svc) => writeln!(output, "{}/{} ({})", repo.get_domain(), repo.get_full_name(), svc.get_website(&repo)?)?,
+                    None => writeln!(output, "{}/{}", repo.get_domain(), repo.get_full_name())?
                 };
             }
 
@@ -107,6 +109,7 @@ mod tests {
     async fn run_normal() {
         let core = Core::builder()
             .with_config(&Config::for_dev_directory(&get_dev_dir()))
+            .with_mock_output()
             .build();
         
         let cmd = ListCommand{};
@@ -119,11 +122,15 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("github.com/sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"), "the output should contain the repos");
     }
 
     #[tokio::test]
     async fn run_search_full() {
         let core = Core::builder()
+            .with_mock_output()
             .with_mock_resolver(|r| {
                 r.set_repos(vec![
                     Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
@@ -147,6 +154,7 @@ mod tests {
     #[tokio::test]
     async fn run_search_quiet() {
         let core = Core::builder()
+            .with_mock_output()
             .with_mock_resolver(|r| {
                 r.set_repos(vec![
                     Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
@@ -165,5 +173,9 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("example.com/ns1/a\n"), "the output should contain the first match");
+        assert!(output.contains("example.com/ns1/b\n"), "the output should contain the second match");
     }
 }

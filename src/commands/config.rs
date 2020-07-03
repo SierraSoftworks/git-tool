@@ -45,7 +45,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
                 let entries = registry.get_entries().await?;
                 for entry in entries {
-                    println!("{}", entry);
+                    writeln!(core.output.writer(), "{}", entry)?;
                 }
             },
             ("add", Some(args)) => {
@@ -56,8 +56,8 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                 let registry = crate::online::GitHubRegistry::from(core.config.clone());
                 let entry = registry.get_entry(id).await?;
 
-                println!("Applying {}", entry.name);
-                println!("{}", entry.description);
+                writeln!(core.output.writer(), "Applying {}", entry.name)?;
+                writeln!(core.output.writer(), "{}", entry.description)?;
 
                 let mut cfg = core.config.clone();
                 for ec in entry.configs {
@@ -71,12 +71,12 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                         tokio::fs::write(&path, cfg.to_string()?).await?;
                     },
                     None => {
-                        println!("{}", cfg.to_string()?);
+                        writeln!(core.output.writer(), "{}", cfg.to_string()?)?;
                     }
                 }
             },
             _ => {
-                println!("{}", core.config.to_string()?);
+                writeln!(core.output.writer(), "{}", core.config.to_string()?)?;
             }
         }
 
@@ -113,7 +113,10 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
 
         let cmd = ConfigCommand{};
 

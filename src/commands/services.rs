@@ -20,8 +20,10 @@ impl Command for ServicesCommand {
 #[async_trait]
 impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for ServicesCommand {
     async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+        let mut output = core.output.writer();
+        
         for svc in core.config.get_services() {
-            println!("{}", svc.get_domain());
+            writeln!(output, "{}", svc.get_domain())?;
         }
 
         Ok(0)

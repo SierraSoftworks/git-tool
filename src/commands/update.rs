@@ -31,8 +31,10 @@ impl Command for UpdateCommand {
 
 #[async_trait]
 impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, O> for UpdateCommand {
-    async fn run<'a>(&self, _core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
+    async fn run<'a>(&self, core: &crate::core::Core<K, L, R, O>, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
     where K: KeyChain, L: Launcher, R: Resolver {
+        let mut output = core.output.writer();
+
         let current_version: semver::Version = env!("CARGO_PKG_VERSION").parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
@@ -48,7 +50,7 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
                     style = "*";
                 }
 
-                println!("{} {}", style, release.id);
+                writeln!(output, "{} {}", style, release.id)?;
             }
 
             return Ok(0)
@@ -62,9 +64,9 @@ impl<K: KeyChain, L: Launcher, R: Resolver, O: Output> CommandRunnable<K, L, R, 
 
         match target_release {
             Some(release) => {
-                println!("Downloading update {}...", &release.id);
+                writeln!(output, "Downloading update {}...", &release.id)?;
                 if manager.update(&release).await? {
-                    println!("Shutting down to complete the update operation.");
+                    writeln!(output, "Shutting down to complete the update operation.")?;
                 }
             },
             None => {
@@ -99,8 +101,9 @@ mod tests {
         
         let cfg = Config::default();
         let core = Core::builder()
-        .with_config(&cfg)
-        .build();
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
         
         let cmd = UpdateCommand{};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
@@ -111,5 +114,8 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output.to_string();
+        assert!(output.contains("  v1.5.6\n"), "the output should contain a list of versions");
     }
 }
