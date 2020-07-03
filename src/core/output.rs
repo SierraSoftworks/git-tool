@@ -76,6 +76,5 @@ pub mod mocks {
         fn flush(&mut self) -> std::io::Result<()> {
             Ok(())
         }
-        
     }
 }

@@ -32,6 +32,7 @@ impl Default for GitHubSource {
 impl Source for GitHubSource {
     async fn get_releases(&self) -> Result<Vec<Release>, crate::core::Error> {
         let uri: Uri = format!("https://api.github.com/repos/{}/releases", self.repo).parse()?;
+        info!("Making GET request to {} to check for new releases.", uri);
 
         let req = hyper::Request::get(uri)
             .header("User-Agent", "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"))
@@ -42,6 +43,7 @@ impl Source for GitHubSource {
                 e))?;
 
         let resp = self.client.request(req).await?;
+        debug!("Received HTTP {} {} from GitHub when requesting releases.", resp.status().as_u16(), resp.status().canonical_reason().unwrap_or("UNKNOWN"));
 
         match resp.status() {
             http::StatusCode::OK => {

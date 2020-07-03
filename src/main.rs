@@ -4,6 +4,7 @@ extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
 extern crate keyring;
+#[macro_use] extern crate log;
 extern crate rpassword;
 extern crate sentry;
 extern crate tokio;
@@ -50,10 +51,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .value_name("FILE")
                 .help("The path to your git-tool configuration file.")
                 .takes_value(true))
-        .arg(Arg::with_name("verbose")
-                .long("verbose")
-                .help("enable verbose logging")
-                .default_value("false"))
         .arg(Arg::with_name("update-resume-internal")
             .long("update-resume-internal")
             .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
@@ -71,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             std::process::exit(status);
         }
         Result::Err(err) => {
-            println!("{}", err.message());
+            error!("{}", err.message());
 
             if err.is_system() {
                 sentry::capture_error(&err);
@@ -126,6 +123,8 @@ async fn run<'a>(
             return cmd.run(&core, cmd_matches).await;
         }
     }
+
+    warn!("You have not provided a valid command or command alias. Try running `git-tool open github.com/your/repo`.");
 
     Ok(-1)
 }
