@@ -161,8 +161,25 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     _ => {}
                 }
             }
+            ("alias", Some(args)) => {
+                if !args.is_present("alias") {
+                    completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
+                } else {
+                    completer.offer("-d");
+                    match core.resolver().get_repos() {
+                        Ok(repos) => {
+                            completer.offer_many(
+                                repos
+                                    .iter()
+                                    .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
             _ => {
-                completer.offer_many(vec!["list", "add"]);
+                completer.offer_many(vec!["list", "add", "alias"]);
             }
         }
     }
