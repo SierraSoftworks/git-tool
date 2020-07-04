@@ -145,20 +145,27 @@ mod tests {
 
     #[test]
     fn render_basic_repo() {
+        let cfg = Config::default();
         let repo = Repo::new(
             "github.com/sierrasoftworks/git-tool", 
             PathBuf::from("/test/github.com/sierrasoftworks/git-tool"));
 
-        assert_eq!(render("{{ .Repo.Name }}", (&repo).into()).unwrap(), "git-tool");
-        assert_eq!(render("{{ .Repo.FullName }}", (&repo).into()).unwrap(), "sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Repo.Namespace }}", (&repo).into()).unwrap(), "sierrasoftworks");
-        assert_eq!(render("{{ .Repo.Domain }}", (&repo).into()).unwrap(), "github.com");
-        assert_eq!(render("{{ .Repo.Path }}", (&repo).into()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
+        let context = repo_context(&cfg, &repo);
 
-        assert_eq!(render("{{ .Target.Name }}", (&repo).into()).unwrap(), "sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Target.Path }}", (&repo).into()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
+        assert_eq!(render("{{ .Repo.Name }}", context.clone()).unwrap(), "git-tool");
+        assert_eq!(render("{{ .Repo.FullName }}", context.clone()).unwrap(), "sierrasoftworks/git-tool");
+        assert_eq!(render("{{ .Repo.Namespace }}", context.clone()).unwrap(), "sierrasoftworks");
+        assert_eq!(render("{{ .Repo.Domain }}", context.clone()).unwrap(), "github.com");
+        assert_eq!(render("{{ .Repo.Path }}", context.clone()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
+        assert_eq!(render("{{ .Repo.Website }}", context.clone()).unwrap(), "https://github.com/sierrasoftworks/git-tool");
+        assert_eq!(render("{{ .Repo.GitURL }}", context.clone()).unwrap(), "git@github.com:sierrasoftworks/git-tool.git");
+        assert_eq!(render("{{ .Repo.HttpURL }}", context.clone()).unwrap(), "https://github.com/sierrasoftworks/git-tool.git");
 
-        assert_eq!(render("{{ .Service.Domain }}", (&repo).into()).unwrap(), "github.com");
+        assert_eq!(render("{{ .Target.Name }}", context.clone()).unwrap(), "sierrasoftworks/git-tool");
+        assert_eq!(render("{{ .Target.Path }}", context.clone()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
+
+        assert_eq!(render("{{ .Service.Domain }}", context.clone()).unwrap(), "github.com");
+        assert_eq!(render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(), "github.com");
     }
 
     #[test]
