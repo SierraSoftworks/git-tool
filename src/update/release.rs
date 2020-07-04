@@ -76,7 +76,7 @@ fn translate_platform(platform: &str) -> &str {
 fn translate_arch(arch: &str) -> &str {
     match arch {
         "x86_64" => "amd64",
-        "x86" => "386",
+        "i686" => "386",
         x => x
     }
 }
