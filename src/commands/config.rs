@@ -57,7 +57,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 let entry = registry.get_entry(core, id).await?;
 
                 writeln!(core.output().writer(), "Applying {}", entry.name)?;
-                writeln!(core.output().writer(), "{}", entry.description)?;
+                writeln!(core.output().writer(), "> {}", entry.description)?;
 
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
@@ -127,5 +127,83 @@ mod tests {
                 panic!(err.message())
             }
         }
+
+        let output = core.output().to_string();
+        assert!(output.contains(&core.config().to_string().unwrap()), "the output should contain the config");
+    }
+
+    #[tokio::test]
+    async fn run_list() {
+        let cfg = Config::from_str("directory: /dev").unwrap();
+        let core = CoreBuilder::default()
+        .with_config(&cfg)
+        .with_mock_output()
+        .build();
+        
+        let cmd = ConfigCommand{};
+        let args = cmd.app().get_matches_from(vec!["config", "list"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {},
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+
+        let output = core.output().to_string();
+        println!("{}", output);
+        assert!(output.contains("apps/bash\n"), "the output should contain some apps");
+        assert!(output.contains("services/github\n"), "the output should contain some services");
+    }
+
+    #[tokio::test]
+    async fn run_add_no_file() {
+        let cfg = Config::from_str("directory: /dev").unwrap();
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+        
+        let cmd = ConfigCommand{};
+        let args = cmd.app().get_matches_from(vec!["config", "add", "apps/bash"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {},
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+
+        let output = core.output().to_string();
+        println!("{}", output);
+        assert!(output.contains("name: bash\n"), "the output should contain the new config");
+    }
+
+    #[tokio::test]
+    async fn run_add_with_file() {
+        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        tokio::fs::write(temp.path().join("config.yml"), Config::default().to_string().unwrap()).await.unwrap();
+
+        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+        
+        let cmd = ConfigCommand{};
+        let args = cmd.app().get_matches_from(vec!["config", "add", "apps/bash"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {},
+            Err(err) => {
+                panic!(err.message())
+            }
+        }
+
+        let output = core.output().to_string();
+        assert!(output.contains("Applying Bash\n> "), "the output should describe what is being done");
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert!(new_cfg.get_app("bash").is_some(), "the app should be added to the config file");
     }
 }
