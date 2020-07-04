@@ -16,7 +16,19 @@ pub struct Features {
     create_remote_private: bool,
 }
 
+impl Default for Features {
+    fn default() -> Self {
+        Self {
+            native_clone: false,
+            create_remote: true,
+            http_transport: false,
+            create_remote_private: true
+        }
+    }
+}
+
 impl Features {
+    #[cfg(test)]
     pub fn builder() -> FeaturesBuilder {
         FeaturesBuilder {
             create_remote: true,
@@ -38,12 +50,14 @@ impl Features {
     }
 }
 
+#[cfg(test)]
 pub struct FeaturesBuilder {
     create_remote: bool,
     create_remote_private: bool,
     http_transport: bool,
 }
 
+#[cfg(test)]
 impl FeaturesBuilder {
     pub fn with_create_remote(self, enabled: bool) -> Self {
         Self {
@@ -67,17 +81,6 @@ impl FeaturesBuilder {
             http_transport: self.http_transport,
             native_clone: true,
             create_remote_private: self.create_remote_private
-        }
-    }
-}
-
-impl Default for Features {
-    fn default() -> Self {
-        Self {
-            native_clone: false,
-            create_remote: true,
-            http_transport: false,
-            create_remote_private: true
         }
     }
 }
