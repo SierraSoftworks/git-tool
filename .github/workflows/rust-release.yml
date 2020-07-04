@@ -9,18 +9,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [windows, linux, darwin]
-        arch: [amd64]
+        os: [windows, linux, freebsd, darwin]
+        arch: [amd64, '386']
         include:
           - arch: amd64
             rust_arch: x86_64
+          - arch: '386'
+            rust_arch: i686
           - os: windows
-            extension: ".exe"
             rust_target_suffix: pc-windows-msvc
+            extension: ".exe"
           - os: linux
             rust_target_suffix: unknown-linux-musl
           - os: darwin
             rust_target_suffix: apple-darwin
+          - os: freebsd
+            rust_target_suffix: unknown-freebsd
+        exclude:
+          - arch: '386'
+            os: darwin
 
     steps:
     - name: Install Dependencies
