@@ -1,6 +1,6 @@
+use super::{system_with_internal, user_with_internal, Error};
 use std::convert;
 use std::io;
-use super::{user_with_internal, system_with_internal, Error};
 
 impl convert::From<io::Error> for Error {
     fn from(err: io::Error) -> Self {

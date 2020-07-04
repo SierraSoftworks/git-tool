@@ -1,17 +1,15 @@
 use super::*;
 use crate::fs::to_native_path;
-use std::{path::PathBuf, fs::read_to_string, fs::read_dir};
+use std::{fs::read_dir, fs::read_to_string, path::PathBuf};
 
 pub struct FileRegistry {
-    path: PathBuf
+    path: PathBuf,
 }
 
 impl FileRegistry {
     #[allow(dead_code)]
     fn new(path: PathBuf) -> Self {
-        Self {
-            path
-        }
+        Self { path }
     }
 }
 
@@ -30,9 +28,18 @@ impl<C: Core> Registry<C> for FileRegistry {
             for entry in read_dir(type_entry.path())? {
                 let file_entry = entry?;
 
-                if file_entry.file_name().to_str().map(|s| s.ends_with(".yaml")).unwrap_or_default() {
+                if file_entry
+                    .file_name()
+                    .to_str()
+                    .map(|s| s.ends_with(".yaml"))
+                    .unwrap_or_default()
+                {
                     if let Some(file_name) = PathBuf::from(file_entry.file_name()).file_stem() {
-                        entries.push(format!("{}/{}", PathBuf::from(type_entry.file_name()).display(), PathBuf::from(file_name).display()));
+                        entries.push(format!(
+                            "{}/{}",
+                            PathBuf::from(type_entry.file_name()).display(),
+                            PathBuf::from(file_name).display()
+                        ));
                     }
                 }
             }
@@ -62,7 +69,7 @@ mod tests {
         assert_ne!(entries.len(), 0);
         assert!(entries.iter().any(|i| i == "apps/bash"));
     }
-    
+
     #[tokio::test]
     async fn get_entry() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
@@ -89,7 +96,7 @@ mod registry_compliance {
             match validate_entry(&registry, &entry).await {
                 Ok(v) => {
                     valid = valid && v;
-                },
+                }
                 Err(e) => {
                     println!("{}", e.message());
                     valid = false;
@@ -101,7 +108,6 @@ mod registry_compliance {
     }
 
     async fn validate_entry(registry: &FileRegistry, name: &str) -> Result<bool, Error> {
-        
         let core = CoreBuilder::default().build();
         let entry = registry.get_entry(&core, name).await?;
         let mut valid = true;
@@ -124,11 +130,17 @@ mod registry_compliance {
             valid = false;
         }
 
-        let test_repo = Repo::new("example.com/test/repo", PathBuf::from("/dev/example.com/test/repo"));
-        
+        let test_repo = Repo::new(
+            "example.com/test/repo",
+            PathBuf::from("/dev/example.com/test/repo"),
+        );
+
         for config in entry.configs {
             if config.platform.is_empty() {
-                println!("- {} has a config which is missing the platform field", name);
+                println!(
+                    "- {} has a config which is missing the platform field",
+                    name
+                );
                 valid = false;
             }
 
@@ -136,7 +148,7 @@ mod registry_compliance {
                 println!("- {} is in the apps/ namespace but has a configuration which is missing an app setting", name);
                 valid = false;
             }
-            
+
             if is_service && config.service.is_none() {
                 println!("- {} is in the services/ namespace but has a configuration which is missing a service setting", name);
                 valid = false;
@@ -144,24 +156,36 @@ mod registry_compliance {
 
             if let Some(app) = config.app {
                 if app.name.is_empty() {
-                    println!("- {}#{} has an app entry which is missing its name", name, &config.platform);
+                    println!(
+                        "- {}#{} has an app entry which is missing its name",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 
                 if app.command.is_empty() {
-                    println!("- {}#{} has an app entry which is missing its command", name, &config.platform);
+                    println!(
+                        "- {}#{} has an app entry which is missing its command",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
             }
 
             if let Some(svc) = config.service {
                 if svc.domain.is_empty() {
-                    println!("- {}#{} has a service entry which is missing its domain", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry which is missing its domain",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 
                 if svc.pattern.is_empty() {
-                    println!("- {}#{} has a service entry which is missing its pattern", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry which is missing its pattern",
+                        name, &config.platform
+                    );
                     valid = false;
                 } else if !valid_service_pattern(&svc.pattern) {
                     println!("- {}#{} has a service entry with an invalid pattern, it should match the regex: /^\\*(\\/\\*)*$/", name, &config.platform);
@@ -169,17 +193,26 @@ mod registry_compliance {
                 }
 
                 if svc.website.is_empty() {
-                    println!("- {}#{} has a service entry which is missing its website template", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry which is missing its website template",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 
                 if svc.http_url.is_empty() {
-                    println!("- {}#{} has a service entry which is missing its Git+HTTP template", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry which is missing its Git+HTTP template",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 
                 if svc.git_url.is_empty() {
-                    println!("- {}#{} has a service entry which is missing its Git+SSH URL template", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry which is missing its Git+SSH URL template",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 
@@ -187,17 +220,32 @@ mod registry_compliance {
                     let test_service: Service = svc.into();
 
                     if let Err(err) = test_service.get_website(&test_repo) {
-                        println!("- {}#{} could not render the website URL for a repository: {}", name, &config.platform, err.message());
+                        println!(
+                            "- {}#{} could not render the website URL for a repository: {}",
+                            name,
+                            &config.platform,
+                            err.message()
+                        );
                         valid = false;
                     }
 
                     if let Err(err) = test_service.get_git_url(&test_repo) {
-                        println!("- {}#{} could not render the Git+SSH URL for a repository: {}", name, &config.platform, err.message());
+                        println!(
+                            "- {}#{} could not render the Git+SSH URL for a repository: {}",
+                            name,
+                            &config.platform,
+                            err.message()
+                        );
                         valid = false;
                     }
 
                     if let Err(err) = test_service.get_http_url(&test_repo) {
-                        println!("- {}#{} could not render the Git+HTTP URL for a repository: {}", name, &config.platform, err.message());
+                        println!(
+                            "- {}#{} could not render the Git+HTTP URL for a repository: {}",
+                            name,
+                            &config.platform,
+                            err.message()
+                        );
                         valid = false;
                     }
                 }

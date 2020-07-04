@@ -1,5 +1,5 @@
+use super::{errors, Config, Repo, Scratchpad, Service, Target};
 use gtmpl::{template, Value};
-use super::{Config, Repo, Target, Service, errors, Scratchpad};
 
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {
@@ -20,7 +20,10 @@ pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
         errors::detailed_message(&e)))
 }
 
-pub fn render_list<S: AsRef<str>>(items: Vec<S>, context: Value) -> Result<Vec<String>, errors::Error>{
+pub fn render_list<S: AsRef<str>>(
+    items: Vec<S>,
+    context: Value,
+) -> Result<Vec<String>, errors::Error> {
     let mut out = Vec::new();
     out.reserve(items.len());
 
@@ -34,28 +37,21 @@ pub fn render_list<S: AsRef<str>>(items: Vec<S>, context: Value) -> Result<Vec<S
 
 pub fn repo_context<'a>(config: &'a Config, repo: &'a Repo) -> Value {
     match config.get_service(&repo.get_domain()) {
-        Some(service) => {
-            RepoWithService {
-                repo,
-                service
-            }.into()
-        },
-        None => {
-            repo.into()
-        }
+        Some(service) => RepoWithService { repo, service }.into(),
+        None => repo.into(),
     }
 }
 
 struct RepoWithService<'a> {
     repo: &'a Repo,
-    service: &'a Service
+    service: &'a Service,
 }
 
 impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
     fn into(self) -> Value {
         let service: Value = self.service.into();
 
-        Value::Object(map!{
+        Value::Object(map! {
             "Target" => Value::Object(map!{
                 "Name" => Value::String(self.repo.get_full_name()),
                 "Path" => Value::String(String::from(self.repo.get_path().to_str().unwrap_or_default())),
@@ -76,13 +72,12 @@ impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
             }),
             "Service" => service.clone()
         })
-        
     }
 }
 
 impl<'a> std::convert::Into<Value> for &Service {
     fn into(self) -> Value {
-        Value::Object(map!{
+        Value::Object(map! {
             "Domain" => Value::String(self.get_domain()),
             "DirectoryGlob" => Value::String(self.get_pattern()),
             "Pattern" => Value::String(self.get_pattern())
@@ -92,13 +87,13 @@ impl<'a> std::convert::Into<Value> for &Service {
 
 impl<'a> std::convert::Into<Value> for &Repo {
     fn into(self) -> Value {
-        let service = Value::Object(map!{
+        let service = Value::Object(map! {
             "Domain" => Value::String(self.get_domain()),
             "DirectoryGlob" => Value::NoValue,
             "Pattern" => Value::NoValue
         });
 
-        Value::Object(map!{
+        Value::Object(map! {
             "Target" => Value::Object(map!{
                 "Name" => Value::String(self.get_full_name()),
                 "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
@@ -119,13 +114,12 @@ impl<'a> std::convert::Into<Value> for &Repo {
             }),
             "Service" => service.clone()
         })
-        
     }
 }
 
 impl std::convert::Into<Value> for &Scratchpad {
     fn into(self) -> Value {
-        Value::Object(map!{
+        Value::Object(map! {
             "Target" => Value::Object(map!{
                 "Name" => Value::String(self.get_name()),
                 "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
@@ -134,7 +128,6 @@ impl std::convert::Into<Value> for &Scratchpad {
             "Repo" => Value::NoValue,
             "Service" => Value::NoValue
         })
-        
     }
 }
 
@@ -147,69 +140,105 @@ mod tests {
     fn render_basic_repo() {
         let cfg = Config::default();
         let repo = Repo::new(
-            "github.com/sierrasoftworks/git-tool", 
-            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"));
+            "github.com/sierrasoftworks/git-tool",
+            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
+        );
 
         let context = repo_context(&cfg, &repo);
 
-        assert_eq!(render("{{ .Repo.Name }}", context.clone()).unwrap(), "git-tool");
-        assert_eq!(render("{{ .Repo.FullName }}", context.clone()).unwrap(), "sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Repo.Namespace }}", context.clone()).unwrap(), "sierrasoftworks");
-        assert_eq!(render("{{ .Repo.Domain }}", context.clone()).unwrap(), "github.com");
-        assert_eq!(render("{{ .Repo.Path }}", context.clone()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Repo.Website }}", context.clone()).unwrap(), "https://github.com/sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Repo.GitURL }}", context.clone()).unwrap(), "git@github.com:sierrasoftworks/git-tool.git");
-        assert_eq!(render("{{ .Repo.HttpURL }}", context.clone()).unwrap(), "https://github.com/sierrasoftworks/git-tool.git");
+        assert_eq!(
+            render("{{ .Repo.Name }}", context.clone()).unwrap(),
+            "git-tool"
+        );
+        assert_eq!(
+            render("{{ .Repo.FullName }}", context.clone()).unwrap(),
+            "sierrasoftworks/git-tool"
+        );
+        assert_eq!(
+            render("{{ .Repo.Namespace }}", context.clone()).unwrap(),
+            "sierrasoftworks"
+        );
+        assert_eq!(
+            render("{{ .Repo.Domain }}", context.clone()).unwrap(),
+            "github.com"
+        );
+        assert_eq!(
+            render("{{ .Repo.Path }}", context.clone()).unwrap(),
+            "/test/github.com/sierrasoftworks/git-tool"
+        );
+        assert_eq!(
+            render("{{ .Repo.Website }}", context.clone()).unwrap(),
+            "https://github.com/sierrasoftworks/git-tool"
+        );
+        assert_eq!(
+            render("{{ .Repo.GitURL }}", context.clone()).unwrap(),
+            "git@github.com:sierrasoftworks/git-tool.git"
+        );
+        assert_eq!(
+            render("{{ .Repo.HttpURL }}", context.clone()).unwrap(),
+            "https://github.com/sierrasoftworks/git-tool.git"
+        );
 
-        assert_eq!(render("{{ .Target.Name }}", context.clone()).unwrap(), "sierrasoftworks/git-tool");
-        assert_eq!(render("{{ .Target.Path }}", context.clone()).unwrap(), "/test/github.com/sierrasoftworks/git-tool");
+        assert_eq!(
+            render("{{ .Target.Name }}", context.clone()).unwrap(),
+            "sierrasoftworks/git-tool"
+        );
+        assert_eq!(
+            render("{{ .Target.Path }}", context.clone()).unwrap(),
+            "/test/github.com/sierrasoftworks/git-tool"
+        );
 
-        assert_eq!(render("{{ .Service.Domain }}", context.clone()).unwrap(), "github.com");
-        assert_eq!(render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(), "github.com");
+        assert_eq!(
+            render("{{ .Service.Domain }}", context.clone()).unwrap(),
+            "github.com"
+        );
+        assert_eq!(
+            render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(),
+            "github.com"
+        );
     }
 
     #[test]
     fn render_basic_scratchpad() {
-        let scratch = Scratchpad::new(
-            "2020w07", 
-            PathBuf::from("/test/scratch/2020w07"));
+        let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
-        assert_eq!(render("{{ .Target.Name }}", (&scratch).into()).unwrap(), "2020w07");
-        assert_eq!(render("{{ .Target.Path }}", (&scratch).into()).unwrap(), "/test/scratch/2020w07");
+        assert_eq!(
+            render("{{ .Target.Name }}", (&scratch).into()).unwrap(),
+            "2020w07"
+        );
+        assert_eq!(
+            render("{{ .Target.Path }}", (&scratch).into()).unwrap(),
+            "/test/scratch/2020w07"
+        );
     }
 
     #[test]
     fn render_advanced_repo() {
         let repo = Repo::new(
-            "github.com/sierrasoftworks/git-tool", 
-            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"));
+            "github.com/sierrasoftworks/git-tool",
+            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
+        );
 
         assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&repo).into()).unwrap(), "github.com/sierrasoftworks/git-tool");
     }
 
     #[test]
     fn render_advanced_scratchpad() {
-        let scratch = Scratchpad::new(
-            "2020w07", 
-            PathBuf::from("/test/scratch/2020w07"));
+        let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
         assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&scratch).into()).unwrap(), "2020w07");
     }
 
     #[test]
     fn render_invalid_syntax() {
-        let scratch = Scratchpad::new(
-            "2020w07", 
-            PathBuf::from("/test/scratch/2020w07"));
+        let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
         render("{{ .Target.Name", (&scratch).into()).unwrap_err();
     }
 
     #[test]
     fn render_invalid_field() {
-        let scratch = Scratchpad::new(
-            "2020w07", 
-            PathBuf::from("/test/scratch/2020w07"));
+        let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
         render("{{ .Target.UnknownField }}", (&scratch).into()).unwrap_err();
     }

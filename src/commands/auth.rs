@@ -1,9 +1,7 @@
 use super::*;
 use clap::{Arg, SubCommand};
 
-pub struct AuthCommand {
-
-}
+pub struct AuthCommand {}
 
 impl Command for AuthCommand {
     fn name(&self) -> String {
@@ -29,11 +27,16 @@ impl Command for AuthCommand {
     }
 }
 
-
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for AuthCommand {
-    async fn run<'a>(&self, core: &C, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where C: Core {
+    async fn run<'a>(
+        &self,
+        core: &C,
+        matches: &clap::ArgMatches<'a>,
+    ) -> Result<i32, crate::core::Error>
+    where
+        C: Core,
+    {
         let service = matches.value_of("service").ok_or(errors::user(
             "You have not provided the name of the service you wish to authenticate.",
             "Please provide the name of the service when running this command: `git-tool auth github.com`."))?;
@@ -62,12 +65,11 @@ impl<C: Core> CommandRunnable<C> for AuthCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_store() {
-        
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
@@ -76,42 +78,39 @@ mod tests {
             .build();
 
         assert!(core.keychain().get_token("github.com").is_err());
-        
-        let cmd = AuthCommand{};
-        let args = cmd.app().get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
+
+        let cmd = AuthCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {
                 assert_eq!(core.keychain().get_token("github.com").unwrap(), "12345");
-            },
-            Err(err) => {
-                panic!(err.message())
             }
+            Err(err) => panic!(err.message()),
         }
     }
 
     #[tokio::test]
     async fn run_delete() {
-        
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
-            .with_mock_keychain(|k| {
-                k.set_token("github.com", "example").unwrap()
-            })
+            .with_mock_keychain(|k| k.set_token("github.com", "example").unwrap())
             .build();
 
         assert!(core.keychain().get_token("github.com").is_ok());
-        
-        let cmd = AuthCommand{};
-        let args = cmd.app().get_matches_from(vec!["auth", "github.com", "--delete"]);
+
+        let cmd = AuthCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["auth", "github.com", "--delete"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {
                 assert!(core.keychain().get_token("github.com").is_err());
-            },
-            Err(err) => {
-                panic!(err.message())
             }
+            Err(err) => panic!(err.message()),
         }
     }
 }

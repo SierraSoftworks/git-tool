@@ -1,4 +1,4 @@
-use super::{Error, system_with_internal};
+use super::{system_with_internal, Error};
 
 impl std::convert::From<base64::DecodeError> for Error {
     fn from(err: base64::DecodeError) -> Self {

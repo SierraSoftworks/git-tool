@@ -1,5 +1,5 @@
-use gtmpl::Value;
 use super::Config;
+use gtmpl::Value;
 
 pub trait Target {
     fn get_name(&self) -> String;

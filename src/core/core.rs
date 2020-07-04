@@ -129,7 +129,7 @@ where
     R: Resolver,
     K: KeyChain,
     O: Output,
-    HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static
+    HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     pub fn build(self) -> DefaultCore<K, L, R, O, HC> {
         DefaultCore {

@@ -1,10 +1,8 @@
 use super::*;
+use crate::update::{GitHubSource, Release, UpdateManager};
 use clap::{Arg, SubCommand};
-use crate::{update::{GitHubSource, UpdateManager, Release}};
 
-pub struct UpdateCommand {
-
-}
+pub struct UpdateCommand {}
 
 impl Command for UpdateCommand {
     fn name(&self) -> String {
@@ -31,8 +29,14 @@ impl Command for UpdateCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for UpdateCommand {
-    async fn run<'a>(&self, core: &C, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where C: Core {
+    async fn run<'a>(
+        &self,
+        core: &C,
+        matches: &clap::ArgMatches<'a>,
+    ) -> Result<i32, crate::core::Error>
+    where
+        C: Core,
+    {
         let mut output = core.output().writer();
 
         let current_version: semver::Version = env!("CARGO_PKG_VERSION").parse().map_err(|err| errors::system_with_internal(
@@ -53,10 +57,11 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
                 writeln!(output, "{} {}", style, release.id)?;
             }
 
-            return Ok(0)
+            return Ok(0);
         }
 
-        let mut target_release = Release::get_latest(releases.iter().filter(|r| r.version > current_version));
+        let mut target_release =
+            Release::get_latest(releases.iter().filter(|r| r.version > current_version));
 
         if let Some(target_version) = matches.value_of("version") {
             target_release = releases.iter().find(|r| r.id == target_version);
@@ -85,7 +90,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         match manager.get_releases().await {
             Ok(releases) => {
                 completer.offer_many(releases.iter().map(|r| &r.id));
-            },
+            }
             _ => {}
         }
     }
@@ -93,29 +98,29 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_list() {
-        
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = UpdateCommand{};
+
+        let cmd = UpdateCommand {};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("  v1.5.6\n"), "the output should contain a list of versions");
+        assert!(
+            output.contains("  v1.5.6\n"),
+            "the output should contain a list of versions"
+        );
     }
 }

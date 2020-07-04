@@ -1,12 +1,12 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct App {
     name: String,
     command: String,
-    #[serde(default, skip_serializing_if="Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     args: Vec<String>,
-    #[serde(default, skip_serializing_if="Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     environment: Vec<String>,
 }
 
@@ -18,21 +18,21 @@ impl App {
     pub fn get_name(&self) -> &str {
         self.name.as_str()
     }
-    
+
     pub fn get_command(&self) -> &str {
         self.command.as_str()
     }
-    
+
     pub fn get_args(&self) -> Vec<String> {
         self.args.clone()
     }
-    
+
     pub fn get_environment(&self) -> Vec<String> {
         self.environment.clone()
     }
 }
 
-pub struct AppBuilder{
+pub struct AppBuilder {
     name: String,
     command: String,
     args: Vec<String>,
@@ -45,7 +45,7 @@ impl Default for AppBuilder {
             name: Default::default(),
             command: Default::default(),
             args: Default::default(),
-            environment: Default::default()
+            environment: Default::default(),
         }
     }
 }

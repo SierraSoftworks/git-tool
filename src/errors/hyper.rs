@@ -1,7 +1,7 @@
-use super::{Error, system_with_internal, user, user_with_internal};
-use std::{fmt::Debug, convert};
+use super::{system_with_internal, user, user_with_internal, Error};
 use http::uri::InvalidUri;
 use hyper::StatusCode;
+use std::{convert, fmt::Debug};
 
 impl convert::From<InvalidUri> for Error {
     fn from(err: InvalidUri) -> Self {
@@ -25,8 +25,7 @@ impl convert::From<hyper::Error> for Error {
                 "We timed out making a web request.",
                 "This is likely due to a problem with the remote server or your internet connection, please try again later and report the problem to us on GitHub if the issue persists.", 
                 err)
-        }
-        else {
+        } else {
             system_with_internal(
                 "An internal error occurred which we could not recover from.",
                 "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.", 
@@ -36,7 +35,9 @@ impl convert::From<hyper::Error> for Error {
 }
 
 impl<T> convert::From<hyper::Response<T>> for Error
-    where T : Debug {
+where
+    T: Debug,
+{
     fn from(resp: hyper::Response<T>) -> Self {
         match resp.status() {
             StatusCode::NOT_FOUND => user(
@@ -64,11 +65,15 @@ pub struct HyperResponseError {
 
 impl HyperResponseError {
     pub async fn with_body<T>(resp: hyper::Response<T>) -> Self
-    where T : hyper::body::HttpBody
+    where
+        T: hyper::body::HttpBody,
     {
         Self {
             status_code: resp.status(),
-            body: hyper::body::to_bytes(resp.into_body()).await.ok().and_then(|data| String::from_utf8(data.to_vec()).ok())
+            body: hyper::body::to_bytes(resp.into_body())
+                .await
+                .ok()
+                .and_then(|data| String::from_utf8(data.to_vec()).ok()),
         }
     }
 }
@@ -77,7 +82,7 @@ impl<T> From<hyper::Response<T>> for HyperResponseError {
     fn from(resp: hyper::Response<T>) -> Self {
         Self {
             status_code: resp.status(),
-            body: None
+            body: None,
         }
     }
 }
@@ -85,13 +90,22 @@ impl<T> From<hyper::Response<T>> for HyperResponseError {
 impl std::fmt::Display for HyperResponseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(body) = self.body.clone() {
-            write!(f, "HTTP {} {}\n{}", self.status_code.as_u16(), self.status_code.canonical_reason().unwrap_or_default(), body)
+            write!(
+                f,
+                "HTTP {} {}\n{}",
+                self.status_code.as_u16(),
+                self.status_code.canonical_reason().unwrap_or_default(),
+                body
+            )
         } else {
-            write!(f, "HTTP {} {}", self.status_code.as_u16(), self.status_code.canonical_reason().unwrap_or_default())
+            write!(
+                f,
+                "HTTP {} {}",
+                self.status_code.as_u16(),
+                self.status_code.canonical_reason().unwrap_or_default()
+            )
         }
     }
 }
 
-impl std::error::Error for HyperResponseError {
-
-}
+impl std::error::Error for HyperResponseError {}

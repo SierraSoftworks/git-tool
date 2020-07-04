@@ -1,9 +1,7 @@
 use super::*;
 use clap::SubCommand;
 
-pub struct AppsCommand {
-
-}
+pub struct AppsCommand {}
 
 impl Command for AppsCommand {
     fn name(&self) -> String {
@@ -17,10 +15,13 @@ impl Command for AppsCommand {
     }
 }
 
-
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for AppsCommand {
-    async fn run<'a>(&self, core: &C, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+    async fn run<'a>(
+        &self,
+        core: &C,
+        _matches: &clap::ArgMatches<'a>,
+    ) -> Result<i32, crate::core::Error> {
         for app in core.config().get_apps() {
             writeln!(core.output().writer(), "{}", app.get_name())?;
         }
@@ -28,35 +29,34 @@ impl<C: Core> CommandRunnable<C> for AppsCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {
-        
-    }
+    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {}
 }
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
-        
+
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = AppsCommand{};
+
+        let cmd = AppsCommand {};
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("shell"), "the output should contain the default app");
+        assert!(
+            output.contains("shell"),
+            "the output should contain the default app"
+        );
     }
 }

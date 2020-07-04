@@ -11,11 +11,7 @@ impl Default for CreateRemote {
 
 #[async_trait::async_trait]
 impl<C: Core> Task<C> for CreateRemote {
-    async fn apply_repo(
-        &self,
-        core: &C,
-        repo: &core::Repo,
-    ) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         if !core.config().get_features().create_remote() {
             return Ok(());
         }
@@ -48,7 +44,7 @@ impl<C: Core> Task<C> for CreateRemote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Target, KeyChain, Config};
+    use crate::core::{Config, KeyChain, Target};
     use tempdir::TempDir;
 
     #[tokio::test]
@@ -64,7 +60,9 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
-            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
+            .with_http_connector(
+                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
+            )
             .build();
         CreateRemote {}.apply_repo(&core, &repo).await.unwrap();
     }
@@ -79,7 +77,9 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
-            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
+            .with_http_connector(
+                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
+            )
             .build();
 
         let task = CreateRemote {};

@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
-use super::{Error, Repo, templates};
+use super::{templates, Error, Repo};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Service {
@@ -38,7 +38,7 @@ impl Service {
     }
 }
 
-pub struct ServiceBuilder{
+pub struct ServiceBuilder {
     domain: String,
     website: String,
     http_url: String,
@@ -124,8 +124,8 @@ impl std::convert::From<&mut ServiceBuilder> for Service {
 
 #[cfg(test)]
 mod tests {
-    use super::{Service, Repo};
-    use std::{path::PathBuf};
+    use super::{Repo, Service};
+    use std::path::PathBuf;
 
     #[test]
     fn service_builder() {
@@ -140,10 +140,22 @@ mod tests {
         assert_eq!(svc.get_domain(), "github.com");
         assert_eq!(svc.get_pattern(), "*/*");
 
-        let repo = Repo::new("github.com/sierrasoftworks/git-tool", PathBuf::from("/test"));
+        let repo = Repo::new(
+            "github.com/sierrasoftworks/git-tool",
+            PathBuf::from("/test"),
+        );
 
-        assert_eq!(svc.get_git_url(&repo).unwrap(), "git@github.com/sierrasoftworks/git-tool.git");
-        assert_eq!(svc.get_http_url(&repo).unwrap(), "https://github.com/sierrasoftworks/git-tool.git");
-        assert_eq!(svc.get_website(&repo).unwrap(), "https://github.com/sierrasoftworks/git-tool");
+        assert_eq!(
+            svc.get_git_url(&repo).unwrap(),
+            "git@github.com/sierrasoftworks/git-tool.git"
+        );
+        assert_eq!(
+            svc.get_http_url(&repo).unwrap(),
+            "https://github.com/sierrasoftworks/git-tool.git"
+        );
+        assert_eq!(
+            svc.get_website(&repo).unwrap(),
+            "https://github.com/sierrasoftworks/git-tool"
+        );
     }
 }

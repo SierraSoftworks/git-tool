@@ -3,7 +3,8 @@ extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
-#[cfg(test)] #[macro_use]
+#[cfg(test)]
+#[macro_use]
 extern crate yup_hyper_mock as hyper_mock;
 extern crate keyring;
 #[macro_use]

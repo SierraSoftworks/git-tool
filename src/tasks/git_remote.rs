@@ -1,5 +1,5 @@
 use super::*;
-use crate::{errors, core::Target, git};
+use crate::{core::Target, errors, git};
 
 pub struct GitRemote {
     pub name: String,
@@ -8,7 +8,7 @@ pub struct GitRemote {
 impl Default for GitRemote {
     fn default() -> Self {
         Self {
-            name: "origin".into()
+            name: "origin".into(),
         }
     }
 }
@@ -22,12 +22,20 @@ impl<C: Core> Task<C> for GitRemote {
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
         )?;
 
-        let url = if core.config().get_features().use_http_transport() { service.get_http_url(repo)? } else { service.get_git_url(repo)? };
+        let url = if core.config().get_features().use_http_transport() {
+            service.get_http_url(repo)?
+        } else {
+            service.get_git_url(repo)?
+        };
 
         git::git_remote_add(&repo.get_path(), &self.name, &url).await
     }
 
-    async fn apply_scratchpad(&self, _core: &C, _scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(
+        &self,
+        _core: &C,
+        _scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error> {
         Ok(())
     }
 }
@@ -43,34 +51,36 @@ mod tests {
     async fn test_repo() {
         let temp = TempDir::new("gt-tasks-remote").unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote", 
-            temp.path().join("repo").into());
+            "github.com/sierrasoftworks/test-git-remote",
+            temp.path().join("repo").into(),
+        );
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
-        
+
         sequence![
-            GitInit{},
-            GitRemote{
+            GitInit {},
+            GitRemote {
                 name: "origin".into()
             }
-        ].apply_repo(&core, &repo).await.unwrap();
+        ]
+        .apply_repo(&core, &repo)
+        .await
+        .unwrap();
         assert!(repo.valid());
     }
 
     #[tokio::test]
     async fn test_scratch() {
         let temp = TempDir::new("gt-tasks-remote").unwrap();
-        let scratch = core::Scratchpad::new(
-            "2019w15", 
-            temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = GitRemote{
+        let task = GitRemote {
             name: "origin".into(),
         };
 

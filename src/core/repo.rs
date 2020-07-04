@@ -1,6 +1,6 @@
-use std::{path};
-pub use super::{Config, Target, templates::repo_context};
+pub use super::{templates::repo_context, Config, Target};
 use gtmpl::Value;
+use std::path;
 
 #[derive(Debug, Clone)]
 pub struct Repo {
@@ -39,8 +39,8 @@ impl Repo {
         Self {
             domain: parts[0].to_string(),
             namespace: parts[1..parts.len() - 1].join("/"),
-            name: parts[parts.len()-1].to_string(),
-            path
+            name: parts[parts.len() - 1].to_string(),
+            path,
         }
     }
 

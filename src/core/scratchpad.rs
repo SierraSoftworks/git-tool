@@ -1,6 +1,6 @@
-use std::path;
 use super::{Config, Target};
 use gtmpl::Value;
+use std::path;
 
 #[derive(Debug, Clone)]
 pub struct Scratchpad {
@@ -30,7 +30,7 @@ impl Scratchpad {
     pub fn new(full_name: &str, path: path::PathBuf) -> Self {
         Self {
             full_name: full_name.to_string(),
-            path
+            path,
         }
     }
 }

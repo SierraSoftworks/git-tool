@@ -1,9 +1,9 @@
 use crate::search::matches;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 
 pub struct Completer {
     filter: Arc<String>,
-    output: Arc<Mutex<dyn std::io::Write + Send>>
+    output: Arc<Mutex<dyn std::io::Write + Send>>,
 }
 
 impl Completer {
@@ -14,7 +14,7 @@ impl Completer {
     pub fn new_for(filter: &str, output: Arc<Mutex<dyn std::io::Write + Send>>) -> Self {
         Self {
             filter: Arc::new(filter.to_string()),
-            output: output
+            output: output,
         }
     }
 
@@ -33,7 +33,9 @@ impl Completer {
     }
 
     pub fn offer_many<S, T>(&self, completions: S)
-    where S: IntoIterator<Item = T>, T: Into<String>
+    where
+        S: IntoIterator<Item = T>,
+        T: Into<String>,
     {
         for item in completions {
             self.offer(&item.into());

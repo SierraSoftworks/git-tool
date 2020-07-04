@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 fn default_as_true() -> bool {
     true
@@ -22,7 +22,7 @@ impl Default for Features {
             native_clone: false,
             create_remote: true,
             http_transport: false,
-            create_remote_private: true
+            create_remote_private: true,
         }
     }
 }
@@ -33,7 +33,7 @@ impl Features {
         FeaturesBuilder {
             create_remote: true,
             create_remote_private: true,
-            http_transport: false
+            http_transport: false,
         }
     }
 
@@ -63,7 +63,7 @@ impl FeaturesBuilder {
         Self {
             create_remote: enabled,
             create_remote_private: self.create_remote_private,
-            http_transport: self.http_transport
+            http_transport: self.http_transport,
         }
     }
 
@@ -71,7 +71,7 @@ impl FeaturesBuilder {
         Self {
             create_remote: self.create_remote,
             create_remote_private: self.create_remote_private,
-            http_transport: enabled
+            http_transport: enabled,
         }
     }
 
@@ -80,7 +80,7 @@ impl FeaturesBuilder {
             create_remote: self.create_remote,
             http_transport: self.http_transport,
             native_clone: true,
-            create_remote_private: self.create_remote_private
+            create_remote_private: self.create_remote_private,
         }
     }
 }

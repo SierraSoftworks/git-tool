@@ -1,8 +1,11 @@
 use super::*;
-use std::{process::Command, path::{Path, PathBuf}};
 use crate::errors;
 use itertools::Itertools;
 use std::time::Duration;
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -10,15 +13,19 @@ use std::os::windows::process::CommandExt;
 use windows::*;
 
 pub struct UpdateManager<S = super::github::GitHubSource>
-where S: Source {
+where
+    S: Source,
+{
     pub target_application: PathBuf,
-    
+
     pub variant: ReleaseVariant,
     pub source: S,
 }
 
 impl<S> UpdateManager<S>
-where S: Source {
+where
+    S: Source,
+{
     pub async fn get_releases(&self) -> Result<Vec<Release>, errors::Error> {
         self.source.get_releases().await
     }
@@ -27,21 +34,27 @@ where S: Source {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
             temporary_application: Some(self.get_temp_app_path(release)),
-            phase: UpdatePhase::Prepare
+            phase: UpdatePhase::Prepare,
         };
 
         let app = state.temporary_application.clone().ok_or(errors::system(
             "A temporary application path was not provided and the update cannot proceed (prepare -> replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
-        
+
         let variant = release.get_variant(&self.variant).ok_or(errors::system(
             &format!("Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
             "Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."))?;
 
         {
-            info!("Downloading release binary for {} to temporary location ({}).", release.version, app.display());
+            info!(
+                "Downloading release binary for {} to temporary location ({}).",
+                release.version,
+                app.display()
+            );
             let mut app_file = std::fs::File::create(&app)?;
-            self.source.get_binary(release, variant, &mut app_file).await?;
+            self.source
+                .get_binary(release, variant, &mut app_file)
+                .await?;
         }
 
         self.resume(&state).await
@@ -52,7 +65,7 @@ where S: Source {
             UpdatePhase::NoUpdate => Ok(false),
             UpdatePhase::Prepare => self.prepare(state).await,
             UpdatePhase::Replace => self.replace(state).await,
-            UpdatePhase::Cleanup => self.cleanup(state).await
+            UpdatePhase::Cleanup => self.cleanup(state).await,
         }
     }
 
@@ -61,7 +74,7 @@ where S: Source {
         let update_source = state.temporary_application.clone().ok_or(errors::system(
             "Could not launch the new application version to continue the update process (prepare -> replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
-        
+
         info!("Launching temporary release binary to perform 'replace' phase of update.");
         self.launch(&update_source, &next_state)?;
 
@@ -100,8 +113,7 @@ where S: Source {
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
         let state_json = serde_json::to_string(state)?;
         let mut cmd = Command::new(app_path);
-        cmd
-            .arg("--update-resume-internal")
+        cmd.arg("--update-resume-internal")
             .arg(&state_json)
             .arg("update")
             .arg("--state")
@@ -126,10 +138,8 @@ where S: Source {
 
             match tokio::fs::remove_file(path).await {
                 Err(e) if retries < 0 => return Err(e.into()),
-                Ok(_) => {
-                    return Ok(())
-                },
-                _ => tokio::time::delay_for(Duration::from_millis(500)).await
+                Ok(_) => return Ok(()),
+                _ => tokio::time::delay_for(Duration::from_millis(500)).await,
             }
         }
 
@@ -143,10 +153,8 @@ where S: Source {
             retries -= 1;
             match tokio::fs::copy(from, to).await {
                 Err(e) if retries < 0 => return Err(e.into()),
-                Ok(_) => {
-                    return Ok(())
-                },
-                _ => tokio::time::delay_for(Duration::from_millis(500)).await
+                Ok(_) => return Ok(()),
+                _ => tokio::time::delay_for(Duration::from_millis(500)).await,
             }
         }
 
@@ -154,18 +162,28 @@ where S: Source {
     }
 
     fn get_temp_app_path(&self, release: &Release) -> PathBuf {
-        let file_name = format!("git-tool-update-{}{}", release.id, self.target_application.extension().and_then(|e| e.to_str()).map(|e| ".".to_string() + e).unwrap_or(if cfg!(windows) { ".exe" } else { "" }.to_string()));
+        let file_name = format!(
+            "git-tool-update-{}{}",
+            release.id,
+            self.target_application
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| ".".to_string() + e)
+                .unwrap_or(if cfg!(windows) { ".exe" } else { "" }.to_string())
+        );
         std::env::temp_dir().join(file_name)
     }
 }
 
 impl<S> Default for UpdateManager<S>
-where S: Source {
+where
+    S: Source,
+{
     fn default() -> Self {
         Self {
             target_application: PathBuf::from(std::env::args().nth(0).unwrap_or_default()),
             source: S::default(),
-            variant: ReleaseVariant::default()
+            variant: ReleaseVariant::default(),
         }
     }
 }

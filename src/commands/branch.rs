@@ -1,8 +1,8 @@
 use super::super::errors;
 use super::*;
 use crate::core::Target;
-use crate::tasks::*;
 use crate::git;
+use crate::tasks::*;
 use clap::{App, Arg, SubCommand};
 
 pub struct BranchCommand {}
@@ -31,11 +31,7 @@ impl Command for BranchCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for BranchCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &ArgMatches<'a>,
-    ) -> Result<i32, errors::Error> {
+    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
@@ -60,12 +56,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(
-        &self,
-        core: &C,
-        completer: &Completer,
-        _matches: &ArgMatches<'a>,
-    ) {
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);

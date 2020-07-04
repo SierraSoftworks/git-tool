@@ -1,23 +1,31 @@
 use super::*;
 use crate::errors;
-use serde::Deserialize;
 use http::Uri;
-
+use serde::Deserialize;
 
 pub struct GitHubRegistry;
 
 #[async_trait::async_trait]
 impl<C: Core> Registry<C> for GitHubRegistry {
     async fn get_entries(&self, core: &C) -> Result<Vec<String>, Error> {
-        let uri: Uri = format!("https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true").parse()?;
+        let uri: Uri = format!(
+            "https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true"
+        )
+        .parse()?;
 
         let req = hyper::Request::get(uri)
-            .header("User-Agent", "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"))
+            .header(
+                "User-Agent",
+                "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
+            )
             .body(hyper::Body::empty())
-            .map_err(|e| errors::system_with_internal(
-                "Unable to construct web request for Git-Tool registry entries.",
-                "Please report this error to us by opening a ticket in GitHub.",
-                e))?;
+            .map_err(|e| {
+                errors::system_with_internal(
+                    "Unable to construct web request for Git-Tool registry entries.",
+                    "Please report this error to us by opening a ticket in GitHub.",
+                    e,
+                )
+            })?;
 
         let resp = core.http_client().request(req).await?;
 
@@ -32,7 +40,10 @@ impl<C: Core> Registry<C> for GitHubRegistry {
                 let suffix = ".yaml";
 
                 for node in tree.tree {
-                    if node.node_type == "blob" && node.path.starts_with(prefix) && node.path.ends_with(suffix) {
+                    if node.node_type == "blob"
+                        && node.path.starts_with(prefix)
+                        && node.path.ends_with(suffix)
+                    {
                         let len = node.path.len();
                         let name: String = node.path[prefix.len()..(len - suffix.len())].into();
                         entries.push(name);
@@ -40,12 +51,11 @@ impl<C: Core> Registry<C> for GitHubRegistry {
                 }
 
                 Ok(entries)
-            },
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                Err(errors::user(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again."))
-            },
+            }
+            http::StatusCode::TOO_MANY_REQUESTS => Err(errors::user(
+                "GitHub has rate limited requests from your IP address.",
+                "Please wait until GitHub removes this rate limit before trying again.",
+            )),
             status => {
                 let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
@@ -57,7 +67,11 @@ impl<C: Core> Registry<C> for GitHubRegistry {
     }
 
     async fn get_entry(&self, core: &C, id: &str) -> Result<Entry, Error> {
-        let uri = format!("https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{}.yaml", id).parse()?;
+        let uri = format!(
+            "https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{}.yaml",
+            id
+        )
+        .parse()?;
         let resp = core.http_client().get(uri).await?;
 
         match resp.status() {
@@ -90,7 +104,7 @@ impl<C: Core> Registry<C> for GitHubRegistry {
 #[derive(Debug, Deserialize, Clone)]
 struct GitHubTree {
     pub tree: Vec<GitHubTreeNode>,
-    pub truncated: bool
+    pub truncated: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -113,7 +127,7 @@ mod tests {
         assert_ne!(entries.len(), 0);
         assert!(entries.iter().any(|i| i == "apps/bash"));
     }
-    
+
     #[tokio::test]
     async fn get_entry() {
         let core = CoreBuilder::default().build();

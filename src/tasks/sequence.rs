@@ -2,14 +2,12 @@ use super::*;
 use std::sync::Arc;
 
 pub struct Sequence<C: Core> {
-    tasks: Vec<Arc<dyn Task<C> + Send + Sync>>
+    tasks: Vec<Arc<dyn Task<C> + Send + Sync>>,
 }
 
 impl<C: Core> Sequence<C> {
-    pub fn new(tasks: Vec<Arc<dyn Task<C> + Send + Sync>>) -> Self{
-        Self {
-            tasks
-        }
+    pub fn new(tasks: Vec<Arc<dyn Task<C> + Send + Sync>>) -> Self {
+        Self { tasks }
     }
 }
 
@@ -23,7 +21,11 @@ impl<C: Core> Task<C> for Sequence<C> {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(
+        &self,
+        core: &C,
+        scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_scratchpad(core, scratch).await?;
         }
@@ -34,9 +36,9 @@ impl<C: Core> Task<C> for Sequence<C> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::TestTask;
     use super::*;
     use crate::core::*;
-    use super::super::TestTask;
 
     #[tokio::test]
     async fn test_empty_sequence() {
@@ -55,10 +57,7 @@ mod tests {
     async fn test_repo() {
         let task1 = Arc::new(TestTask::default());
         let task2 = Arc::new(TestTask::default());
-        let seq = Sequence::new(vec![
-            task1.clone(),
-            task2.clone()
-        ]);
+        let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let repo = get_repo();
         let core = core::CoreBuilder::default()
@@ -78,10 +77,7 @@ mod tests {
     async fn test_scratchpad() {
         let task1 = Arc::new(TestTask::default());
         let task2 = Arc::new(TestTask::default());
-        let seq = Sequence::new(vec![
-            task1.clone(),
-            task2.clone()
-        ]);
+        let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let scratch = get_scratch();
         let core = core::CoreBuilder::default()
@@ -98,7 +94,10 @@ mod tests {
     }
 
     fn get_repo() -> core::Repo {
-        core::Repo::new("github.com/sierrasoftworks/git-tool", std::path::PathBuf::from("/test/github.com/sierrasoftworks/git-tool"))
+        core::Repo::new(
+            "github.com/sierrasoftworks/git-tool",
+            std::path::PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
+        )
     }
 
     fn get_scratch() -> core::Scratchpad {

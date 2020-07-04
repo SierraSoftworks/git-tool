@@ -1,10 +1,8 @@
 use super::*;
-use clap::{Arg, SubCommand};
 use crate::completion::get_shells;
+use clap::{Arg, SubCommand};
 
-pub struct ShellInitCommand {
-
-}
+pub struct ShellInitCommand {}
 
 impl Command for ShellInitCommand {
     fn name(&self) -> String {
@@ -19,12 +17,16 @@ impl Command for ShellInitCommand {
             .after_help("Used to configure your shell environment to ensure that it works correctly with Git-Tool, including auto-complete support.");
 
         for shell in shells {
-            cmd = cmd.subcommand(SubCommand::with_name(shell.get_name())
-                .about("prints the initialization script for this shell")
-                .arg(Arg::with_name("full")
-                    .long("full")
-                    .help("prints the full initialization script for this shell")
-                    .hidden(true)));
+            cmd = cmd.subcommand(
+                SubCommand::with_name(shell.get_name())
+                    .about("prints the initialization script for this shell")
+                    .arg(
+                        Arg::with_name("full")
+                            .long("full")
+                            .help("prints the full initialization script for this shell")
+                            .hidden(true),
+                    ),
+            );
         }
 
         cmd
@@ -33,8 +35,14 @@ impl Command for ShellInitCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ShellInitCommand {
-    async fn run<'a>(&self, core: &C, matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error>
-    where C: Core {
+    async fn run<'a>(
+        &self,
+        core: &C,
+        matches: &clap::ArgMatches<'a>,
+    ) -> Result<i32, crate::core::Error>
+    where
+        C: Core,
+    {
         let mut output = core.output().writer();
 
         match matches.subcommand() {
@@ -44,13 +52,13 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
                     &format!("The shell '{}' is not currently supported by Git-Tool.", name),
                     "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
                 ))?;
-                    
+
                 if matches.is_present("full") {
                     write!(output, "{}", shell.get_long_init())?;
                 } else {
                     write!(output, "{}", shell.get_short_init())?;
                 }
-            },
+            }
             _ => {
                 Err(errors::user(
                     "You did not provide the name of the shell you want to configure.",
@@ -69,29 +77,29 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
-        
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = ShellInitCommand{};
+
+        let cmd = ShellInitCommand {};
         let args = cmd.app().get_matches_from(vec!["shell-init", "powershell"]);
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("Invoke-Expression"), "the output should include the setup script");
+        assert!(
+            output.contains("Invoke-Expression"),
+            "the output should include the setup script"
+        );
     }
 }

@@ -31,7 +31,7 @@ impl<C: Core> CommandRunnable<C> for CompleteCommand {
         matches: &clap::ArgMatches<'a>,
     ) -> Result<i32, crate::core::Error>
     where
-        C: Core
+        C: Core,
     {
         let position: Option<usize> = matches
             .value_of("position")
@@ -51,12 +51,7 @@ impl<C: Core> CommandRunnable<C> for CompleteCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(
-        &self,
-        _core: &C,
-        completer: &Completer,
-        _matches: &ArgMatches<'a>,
-    ) {
+    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
         completer.offer("--position");
     }
 }
@@ -76,7 +71,7 @@ impl CompleteCommand {
         match position {
             Some(position) if position >= cmd.len() => {
                 cmd.extend(std::iter::repeat(' ').take(position - cmd.len()));
-            },
+            }
             Some(position) if position < cmd.len() => {
                 cmd = cmd[..position].into();
             }
@@ -159,7 +154,7 @@ impl CompleteCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{CoreBuilder, Config};
+    use super::core::{Config, CoreBuilder};
     use super::*;
     use crate::test::get_dev_dir;
     use std::sync::Mutex;
@@ -201,9 +196,18 @@ mod tests {
             Some(("git-tool apps".to_string(), "".to_string()))
         );
 
-        assert_eq!(cmd.extract_command_and_filter("gt o", Some(5)), Some(("gt o".to_string(), "".to_string())));
-        assert_eq!(cmd.extract_command_and_filter("gt o sie", Some(8)), Some(("gt o".to_string(), "sie".to_string())));
-        assert_eq!(cmd.extract_command_and_filter("gt update", Some(10)), Some(("gt update".to_string(), "".to_string())));
+        assert_eq!(
+            cmd.extract_command_and_filter("gt o", Some(5)),
+            Some(("gt o".to_string(), "".to_string()))
+        );
+        assert_eq!(
+            cmd.extract_command_and_filter("gt o sie", Some(8)),
+            Some(("gt o".to_string(), "sie".to_string()))
+        );
+        assert_eq!(
+            cmd.extract_command_and_filter("gt update", Some(10)),
+            Some(("gt update".to_string(), "".to_string()))
+        );
     }
 
     #[test]

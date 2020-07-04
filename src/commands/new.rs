@@ -1,11 +1,9 @@
-use clap::{App, SubCommand, ArgMatches, Arg};
-use super::*;
 use super::super::errors;
+use super::*;
 use crate::tasks::*;
+use clap::{App, Arg, ArgMatches, SubCommand};
 
-pub struct NewCommand {
-
-}
+pub struct NewCommand {}
 
 impl Command for NewCommand {
     fn name(&self) -> String {
@@ -20,32 +18,38 @@ impl Command for NewCommand {
             .alias("n")
             .alias("create")
             .after_help("Creates a new repository with the provided name.")
-            .arg(Arg::with_name("repo")
+            .arg(
+                Arg::with_name("repo")
                     .help("The name of the repository to create.")
-                    .index(1))
+                    .index(1),
+            )
     }
 }
 
-
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for NewCommand {    
+impl<C: Core> CommandRunnable<C> for NewCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
                 "No repository name provided for creation.",
-                "Please provide a repository name when calling this method: git-tool new my/repo"))?
+                "Please provide a repository name when calling this method: git-tool new my/repo",
+            ))?,
         };
 
         if repo.valid() {
-            return Ok(0)
+            return Ok(0);
         }
 
         let tasks = sequence![
-            GitInit{},
-            GitRemote{ name: "origin".to_string() },
-            GitCheckout{ branch: "main".to_string() },
-            CreateRemote { }
+            GitInit {},
+            GitRemote {
+                name: "origin".to_string()
+            },
+            GitCheckout {
+                branch: "main".to_string()
+            },
+            CreateRemote {}
         ];
 
         tasks.apply_repo(core, &repo).await?;
@@ -57,7 +61,11 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
         match core.resolver().get_repos() {
             Ok(repos) => {
                 let mut namespaces = std::collections::HashSet::new();
-                let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+                let default_svc = core
+                    .config()
+                    .get_default_service()
+                    .map(|s| s.get_domain())
+                    .unwrap_or_default();
 
                 for repo in repos {
                     if repo.get_domain() == default_svc {
@@ -68,7 +76,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
                 }
 
                 completer.offer_many(namespaces.iter().map(|s| s.as_str()));
-            },
+            }
             _ => {}
         }
     }
@@ -76,14 +84,16 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_partial() {
-        let cmd = NewCommand{};
+        let cmd = NewCommand {};
 
-        let args = cmd.app().get_matches_from(vec!["new", "test/new-repo-partial"]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["new", "test/new-repo-partial"]);
 
         let temp = tempdir::TempDir::new("gt-command-new").unwrap();
         let cfg = Config::for_dev_directory(temp.path());
@@ -93,10 +103,15 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
-            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
+            .with_http_connector(
+                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
+            )
             .build();
 
-        let repo = core.resolver().get_best_repo("github.com/test/new-repo-partial").unwrap();
+        let repo = core
+            .resolver()
+            .get_best_repo("github.com/test/new-repo-partial")
+            .unwrap();
         assert_eq!(repo.valid(), false);
 
         cmd.run(&core, &args).await.unwrap();
@@ -106,9 +121,11 @@ mod tests {
 
     #[tokio::test]
     async fn run_fully_qualified() {
-        let cmd = NewCommand{};
+        let cmd = NewCommand {};
 
-        let args = cmd.app().get_matches_from(vec!["new", "github.com/test/new-repo-full"]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["new", "github.com/test/new-repo-full"]);
 
         let temp = tempdir::TempDir::new("gt-command-new").unwrap();
         let cfg = Config::for_dev_directory(temp.path());
@@ -118,10 +135,15 @@ mod tests {
             .with_mock_keychain(|s| {
                 s.set_token("github.com", "test_token").unwrap();
             })
-            .with_http_connector(crate::online::service::github::mocks::NewRepoSuccessFlow::default())
+            .with_http_connector(
+                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
+            )
             .build();
 
-        let repo = core.resolver().get_best_repo("github.com/test/new-repo-full").unwrap();
+        let repo = core
+            .resolver()
+            .get_best_repo("github.com/test/new-repo-full")
+            .unwrap();
         assert_eq!(repo.valid(), false);
 
         cmd.run(&core, &args).await.unwrap();

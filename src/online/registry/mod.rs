@@ -1,15 +1,15 @@
-use serde::{Serialize, Deserialize};
 use crate::core::*;
-use std::{env::consts::OS};
+use serde::{Deserialize, Serialize};
+use std::env::consts::OS;
 
-mod github_registry;
 mod file_registry;
+mod github_registry;
 
-pub use github_registry::GitHubRegistry;
 pub use file_registry::FileRegistry;
+pub use github_registry::GitHubRegistry;
 
 #[async_trait::async_trait]
-pub trait Registry<C: Core> : Send + Sync {
+pub trait Registry<C: Core>: Send + Sync {
     async fn get_entries(&self, core: &C) -> Result<Vec<String>, Error>;
     async fn get_entry(&self, core: &C, id: &str) -> Result<Entry, Error>;
 }
@@ -28,7 +28,7 @@ pub struct EntryConfig {
     #[serde(default)]
     pub app: Option<EntryApp>,
     #[serde(default)]
-    pub service: Option<EntryService>
+    pub service: Option<EntryService>,
 }
 
 impl EntryConfig {
@@ -44,7 +44,7 @@ pub struct EntryApp {
     #[serde(default)]
     pub args: Vec<String>,
     #[serde(default)]
-    pub environment: Vec<String>
+    pub environment: Vec<String>,
 }
 
 impl Into<App> for EntryApp {
@@ -62,11 +62,11 @@ impl Into<App> for EntryApp {
 pub struct EntryService {
     pub domain: String,
     pub website: String,
-    #[serde(rename="httpUrl")]
+    #[serde(rename = "httpUrl")]
     pub http_url: String,
-    #[serde(rename="gitUrl")]
+    #[serde(rename = "gitUrl")]
     pub git_url: String,
-    pub pattern: String    
+    pub pattern: String,
 }
 
 impl Into<Service> for EntryService {
@@ -84,7 +84,7 @@ impl Into<Service> for EntryService {
 fn translate_os_name(name: &str) -> &str {
     match name {
         "macos" => "darwin",
-        _ => name
+        _ => name,
     }
 }
 
@@ -94,24 +94,40 @@ mod tests {
 
     #[test]
     fn is_compatible() {
-        assert_eq!(EntryConfig{
-            platform: "any".to_string(),
-            ..Default::default()
-        }.is_compatible(), true);
-        
-        assert_eq!(EntryConfig{
-            platform: "windows".to_string(),
-            ..Default::default()
-        }.is_compatible(), OS == "windows");
-        
-        assert_eq!(EntryConfig{
-            platform: "linux".to_string(),
-            ..Default::default()
-        }.is_compatible(), OS == "linux");
-        
-        assert_eq!(EntryConfig{
-            platform: "darwin".to_string(),
-            ..Default::default()
-        }.is_compatible(), OS == "macos");
+        assert_eq!(
+            EntryConfig {
+                platform: "any".to_string(),
+                ..Default::default()
+            }
+            .is_compatible(),
+            true
+        );
+
+        assert_eq!(
+            EntryConfig {
+                platform: "windows".to_string(),
+                ..Default::default()
+            }
+            .is_compatible(),
+            OS == "windows"
+        );
+
+        assert_eq!(
+            EntryConfig {
+                platform: "linux".to_string(),
+                ..Default::default()
+            }
+            .is_compatible(),
+            OS == "linux"
+        );
+
+        assert_eq!(
+            EntryConfig {
+                platform: "darwin".to_string(),
+                ..Default::default()
+            }
+            .is_compatible(),
+            OS == "macos"
+        );
     }
 }

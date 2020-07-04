@@ -1,12 +1,10 @@
-use clap::{App, Arg, SubCommand, ArgMatches};
+use super::async_trait;
+use super::online::gitignore;
 use super::Command;
 use super::*;
-use super::online::gitignore;
-use super::async_trait;
+use clap::{App, Arg, ArgMatches, SubCommand};
 
-pub struct IgnoreCommand {
-
-}
+pub struct IgnoreCommand {}
 
 impl Command for IgnoreCommand {
     fn name(&self) -> String {
@@ -31,7 +29,7 @@ impl Command for IgnoreCommand {
                     .index(1))
     }
 }
-    
+
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for IgnoreCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
@@ -44,17 +42,23 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
                 for lang in languages {
                     writeln!(output, "{}", lang)?;
                 }
-            },
+            }
             _ => {
                 let mut original_content: String = String::default();
 
-                let ignore_path = std::path::PathBuf::from(matches.value_of("path").unwrap_or(".gitignore"));
+                let ignore_path =
+                    std::path::PathBuf::from(matches.value_of("path").unwrap_or(".gitignore"));
 
                 if let Ok(content) = tokio::fs::read_to_string(&ignore_path).await {
                     original_content = content;
                 }
 
-                let content = gitignore::add_or_update(core, original_content.as_str(), matches.values_of("language").unwrap_or_default().collect()).await?;
+                let content = gitignore::add_or_update(
+                    core,
+                    original_content.as_str(),
+                    matches.values_of("language").unwrap_or_default().collect(),
+                )
+                .await?;
 
                 tokio::fs::write(&ignore_path, content).await?;
             }
@@ -73,8 +77,8 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
     use clap::ArgMatches;
 
     #[tokio::test]
@@ -86,16 +90,17 @@ mod tests {
             .with_mock_output()
             .build();
 
-        let cmd = IgnoreCommand{};
+        let cmd = IgnoreCommand {};
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("visualstudio"), "the ignore list should be printed");
+        assert!(
+            output.contains("visualstudio"),
+            "the ignore list should be printed"
+        );
     }
 }

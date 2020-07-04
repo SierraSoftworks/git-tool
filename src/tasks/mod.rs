@@ -25,27 +25,30 @@ mod git_init;
 mod git_remote;
 mod new_folder;
 
-pub use sequence::Sequence;
 pub use create_remote::CreateRemote;
 pub use git_checkout::GitCheckout;
 pub use git_clone::GitClone;
 pub use git_init::GitInit;
 pub use git_remote::GitRemote;
 pub use new_folder::NewFolder;
+pub use sequence::Sequence;
 
 #[async_trait]
 pub trait Task<C: Core> {
     async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error>;
-    async fn apply_scratchpad(&self, core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error>;
+    async fn apply_scratchpad(
+        &self,
+        core: &C,
+        scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error>;
 }
 
 #[cfg(test)]
 pub struct TestTask {
     ran_repo: Mutex<Option<core::Repo>>,
     ran_scratchpad: Mutex<Option<core::Scratchpad>>,
-    error: bool
+    error: bool,
 }
-
 
 #[cfg(test)]
 impl Default for TestTask {
@@ -53,7 +56,7 @@ impl Default for TestTask {
         Self {
             ran_repo: Mutex::new(None),
             ran_scratchpad: Mutex::new(None),
-            error: false
+            error: false,
         }
     }
 }
@@ -67,19 +70,31 @@ impl<C: Core> Task<C> for TestTask {
         *r = Some(repo.clone());
 
         match self.error {
-            true => Err(core::Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
-            false => Ok(())
+            true => Err(core::Error::SystemError(
+                "Mock Error".to_string(),
+                "Configure the mock to not throw an error".to_string(),
+                None,
+            )),
+            false => Ok(()),
         }
     }
 
-    async fn apply_scratchpad(&self, _core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(
+        &self,
+        _core: &C,
+        scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error> {
         let mut s = self.ran_scratchpad.lock().await;
 
         *s = Some(scratch.clone());
 
         match self.error {
-            true => Err(core::Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
-            false => Ok(())
+            true => Err(core::Error::SystemError(
+                "Mock Error".to_string(),
+                "Configure the mock to not throw an error".to_string(),
+                None,
+            )),
+            false => Ok(()),
         }
     }
 }

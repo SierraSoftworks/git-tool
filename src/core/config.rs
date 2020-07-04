@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use std::vec::Vec;
 use std::{path, sync::Arc};
 
+use super::super::errors;
 use super::app;
 use super::features;
 use super::service;
-use super::super::errors;
 use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -35,13 +35,25 @@ impl Config {
         let mut into = self.clone();
         let from = other.clone();
 
-        match from.config_file { Some(path) => into.config_file = Some(path.clone()), None => {} }
-        if from.dev_directory.components().count() > 0 { into.dev_directory = from.dev_directory.clone(); }
-        match from.scratch_directory { Some(path) => into.scratch_directory = Some(path.clone()), None => {} }
-        if !from.services.is_empty() { into.services = from.services.clone(); }
-        if !from.apps.is_empty() { into.apps = from.apps.clone(); }
+        match from.config_file {
+            Some(path) => into.config_file = Some(path.clone()),
+            None => {}
+        }
+        if from.dev_directory.components().count() > 0 {
+            into.dev_directory = from.dev_directory.clone();
+        }
+        match from.scratch_directory {
+            Some(path) => into.scratch_directory = Some(path.clone()),
+            None => {}
+        }
+        if !from.services.is_empty() {
+            into.services = from.services.clone();
+        }
+        if !from.apps.is_empty() {
+            into.apps = from.apps.clone();
+        }
         into.features = from.features;
-        
+
         for (k, v) in from.aliases.iter() {
             into.aliases.insert(k.clone(), v.clone());
         }
@@ -55,14 +67,14 @@ impl Config {
         match template.app {
             Some(app) => {
                 into.apps.push(Arc::new(app.into()));
-            },
+            }
             None => {}
         }
 
         match template.service {
             Some(svc) => {
                 into.services.push(Arc::new(svc.into()));
-            },
+            }
             None => {}
         }
 
@@ -84,10 +96,14 @@ impl Config {
 
     #[cfg(test)]
     pub fn from_str(yaml: &str) -> Result<Self, errors::Error> {
-        serde_yaml::from_str(yaml).map(|x| Config::default().extend(x)).map_err(|e| errors::user_with_internal(
+        serde_yaml::from_str(yaml)
+            .map(|x| Config::default().extend(x))
+            .map_err(|e| {
+                errors::user_with_internal(
             "We couldn't parse your configuration file.", 
             "Please make sure that the YAML in your configuration file is correctly formatted.", 
-            e))
+            e)
+            })
     }
 
     pub fn from_file(path: &path::Path) -> Result<Self, errors::Error> {
@@ -100,19 +116,27 @@ impl Config {
     }
 
     pub fn from_reader<R>(rdr: R) -> Result<Self, errors::Error>
-        where R : std::io::Read {
-        serde_yaml::from_reader(rdr).map(|x| Config::default().extend(x)).map_err(|e| errors::user_with_internal(
+    where
+        R: std::io::Read,
+    {
+        serde_yaml::from_reader(rdr)
+            .map(|x| Config::default().extend(x))
+            .map_err(|e| {
+                errors::user_with_internal(
             "We couldn't parse your configuration file.", 
             "Please make sure that the YAML in your configuration file is correctly formatted.", 
-            e))
+            e)
+            })
     }
-    
-    pub fn to_string(&self) -> Result<String, errors::Error>
-    {
-        serde_yaml::to_string(self).map_err(|e| errors::system_with_internal(
-            "We couldn't serialize your configuration to YAML.",
-            "Please report this issue on GitHub so that we can try and resolve it.",
-            e))
+
+    pub fn to_string(&self) -> Result<String, errors::Error> {
+        serde_yaml::to_string(self).map_err(|e| {
+            errors::system_with_internal(
+                "We couldn't serialize your configuration to YAML.",
+                "Please report this issue on GitHub so that we can try and resolve it.",
+                e,
+            )
+        })
     }
 
     pub fn get_config_file(&self) -> Option<path::PathBuf> {
@@ -126,7 +150,7 @@ impl Config {
     pub fn get_scratch_directory(&self) -> path::PathBuf {
         match self.scratch_directory.clone() {
             Some(dir) => dir,
-            None => self.get_dev_directory().join("scratch")
+            None => self.get_dev_directory().join("scratch"),
         }
     }
 
@@ -141,7 +165,7 @@ impl Config {
     pub fn get_app(&self, name: &str) -> Option<&app::App> {
         for app in self.apps.iter() {
             if app.get_name() == name {
-                return Some(app.as_ref())
+                return Some(app.as_ref());
             }
         }
 
@@ -157,9 +181,9 @@ impl Config {
     }
 
     pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
-        for svc in self.services.iter(){
+        for svc in self.services.iter() {
             if svc.get_domain() == domain {
-                return Some(svc.as_ref())
+                return Some(svc.as_ref());
             }
         }
 
@@ -225,30 +249,34 @@ impl Default for Config {
 #[cfg(test)]
 mod tests {
     use super::Config;
+    use crate::{
+        online::registry::{EntryApp, EntryConfig, EntryService},
+        test::get_repo_root,
+    };
     use std::path::PathBuf;
-    use crate::{test::get_repo_root, online::registry::{EntryApp, EntryConfig, EntryService}};
 
     #[test]
     fn load_from_string_basic() {
         match Config::from_str("directory: /test/dev") {
             Ok(cfg) => {
-                assert_eq!(cfg.get_dev_directory(),  PathBuf::from("/test/dev"));
-                assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/dev/scratch"));
+                assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
+                assert_eq!(
+                    cfg.get_scratch_directory(),
+                    PathBuf::from("/test/dev/scratch")
+                );
 
                 match cfg.get_app("shell") {
                     Some(app) => {
                         assert_eq!(app.get_name(), "shell");
                         assert_eq!(app.get_command(), "bash");
-                    },
-                    _ => panic!("expected that the shell app would be registered")
+                    }
+                    _ => panic!("expected that the shell app would be registered"),
                 }
-            },
-            Err(e) => {
-                panic!(e.message())
             }
+            Err(e) => panic!(e.message()),
         }
     }
-    
+
     #[test]
     fn load_from_string_with_scratchdir() {
         match Config::from_str("directory: /test/dev\nscratchpads: /test/scratch") {
@@ -257,51 +285,49 @@ mod tests {
                 assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/scratch"));
 
                 match cfg.get_service("github.com") {
-                    Some(_) => {},
-                    None => panic!("The default services should be present.")
+                    Some(_) => {}
+                    None => panic!("The default services should be present."),
                 }
-                
+
                 match cfg.get_app("shell") {
-                    Some(_) => {},
-                    None => panic!("The default apps should be present.")
+                    Some(_) => {}
+                    None => panic!("The default apps should be present."),
                 }
-            },
-            Err(e) => {
-                panic!(e.message())
             }
+            Err(e) => panic!(e.message()),
         }
     }
-    
+
     #[test]
     fn load_from_string_with_new_apps() {
-        match Config::from_str("
+        match Config::from_str(
+            "
 directory: /test/dev
 
 apps:
     - name: test-app
       command: test
-") {
+",
+        ) {
             Ok(cfg) => {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
 
                 match cfg.get_service("github.com") {
-                    Some(_) => {},
-                    None => panic!("The default services should be present.")
+                    Some(_) => {}
+                    None => panic!("The default services should be present."),
                 }
-                
+
                 match cfg.get_app("test-app") {
-                    Some(_) => {},
-                    None => panic!("The new apps should be present.")
+                    Some(_) => {}
+                    None => panic!("The new apps should be present."),
                 }
-                
+
                 match cfg.get_app("shell") {
                     Some(_) => panic!("The default apps should not be present."),
-                    None => {},
+                    None => {}
                 }
-            },
-            Err(e) => {
-                panic!(e.message())
             }
+            Err(e) => panic!(e.message()),
         }
     }
 
@@ -314,7 +340,7 @@ apps:
                 name: "test-app".to_string(),
                 command: "/bin/true".to_string(),
                 args: vec![],
-                environment: vec![]
+                environment: vec![],
             }),
             service: Some(EntryService {
                 domain: "example.com".to_string(),
@@ -322,21 +348,40 @@ apps:
                 website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}".to_string(),
                 git_url: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git".to_string(),
                 http_url: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git".to_string(),
-            })
+            }),
         });
 
-        assert!(new_cfg.get_app("test-app").is_some(), "the test-app should have been added");
-        assert!(new_cfg.get_service("example.com").is_some(), "the example service should have been registered");
+        assert!(
+            new_cfg.get_app("test-app").is_some(),
+            "the test-app should have been added"
+        );
+        assert!(
+            new_cfg.get_service("example.com").is_some(),
+            "the example service should have been registered"
+        );
     }
 
     #[test]
     fn test_load_file() {
-        let file_path = get_repo_root().join("test").join("data").join("config.valid.yml");
+        let file_path = get_repo_root()
+            .join("test")
+            .join("data")
+            .join("config.valid.yml");
         let cfg = Config::from_file(&file_path).unwrap();
 
-        assert!(cfg.get_app("make").is_some(), "the correct config file should have been loaded");
-        assert_eq!(cfg.get_alias("gt"), Some("github.com/SierraSoftworks/git-tool".to_string()), "the aliases should have been loaded");
-        assert_eq!(cfg.get_config_file(), Some(file_path), "the file path should have been populated");
-
+        assert!(
+            cfg.get_app("make").is_some(),
+            "the correct config file should have been loaded"
+        );
+        assert_eq!(
+            cfg.get_alias("gt"),
+            Some("github.com/SierraSoftworks/git-tool".to_string()),
+            "the aliases should have been loaded"
+        );
+        assert_eq!(
+            cfg.get_config_file(),
+            Some(file_path),
+            "the file path should have been populated"
+        );
     }
 }

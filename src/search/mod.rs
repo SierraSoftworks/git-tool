@@ -1,6 +1,6 @@
 pub fn matches(value: &str, sequence: &str) -> bool {
     if sequence.len() > value.len() {
-        return false
+        return false;
     }
 
     let mut seq_iter = sequence.chars().peekable();
@@ -10,14 +10,14 @@ pub fn matches(value: &str, sequence: &str) -> bool {
                 if c.to_lowercase().eq(sc.to_lowercase()) {
                     seq_iter.next();
                 }
-            },
-            None => break
+            }
+            None => break,
         }
     }
 
     match seq_iter.peek() {
         Some(_) => false,
-        None => true
+        None => true,
     }
 }
 

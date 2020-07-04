@@ -1,13 +1,18 @@
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use crate::errors;
-use std::io;
 use super::release::*;
+use crate::errors;
+use serde::{Deserialize, Serialize};
+use std::io;
+use std::path::PathBuf;
 
 #[async_trait::async_trait]
 pub trait Source: Default + Send + Sync {
     async fn get_releases(&self) -> Result<Vec<Release>, errors::Error>;
-    async fn get_binary<W: io::Write + Send>(&self, release: &Release, variant: &ReleaseVariant, into: &mut W) -> Result<(), errors::Error>;
+    async fn get_binary<W: io::Write + Send>(
+        &self,
+        release: &Release,
+        variant: &ReleaseVariant,
+        into: &mut W,
+    ) -> Result<(), errors::Error>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -35,7 +40,8 @@ impl ToString for UpdatePhase {
             UpdatePhase::Prepare => "prepare",
             UpdatePhase::Replace => "replace",
             UpdatePhase::Cleanup => "cleanup",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -55,7 +61,7 @@ impl UpdateState {
         UpdateState {
             target_application: self.target_application.clone(),
             temporary_application: self.temporary_application.clone(),
-            phase
+            phase,
         }
     }
 }
@@ -113,13 +119,24 @@ mod tests {
         let update = UpdateState {
             target_application: Some(PathBuf::from("/bin/git-tool")),
             temporary_application: Some(PathBuf::from("/tmp/git-tool-update")),
-            phase: UpdatePhase::Replace
+            phase: UpdatePhase::Replace,
         };
 
         let new_update = update.for_phase(UpdatePhase::Cleanup);
         assert_eq!(new_update.target_application, update.target_application);
-        assert_eq!(new_update.temporary_application, update.temporary_application);
-        assert_eq!(update.phase, UpdatePhase::Replace, "the old update entry should not be modified");
-        assert_eq!(new_update.phase, UpdatePhase::Cleanup, "the new update entry should have the correct phase");
+        assert_eq!(
+            new_update.temporary_application,
+            update.temporary_application
+        );
+        assert_eq!(
+            update.phase,
+            UpdatePhase::Replace,
+            "the old update entry should not be modified"
+        );
+        assert_eq!(
+            new_update.phase,
+            UpdatePhase::Cleanup,
+            "the new update entry should have the correct phase"
+        );
     }
 }

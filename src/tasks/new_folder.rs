@@ -1,4 +1,4 @@
-use super::{*, core::Target};
+use super::{core::Target, *};
 
 pub struct NewFolder {}
 
@@ -12,7 +12,11 @@ impl<C: Core> Task<C> for NewFolder {
         Ok(())
     }
 
-    async fn apply_scratchpad(&self, _core: &C, scratch: &core::Scratchpad) -> Result<(), core::Error> {
+    async fn apply_scratchpad(
+        &self,
+        _core: &C,
+        scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error> {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(path)?;
@@ -30,16 +34,14 @@ mod tests {
     #[tokio::test]
     async fn test_repo_exists() {
         let temp = TempDir::new("gt-tasks-new-folder").unwrap();
-        let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test1", 
-            temp.path().into());
+        let repo = core::Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = NewFolder{};
-        
+        let task = NewFolder {};
+
         assert_eq!(repo.get_path().exists(), true);
 
         task.apply_repo(&core, &repo).await.unwrap();
@@ -50,15 +52,16 @@ mod tests {
     async fn test_repo_new() {
         let temp = TempDir::new("gt-tasks-new-folder").unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test3", 
-            temp.path().join("repo").into());
+            "github.com/sierrasoftworks/test3",
+            temp.path().join("repo").into(),
+        );
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = NewFolder{};
-        
+        let task = NewFolder {};
+
         assert_eq!(repo.get_path().exists(), false);
 
         task.apply_repo(&core, &repo).await.unwrap();
@@ -68,16 +71,14 @@ mod tests {
     #[tokio::test]
     async fn test_scratch_exists() {
         let temp = TempDir::new("gt-tasks-new-folder").unwrap();
-        let scratch = core::Scratchpad::new(
-            "2019w15", 
-            temp.path().into());
+        let scratch = core::Scratchpad::new("2019w15", temp.path().into());
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = NewFolder{};
-        
+        let task = NewFolder {};
+
         assert_eq!(scratch.get_path().exists(), true);
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
@@ -87,16 +88,14 @@ mod tests {
     #[tokio::test]
     async fn test_scratch_new() {
         let temp = TempDir::new("gt-tasks-new-folder").unwrap();
-        let scratch = core::Scratchpad::new(
-            "2019w19", 
-            temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w19", temp.path().join("scratch").into());
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = NewFolder{};
-        
+        let task = NewFolder {};
+
         assert_eq!(scratch.get_path().exists(), false);
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();

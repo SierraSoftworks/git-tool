@@ -1,7 +1,7 @@
-use super::{Config, Scratchpad, Error, Service, Repo, errors};
-use std::env;
-use chrono::prelude::*;
+use super::{errors, Config, Error, Repo, Scratchpad, Service};
 use crate::{fs::to_native_path, search};
+use chrono::prelude::*;
+use std::env;
 use std::sync::Arc;
 
 pub trait Resolver: Send + Sync + From<Arc<Config>> {
@@ -23,9 +23,7 @@ pub struct FileSystemResolver {
 
 impl From<Arc<Config>> for FileSystemResolver {
     fn from(config: Arc<Config>) -> Self {
-        Self {
-            config
-        }
+        Self { config }
     }
 }
 
@@ -38,9 +36,7 @@ impl Resolver for FileSystemResolver {
             let dir_info = dir?;
             if dir_info.file_type()?.is_dir() {
                 if let Some(name) = dir_info.file_name().to_str() {
-                    scratchpads.push(Scratchpad::new(
-                        name, 
-                        dir_info.path().to_path_buf()));
+                    scratchpads.push(Scratchpad::new(name, dir_info.path().to_path_buf()));
                 }
             }
         }
@@ -50,8 +46,9 @@ impl Resolver for FileSystemResolver {
 
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
-            name.clone(), 
-            self.config.get_scratch_directory().join(name.clone())))
+            name.clone(),
+            self.config.get_scratch_directory().join(name.clone()),
+        ))
     }
 
     fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
@@ -74,12 +71,16 @@ impl Resolver for FileSystemResolver {
 
     fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
         let dev_dir = self.config.get_dev_directory().canonicalize()?;
-        let dir = if path.is_absolute() { path.canonicalize()? } else { dev_dir.join(path) };
-        
+        let dir = if path.is_absolute() {
+            path.canonicalize()?
+        } else {
+            dev_dir.join(path)
+        };
+
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
             return Err(errors::user(
                 "Current directory is not a valid repository.",
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))
+                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())));
         }
 
         match dir.strip_prefix(&dev_dir) {
@@ -92,7 +93,8 @@ impl Resolver for FileSystemResolver {
     }
 
     fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
-        let true_name = std::path::PathBuf::from(self.config.get_alias(name).unwrap_or(name.to_string()));
+        let true_name =
+            std::path::PathBuf::from(self.config.get_alias(name).unwrap_or(name.to_string()));
 
         match self.get_repo(&true_name) {
             Ok(repo) => return Ok(repo),
@@ -100,7 +102,10 @@ impl Resolver for FileSystemResolver {
         }
 
         let all_repos = self.get_repos()?;
-        let repos: Vec<&Repo> = all_repos.iter().filter(|r| search::matches(&(r.get_domain() + &r.get_full_name()), name)).collect();
+        let repos: Vec<&Repo> = all_repos
+            .iter()
+            .filter(|r| search::matches(&(r.get_domain() + &r.get_full_name()), name))
+            .collect();
 
         match repos.len() {
             0 => {
@@ -143,7 +148,7 @@ impl Resolver for FileSystemResolver {
         if !svc.get_pattern().split("/").all(|p| p == "*") {
             return Err(errors::user(
                 &format!("The glob pattern used for the '{}' service was invalid.", svc.get_domain()),
-                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."))
+                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
         }
 
         let path = self.config.get_dev_directory().join(svc.get_domain());
@@ -159,11 +164,14 @@ impl Resolver for FileSystemResolver {
     }
 }
 
-fn service_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::PathBuf) -> Result<&'a Service, Error> {
+fn service_from_relative_path<'a>(
+    config: &'a Config,
+    relative_path: &std::path::PathBuf,
+) -> Result<&'a Service, Error> {
     if !relative_path.is_relative() {
         return Err(errors::system(
             &format!("The path '{}' used to resolve a repo was not relative.", relative_path.display()),
-            "Please report this issue to us on GitHub, including the command you ran, so that we can troubleshoot the problem."))
+            "Please report this issue to us on GitHub, including the command you ran, so that we can troubleshoot the problem."));
     }
 
     let mut components = relative_path.components();
@@ -183,17 +191,25 @@ fn service_from_relative_path<'a>(config: &'a Config, relative_path: &std::path:
     }
 }
 
-fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::PathBuf, fallback_to_default: bool) -> Result<Repo, Error> {
+fn repo_from_relative_path<'a>(
+    config: &'a Config,
+    relative_path: &std::path::PathBuf,
+    fallback_to_default: bool,
+) -> Result<Repo, Error> {
     if !relative_path.is_relative() {
         return Err(errors::system(
             &format!("The path '{}' used to resolve a repo was not relative.", relative_path.display()),
-            "Please report this issue to us on GitHub, including the command you ran, so that we can troubleshoot the problem."))
+            "Please report this issue to us on GitHub, including the command you ran, so that we can troubleshoot the problem."));
     }
-    
+
     let svc = service_from_relative_path(config, relative_path)?;
     let name_length = svc.get_pattern().split_terminator("/").count() + 1;
-    let mut name_parts: Vec<String> = relative_path.components().take(name_length).map(|c| c.as_os_str().to_str().unwrap().to_string()).collect();
-    
+    let mut name_parts: Vec<String> = relative_path
+        .components()
+        .take(name_length)
+        .map(|c| c.as_os_str().to_str().unwrap().to_string())
+        .collect();
+
     let mut true_path = relative_path.to_path_buf();
 
     if fallback_to_default && !relative_path.starts_with(svc.get_domain()) {
@@ -203,40 +219,54 @@ fn repo_from_relative_path<'a>(config: &'a Config, relative_path: &std::path::Pa
 
     if name_parts.len() != name_length {
         Err(errors::user(
-            &format!("The service '{}' requires a repository name in the form '{}', but we got '{}'.", svc.get_domain(), svc.get_pattern(), relative_path.display()),
-            "Make sure that your repository is correctly named for the service you are using."))
+            &format!(
+                "The service '{}' requires a repository name in the form '{}', but we got '{}'.",
+                svc.get_domain(),
+                svc.get_pattern(),
+                relative_path.display()
+            ),
+            "Make sure that your repository is correctly named for the service you are using.",
+        ))
     } else {
-        Ok(Repo::new(&name_parts.join("/"), to_native_path(config.get_dev_directory().join(true_path))))
+        Ok(Repo::new(
+            &name_parts.join("/"),
+            to_native_path(config.get_dev_directory().join(true_path)),
+        ))
     }
 }
 
 fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
     let depth = pattern.split("/").count();
-    
+
     get_directory_tree_to_depth(from, depth)
 }
 
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
-        return vec![from.clone()]
+        return vec![from.clone()];
     }
 
     from.read_dir()
-        .map(|dirs| dirs
-            .map(|dir| match dir {
-                    Ok(d) => {
-                        match d.file_type() {
-                            Ok(ft) => if ft.is_dir() { Some(d.path()) } else { None },
-                            Err(_) => None
+        .map(|dirs| {
+            dirs.map(|dir| match dir {
+                Ok(d) => match d.file_type() {
+                    Ok(ft) => {
+                        if ft.is_dir() {
+                            Some(d.path())
+                        } else {
+                            None
                         }
-                    },
-                    Err(_) => None
-                })
-                .filter(|d| d.is_some())
-                .map(|d| d.unwrap())
-                .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
-                .collect())
-                .unwrap()
+                    }
+                    Err(_) => None,
+                },
+                Err(_) => None,
+            })
+            .filter(|d| d.is_some())
+            .map(|d| d.unwrap())
+            .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
+            .collect()
+        })
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -249,7 +279,7 @@ pub mod mocks {
         repos: Vec<Repo>,
         scratchpads: Vec<Scratchpad>,
         current_date: DateTime<Local>,
-        error: bool
+        error: bool,
     }
 
     impl From<Arc<Config>> for MockResolver {
@@ -260,7 +290,7 @@ pub mod mocks {
                 repos: Vec::new(),
                 scratchpads: Vec::new(),
                 current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
-                error: false
+                error: false,
             }
         }
     }
@@ -282,14 +312,19 @@ pub mod mocks {
     impl Resolver for MockResolver {
         fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
             match self.error {
-                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
-                false => Ok(self.scratchpads.clone())
+                true => Err(Error::SystemError(
+                    "Mock Error".to_string(),
+                    "Configure the mock to not throw an error".to_string(),
+                    None,
+                )),
+                false => Ok(self.scratchpads.clone()),
             }
         }
         fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
             Ok(Scratchpad::new(
-                name.clone(), 
-                self.config.get_scratch_directory().join(name.clone())))
+                name.clone(),
+                self.config.get_scratch_directory().join(name.clone()),
+            ))
         }
 
         fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
@@ -316,18 +351,31 @@ pub mod mocks {
 
         fn get_repos(&self) -> Result<Vec<Repo>, Error> {
             match self.error {
-                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
-                false => Ok(self.repos.clone())
+                true => Err(Error::SystemError(
+                    "Mock Error".to_string(),
+                    "Configure the mock to not throw an error".to_string(),
+                    None,
+                )),
+                false => Ok(self.repos.clone()),
             }
         }
 
         fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
             match self.error {
-                true => Err(Error::SystemError("Mock Error".to_string(), "Configure the mock to not throw an error".to_string(), None)),
-                false => Ok(self.repos.iter().filter(|r| r.get_domain() == svc.get_domain()).map(|r| r.clone()).collect())
+                true => Err(Error::SystemError(
+                    "Mock Error".to_string(),
+                    "Configure the mock to not throw an error".to_string(),
+                    None,
+                )),
+                false => Ok(self
+                    .repos
+                    .iter()
+                    .filter(|r| r.get_domain() == svc.get_domain())
+                    .map(|r| r.clone())
+                    .collect()),
             }
         }
-        
+
         fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
             let path = std::path::PathBuf::from(name);
             self.get_repo(&path)
@@ -335,14 +383,13 @@ pub mod mocks {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::super::Target;
-    use super::{Config, Resolver, FileSystemResolver};
-    use std::{sync::Arc, path};
-    use chrono::prelude::*;
+    use super::{Config, FileSystemResolver, Resolver};
     use crate::test::get_dev_dir;
+    use chrono::prelude::*;
+    use std::{path, sync::Arc};
 
     #[test]
     fn get_scratchpads() {
@@ -355,7 +402,10 @@ mod tests {
         assert!(results.iter().any(|r| r.get_name() == "2019w27"));
 
         let example = results.iter().find(|r| r.get_name() == "2019w15").unwrap();
-        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w15"));
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir().join("scratch").join("2019w15")
+        );
     }
 
     #[test]
@@ -363,7 +413,10 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver.get_scratchpad("2019w15").unwrap();
-        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w15"));
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir().join("scratch").join("2019w15")
+        );
     }
 
     #[test]
@@ -371,7 +424,10 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver.get_scratchpad("2019w10").unwrap();
-        assert_eq!(example.get_path(), get_dev_dir().join("scratch").join("2019w10"));
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir().join("scratch").join("2019w10")
+        );
     }
 
     #[test]
@@ -393,8 +449,17 @@ mod tests {
         let results = resolver.get_repos().unwrap();
         assert_eq!(results.len(), 6);
 
-        let example = results.iter().find(|r| r.get_full_name() == "sierrasoftworks/test1").unwrap();
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+        let example = results
+            .iter()
+            .find(|r| r.get_full_name() == "sierrasoftworks/test1")
+            .unwrap();
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")
+        );
     }
 
     #[test]
@@ -406,8 +471,17 @@ mod tests {
         let results = resolver.get_repos_for(svc).unwrap();
         assert_eq!(results.len(), 4);
 
-        let example = results.iter().find(|r| r.get_full_name() == "sierrasoftworks/test1").unwrap();
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test1"));
+        let example = results
+            .iter()
+            .find(|r| r.get_full_name() == "sierrasoftworks/test1")
+            .unwrap();
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")
+        );
     }
 
     #[test]
@@ -422,28 +496,64 @@ mod tests {
     fn get_repo_exists() {
         let resolver = get_resolver();
 
-        let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test1")).unwrap();
+        let example = resolver
+            .get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test1"))
+            .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
-        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1"));
+        assert_eq!(
+            example.get_path(),
+            resolver
+                .config
+                .get_dev_directory()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")
+        );
     }
 
     #[test]
     fn get_repo_exists_absolute() {
         let resolver = get_resolver();
-        
 
-        let example = resolver.get_repo(&resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1")).unwrap();
+        let example = resolver
+            .get_repo(
+                &resolver
+                    .config
+                    .get_dev_directory()
+                    .join("github.com")
+                    .join("sierrasoftworks")
+                    .join("test1"),
+            )
+            .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
-        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test1"));
+        assert_eq!(
+            example.get_path(),
+            resolver
+                .config
+                .get_dev_directory()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")
+        );
     }
 
     #[test]
     fn get_repo_new() {
         let resolver = get_resolver();
 
-        let example = resolver.get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test3")).unwrap();
+        let example = resolver
+            .get_repo(&path::PathBuf::from("github.com/sierrasoftworks/test3"))
+            .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
-        assert_eq!(example.get_path(), resolver.config.get_dev_directory().join("github.com").join("sierrasoftworks").join("test3"));
+        assert_eq!(
+            example.get_path(),
+            resolver
+                .config
+                .get_dev_directory()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test3")
+        );
     }
 
     #[test]
@@ -453,7 +563,13 @@ mod tests {
         let example = resolver.get_best_repo("sierrasoftworks/test3").unwrap();
         assert_eq!(example.get_domain(), "github.com");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
-        assert_eq!(example.get_path(), get_dev_dir().join("github.com").join("sierrasoftworks").join("test3"));
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test3")
+        );
     }
 
     #[test]
@@ -462,10 +578,26 @@ mod tests {
 
         assert_eq!(children.len(), 4);
 
-        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("sierrasoftworks").join("test1")));
-        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("sierrasoftworks").join("test2")));
-        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("spartan563").join("test1")));
-        assert!(children.iter().any(|p| p == &get_dev_dir().join("github.com").join("spartan563").join("test2")));
+        assert!(children.iter().any(|p| p
+            == &get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")));
+        assert!(children.iter().any(|p| p
+            == &get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test2")));
+        assert!(children.iter().any(|p| p
+            == &get_dev_dir()
+                .join("github.com")
+                .join("spartan563")
+                .join("test1")));
+        assert!(children.iter().any(|p| p
+            == &get_dev_dir()
+                .join("github.com")
+                .join("spartan563")
+                .join("test2")));
     }
 
     fn get_resolver() -> FileSystemResolver {

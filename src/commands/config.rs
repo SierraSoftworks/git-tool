@@ -1,12 +1,10 @@
-use clap::{App, SubCommand, ArgMatches, Arg};
+use super::async_trait;
 use super::Command;
 use super::*;
-use super::async_trait;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use online::registry::Registry;
 
-pub struct ConfigCommand {
-
-}
+pub struct ConfigCommand {}
 
 impl Command for ConfigCommand {
     fn name(&self) -> String {
@@ -35,7 +33,7 @@ impl Command for ConfigCommand {
                     .required(true)))
     }
 }
-    
+
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ConfigCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
@@ -47,11 +45,12 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 for entry in entries {
                     writeln!(core.output().writer(), "{}", entry)?;
                 }
-            },
+            }
             ("add", Some(args)) => {
                 let id = args.value_of("id").ok_or(errors::user(
                     "You have not provided an ID for the config template you wish to add.",
-                    ""))?;
+                    "",
+                ))?;
 
                 let registry = crate::online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
@@ -69,12 +68,12 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 match cfg.get_config_file() {
                     Some(path) => {
                         tokio::fs::write(&path, cfg.to_string()?).await?;
-                    },
+                    }
                     None => {
                         writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
                     }
                 }
-            },
+            }
             _ => {
                 writeln!(core.output().writer(), "{}", core.config().to_string()?)?;
             }
@@ -85,18 +84,16 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, matches: &ArgMatches<'a>) {
         match matches.subcommand() {
-            ("list", _) => {
-
-            },
+            ("list", _) => {}
             ("add", _) => {
                 let registry = online::GitHubRegistry;
                 match registry.get_entries(core).await {
                     Ok(entries) => {
                         completer.offer_many(entries);
-                    },
+                    }
                     _ => {}
                 }
-            },
+            }
             _ => {
                 completer.offer_many(vec!["list", "add"]);
             }
@@ -106,8 +103,8 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
     use clap::ArgMatches;
 
     #[tokio::test]
@@ -119,41 +116,46 @@ mod tests {
             .with_mock_output()
             .build();
 
-        let cmd = ConfigCommand{};
+        let cmd = ConfigCommand {};
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains(&core.config().to_string().unwrap()), "the output should contain the config");
+        assert!(
+            output.contains(&core.config().to_string().unwrap()),
+            "the output should contain the config"
+        );
     }
 
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::from_str("directory: /dev").unwrap();
         let core = CoreBuilder::default()
-        .with_config(&cfg)
-        .with_mock_output()
-        .build();
-        
-        let cmd = ConfigCommand{};
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "list"]);
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
         println!("{}", output);
-        assert!(output.contains("apps/bash\n"), "the output should contain some apps");
-        assert!(output.contains("services/github\n"), "the output should contain some services");
+        assert!(
+            output.contains("apps/bash\n"),
+            "the output should contain some apps"
+        );
+        assert!(
+            output.contains("services/github\n"),
+            "the output should contain some services"
+        );
     }
 
     #[tokio::test]
@@ -163,47 +165,61 @@ mod tests {
             .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = ConfigCommand{};
-        let args = cmd.app().get_matches_from(vec!["config", "add", "apps/bash"]);
+
+        let cmd = ConfigCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["config", "add", "apps/bash"]);
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
         println!("{}", output);
-        assert!(output.contains("name: bash\n"), "the output should contain the new config");
+        assert!(
+            output.contains("name: bash\n"),
+            "the output should contain the new config"
+        );
     }
 
     #[tokio::test]
     async fn run_add_with_file() {
         let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
-        tokio::fs::write(temp.path().join("config.yml"), Config::default().to_string().unwrap()).await.unwrap();
+        tokio::fs::write(
+            temp.path().join("config.yml"),
+            Config::default().to_string().unwrap(),
+        )
+        .await
+        .unwrap();
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = ConfigCommand{};
-        let args = cmd.app().get_matches_from(vec!["config", "add", "apps/bash"]);
+
+        let cmd = ConfigCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["config", "add", "apps/bash"]);
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("Applying Bash\n> "), "the output should describe what is being done");
+        assert!(
+            output.contains("Applying Bash\n> "),
+            "the output should describe what is being done"
+        );
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        assert!(new_cfg.get_app("bash").is_some(), "the app should be added to the config file");
+        assert!(
+            new_cfg.get_app("bash").is_some(),
+            "the app should be added to the config file"
+        );
     }
 }

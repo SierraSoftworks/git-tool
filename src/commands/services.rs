@@ -1,9 +1,7 @@
 use super::*;
 use clap::SubCommand;
 
-pub struct ServicesCommand {
-
-}
+pub struct ServicesCommand {}
 
 impl Command for ServicesCommand {
     fn name(&self) -> String {
@@ -19,7 +17,11 @@ impl Command for ServicesCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ServicesCommand {
-    async fn run<'a>(&self, core: &C, _matches: &clap::ArgMatches<'a>) -> Result<i32, crate::core::Error> {
+    async fn run<'a>(
+        &self,
+        core: &C,
+        _matches: &clap::ArgMatches<'a>,
+    ) -> Result<i32, crate::core::Error> {
         let mut output = core.output().writer();
 
         for svc in core.config().get_services() {
@@ -29,34 +31,34 @@ impl<C: Core> CommandRunnable<C> for ServicesCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {
-    }
+    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {}
 }
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
-        
+
         let cfg = Config::default();
         let core = CoreBuilder::default()
-        .with_config(&cfg)
+            .with_config(&cfg)
             .with_mock_output()
             .build();
-        
-        let cmd = ServicesCommand{};
+
+        let cmd = ServicesCommand {};
         match cmd.run(&core, &args).await {
-            Ok(_) => {},
-            Err(err) => {
-                panic!(err.message())
-            }
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
         }
 
         let output = core.output().to_string();
-        assert!(output.contains("github.com\n"), "the output should contain each service");
+        assert!(
+            output.contains("github.com\n"),
+            "the output should contain each service"
+        );
     }
 }

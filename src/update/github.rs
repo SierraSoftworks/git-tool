@@ -1,29 +1,28 @@
 use super::*;
-use serde::Deserialize;
-use hyper::Client;
 use crate::errors;
 use http::Uri;
-use std::env::consts::{OS, ARCH};
 use hyper::body::HttpBody;
+use hyper::Client;
+use serde::Deserialize;
+use std::env::consts::{ARCH, OS};
 
 pub struct GitHubSource {
     pub repo: String,
     pub artifact_prefix: String,
     pub release_tag_prefix: String,
-    client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, hyper::Body>
+    client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, hyper::Body>,
 }
 
 impl Default for GitHubSource {
     fn default() -> Self {
         let https = hyper_tls::HttpsConnector::new();
-        let client = Client::builder()
-            .build(https);
+        let client = Client::builder().build(https);
 
         Self {
             repo: "SierraSoftworks/git-tool".to_string(),
             artifact_prefix: "git-tool-".to_string(),
             release_tag_prefix: "v".to_string(),
-            client
+            client,
         }
     }
 }
@@ -35,15 +34,25 @@ impl Source for GitHubSource {
         info!("Making GET request to {} to check for new releases.", uri);
 
         let req = hyper::Request::get(uri)
-            .header("User-Agent", "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"))
+            .header(
+                "User-Agent",
+                "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
+            )
             .body(hyper::Body::empty())
-            .map_err(|e| errors::system_with_internal(
-                "Unable to construct web request for Git-Tool releases.",
-                "Please report this error to us by opening a ticket in GitHub.",
-                e))?;
+            .map_err(|e| {
+                errors::system_with_internal(
+                    "Unable to construct web request for Git-Tool releases.",
+                    "Please report this error to us by opening a ticket in GitHub.",
+                    e,
+                )
+            })?;
 
         let resp = self.client.request(req).await?;
-        debug!("Received HTTP {} {} from GitHub when requesting releases.", resp.status().as_u16(), resp.status().canonical_reason().unwrap_or("UNKNOWN"));
+        debug!(
+            "Received HTTP {} {} from GitHub when requesting releases.",
+            resp.status().as_u16(),
+            resp.status().canonical_reason().unwrap_or("UNKNOWN")
+        );
 
         match resp.status() {
             http::StatusCode::OK => {
@@ -51,12 +60,11 @@ impl Source for GitHubSource {
                 let releases: Vec<GitHubRelease> = serde_json::from_slice(&body)?;
 
                 self.get_releases_from_response(releases)
-            },
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                Err(errors::user(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again."))
-            },
+            }
+            http::StatusCode::TOO_MANY_REQUESTS => Err(errors::user(
+                "GitHub has rate limited requests from your IP address.",
+                "Please wait until GitHub removes this rate limit before trying again.",
+            )),
             status => {
                 let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
@@ -67,15 +75,27 @@ impl Source for GitHubSource {
         }
     }
 
-    async fn get_binary<W: std::io::Write + Send>(&self, release: &Release, variant: &ReleaseVariant, into: &mut W) -> Result<(), crate::core::Error> {
-        let uri: Uri = format!("https://github.com/{}/releases/download/{}/{}", self.repo, release.id, variant.id).parse()?;
+    async fn get_binary<W: std::io::Write + Send>(
+        &self,
+        release: &Release,
+        variant: &ReleaseVariant,
+        into: &mut W,
+    ) -> Result<(), crate::core::Error> {
+        let uri: Uri = format!(
+            "https://github.com/{}/releases/download/{}/{}",
+            self.repo, release.id, variant.id
+        )
+        .parse()?;
 
         self.download_to_file(uri, into).await
     }
 }
 
 impl GitHubSource {
-    fn get_releases_from_response(&self, releases: Vec<GitHubRelease>) -> Result<Vec<Release>, errors::Error> {
+    fn get_releases_from_response(
+        &self,
+        releases: Vec<GitHubRelease>,
+    ) -> Result<Vec<Release>, errors::Error> {
         let mut output: Vec<Release> = Vec::new();
         output.reserve(releases.len());
 
@@ -85,14 +105,12 @@ impl GitHubSource {
             }
 
             match r.tag_name[self.release_tag_prefix.len()..].parse() {
-                Ok(version) => {
-                    output.push(Release {
-                        id: r.tag_name.clone(),
-                        changelog: r.body.clone(),
-                        version,
-                        variants: self.get_variants_from_response(&r)
-                    })
-                },
+                Ok(version) => output.push(Release {
+                    id: r.tag_name.clone(),
+                    changelog: r.body.clone(),
+                    version,
+                    variants: self.get_variants_from_response(&r),
+                }),
                 Err(_) => {}
             }
         }
@@ -108,30 +126,36 @@ impl GitHubSource {
                 continue;
             }
 
-            let spec_name = a.name[self.artifact_prefix.len()..].trim_end_matches(".exe").to_string();
+            let spec_name = a.name[self.artifact_prefix.len()..]
+                .trim_end_matches(".exe")
+                .to_string();
             let mut parts = spec_name.split('-');
-            
+
             let arch = match parts.next_back() {
                 Some(spec_arch) => spec_arch.to_string(),
-                None => ARCH.to_string()
+                None => ARCH.to_string(),
             };
-            
+
             let platform = match parts.next_back() {
                 Some(os) => os.to_string(),
-                None => OS.to_string()
+                None => OS.to_string(),
             };
 
             variants.push(ReleaseVariant {
                 id: a.name.clone(),
                 arch,
-                platform
+                platform,
             })
         }
 
         variants
     }
 
-    async fn download_to_file<W: std::io::Write + Send>(&self, uri: Uri, into: &mut W) -> Result<(), errors::Error> {
+    async fn download_to_file<W: std::io::Write + Send>(
+        &self,
+        uri: Uri,
+        into: &mut W,
+    ) -> Result<(), errors::Error> {
         let mut recursion_limit = 5;
         let mut current_uri = uri.clone();
 
@@ -139,12 +163,18 @@ impl GitHubSource {
             recursion_limit -= 1;
 
             let req = hyper::Request::get(current_uri)
-                .header("User-Agent", "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"))
+                .header(
+                    "User-Agent",
+                    "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
+                )
                 .body(hyper::Body::empty())
-                .map_err(|e| errors::system_with_internal(
-                    "Unable to construct web request for Git-Tool releases.",
-                    "Please report this error to us by opening a ticket in GitHub.",
-                    e))?;
+                .map_err(|e| {
+                    errors::system_with_internal(
+                        "Unable to construct web request for Git-Tool releases.",
+                        "Please report this error to us by opening a ticket in GitHub.",
+                        e,
+                    )
+                })?;
 
             let resp = self.client.request(req).await?;
 
@@ -198,18 +228,21 @@ struct GitHubRelease {
     pub tag_name: String,
     pub body: String,
     pub prerelease: bool,
-    pub assets: Vec<GitHubAsset>
+    pub assets: Vec<GitHubAsset>,
 }
 
 #[derive(Debug, Deserialize)]
 struct GitHubAsset {
-    pub name: String
+    pub name: String,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{sync::{Mutex, Arc}, io::Write};
+    use std::{
+        io::Write,
+        sync::{Arc, Mutex},
+    };
 
     #[tokio::test]
     async fn test_get_releases() {
@@ -219,8 +252,14 @@ mod tests {
 
         assert_ne!(releases.len(), 0);
         for release in releases {
-            assert!(release.id.contains(&release.version.to_string()), "the release version should be derived from the tag");
-            assert_ne!(&release.changelog, "", "the release changelog should not be empty");
+            assert!(
+                release.id.contains(&release.version.to_string()),
+                "the release version should be derived from the tag"
+            );
+            assert_ne!(
+                &release.changelog, "",
+                "the release changelog should not be empty"
+            );
         }
     }
 
@@ -229,24 +268,31 @@ mod tests {
         let source = GitHubSource::default();
 
         let releases = source.get_releases().await.unwrap();
-        let latest = Release::get_latest(releases.iter()).expect("There should be an available release");
-        let variant = latest.variants.first().expect("There should be a variant available");
+        let latest =
+            Release::get_latest(releases.iter()).expect("There should be an available release");
+        let variant = latest
+            .variants
+            .first()
+            .expect("There should be a variant available");
 
         let mut target = sink();
 
-        source.get_binary(&latest, &variant, &mut target).await.unwrap();
+        source
+            .get_binary(&latest, &variant, &mut target)
+            .await
+            .unwrap();
 
         assert!(target.get_length() > 0);
     }
 
     fn sink() -> Sink {
         Sink {
-            length: Arc::new(Mutex::new(0))
+            length: Arc::new(Mutex::new(0)),
         }
     }
 
     struct Sink {
-        length: Arc<Mutex<usize>>
+        length: Arc<Mutex<usize>>,
     }
 
     impl Sink {
@@ -258,14 +304,15 @@ mod tests {
     impl Write for Sink {
         #[inline]
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.length.lock().map(|mut m| {
-                *m += buf.len();
-                buf.len()
-            }).map_err(|_| {
-                std::io::ErrorKind::Other.into()
-            })
+            self.length
+                .lock()
+                .map(|mut m| {
+                    *m += buf.len();
+                    buf.len()
+                })
+                .map_err(|_| std::io::ErrorKind::Other.into())
         }
-    
+
         #[inline]
         fn flush(&mut self) -> std::io::Result<()> {
             Ok(())
