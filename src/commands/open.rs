@@ -102,6 +102,7 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();

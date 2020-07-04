@@ -153,11 +153,74 @@ impl CompleteCommand {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod helpers {
     use super::core::{Config, CoreBuilder};
     use super::*;
     use crate::test::get_dev_dir;
     use std::sync::Mutex;
+
+    pub fn test_responsible_command(args: &str, expected: Option<&str>) {
+        let cmd = CompleteCommand {};
+        let cmds = default_commands();
+
+        let responsible = cmd
+            .get_responsible_command(&cmds, args)
+            .map(|(c, _)| c.name());
+
+        assert_eq!(
+            responsible.clone(),
+            expected.map(|n| n.to_string()),
+            "responsible command [{}] should match [{}]",
+            responsible.unwrap_or("<None>".to_string()),
+            expected.unwrap_or("<None>")
+        );
+    }
+
+    pub async fn test_completions_with_config(
+        cfg: &Config,
+        args: &str,
+        filter: &str,
+        contains: Vec<&str>,
+    ) {
+        let cmd = CompleteCommand {};
+        let cmds = default_commands();
+
+        let core = CoreBuilder::default().with_config(cfg).build();
+
+        let writer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+        let completer = Completer::new_for(filter, writer.clone());
+        cmd.offer_completions(&core, &cmds, args, &completer).await;
+
+        let output = String::from_utf8(writer.lock().unwrap().to_vec()).unwrap();
+
+        let mut offers = std::collections::HashSet::new();
+
+        for offer in output.split_terminator("\n") {
+            offers.insert(offer);
+        }
+
+        for item in contains {
+            assert!(
+                offers.contains(item),
+                "completion output '{}' should contain '{}'",
+                output,
+                item
+            );
+        }
+    }
+
+    pub async fn test_completions(args: &str, filter: &str, contains: Vec<&str>) {
+        let config = Config::for_dev_directory(&get_dev_dir());
+
+        test_completions_with_config(&config, args, filter, contains).await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::core::{Config, CoreBuilder};
+    use super::helpers::*;
+    use super::*;
 
     #[tokio::test]
     async fn run() {
@@ -291,52 +354,5 @@ mod tests {
             vec!["shell", "2019w15", "2019w16", "2019w27"],
         )
         .await;
-    }
-
-    fn test_responsible_command(args: &str, expected: Option<&str>) {
-        let cmd = CompleteCommand {};
-        let cmds = default_commands();
-
-        let responsible = cmd
-            .get_responsible_command(&cmds, args)
-            .map(|(c, _)| c.name());
-
-        assert_eq!(
-            responsible.clone(),
-            expected.map(|n| n.to_string()),
-            "responsible command [{}] should match [{}]",
-            responsible.unwrap_or("<None>".to_string()),
-            expected.unwrap_or("<None>")
-        );
-    }
-
-    async fn test_completions(args: &str, filter: &str, contains: Vec<&str>) {
-        let cmd = CompleteCommand {};
-        let cmds = default_commands();
-
-        let core = CoreBuilder::default()
-            .with_config(&Config::for_dev_directory(&get_dev_dir()))
-            .build();
-
-        let writer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
-        let completer = Completer::new_for(filter, writer.clone());
-        cmd.offer_completions(&core, &cmds, args, &completer).await;
-
-        let output = String::from_utf8(writer.lock().unwrap().to_vec()).unwrap();
-
-        let mut offers = std::collections::HashSet::new();
-
-        for offer in output.split_terminator("\n") {
-            offers.insert(offer);
-        }
-
-        for item in contains {
-            assert!(
-                offers.contains(item),
-                "completion output '{}' should contain '{}'",
-                output,
-                item
-            );
-        }
     }
 }
