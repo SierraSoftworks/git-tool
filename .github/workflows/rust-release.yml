@@ -89,7 +89,7 @@ jobs:
     - name: Upload to Release
       uses: Shopify/upload-to-release@1.0.0
       with:
-        name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        name: "git-tool-${{ matrix.os_name }}-${{ matrix.arch }}${{ matrix.extension }}"
         path: "target/release/git-tool${{ matrix.extension }}"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         content-type: application/octet-stream
