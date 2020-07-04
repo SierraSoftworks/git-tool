@@ -226,7 +226,7 @@ impl Default for Config {
 mod tests {
     use super::Config;
     use std::path::PathBuf;
-    use crate::online::registry::{EntryApp, EntryConfig, EntryService};
+    use crate::{test::get_repo_root, online::registry::{EntryApp, EntryConfig, EntryService}};
 
     #[test]
     fn load_from_string_basic() {
@@ -327,5 +327,16 @@ apps:
 
         assert!(new_cfg.get_app("test-app").is_some(), "the test-app should have been added");
         assert!(new_cfg.get_service("example.com").is_some(), "the example service should have been registered");
+    }
+
+    #[test]
+    fn test_load_file() {
+        let file_path = get_repo_root().join("test").join("data").join("config.valid.yml");
+        let cfg = Config::from_file(&file_path).unwrap();
+
+        assert!(cfg.get_app("make").is_some(), "the correct config file should have been loaded");
+        assert_eq!(cfg.get_alias("gt"), Some("github.com/SierraSoftworks/git-tool".to_string()), "the aliases should have been loaded");
+        assert_eq!(cfg.get_config_file(), Some(file_path), "the file path should have been populated");
+
     }
 }
