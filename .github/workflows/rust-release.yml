@@ -9,21 +9,48 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [windows, linux, freebsd, darwin]
-        arch: [amd64, "386"]
+        os: [windows, linux, darwin]
+        arch: [amd64]
         include:
+          - arch: amd64
+            rust_arch: x86_64
           - os: windows
             extension: ".exe"
-    
+            rust_target_suffix: pc-windows-msvc
+          - os: linux
+            rust_target_suffix: unknown-linux-musl
+          - os: darwin
+            rust_target_suffix: apple-darwin
+
     steps:
-    - name: Set up Go 1.14
-      uses: actions/setup-go@v1
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libdbus-1-3 libdbus-1-dev
+      if: matrix.os == "linux"
+      
+    - name: Get Rust Stable
+      uses: actions-rs/toolchain@v1
       with:
-        go-version: 1.14
-      id: go
+        toolchain: stable
+        target: "${{ matrix.rust_arch }}-${{ matrix.rust_target_suffix }}"
+        override: true
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
+
+    - name: Set Package Version
+      uses: ciiiii/toml-editor@1.0.0
+      with:
+        file: Cargo.toml
+        key: package.version
+        value: ${{ github.event.release.tag_name }}
+
+    - name: Build Release
+      uses: actions-rs/cargo@v1.0.1
+      with:
+        command: build
+        args: --release
 
     - name: Build
       run: go build -o bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} -ldflags "-X main.version=${{ github.event.release.tag_name }}" ./cmd/git-tool/main.go
@@ -39,13 +66,13 @@ jobs:
         SENTRY_PROJECT: git-tool
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       with:
-        environment: ${{ matrix.os }}-${{ matrix.arch }}
-        tagName: ${{ github.event.release.tag_name }}
+        environment: git-tool
+        tagName: git-tool@${{ github.event.release.tag_name }}
 
     - name: Upload to Release
       uses: Shopify/upload-to-release@1.0.0
       with:
         name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
-        path: "bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+        path: "target/release/git-tool${{ matrix.extension }}"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         content-type: application/octet-stream
