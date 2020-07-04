@@ -43,9 +43,9 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
             "Could not parse the current application version into a SemVer version number.",
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
             err))?;
-        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
+        let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
 
-        let releases = manager.get_releases().await?;
+        let releases = manager.get_releases(core).await?;
 
         if matches.is_present("list") {
             for release in releases {
@@ -70,7 +70,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         match target_release {
             Some(release) => {
                 writeln!(output, "Downloading update {}...", &release.id)?;
-                if manager.update(&release).await? {
+                if manager.update(core, &release).await? {
                     writeln!(output, "Shutting down to complete the update operation.")?;
                 }
             },
@@ -84,10 +84,10 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
-        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
+    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
 
-        match manager.get_releases().await {
+        match manager.get_releases(core).await {
             Ok(releases) => {
                 completer.offer_many(releases.iter().map(|r| &r.id));
             }

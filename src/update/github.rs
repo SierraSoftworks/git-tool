@@ -1,8 +1,7 @@
 use super::*;
-use crate::errors;
+use crate::{core::Core, errors};
 use http::Uri;
 use hyper::body::HttpBody;
-use hyper::Client;
 use serde::Deserialize;
 use std::env::consts::{ARCH, OS};
 
@@ -10,26 +9,21 @@ pub struct GitHubSource {
     pub repo: String,
     pub artifact_prefix: String,
     pub release_tag_prefix: String,
-    client: Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>, hyper::Body>,
 }
 
 impl Default for GitHubSource {
     fn default() -> Self {
-        let https = hyper_tls::HttpsConnector::new();
-        let client = Client::builder().build(https);
-
         Self {
             repo: "SierraSoftworks/git-tool".to_string(),
             artifact_prefix: "git-tool-".to_string(),
             release_tag_prefix: "v".to_string(),
-            client,
         }
     }
 }
 
 #[async_trait::async_trait]
-impl Source for GitHubSource {
-    async fn get_releases(&self) -> Result<Vec<Release>, crate::core::Error> {
+impl<C: Core> Source<C> for GitHubSource {
+    async fn get_releases(&self, core: &C) -> Result<Vec<Release>, crate::core::Error> {
         let uri: Uri = format!("https://api.github.com/repos/{}/releases", self.repo).parse()?;
         info!("Making GET request to {} to check for new releases.", uri);
 
@@ -47,7 +41,7 @@ impl Source for GitHubSource {
                 )
             })?;
 
-        let resp = self.client.request(req).await?;
+        let resp = core.http_client().request(req).await?;
         debug!(
             "Received HTTP {} {} from GitHub when requesting releases.",
             resp.status().as_u16(),
@@ -77,6 +71,7 @@ impl Source for GitHubSource {
 
     async fn get_binary<W: std::io::Write + Send>(
         &self,
+        core: &C,
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,
@@ -87,7 +82,7 @@ impl Source for GitHubSource {
         )
         .parse()?;
 
-        self.download_to_file(uri, into).await
+        self.download_to_file(core, uri, into).await
     }
 }
 
@@ -151,8 +146,9 @@ impl GitHubSource {
         variants
     }
 
-    async fn download_to_file<W: std::io::Write + Send>(
+    async fn download_to_file<C: Core, W: std::io::Write + Send>(
         &self,
+        core: &C,
         uri: Uri,
         into: &mut W,
     ) -> Result<(), errors::Error> {
@@ -176,7 +172,7 @@ impl GitHubSource {
                     )
                 })?;
 
-            let resp = self.client.request(req).await?;
+            let resp = core.http_client().request(req).await?;
 
             match resp.status() {
                 http::StatusCode::OK => {
@@ -239,18 +235,49 @@ struct GitHubAsset {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::CoreBuilder;
     use std::{
         io::Write,
         sync::{Arc, Mutex},
     };
 
+    mock_connector_in_order!(MockGetReleasesFlow {
+r#"HTTP/1.1 200 OK
+Content-Type: application/vnd.github.v3+json
+Content-Length: 321
+
+[
+    {
+        "name": "Version 2.0.0",
+        "tag_name":"v2.0.0",
+        "body": "Example Release",
+        "prerelease": false,
+        "assets": [
+            { "name": "git-tool-windows-amd64.exe" },
+            { "name": "git-tool-linux-amd64" },
+            { "name": "git-tool-darwin-amd64" }
+        ]
+    }
+]
+"#
+
+r#"HTTP/1.1 200 OK
+Content-Type: application/octet-stream
+Content-Length: 8
+
+testdata
+"#});
+
     #[tokio::test]
     async fn test_get_releases() {
         let source = GitHubSource::default();
+        let core = CoreBuilder::default()
+            .with_http_connector(MockGetReleasesFlow::default())
+            .build();
 
-        let releases = source.get_releases().await.unwrap();
+        let releases = source.get_releases(&core).await.unwrap();
 
-        assert_ne!(releases.len(), 0);
+        assert_eq!(releases.len(), 1);
         for release in releases {
             assert!(
                 release.id.contains(&release.version.to_string()),
@@ -266,8 +293,11 @@ mod tests {
     #[tokio::test]
     async fn test_download() {
         let source = GitHubSource::default();
+        let core = CoreBuilder::default()
+            .with_http_connector(MockGetReleasesFlow::default())
+            .build();
 
-        let releases = source.get_releases().await.unwrap();
+        let releases = source.get_releases(&core).await.unwrap();
         let latest =
             Release::get_latest(releases.iter()).expect("There should be an available release");
         let variant = latest
@@ -278,7 +308,7 @@ mod tests {
         let mut target = sink();
 
         source
-            .get_binary(&latest, &variant, &mut target)
+            .get_binary(&core, &latest, &variant, &mut target)
             .await
             .unwrap();
 

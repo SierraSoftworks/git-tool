@@ -1,14 +1,15 @@
 use super::release::*;
-use crate::errors;
+use crate::{core::Core, errors};
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::PathBuf;
 
 #[async_trait::async_trait]
-pub trait Source: Default + Send + Sync {
-    async fn get_releases(&self) -> Result<Vec<Release>, errors::Error>;
+pub trait Source<C: Core>: Default + Send + Sync {
+    async fn get_releases(&self, core: &C) -> Result<Vec<Release>, errors::Error>;
     async fn get_binary<W: io::Write + Send>(
         &self,
+        core: &C,
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,
