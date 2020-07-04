@@ -39,6 +39,7 @@ where S: Source {
             "Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."))?;
 
         {
+            info!("Downloading release binary for {} to temporary location ({}).", release.version, app.display());
             let mut app_file = std::fs::File::create(&app)?;
             self.source.get_binary(release, variant, &mut app_file).await?;
         }
@@ -61,6 +62,7 @@ where S: Source {
             "Could not launch the new application version to continue the update process (prepare -> replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
         
+        info!("Launching temporary release binary to perform 'replace' phase of update.");
         self.launch(&update_source, &next_state)?;
 
         Ok(true)
@@ -74,8 +76,10 @@ where S: Source {
             "Could not locate the application which was meant to be updated due to an issue loading the update state (replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
+        info!("Replacing original application binary with temporary release binary.");
         self.copy_file(&update_source, &update_target).await?;
 
+        info!("Launching updated application to perform 'cleanup' phase of update.");
         let next_state = state.for_phase(UpdatePhase::Cleanup);
         self.launch(&update_target, &next_state)?;
 
@@ -87,6 +91,7 @@ where S: Source {
             "Could not locate the temporary update files needed to complete the update process (cleanup phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
+        info!("Removing temporary update application binary.");
         self.delete_file(&update_source).await?;
 
         Ok(true)
