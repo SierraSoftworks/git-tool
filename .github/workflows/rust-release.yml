@@ -58,13 +58,6 @@ jobs:
       with:
         command: build
         args: --release
-
-    - name: Build
-      run: go build -o bin/git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }} -ldflags "-X main.version=${{ github.event.release.tag_name }}" ./cmd/git-tool/main.go
-      shell: pwsh
-      env:
-        GOOS: ${{ matrix.os }}
-        GOARCH: ${{ matrix.arch }}
         
     - name: Create Sentry Release
       uses: tclindner/sentry-releases-action@v1.0.0
