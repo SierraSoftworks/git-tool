@@ -3,12 +3,13 @@ use crate::{core::Core, errors};
 use itertools::Itertools;
 use std::time::Duration;
 use std::{
+    marker::PhantomData,
     path::{Path, PathBuf},
     process::Command,
 };
 
 #[cfg(windows)]
-use std::{marker::PhantomData, os::windows::process::CommandExt};
+use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
@@ -190,7 +191,7 @@ where
             source: S::default(),
             variant: ReleaseVariant::default(),
 
-            ..Default::default()
+            core_type: PhantomData::default(),
         }
     }
 }
