@@ -165,16 +165,18 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 if !args.is_present("alias") {
                     completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
                 } else {
-                    completer.offer("-d");
-                    match core.resolver().get_repos() {
-                        Ok(repos) => {
-                            completer.offer_many(
-                                repos
-                                    .iter()
-                                    .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
-                            );
+                    if !args.is_present("delete") && !args.is_present("repo") {
+                        completer.offer("-d");
+                        match core.resolver().get_repos() {
+                            Ok(repos) => {
+                                completer.offer_many(
+                                    repos.iter().map(|r| {
+                                        format!("{}/{}", r.get_domain(), r.get_full_name())
+                                    }),
+                                );
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }
@@ -189,7 +191,9 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 mod tests {
     use super::core::{Config, CoreBuilder};
     use super::*;
+    use crate::test::get_dev_dir;
     use clap::ArgMatches;
+    use complete::helpers::test_completions_with_config;
 
     #[tokio::test]
     async fn run() {
@@ -454,5 +458,30 @@ aliases:
             true,
             "the alias should be removed from the config file"
         );
+    }
+
+    #[tokio::test]
+    async fn test_alias_completion() {
+        let cfg = Config::from_str(&format!(
+            r#"
+directory: "{}"
+
+aliases:
+  test1: example.com/tests/test1
+  test2: example.com/tests/test2
+"#,
+            get_dev_dir().to_str().unwrap().replace("\\", "\\\\")
+        ))
+        .unwrap();
+
+        test_completions_with_config(&cfg, "gt config alias", "", vec!["test1", "test2"]).await;
+
+        test_completions_with_config(
+            &cfg,
+            "gt config alias test1",
+            "",
+            vec!["-d", "github.com/sierrasoftworks/test1"],
+        )
+        .await;
     }
 }
