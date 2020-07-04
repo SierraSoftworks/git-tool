@@ -1,8 +1,9 @@
 use super::*;
-use crate::errors;
+use crate::{core::Core, errors};
 use itertools::Itertools;
 use std::time::Duration;
 use std::{
+    marker::PhantomData,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -12,25 +13,29 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
-pub struct UpdateManager<S = super::github::GitHubSource>
+pub struct UpdateManager<C, S = super::github::GitHubSource>
 where
-    S: Source,
+    C: Core,
+    S: Source<C>,
 {
     pub target_application: PathBuf,
 
     pub variant: ReleaseVariant,
     pub source: S,
+
+    core_type: PhantomData<C>,
 }
 
-impl<S> UpdateManager<S>
+impl<C, S> UpdateManager<C, S>
 where
-    S: Source,
+    C: Core,
+    S: Source<C>,
 {
-    pub async fn get_releases(&self) -> Result<Vec<Release>, errors::Error> {
-        self.source.get_releases().await
+    pub async fn get_releases(&self, core: &C) -> Result<Vec<Release>, errors::Error> {
+        self.source.get_releases(core).await
     }
 
-    pub async fn update(&self, release: &Release) -> Result<bool, errors::Error> {
+    pub async fn update(&self, core: &C, release: &Release) -> Result<bool, errors::Error> {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
             temporary_application: Some(self.get_temp_app_path(release)),
@@ -53,7 +58,7 @@ where
             );
             let mut app_file = std::fs::File::create(&app)?;
             self.source
-                .get_binary(release, variant, &mut app_file)
+                .get_binary(core, release, variant, &mut app_file)
                 .await?;
         }
 
@@ -175,15 +180,18 @@ where
     }
 }
 
-impl<S> Default for UpdateManager<S>
+impl<C, S> Default for UpdateManager<C, S>
 where
-    S: Source,
+    C: Core,
+    S: Source<C>,
 {
     fn default() -> Self {
         Self {
             target_application: PathBuf::from(std::env::args().nth(0).unwrap_or_default()),
             source: S::default(),
             variant: ReleaseVariant::default(),
+
+            core_type: PhantomData::default(),
         }
     }
 }
