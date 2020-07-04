@@ -226,6 +226,7 @@ impl Default for Config {
 mod tests {
     use super::Config;
     use std::path::PathBuf;
+    use crate::online::registry::{EntryApp, EntryConfig, EntryService};
 
     #[test]
     fn load_from_string_basic() {
@@ -302,5 +303,29 @@ apps:
                 panic!(e.message())
             }
         }
+    }
+
+    #[test]
+    fn add_template() {
+        let cfg = Config::default();
+        let new_cfg = cfg.add(EntryConfig {
+            platform: "linux".to_string(),
+            app: Some(EntryApp {
+                name: "test-app".to_string(),
+                command: "/bin/true".to_string(),
+                args: vec![],
+                environment: vec![]
+            }),
+            service: Some(EntryService {
+                domain: "example.com".to_string(),
+                pattern: "*/*".to_string(),
+                website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}".to_string(),
+                git_url: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git".to_string(),
+                http_url: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git".to_string(),
+            })
+        });
+
+        assert!(new_cfg.get_app("test-app").is_some(), "the test-app should have been added");
+        assert!(new_cfg.get_service("example.com").is_some(), "the example service should have been registered");
     }
 }
