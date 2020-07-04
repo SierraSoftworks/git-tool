@@ -31,6 +31,21 @@ impl Command for ConfigCommand {
                     .index(1)
                     .help("the id of the configuration template you want to add")
                     .required(true)))
+
+            .subcommand(SubCommand::with_name("alias")
+                .version("1.0")
+                .about("manage aliases for your repositories")
+                .help_message("Set or remove aliases for your repositories within your config file.")
+                .arg(Arg::with_name("delete")
+                    .short("-d")
+                    .long("--delete")
+                    .help("delete the alias from your config file"))
+                .arg(Arg::with_name("alias")
+                    .help("the name of the alias to manage")
+                    .index(1))
+                .arg(Arg::with_name("repo")
+                    .help("the fully qualified repository name")
+                    .index(2)))
     }
 }
 
@@ -74,6 +89,58 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     }
                 }
             }
+            ("alias", Some(args)) => match args.value_of("alias") {
+                Some(alias) => {
+                    if args.is_present("delete") {
+                        let mut cfg = core.config().clone();
+                        cfg.remove_alias(alias);
+
+                        match cfg.get_config_file() {
+                            Some(path) => {
+                                tokio::fs::write(&path, cfg.to_string()?).await?;
+                            }
+                            None => {
+                                writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
+                            }
+                        }
+
+                        return Ok(0);
+                    }
+
+                    match args.value_of("repo") {
+                        Some(repo) => {
+                            let mut cfg = core.config().clone();
+                            cfg.add_alias(alias, repo);
+
+                            match cfg.get_config_file() {
+                                Some(path) => {
+                                    tokio::fs::write(&path, cfg.to_string()?).await?;
+                                }
+                                None => {
+                                    writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
+                                }
+                            }
+                        }
+                        None => {
+                            let mut output = core.output().writer();
+                            match core.config().get_alias(alias) {
+                                Some(repo) => {
+                                    writeln!(output, "{} = {}", alias, repo)?;
+                                }
+                                None => {
+                                    writeln!(output, "No alias exists with the name '{}'", alias)?;
+                                }
+                            }
+                        }
+                    }
+                }
+                None => {
+                    let mut output = core.output().writer();
+                    for (alias, repo) in core.config().get_aliases() {
+                        writeln!(output, "{} = {}", alias, repo)?;
+                    }
+                }
+            },
             _ => {
                 writeln!(core.output().writer(), "{}", core.config().to_string()?)?;
             }
@@ -220,6 +287,155 @@ mod tests {
         assert!(
             new_cfg.get_app("bash").is_some(),
             "the app should be added to the config file"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_alias_list() {
+        let cfg = Config::from_str(
+            r#"
+directory: /dev
+
+aliases:
+  test1: example.com/tests/test1
+  test2: example.com/tests/test2
+"#,
+        )
+        .unwrap();
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
+        let args = cmd.app().get_matches_from(vec!["config", "alias"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
+        }
+
+        let output = core.output().to_string();
+        println!("{}", output);
+        assert!(
+            output.contains("test1 = example.com/tests/test1\n"),
+            "the output should contain the aliases"
+        );
+        assert!(
+            output.contains("test2 = example.com/tests/test2\n"),
+            "the output should contain the aliases"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_alias_info() {
+        let cfg = Config::from_str(
+            r#"
+directory: /dev
+
+aliases:
+  test1: example.com/tests/test1
+  test2: example.com/tests/test2
+"#,
+        )
+        .unwrap();
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
+        let args = cmd.app().get_matches_from(vec!["config", "alias", "test1"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
+        }
+
+        let output = core.output().to_string();
+        println!("{}", output);
+        assert!(
+            output.contains("test1 = example.com/tests/test1\n"),
+            "the output should contain the alias"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_alias_add() {
+        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        tokio::fs::write(
+            temp.path().join("config.yml"),
+            Config::default().to_string().unwrap(),
+        )
+        .await
+        .unwrap();
+
+        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
+        let args =
+            cmd.app()
+                .get_matches_from(vec!["config", "alias", "test", "example.com/tests/test"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
+        }
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(
+            new_cfg.get_alias("test").unwrap_or_default(),
+            "example.com/tests/test",
+            "the alias should be added to the config file"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_alias_delete() {
+        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        tokio::fs::write(
+            temp.path().join("config.yml"),
+            r#"
+directory: /dev
+aliases:
+  test: example.com/tests/test
+            "#,
+        )
+        .await
+        .unwrap();
+
+        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(
+            cfg.get_alias("test").unwrap(),
+            "example.com/tests/test",
+            "the config should have an alias initially"
+        );
+
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["config", "alias", "-d", "test"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
+        }
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(
+            new_cfg.get_alias("test").is_none(),
+            true,
+            "the alias should be removed from the config file"
         );
     }
 }

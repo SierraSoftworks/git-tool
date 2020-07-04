@@ -194,6 +194,18 @@ impl Config {
         self.aliases.get(name).map(|r| r.clone())
     }
 
+    pub fn get_aliases(&self) -> std::collections::hash_map::Iter<String, String> {
+        self.aliases.iter()
+    }
+
+    pub fn add_alias(&mut self, name: &str, repo: &str) {
+        self.aliases.insert(name.to_string(), repo.to_string());
+    }
+
+    pub fn remove_alias(&mut self, name: &str) {
+        self.aliases.remove(name);
+    }
+
     pub fn get_features(&self) -> &features::Features {
         &self.features
     }
