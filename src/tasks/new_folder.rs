@@ -29,11 +29,11 @@ impl<C: Core> Task<C> for NewFolder {
 mod tests {
     use super::*;
     use crate::core::*;
-    use tempdir::TempDir;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_repo_exists() {
-        let temp = TempDir::new("gt-tasks-new-folder").unwrap();
+        let temp = tempdir().unwrap();
         let repo = core::Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
 
         let core = core::CoreBuilder::default()
@@ -50,7 +50,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_repo_new() {
-        let temp = TempDir::new("gt-tasks-new-folder").unwrap();
+        let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "github.com/sierrasoftworks/test3",
             temp.path().join("repo").into(),
@@ -70,7 +70,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scratch_exists() {
-        let temp = TempDir::new("gt-tasks-new-folder").unwrap();
+        let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().into());
 
         let core = core::CoreBuilder::default()
@@ -87,7 +87,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scratch_new() {
-        let temp = TempDir::new("gt-tasks-new-folder").unwrap();
+        let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w19", temp.path().join("scratch").into());
 
         let core = core::CoreBuilder::default()

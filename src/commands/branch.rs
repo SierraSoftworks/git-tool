@@ -69,13 +69,12 @@ mod tests {
 
     use super::*;
     use crate::core::*;
-    use tempdir::TempDir;
 
     #[tokio::test]
     async fn checkout_branch_inside_repo() {
         let cmd = BranchCommand {};
 
-        let temp = TempDir::new("gt-commands-branch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
 
         let repo: Repo = core::Repo::new(
             "github.com/sierrasoftworks/test-git-checkout-command",
@@ -107,7 +106,7 @@ mod tests {
     async fn checkout_branch_outside_repo() {
         let cmd = BranchCommand {};
 
-        let temp = TempDir::new("gt-commands-branch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))

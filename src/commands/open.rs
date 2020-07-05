@@ -121,7 +121,7 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
 mod tests {
     use super::*;
     use super::core::{CoreBuilder, Config, Repo};
-    use tempdir::TempDir;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn run() {
@@ -142,7 +142,7 @@ features:
   http_transport: true
 ").unwrap();
 
-        let temp = TempDir::new("gt-commands-open").unwrap();
+        let temp = tempdir().unwrap();
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|l| {
