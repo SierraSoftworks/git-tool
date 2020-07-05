@@ -14,7 +14,7 @@ impl Command for UpdateCommand {
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
             .after_help("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
             .arg(Arg::with_name("state")
-                .long("update-resume-internal")
+                .long("state")
                 .help("State information used to resume an update operation.")
                 .hidden(true)
                 .takes_value(true))
@@ -44,6 +44,25 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
             err))?;
         let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
+
+        let resume_successful = match matches.value_of("state") {
+            Some(state) => {
+                debug!("Received update state: {}", state);
+                let state: crate::update::UpdateState = serde_json::from_str(state).map_err(|e| errors::system_with_internal(
+                    "Could not deserialize the update state blob.",
+                    "Please report this issue to us on GitHub and use the manual update process until this problem is resolved.",
+                    e))?;
+
+                info!("Resuming update in phase {}", state.phase.to_string());
+                manager.resume(&state).await?
+            }
+            None => false,
+        };
+
+        if resume_successful {
+            sentry::capture_message(&format!("Resumed Update"), sentry::Level::Info);
+            return Ok(0);
+        }
 
         let releases = manager.get_releases(core).await?;
 

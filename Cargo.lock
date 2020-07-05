@@ -538,7 +538,7 @@ checksum = "bcc8e0c9bce37868955864dbecd2b1ab2bdf967e6f28066d65aaac620444b65c"
 
 [[package]]
 name = "git-tool"
-version = "2.0.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "base64",
