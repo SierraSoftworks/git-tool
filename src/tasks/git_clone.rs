@@ -38,11 +38,11 @@ impl<C: Core> Task<C> for GitClone {
 mod tests {
     use super::*;
     use crate::core::*;
-    use tempdir::TempDir;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_repo_basic() {
-        let temp = TempDir::new("gt-tasks-clone").unwrap();
+        let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "github.com/git-fixtures/basic",
             temp.path().join("repo").into(),
@@ -58,7 +58,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scratch() {
-        let temp = TempDir::new("gt-tasks-clone").unwrap();
+        let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
         let core = core::CoreBuilder::default()

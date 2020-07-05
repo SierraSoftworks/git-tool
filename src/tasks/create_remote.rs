@@ -45,11 +45,11 @@ impl<C: Core> Task<C> for CreateRemote {
 mod tests {
     use super::*;
     use crate::core::{Config, KeyChain, Target};
-    use tempdir::TempDir;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_repo() {
-        let temp = TempDir::new("gt-tasks-create-remote").unwrap();
+        let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "github.com/sierrasoftworks/test-git-remote",
             temp.path().join("repo").into(),
@@ -69,7 +69,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scratch() {
-        let temp = TempDir::new("gt-tasks-create-remote").unwrap();
+        let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
         let core = core::CoreBuilder::default()
