@@ -39,6 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
         sentry::ClientOptions {
             release: sentry::release_name!(),
+            default_integrations: true,
             ..Default::default()
         }
         .add_integration(sentry::integrations::log::LogIntegration::default()),
@@ -56,6 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .env("GITTOOL_CONFIG")
                 .value_name("FILE")
                 .help("The path to your git-tool configuration file.")
+                .global(true)
                 .takes_value(true))
         .arg(Arg::with_name("update-resume-internal")
             .long("update-resume-internal")
@@ -75,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         }
         Result::Err(err) => {
             error!("{}", err.message());
+            println!("{}", err.message());
 
             if err.is_system() {
                 sentry::capture_error(&err);
@@ -102,7 +105,12 @@ async fn run<'a>(
     // Legacy update interoperability for compatibility with the Golang implementation
     if let Some(state) = matches.value_of("update-resume-internal") {
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
-            let matches = cmd.app().get_matches_from(vec!["update", "--state", state]);
+            let matches = cmd
+                .app()
+                .get_matches_from_safe(vec!["gt", "update", "--state", &state.replace("\"", "\"\"")])
+                .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
+                    "Please report this error to us on GitHub and use the manual update process until it is resolved.",
+                    e))?;
 
             return cmd.run(&core, &matches).await;
         }
