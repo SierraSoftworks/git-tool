@@ -95,7 +95,7 @@ mod tests {
             .app()
             .get_matches_from(vec!["new", "test/new-repo-partial"]);
 
-        let temp = tempdir::TempDir::new("gt-command-new").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
         let core = CoreBuilder::default()
@@ -127,7 +127,7 @@ mod tests {
             .app()
             .get_matches_from(vec!["new", "github.com/test/new-repo-full"]);
 
-        let temp = tempdir::TempDir::new("gt-command-new").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
         let core = CoreBuilder::default()
