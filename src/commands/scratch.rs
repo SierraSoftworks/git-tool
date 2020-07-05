@@ -117,7 +117,7 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["scratch"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
@@ -160,7 +160,7 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "test-app"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
@@ -200,7 +200,7 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
@@ -239,7 +239,7 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "test-app", "2020w07"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
@@ -279,7 +279,7 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "unknown-app", "2020w07"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}
@@ -312,7 +312,7 @@ apps:
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
-        let temp = tempdir::TempDir::new("gt-commands-scratch").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let cfg = Config::from_str(&format!("
 directory: {}
 scratchpads: {}

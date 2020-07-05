@@ -274,7 +274,7 @@ mod tests {
 
     #[tokio::test]
     async fn run_add_with_file() {
-        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         tokio::fs::write(
             temp.path().join("config.yml"),
             Config::default().to_string().unwrap(),
@@ -383,7 +383,7 @@ aliases:
 
     #[tokio::test]
     async fn run_alias_add() {
-        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         tokio::fs::write(
             temp.path().join("config.yml"),
             Config::default().to_string().unwrap(),
@@ -418,7 +418,7 @@ aliases:
 
     #[tokio::test]
     async fn run_alias_delete() {
-        let temp = tempdir::TempDir::new("gt-commands-config").unwrap();
+        let temp = tempfile::tempdir().unwrap();
         tokio::fs::write(
             temp.path().join("config.yml"),
             r#"
