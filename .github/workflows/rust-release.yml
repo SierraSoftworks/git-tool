@@ -70,7 +70,7 @@ jobs:
         name: cargofile
 
     - name: Build Release
-      uses: actions-rs/cargo@v1.0.1
+      uses: actions-rs/cargo@v1.0.3
       with:
         command: build
         args: --release
