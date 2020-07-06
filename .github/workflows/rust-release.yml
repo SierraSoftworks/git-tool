@@ -24,7 +24,7 @@ jobs:
         value: ${{ steps.version.outputs.version }}
 
     - name: Stash Versioned Cargo.toml
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: cargofile
         path: Cargo.toml
@@ -65,7 +65,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Fetch Versioned Cargo.toml
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v2
       with:
         name: cargofile
 
