@@ -29,7 +29,7 @@ jobs:
     #     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v2
         
     - name: Run tests
-      uses: actions-rs/cargo@v1.0.1
+      uses: actions-rs/cargo@v1.0.3
       with:
         command: test
         args: --all-features --no-fail-fast
