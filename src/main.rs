@@ -107,7 +107,7 @@ async fn run<'a>(
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
-                .get_matches_from_safe(vec!["gt", "update", "--state", &state.replace("\"", "\"\"")])
+                .get_matches_from_safe(vec!["gt", "update", "--state", &state])
                 .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
                     "Please report this error to us on GitHub and use the manual update process until it is resolved.",
                     e))?;
