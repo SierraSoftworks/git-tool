@@ -76,7 +76,7 @@ jobs:
         args: --release
         
     - name: Create Sentry Release
-      uses: tclindner/sentry-releases-action@v1.0.0
+      uses: tclindner/sentry-releases-action@v1.2.0
       env:
         SENTRY_ORG: sierra-softworks
         SENTRY_PROJECT: git-tool
