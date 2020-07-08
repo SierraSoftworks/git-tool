@@ -11,6 +11,8 @@ extern crate keyring;
 extern crate log;
 extern crate rpassword;
 extern crate sentry;
+#[macro_use]
+extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
@@ -50,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut app = App::new("Git-Tool")
         .version(env!("CARGO_PKG_VERSION"))
         .author("Benjamin Pannell <benjamin@pannell.dev>")
-        .about("Simplify your Git repository management and stop thinking about folders.")
+        .about("Simplify your Git repository management and stop thinking about where things belong.")
         .arg(Arg::with_name("config")
                 .short("c")
                 .long("config")
@@ -68,10 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let matches = app.clone().get_matches();
 
-    match run(commands, matches).await {
-        Result::Ok(-1) => {
-            app.print_help()?;
-        }
+    match run(&mut app, commands, matches).await {
         Result::Ok(status) => {
             std::process::exit(status);
         }
@@ -86,13 +85,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             std::process::exit(1);
         }
     }
-
-    Ok(())
 }
 
-async fn run<'a>(
+async fn run<'a, 'b: 'a>(
+    app: &'a mut App<'a, 'b>,
     commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
-    matches: ArgMatches<'a>,
+    matches: ArgMatches<'b>,
 ) -> Result<i32, errors::Error> {
     let mut core_builder = core::CoreBuilder::default();
 
@@ -126,11 +124,17 @@ async fn run<'a>(
                 ..Default::default()
             });
 
+            sentry::configure_scope(|scope| {
+                scope.set_transaction(Some(&cmd.name()));
+                scope.set_tag("command", cmd.name());
+            });
+
             return cmd.run(&core, cmd_matches).await;
         }
     }
 
     warn!("You have not provided a valid command or command alias. Try running `git-tool open github.com/your/repo`.");
+    app.print_help().unwrap_or_default();
 
     Ok(-1)
 }

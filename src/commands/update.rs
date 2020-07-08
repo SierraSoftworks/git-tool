@@ -48,19 +48,31 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         let resume_successful = match matches.value_of("state") {
             Some(state) => {
                 debug!("Received update state: {}", state);
+                sentry::configure_scope(|scope| {
+                    scope.set_extra("state", json!(state));
+                });
+
                 let state: crate::update::UpdateState = serde_json::from_str(state).map_err(|e| errors::system_with_internal(
                     "Could not deserialize the update state blob.",
                     "Please report this issue to us on GitHub and use the manual update process until this problem is resolved.",
                     e))?;
+                sentry::configure_scope(|scope| {
+                    scope.set_extra("state", serde_json::to_value(&state).unwrap_or_default());
+                    scope.set_transaction(Some(&format!("update/{}", state.phase.to_string())));
+                });
 
                 info!("Resuming update in phase {}", state.phase.to_string());
-                manager.resume(&state).await?
+                manager.resume(&state).await.map_err(|e| {
+                    sentry::capture_error(&e);
+
+                    e
+                })?
             }
             None => false,
         };
 
         if resume_successful {
-            sentry::capture_message(&format!("Resumed Update"), sentry::Level::Info);
+            sentry::capture_message("Resumed Update", sentry::Level::Info);
             return Ok(0);
         }
 
@@ -88,6 +100,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
 
         match target_release {
             Some(release) => {
+                sentry::capture_message(&format!("Starting Update to {}", release.id), sentry::Level::Info);
                 writeln!(output, "Downloading update {}...", &release.id)?;
                 if manager.update(core, &release).await? {
                     writeln!(output, "Shutting down to complete the update operation.")?;
