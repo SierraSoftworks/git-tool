@@ -61,24 +61,54 @@ impl Config {
         into
     }
 
-    pub fn add(&self, template: EntryConfig) -> Self {
+    pub fn apply_template(
+        &self,
+        template: EntryConfig,
+        replace_existing: bool,
+    ) -> Result<Self, errors::Error> {
         let mut into = self.clone();
 
         match template.app {
             Some(app) => {
-                into.apps.push(Arc::new(app.into()));
+                if let Some(existing_position) =
+                    into.apps.iter().position(|a| a.get_name() == app.name)
+                {
+                    if !replace_existing {
+                        return Err(errors::user(
+                            &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
+                            &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app=&app.name)));
+                    } else {
+                        into.apps[existing_position] = Arc::new(app.into());
+                    }
+                } else {
+                    into.apps.push(Arc::new(app.into()));
+                }
             }
             None => {}
         }
 
         match template.service {
             Some(svc) => {
-                into.services.push(Arc::new(svc.into()));
+                if let Some(existing_position) = into
+                    .services
+                    .iter()
+                    .position(|s| s.get_domain() == svc.domain)
+                {
+                    if !replace_existing {
+                        return Err(errors::user(
+                            &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.domain),
+                            &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.domain)));
+                    } else {
+                        into.services[existing_position] = Arc::new(svc.into());
+                    }
+                } else {
+                    into.services.push(Arc::new(svc.into()));
+                }
             }
             None => {}
         }
 
-        into
+        Ok(into)
     }
 
     #[cfg(test)]
@@ -344,9 +374,9 @@ apps:
     }
 
     #[test]
-    fn add_template() {
+    fn apply_template() {
         let cfg = Config::default();
-        let new_cfg = cfg.add(EntryConfig {
+        let template = EntryConfig {
             platform: "linux".to_string(),
             app: Some(EntryApp {
                 name: "test-app".to_string(),
@@ -361,8 +391,9 @@ apps:
                 git_url: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git".to_string(),
                 http_url: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git".to_string(),
             }),
-        });
+        };
 
+        let new_cfg = cfg.apply_template(template.clone(), false).unwrap();
         assert!(
             new_cfg.get_app("test-app").is_some(),
             "the test-app should have been added"
@@ -371,6 +402,9 @@ apps:
             new_cfg.get_service("example.com").is_some(),
             "the example service should have been registered"
         );
+
+        assert!(new_cfg.apply_template(template.clone(), false).is_err());
+        assert!(new_cfg.apply_template(template.clone(), true).is_ok());
     }
 
     #[test]

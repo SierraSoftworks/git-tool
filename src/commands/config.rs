@@ -30,7 +30,11 @@ impl Command for ConfigCommand {
                 .arg(Arg::with_name("id")
                     .index(1)
                     .help("the id of the configuration template you want to add")
-                    .required(true)))
+                    .required(true))
+                .arg(Arg::with_name("force")
+                    .long("force")
+                    .short("f")
+                    .help("overwrites any existing entries with those from the template.")))
 
             .subcommand(SubCommand::with_name("alias")
                 .version("1.0")
@@ -76,7 +80,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
-                        cfg = cfg.add(ec);
+                        cfg = cfg.apply_template(ec, args.is_present("force"))?;
                     }
                 }
 
