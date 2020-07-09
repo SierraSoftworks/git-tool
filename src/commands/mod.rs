@@ -17,6 +17,7 @@ mod auth;
 mod branch;
 mod complete;
 mod config;
+mod helpers;
 mod ignore;
 mod info;
 mod list;

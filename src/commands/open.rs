@@ -1,12 +1,10 @@
-use clap::{App, SubCommand, Arg, ArgMatches};
 use super::Command;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
+use clap::{App, Arg, ArgMatches, SubCommand};
 
-pub struct OpenCommand {
-
-}
+pub struct OpenCommand {}
 
 impl Command for OpenCommand {
     fn name(&self) -> String {
@@ -31,87 +29,65 @@ New applications can be configured either by making changes to your configuratio
     }
 }
 
-
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for OpenCommand {    
+impl<C: Core> CommandRunnable<C> for OpenCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        let mut repo: Option<core::Repo> = None;
-        let mut app: Option<&core::App> = core.config().get_default_app();
-
-        match matches.value_of("repo") {
-            Some(name) => {
-                repo = Some(core.resolver().get_best_repo(name)?);
+        let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
+            helpers::LaunchTarget::AppAndTarget(app, target) => {
+                (app, core.resolver().get_best_repo(target)?)
             },
-            None => {}
-        }
-
-        match matches.value_of("app") {
-            Some(name) => {
-                match repo {
-                    Some(_) => {
-                        app = core.config().get_app(name);
-
-                        match app {
-                            Some(_) => {},
-                            None => return Err(errors::user(
-                                format!("Could not find application with name '{}'.", name).as_str(),
-                                format!("Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{}'.", name).as_str()))
-                        }
-                    }
-                    None => {
-                        repo = Some(core.resolver().get_best_repo(name)?);
-                    }
-                }
+            helpers::LaunchTarget::App(app) => {
+                (app, core.resolver().get_current_repo()?)
             },
-            None => 
+            helpers::LaunchTarget::Target(target) => {
+                let app = core.config().get_default_app().ok_or(errors::user(
+                    "No default application available.",
+                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+
+                (app, core.resolver().get_best_repo(target)?)
+            },
+            helpers::LaunchTarget::Err(err) => {
+                return Err(err)
+            },
+            helpers::LaunchTarget::None => {
                 return Err(errors::user(
                     "You did not specify the name of a repository to use.",
                     "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'."))
-            
-        }
-
-        match app {
-            Some(_) => {},
-            None => 
-                return Err(errors::user(
-                    "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))
-        }
-
-        match repo {
-            Some(_) => {}
-            None => {
-                repo = Some(core.resolver().get_current_repo()?);
             }
+        };
+
+        if !repo.exists() {
+            sequence![GitClone {}].apply_repo(core, &repo).await?;
         }
 
-        if let Some(repo) = repo {
-            if !repo.exists() {
-                sequence![
-                    GitClone{}
-                ].apply_repo(core, &repo).await?;
-            }
-
-            if let Some(app) = app {
-                let status = core.launcher().run(app, &repo).await?;
-                return Ok(status)
-            }
-        }
-        
-        Ok(0)
+        let status = core.launcher().run(app, &repo).await?;
+        Ok(status)
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
-        let default_svc = core.config().get_default_service().map(|s| s.get_domain()).unwrap_or_default();
+        let default_svc = core
+            .config()
+            .get_default_service()
+            .map(|s| s.get_domain())
+            .unwrap_or_default();
 
         match core.resolver().get_repos() {
             Ok(repos) => {
-                completer.offer_many(repos.iter().filter(|r| r.get_domain() == default_svc).map(|r| r.get_full_name()));
-                completer.offer_many(repos.iter().map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())));
-            },
+                completer.offer_many(
+                    repos
+                        .iter()
+                        .filter(|r| r.get_domain() == default_svc)
+                        .map(|r| r.get_full_name()),
+                );
+                completer.offer_many(
+                    repos
+                        .iter()
+                        .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
+                );
+            }
             _ => {}
         }
     }
@@ -119,17 +95,18 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
-    use super::core::{CoreBuilder, Config, Repo};
     use tempfile::tempdir;
 
     #[tokio::test]
     async fn run() {
-        let cmd = OpenCommand{};
+        let cmd = OpenCommand {};
 
         let args = cmd.app().get_matches_from(vec!["open", "test-app", "repo"]);
 
-        let cfg = Config::from_str("
+        let cfg = Config::from_str(
+            "
 directory: /dev
 
 apps:
@@ -140,7 +117,9 @@ apps:
 
 features:
   http_transport: true
-").unwrap();
+",
+        )
+        .unwrap();
 
         let temp = tempdir().unwrap();
         let core = CoreBuilder::default()
@@ -149,10 +128,12 @@ features:
                 l.status = 5;
             })
             .with_mock_resolver(|r| {
-                r.set_repo(Repo::new("github.com/git-fixtures/basic", temp.path().join("repo").into()));
+                r.set_repo(Repo::new(
+                    "github.com/git-fixtures/basic",
+                    temp.path().join("repo").into(),
+                ));
             })
             .build();
-        
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
@@ -162,10 +143,8 @@ features:
 
                 let launch = &launches[0];
                 assert_eq!(launch.target_path, temp.path().join("repo"))
-            },
-            Err(err) => {
-                panic!(err.message())
             }
+            Err(err) => panic!(err.message()),
         }
     }
 }
