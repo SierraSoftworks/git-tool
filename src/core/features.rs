@@ -14,6 +14,8 @@ pub struct Features {
     http_transport: bool,
     #[serde(default = "default_as_true")]
     create_remote_private: bool,
+    #[serde(default)]
+    open_new_repo_in_default_app: bool,
 }
 
 impl Default for Features {
@@ -23,6 +25,7 @@ impl Default for Features {
             create_remote: true,
             http_transport: false,
             create_remote_private: true,
+            open_new_repo_in_default_app: false,
         }
     }
 }
@@ -47,6 +50,10 @@ impl Features {
 
     pub fn create_remote_private(&self) -> bool {
         self.create_remote_private
+    }
+
+    pub fn open_new_repo_in_default_app(&self) -> bool {
+        self.open_new_repo_in_default_app
     }
 }
 
@@ -79,8 +86,8 @@ impl FeaturesBuilder {
         Features {
             create_remote: self.create_remote,
             http_transport: self.http_transport,
-            native_clone: true,
             create_remote_private: self.create_remote_private,
+            ..Default::default()
         }
     }
 }

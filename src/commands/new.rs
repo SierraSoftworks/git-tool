@@ -60,7 +60,8 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
         tasks.apply_repo(core, &repo).await?;
 
-        if matches.is_present("open") {
+        if matches.is_present("open") || core.config().get_features().open_new_repo_in_default_app()
+        {
             let app = core.config().get_default_app().ok_or(errors::user(
                 "No default application available.",
                 "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
