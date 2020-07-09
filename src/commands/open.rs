@@ -26,6 +26,10 @@ New applications can be configured either by making changes to your configuratio
             .arg(Arg::with_name("repo")
                     .help("The name of the repository to open.")
                     .index(2))
+            .arg(Arg::with_name("create")
+                    .long("create")
+                    .short("c")
+                    .help("create the repository if it does not exist."))
     }
 }
 
@@ -57,7 +61,24 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
         };
 
         if !repo.exists() {
-            sequence![GitClone {}].apply_repo(core, &repo).await?;
+            match sequence![GitClone {}].apply_repo(core, &repo).await {
+                Ok(()) => {}
+                Err(_) if matches.is_present("create") => {
+                    sequence![
+                        GitInit {},
+                        GitRemote {
+                            name: "origin".to_string()
+                        },
+                        GitCheckout {
+                            branch: "main".to_string()
+                        },
+                        CreateRemote {}
+                    ]
+                    .apply_repo(core, &repo)
+                    .await?;
+                }
+                Err(e) => return Err(e),
+            }
         }
 
         let status = core.launcher().run(app, &repo).await?;
