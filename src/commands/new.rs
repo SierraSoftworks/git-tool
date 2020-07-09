@@ -73,6 +73,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer("--open");
         match core.resolver().get_repos() {
             Ok(repos) => {
                 let mut namespaces = std::collections::HashSet::new();
