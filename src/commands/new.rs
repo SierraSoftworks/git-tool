@@ -23,6 +23,12 @@ impl Command for NewCommand {
                     .help("The name of the repository to create.")
                     .index(1),
             )
+            .arg(
+                Arg::with_name("open")
+                    .long("open")
+                    .short("o")
+                    .help("opens the repository in your default application after it is created."),
+            )
     }
 }
 
@@ -53,6 +59,15 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
         ];
 
         tasks.apply_repo(core, &repo).await?;
+
+        if matches.is_present("open") {
+            let app = core.config().get_default_app().ok_or(errors::user(
+                "No default application available.",
+                "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+
+            let status = core.launcher().run(app, &repo).await?;
+            return Ok(status);
+        }
 
         Ok(0)
     }
