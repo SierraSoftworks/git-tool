@@ -1,11 +1,9 @@
-use clap::{App, SubCommand, Arg, ArgMatches};
-use super::{Command, core::Target, tasks, tasks::Task};
-use super::*;
 use super::async_trait;
+use super::*;
+use super::{core::Target, tasks, tasks::Task, Command};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
-pub struct ScratchCommand {
-
-}
+pub struct ScratchCommand {}
 
 impl Command for ScratchCommand {
     fn name(&self) -> String {
@@ -17,81 +15,55 @@ impl Command for ScratchCommand {
             .version("1.0")
             .alias("s")
             .about("opens a scratchpad using an application defined in your config")
-            .arg(Arg::with_name("app")
+            .arg(
+                Arg::with_name("app")
                     .help("The name of the application to launch.")
-                    .index(1))
-            .arg(Arg::with_name("scratchpad")
+                    .index(1),
+            )
+            .arg(
+                Arg::with_name("scratchpad")
                     .help("The name of the scratchpad to open.")
-                    .index(2))
+                    .index(2),
+            )
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ScratchCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        let mut scratchpad: Option<core::Scratchpad> = None;
-        let mut app: Option<&core::App> = core.config().get_default_app();
-
-        match app {
-            Some(_) => {},
-            None => 
-                return Err(errors::user(
+        let (app, scratchpad) = match helpers::get_launch_app(
+            core,
+            matches.value_of("app"),
+            matches.value_of("scratchpad"),
+        ) {
+            helpers::LaunchTarget::AppAndTarget(app, target) => {
+                (app, core.resolver().get_scratchpad(target)?)
+            }
+            helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_scratchpad()?),
+            helpers::LaunchTarget::Target(target) => {
+                let app = core.config().get_default_app().ok_or(errors::user(
                     "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))
-        }
+                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
-        match matches.value_of("scratchpad") {
-            Some(name) => {
-                scratchpad = Some(core.resolver().get_scratchpad(name)?);
-            },
-            None => {}
-        }
-
-        match matches.value_of("app") {
-            Some(name) => {
-                match core.config().get_app(name) {
-                    Some(a) => {
-                        app = Some(a);
-                    },
-                    None => {
-                        match scratchpad {
-                            Some(_) => {
-                                return Err(errors::user(
-                                    format!("Could not find application with name '{}'.", name).as_str(),
-                                    format!("Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{}'.", name).as_str()))
-                            },
-                            None => {
-                                scratchpad = Some(core.resolver().get_scratchpad(name)?);
-                            }
-                        }
-                    }
-                }
-            },
-            None => {}
-        }
-
-        match scratchpad {
-            Some(_) => {},
-            None => {
-                scratchpad = Some(core.resolver().get_current_scratchpad()?);
+                (app, core.resolver().get_scratchpad(target)?)
             }
-        }
+            helpers::LaunchTarget::Err(err) => return Err(err),
+            helpers::LaunchTarget::None => {
+                let app = core.config().get_default_app().ok_or(errors::user(
+                    "No default application available.",
+                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
-        if let Some(scratchpad) = scratchpad {
-            if let Some(app) = app {
-                if !scratchpad.exists() {
-                    let task = tasks::NewFolder{};
-                    task.apply_scratchpad(core, &scratchpad).await?;
-                }
-
-                let status = core.launcher().run(app, &scratchpad).await?;
-                return Ok(status)
+                (app, core.resolver().get_current_scratchpad()?)
             }
+        };
+
+        if !scratchpad.exists() {
+            let task = tasks::NewFolder {};
+            task.apply_scratchpad(core, &scratchpad).await?;
         }
-        
-        Err(errors::system(
-            "We got ourselves into an unexpected state and weren't able to open your scratchpad.",
-            "Please open a bug report with us on GitHub explaining what you were doing when this happened."))
+
+        let status = core.launcher().run(app, &scratchpad).await?;
+        return Ok(status);
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
@@ -100,7 +72,7 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
         match core.resolver().get_scratchpads() {
             Ok(pads) => {
                 completer.offer_many(pads.iter().map(|p| p.get_name()));
-            },
+            }
             _ => {}
         }
     }
@@ -108,17 +80,18 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
 
 #[cfg(test)]
 mod tests {
+    use super::core::{Config, CoreBuilder};
     use super::*;
-    use super::core::{CoreBuilder, Config};
 
     #[tokio::test]
     async fn run_no_args() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
         let args = cmd.app().get_matches_from(vec!["scratch"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -127,7 +100,11 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
@@ -137,7 +114,6 @@ apps:
             .with_mock_resolver(|_| {})
             .build();
 
-
         match cmd.run(&core, &args).await {
             Ok(status) => {
                 let launches = core.launcher().launches.lock().await;
@@ -145,23 +121,25 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w01"));
+                assert_eq!(
+                    launch.target_path,
+                    temp.path().join("scratch").join("2020w01")
+                );
                 assert_eq!(status, 5);
-            },
-            Err(err) => {
-                panic!(err.message())
             }
+            Err(err) => panic!(err.message()),
         }
     }
-    
+
     #[tokio::test]
     async fn run_only_app() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
         let args = cmd.app().get_matches_from(vec!["scratch", "test-app"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -170,14 +148,17 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
@@ -186,22 +167,24 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w01"));
-            },
-            Err(err) => {
-                panic!(err.message())
+                assert_eq!(
+                    launch.target_path,
+                    temp.path().join("scratch").join("2020w01")
+                );
             }
+            Err(err) => panic!(err.message()),
         }
     }
-    
+
     #[tokio::test]
     async fn run_only_scratchpad() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -210,7 +193,11 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-        ", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+        ",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
@@ -225,22 +212,26 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, core.config().get_scratch_directory().join("2020w07"));
-            },
-            Err(err) => {
-                panic!(err.message())
+                assert_eq!(
+                    launch.target_path,
+                    core.config().get_scratch_directory().join("2020w07")
+                );
             }
+            Err(err) => panic!(err.message()),
         }
     }
-    
+
     #[tokio::test]
     async fn run_app_and_scratchpad() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
-        let args = cmd.app().get_matches_from(vec!["scratch", "test-app", "2020w07"]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["scratch", "test-app", "2020w07"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -249,38 +240,45 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
                 let launches = core.launcher().launches.lock().await;
                 assert_eq!(launches.len(), 1);
-                
+
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w07"));
-            },
-            Err(err) => {
-                panic!(err.message())
+                assert_eq!(
+                    launch.target_path,
+                    temp.path().join("scratch").join("2020w07")
+                );
             }
+            Err(err) => panic!(err.message()),
         }
     }
-    
+
     #[tokio::test]
     async fn run_unknown_app() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
-        let args = cmd.app().get_matches_from(vec!["scratch", "unknown-app", "2020w07"]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["scratch", "unknown-app", "2020w07"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -289,31 +287,35 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
-
 
         match cmd.run(&core, &args).await {
             Ok(_) => {
                 panic!("It should not launch an app.");
-            },
+            }
             Err(_) => {}
         }
     }
-    
+
     #[tokio::test]
     async fn run_new_scratchpad() {
-        let cmd = ScratchCommand{};
+        let cmd = ScratchCommand {};
 
         let args = cmd.app().get_matches_from(vec!["scratch", "2020w07"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!("
+        let cfg = Config::from_str(&format!(
+            "
 directory: {}
 scratchpads: {}
 
@@ -322,7 +324,11 @@ apps:
     command: test
     args:
         - '{{ .Target.Name }}'
-", temp.path().display(), temp.path().join("scratch").display())).unwrap();
+",
+            temp.path().display(),
+            temp.path().join("scratch").display()
+        ))
+        .unwrap();
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
@@ -337,15 +343,16 @@ apps:
 
                 let launch = &launches[0];
                 assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(launch.target_path, temp.path().join("scratch").join("2020w07"));
+                assert_eq!(
+                    launch.target_path,
+                    temp.path().join("scratch").join("2020w07")
+                );
 
                 assert_eq!(launch.target_path.exists(), true);
 
                 std::fs::remove_dir(launch.target_path.clone()).unwrap();
-            },
-            Err(err) => {
-                panic!(err.message())
             }
+            Err(err) => panic!(err.message()),
         }
     }
 }

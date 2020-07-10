@@ -23,6 +23,12 @@ impl Command for NewCommand {
                     .help("The name of the repository to create.")
                     .index(1),
             )
+            .arg(
+                Arg::with_name("open")
+                    .long("open")
+                    .short("o")
+                    .help("opens the repository in your default application after it is created."),
+            )
     }
 }
 
@@ -54,10 +60,21 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
         tasks.apply_repo(core, &repo).await?;
 
+        if matches.is_present("open") || core.config().get_features().open_new_repo_in_default_app()
+        {
+            let app = core.config().get_default_app().ok_or(errors::user(
+                "No default application available.",
+                "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+
+            let status = core.launcher().run(app, &repo).await?;
+            return Ok(status);
+        }
+
         Ok(0)
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer("--open");
         match core.resolver().get_repos() {
             Ok(repos) => {
                 let mut namespaces = std::collections::HashSet::new();
