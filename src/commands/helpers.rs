@@ -57,18 +57,7 @@ mod tests {
                 assert_eq!(app.get_name(), "shell");
                 assert_eq!(repo, "github.com/test/test");
             }
-            LaunchTarget::App(_) => {
-                panic!("Both the app and target should have been matched, only got the app.");
-            }
-            LaunchTarget::Target(_) => {
-                panic!("Both the app and target should have been matched, only got the target.");
-            }
-            LaunchTarget::Err(_) => {
-                panic!("Should not have received an error!");
-            }
-            LaunchTarget::None => {
-                panic!("Both the app and target should have been matched, got none.");
-            }
+            _ => panic!("Both the app and target should have been matched."),
         }
     }
 
@@ -81,18 +70,7 @@ mod tests {
                 assert_eq!(app.get_name(), "shell");
                 assert_eq!(repo, "github.com/test/test");
             }
-            LaunchTarget::App(_) => {
-                panic!("Both the app and target should have been matched, only got the app.");
-            }
-            LaunchTarget::Target(_) => {
-                panic!("Both the app and target should have been matched, only got the target.");
-            }
-            LaunchTarget::Err(_) => {
-                panic!("Should not have received an error!");
-            }
-            LaunchTarget::None => {
-                panic!("Both the app and target should have been matched, got none.");
-            }
+            _ => panic!("Both the app and target should have been matched."),
         }
     }
 
@@ -101,21 +79,10 @@ mod tests {
         let core = CoreBuilder::default().build();
 
         match get_launch_app(&core, Some("shell"), None) {
-            LaunchTarget::AppAndTarget(_, _) => {
-                panic!("Only the app should have been matched, got the app and target.");
-            }
             LaunchTarget::App(app) => {
                 assert_eq!(app.get_name(), "shell");
             }
-            LaunchTarget::Target(_) => {
-                panic!("Only the app should have been matched, got the target.");
-            }
-            LaunchTarget::Err(_) => {
-                panic!("Should not have received an error!");
-            }
-            LaunchTarget::None => {
-                panic!("Only the app should have been matched, got none.");
-            }
+            _ => panic!("Only the app should have been matched."),
         }
     }
 
@@ -124,21 +91,10 @@ mod tests {
         let core = CoreBuilder::default().build();
 
         match get_launch_app(&core, Some("github.com/test/test"), None) {
-            LaunchTarget::AppAndTarget(_, _) => {
-                panic!("Only the target should have been matched, got the app and target.");
-            }
-            LaunchTarget::App(_) => {
-                panic!("Only the target should have been matched, got the app.");
-            }
             LaunchTarget::Target(repo) => {
                 assert_eq!(repo, "github.com/test/test");
             }
-            LaunchTarget::Err(_) => {
-                panic!("Should not have received an error!");
-            }
-            LaunchTarget::None => {
-                panic!("Only the target should have been matched, got none.");
-            }
+            _ => panic!("Only the target should have been matched."),
         }
     }
 
@@ -147,19 +103,8 @@ mod tests {
         let core = CoreBuilder::default().build();
 
         match get_launch_app(&core, Some("unknown"), Some("github.com/test/test")) {
-            LaunchTarget::AppAndTarget(_, _) => {
-                panic!("Expected to receive an error.");
-            }
-            LaunchTarget::App(_) => {
-                panic!("Expected to receive an error.");
-            }
-            LaunchTarget::Target(_) => {
-                panic!("Expected to receive an error.");
-            }
             LaunchTarget::Err(e) => assert!(!e.is_system()),
-            LaunchTarget::None => {
-                panic!("Expected to receive an error.");
-            }
+            _ => panic!("Expected to receive an error."),
         }
     }
 
@@ -168,19 +113,8 @@ mod tests {
         let core = CoreBuilder::default().build();
 
         match get_launch_app(&core, None, None) {
-            LaunchTarget::AppAndTarget(_, _) => {
-                panic!("Expected to receive an error.");
-            }
-            LaunchTarget::App(_) => {
-                panic!("Expected to receive an error.");
-            }
-            LaunchTarget::Target(_) => {
-                panic!("Expected to receive an error.");
-            }
-            LaunchTarget::Err(e) => {
-                panic!("Should not have received an error!");
-            }
             LaunchTarget::None => {}
+            _ => panic!("Expected to receive none"),
         }
     }
 }
