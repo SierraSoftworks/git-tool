@@ -27,6 +27,11 @@ jobs:
     #       target
     #       !target/*/**.gcda
     #     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v2
+
+    - name: Prepare Git for Tests
+      run: |
+        git config --global user.name "Test User"
+        git config --global user.email "test@example.com"
         
     - name: Run tests
       uses: actions-rs/cargo@v1.0.3
