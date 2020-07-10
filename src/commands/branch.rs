@@ -36,9 +36,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
 
         match matches.value_of("branch") {
             Some(branch) => {
-                let task = tasks::GitCheckout {
-                    branch: branch.to_string(),
-                };
+                let task = tasks::GitCheckout { branch };
 
                 task.apply_repo(core, &repo).await?;
             }

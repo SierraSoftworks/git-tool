@@ -1,14 +1,15 @@
 use super::*;
 use crate::{core::Target, git};
 
-pub struct GitCheckout<'a> {
-    pub branch: &'a str,
+pub struct GitCommit<'a> {
+    pub message: &'a str,
+    pub paths: Vec<&'a str>,
 }
 
 #[async_trait::async_trait]
-impl<'a, C: Core> Task<C> for GitCheckout<'a> {
+impl<'a, C: Core> Task<C> for GitCommit<'a> {
     async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
-        git::git_checkout(&repo.get_path(), &self.branch).await
+        git::git_commit(&repo.get_path(), self.message, &self.paths).await
     }
 
     async fn apply_scratchpad(
@@ -24,31 +25,36 @@ impl<'a, C: Core> Task<C> for GitCheckout<'a> {
 mod tests {
     use super::*;
     use crate::core::*;
-    use crate::tasks::GitInit;
+    use std::path::PathBuf;
     use tempfile::tempdir;
 
     #[tokio::test]
-    async fn test_repo() {
+    async fn test_repo_basic() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-checkout",
-            temp.path().join("repo").into(),
-        );
+        let repo = core::Repo::new("github.com/git-fixtures/basic", temp.path().into());
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        sequence![GitInit {}, GitCheckout { branch: "test" }]
-            .apply_repo(&core, &repo)
-            .await
-            .unwrap();
+        sequence![
+            GitInit {},
+            WriteFile {
+                path: PathBuf::from("README.md"),
+                content: "This is a test"
+            },
+            GitAdd {
+                paths: vec!["README.md"]
+            },
+            GitCommit {
+                message: "Test Commit",
+                paths: vec!["README.md"]
+            }
+        ]
+        .apply_repo(&core, &repo)
+        .await
+        .unwrap();
         assert!(repo.valid());
-
-        assert_eq!(
-            git::git_current_branch(&repo.get_path()).await.unwrap(),
-            "test"
-        );
     }
 
     #[tokio::test]
@@ -60,7 +66,10 @@ mod tests {
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = GitCheckout { branch: "test" };
+        let task = GitCommit {
+            message: "Doesn't Matter",
+            paths: vec![],
+        };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);

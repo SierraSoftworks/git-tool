@@ -1,20 +1,18 @@
 use super::*;
 use crate::{core::Target, errors, git};
 
-pub struct GitRemote {
-    pub name: String,
+pub struct GitRemote<'a> {
+    pub name: &'a str,
 }
 
-impl Default for GitRemote {
+impl Default for GitRemote<'static> {
     fn default() -> Self {
-        Self {
-            name: "origin".into(),
-        }
+        Self { name: "origin" }
     }
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for GitRemote {
+impl<'a, C: Core> Task<C> for GitRemote<'a> {
     async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         let service = core.config().get_service(&repo.get_domain()).ok_or(
             errors::user(
@@ -59,15 +57,10 @@ mod tests {
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        sequence![
-            GitInit {},
-            GitRemote {
-                name: "origin".into()
-            }
-        ]
-        .apply_repo(&core, &repo)
-        .await
-        .unwrap();
+        sequence![GitInit {}, GitRemote { name: "origin" }]
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
         assert!(repo.valid());
     }
 
@@ -80,9 +73,7 @@ mod tests {
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
-        let task = GitRemote {
-            name: "origin".into(),
-        };
+        let task = GitRemote { name: "origin" };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);

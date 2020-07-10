@@ -49,12 +49,8 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
         let tasks = sequence![
             GitInit {},
-            GitRemote {
-                name: "origin".to_string()
-            },
-            GitCheckout {
-                branch: "main".to_string()
-            },
+            GitRemote { name: "origin" },
+            GitCheckout { branch: "main" },
             CreateRemote {}
         ];
 

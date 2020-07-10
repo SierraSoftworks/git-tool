@@ -66,12 +66,8 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
                 Err(_) if matches.is_present("create") => {
                     sequence![
                         GitInit {},
-                        GitRemote {
-                            name: "origin".to_string()
-                        },
-                        GitCheckout {
-                            branch: "main".to_string()
-                        },
+                        GitRemote { name: "origin" },
+                        GitCheckout { branch: "main" },
                         CreateRemote {}
                     ]
                     .apply_repo(core, &repo)
