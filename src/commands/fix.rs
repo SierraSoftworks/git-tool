@@ -110,6 +110,9 @@ mod tests {
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
+            .with_mock_keychain(|s| {
+                s.set_token("github.com", "test_token").unwrap();
+            })
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
