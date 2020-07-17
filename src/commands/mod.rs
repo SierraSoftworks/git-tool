@@ -17,6 +17,7 @@ mod auth;
 mod branch;
 mod complete;
 mod config;
+mod fix;
 mod helpers;
 mod ignore;
 mod info;
@@ -50,6 +51,7 @@ pub fn commands<C: Core>() -> Vec<Arc<dyn CommandRunnable<C>>> {
         Arc::new(branch::BranchCommand {}),
         Arc::new(complete::CompleteCommand {}),
         Arc::new(config::ConfigCommand {}),
+        Arc::new(fix::FixCommand {}),
         Arc::new(info::InfoCommand {}),
         Arc::new(ignore::IgnoreCommand {}),
         Arc::new(list::ListCommand {}),

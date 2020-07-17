@@ -26,7 +26,15 @@ impl<'a, C: Core> Task<C> for GitRemote<'a> {
             service.get_git_url(repo)?
         };
 
-        git::git_remote_add(&repo.get_path(), &self.name, &url).await
+        if git::git_remote_list(&repo.get_path())
+            .await?
+            .iter()
+            .any(|r| r == self.name)
+        {
+            git::git_remote_set_url(&repo.get_path(), &self.name, &url).await
+        } else {
+            git::git_remote_add(&repo.get_path(), &self.name, &url).await
+        }
     }
 
     async fn apply_scratchpad(
