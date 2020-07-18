@@ -75,6 +75,8 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
     }
 
     async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+        completer.offer("--all");
+        completer.offer("--no-create-remote");
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
 
         let default_svc = core
