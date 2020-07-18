@@ -124,4 +124,5 @@ jobs:
 
       - name: Finalize Sentry Release
         run: |
+          VERSION="git-tool@${{ github.event.release.tag_name }}"
           sentry-cli releases finalize "$VERSION"
