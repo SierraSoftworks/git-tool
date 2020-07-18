@@ -1,17 +1,23 @@
 use super::*;
 use crate::errors;
 
-pub struct CreateRemote {}
+pub struct CreateRemote {
+    pub enabled: bool,
+}
 
 impl Default for CreateRemote {
     fn default() -> Self {
-        Self {}
+        Self { enabled: true }
     }
 }
 
 #[async_trait::async_trait]
 impl<C: Core> Task<C> for CreateRemote {
     async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+        if !self.enabled {
+            return Ok(());
+        }
+
         if !core.config().get_features().create_remote() {
             return Ok(());
         }
@@ -64,7 +70,10 @@ mod tests {
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
             .build();
-        CreateRemote {}.apply_repo(&core, &repo).await.unwrap();
+        CreateRemote { enabled: true }
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
@@ -82,7 +91,7 @@ mod tests {
             )
             .build();
 
-        let task = CreateRemote {};
+        let task = CreateRemote { enabled: true };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert_eq!(scratch.get_path().join(".git").exists(), false);

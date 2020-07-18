@@ -23,13 +23,22 @@ impl Command for FixCommand {
                 .long("all")
                 .short("a")
                 .help("apply fixes to all matched repositories"))
+            .arg(Arg::with_name("no-create-remote")
+                .long("no-create-remote")
+                .short("R")
+                .help("prevent the creation of a remote repository (on supported services)"))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for FixCommand {
     async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
-        let tasks = sequence![GitRemote { name: "origin" }, CreateRemote {}];
+        let tasks = sequence![
+            GitRemote { name: "origin" },
+            CreateRemote {
+                enabled: !matches.is_present("no-create-remote")
+            }
+        ];
 
         match matches.is_present("all") {
             true => {

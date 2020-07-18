@@ -30,6 +30,10 @@ New applications can be configured either by making changes to your configuratio
                     .long("create")
                     .short("c")
                     .help("create the repository if it does not exist."))
+            .arg(Arg::with_name("no-create-remote")
+                    .long("no-create-remote")
+                    .short("R")
+                    .help("prevent the creation of a remote repository (on supported services)"))
     }
 }
 
@@ -68,7 +72,9 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
                         GitInit {},
                         GitRemote { name: "origin" },
                         GitCheckout { branch: "main" },
-                        CreateRemote {}
+                        CreateRemote {
+                            enabled: !matches.is_present("no-create-remote")
+                        }
                     ]
                     .apply_repo(core, &repo)
                     .await?;

@@ -29,6 +29,12 @@ impl Command for NewCommand {
                     .short("o")
                     .help("opens the repository in your default application after it is created."),
             )
+            .arg(
+                Arg::with_name("no-create-remote")
+                    .long("no-create-remote")
+                    .short("R")
+                    .help("prevent the creation of a remote repository (on supported services)"),
+            )
     }
 }
 
@@ -51,7 +57,9 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
             GitInit {},
             GitRemote { name: "origin" },
             GitCheckout { branch: "main" },
-            CreateRemote {}
+            CreateRemote {
+                enabled: !matches.is_present("no-create-remote")
+            }
         ];
 
         tasks.apply_repo(core, &repo).await?;
