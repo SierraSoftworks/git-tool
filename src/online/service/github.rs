@@ -79,10 +79,7 @@ impl GitHubService {
         let req = Request::builder()
             .uri(&uri)
             .method(method)
-            .header(
-                "User-Agent",
-                format!("Git-Tool/{}", env!("CARGO_PKG_VERSION")),
-            )
+            .header("User-Agent", version!("Git-Tool/v"))
             .header("Accept", "application/vnd.github.v3+json")
             .header("Authorization", format!("token {}", token))
             .body(body)

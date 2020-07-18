@@ -14,10 +14,7 @@ impl<C: Core> Registry<C> for GitHubRegistry {
         .parse()?;
 
         let req = hyper::Request::get(uri)
-            .header(
-                "User-Agent",
-                "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
-            )
+            .header("User-Agent", version!("Git-Tool/"))
             .body(hyper::Body::empty())
             .map_err(|e| {
                 errors::system_with_internal(

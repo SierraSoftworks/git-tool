@@ -21,6 +21,8 @@ use clap::{App, Arg, ArgMatches};
 use std::sync::Arc;
 
 #[macro_use]
+mod macros;
+#[macro_use]
 mod tasks;
 mod commands;
 mod completion;
@@ -40,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let raven = sentry::init((
         "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
         sentry::ClientOptions {
-            release: sentry::release_name!(),
+            release: Some(version!("git-tool@v{}").into()),
             default_integrations: true,
             ..Default::default()
         }
@@ -48,9 +50,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     ));
 
     let commands = commands::default_commands();
+    let version = version!("v");
 
     let mut app = App::new("Git-Tool")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(version.as_str())
         .author("Benjamin Pannell <benjamin@pannell.dev>")
         .about("Simplify your Git repository management and stop thinking about where things belong.")
         .arg(Arg::with_name("config")

@@ -28,10 +28,7 @@ impl<C: Core> Source<C> for GitHubSource {
         info!("Making GET request to {} to check for new releases.", uri);
 
         let req = hyper::Request::get(uri)
-            .header(
-                "User-Agent",
-                "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
-            )
+            .header("User-Agent", version!("Git-Tool/v"))
             .body(hyper::Body::empty())
             .map_err(|e| {
                 errors::system_with_internal(
@@ -159,10 +156,7 @@ impl GitHubSource {
             recursion_limit -= 1;
 
             let req = hyper::Request::get(current_uri)
-                .header(
-                    "User-Agent",
-                    "Git-Tool/".to_string() + env!("CARGO_PKG_VERSION"),
-                )
+                .header("User-Agent", version!("Git-Tool/v"))
                 .body(hyper::Body::empty())
                 .map_err(|e| {
                     errors::system_with_internal(

@@ -39,7 +39,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
     {
         let mut output = core.output().writer();
 
-        let current_version: semver::Version = env!("CARGO_PKG_VERSION").parse().map_err(|err| errors::system_with_internal(
+        let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
             err))?;
