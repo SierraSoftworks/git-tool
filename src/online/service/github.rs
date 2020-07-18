@@ -134,6 +134,7 @@ struct GitHubErrorResponse {
 
     pub message: String,
     pub documentation_url: String,
+    #[serde(default)]
     pub errors: Vec<GitHubError>,
 }
 
