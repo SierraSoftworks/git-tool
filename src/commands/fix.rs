@@ -34,7 +34,7 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
         match matches.is_present("all") {
             true => {
                 let mut output = core.output().writer();
-                let filter = match matches.value_of("filter") {
+                let filter = match matches.value_of("repo") {
                     Some(name) => name,
                     None => "",
                 };
