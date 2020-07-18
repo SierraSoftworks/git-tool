@@ -34,11 +34,21 @@ impl<C: Core> OnlineService<C> for GitHubService {
         };
 
         let req_body = serde_json::to_vec(&new_repo)?;
-        let _new_repo_resp: NewRepoResponse = self
-            .make_request(core, "POST", uri, Body::from(req_body))
+        let new_repo_resp: Result<NewRepoResponse, GitHubErrorResponse> = self
+            .make_request(
+                core,
+                "POST",
+                uri,
+                Body::from(req_body),
+                vec![StatusCode::CREATED],
+            )
             .await?;
 
-        Ok(())
+        match new_repo_resp {
+            Ok(_) => Ok(()),
+            Err(e) if e.http_status_code == StatusCode::UNPROCESSABLE_ENTITY => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
@@ -46,9 +56,14 @@ impl GitHubService {
     async fn get_user_login<C: Core>(&self, core: &C) -> Result<String, Error> {
         let uri: Uri = "https://api.github.com/user".parse()?;
 
-        let user: UserProfile = self.make_request(core, "GET", uri, Body::empty()).await?;
+        let user: Result<UserProfile, GitHubErrorResponse> = self
+            .make_request(core, "GET", uri, Body::empty(), vec![StatusCode::OK])
+            .await?;
 
-        Ok(user.login)
+        match user {
+            Ok(user) => Ok(user.login),
+            Err(e) => Err(e.into()),
+        }
     }
 
     async fn make_request<C: Core, T: DeserializeOwned>(
@@ -57,11 +72,12 @@ impl GitHubService {
         method: &str,
         uri: Uri,
         body: Body,
-    ) -> Result<T, Error> {
+        acceptable: Vec<StatusCode>,
+    ) -> Result<Result<T, GitHubErrorResponse>, Error> {
         let token = core.keychain().get_token("github.com")?;
 
         let req = Request::builder()
-            .uri(uri)
+            .uri(&uri)
             .method(method)
             .header(
                 "User-Agent",
@@ -81,28 +97,18 @@ impl GitHubService {
         let resp = core.http_client().request(req).await?;
 
         match resp.status() {
-            StatusCode::OK | StatusCode::CREATED => {
+            status if acceptable.contains(&status) => {
                 let body = hyper::body::to_bytes(resp.into_body()).await?;
                 let result = serde_json::from_slice(&body)?;
 
-                Ok(result)
-            },
-            http::StatusCode::UNAUTHORIZED => {
-                Err(errors::user(
-                    "You have not provided a valid authentication token for github.com.",
-                    "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`."))
-            },
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                Err(errors::user(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again."))
-            },
+                Ok(Ok(result))
+            }
             status => {
-                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
-                Err(errors::system_with_internal(
-                    &format!("Received an HTTP {} {} response from GitHub when.", status.as_u16(), status.canonical_reason().unwrap_or_default()),
-                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    inner_error))
+                let body = hyper::body::to_bytes(resp.into_body()).await?;
+                let mut result: GitHubErrorResponse = serde_json::from_slice(&body)?;
+                result.http_status_code = status;
+
+                Ok(Err(result))
             }
         }
     }
@@ -122,6 +128,53 @@ struct UserProfile {
 #[derive(Debug, Deserialize)]
 struct NewRepoResponse {
     pub id: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct GitHubErrorResponse {
+    #[serde(skip)]
+    pub http_status_code: StatusCode,
+
+    pub message: String,
+    pub documentation_url: String,
+    pub errors: Vec<GitHubError>,
+}
+
+impl Into<errors::Error> for GitHubErrorResponse {
+    fn into(self) -> errors::Error {
+        match self.http_status_code {
+            http::StatusCode::UNAUTHORIZED => {
+                errors::user(
+                    "You have not provided a valid authentication token for github.com.",
+                    "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.")
+            },
+            http::StatusCode::TOO_MANY_REQUESTS => {
+                errors::user(
+                    "GitHub has rate limited requests from your IP address.",
+                    "Please wait until GitHub removes this rate limit before trying again.")
+            },
+            status => {
+                errors::system_with_internal(
+                    &format!("Received an HTTP {} {} response from GitHub.", status.as_u16(), status.canonical_reason().unwrap_or_default()),
+                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+                    errors::detailed_message(&format!("{:?}", self)))
+            }
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct GitHubError {
+    pub message: String,
+
+    #[serde(default)]
+    pub resource: String,
+
+    #[serde(default)]
+    pub code: String,
+
+    #[serde(default)]
+    pub field: String,
 }
 
 #[cfg(test)]
@@ -147,11 +200,31 @@ mod tests {
             .await
             .expect("No error should have been generated");
     }
+
+    #[tokio::test]
+    async fn test_happy_path_user_repo_exists() {
+        let http = NewRepoExistsFlow::default();
+
+        let core = CoreBuilder::default()
+            .with_mock_keychain(|s| {
+                s.set_token("github.com", "test_token").unwrap();
+            })
+            .with_http_connector(http)
+            .build();
+
+        let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
+        let service = GitHubService::default();
+        service
+            .ensure_created(&core, &repo)
+            .await
+            .expect("No error should have been generated");
+    }
 }
 
 #[cfg(test)]
 pub mod mocks {
     pub type NewRepoSuccessFlow = MockGitHubNewRepoSuccessFlow;
+    pub type NewRepoExistsFlow = MockGitHubNewRepoDuplicateFlow;
 
     mock_connector_in_order!(MockGitHubNewRepoSuccessFlow {
 r#"HTTP/1.1 200 OK
@@ -166,5 +239,20 @@ Content-Type: application/vnd.github.v3+json
 Content-Length: 11
 
 {"id":1234}
+"#});
+
+    mock_connector_in_order!(MockGitHubNewRepoDuplicateFlow {
+r#"HTTP/1.1 200 OK
+Content-Type: application/vnd.github.v3+json
+Content-Length: 16
+
+{"login":"test"}
+"#
+
+r#"HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/vnd.github.v3+json
+Content-Length: 225
+
+{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}
 "#});
 }
