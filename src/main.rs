@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let raven = sentry::init((
         "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
         sentry::ClientOptions {
-            release: Some(version!("git-tool@v{}").into()),
+            release: Some(version!("git-tool@v").into()),
             default_integrations: true,
             ..Default::default()
         }
