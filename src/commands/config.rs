@@ -1,7 +1,7 @@
 use super::async_trait;
 use super::Command;
 use super::*;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use online::registry::Registry;
 
 pub struct ConfigCommand {}
@@ -11,51 +11,51 @@ impl Command for ConfigCommand {
         String::from("config")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
             .about("manage your Git-Tool configuration file")
-            .help_message("This tool allows you to easily make changes to your Git-Tool config file.")
+            .long_about("This tool allows you to easily make changes to your Git-Tool config file.")
 
-            .subcommand(SubCommand::with_name("list")
+            .subcommand(App::new("list")
                 .version("1.0")
-                .alias("ls")
+                .visible_alias("ls")
                 .about("list available config templates")
-                .help_message("Gets the list of config templates which are available through the Git-Tool registry."))
+                .long_about("Gets the list of config templates which are available through the Git-Tool registry."))
 
-            .subcommand(SubCommand::with_name("add")
+            .subcommand(App::new("add")
                 .version("1.0")
                 .about("adds a configuration template to your current config file")
-                .help_message("Adds a configuration template from the Git-Tool online registry to your config file.")
+                .long_about("Adds a configuration template from the Git-Tool online registry to your config file.")
                 .arg(Arg::with_name("id")
                     .index(1)
-                    .help("the id of the configuration template you want to add")
+                    .about("the id of the configuration template you want to add")
                     .required(true))
                 .arg(Arg::with_name("force")
                     .long("force")
-                    .short("f")
-                    .help("overwrites any existing entries with those from the template.")))
+                    .short('f')
+                    .about("overwrites any existing entries with those from the template.")))
 
-            .subcommand(SubCommand::with_name("alias")
+            .subcommand(App::new("alias")
                 .version("1.0")
                 .about("manage aliases for your repositories")
-                .help_message("Set or remove aliases for your repositories within your config file.")
+                .long_about("Set or remove aliases for your repositories within your config file.")
                 .arg(Arg::with_name("delete")
-                    .short("-d")
-                    .long("--delete")
-                    .help("delete the alias from your config file"))
+                    .short('d')
+                    .long("delete")
+                    .about("delete the alias from your config file"))
                 .arg(Arg::with_name("alias")
-                    .help("the name of the alias to manage")
+                    .about("the name of the alias to manage")
                     .index(1))
                 .arg(Arg::with_name("repo")
-                    .help("the fully qualified repository name")
+                    .about("the fully qualified repository name")
                     .index(2)))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ConfigCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             ("list", Some(_args)) => {
                 let registry = crate::online::GitHubRegistry;
@@ -153,7 +153,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, matches: &ArgMatches) {
         match matches.subcommand() {
             ("list", _) => {}
             ("add", _) => {

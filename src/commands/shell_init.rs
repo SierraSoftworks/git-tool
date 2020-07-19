@@ -1,6 +1,6 @@
 use super::*;
 use crate::completion::get_shells;
-use clap::{Arg, SubCommand};
+use clap::Arg;
 
 pub struct ShellInitCommand {}
 
@@ -8,22 +8,22 @@ impl Command for ShellInitCommand {
     fn name(&self) -> String {
         String::from("shell-init")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
+    fn app<'a>(&self) -> clap::App<'a> {
         let shells = get_shells();
 
-        let mut cmd = SubCommand::with_name(&self.name())
+        let mut cmd = App::new(&self.name())
             .version("1.0")
             .about("configures your shell for use with Git-Tool")
-            .after_help("Used to configure your shell environment to ensure that it works correctly with Git-Tool, including auto-complete support.");
+            .long_about("Used to configure your shell environment to ensure that it works correctly with Git-Tool, including auto-complete support.");
 
         for shell in shells {
             cmd = cmd.subcommand(
-                SubCommand::with_name(shell.get_name())
+                App::new(shell.get_name())
                     .about("prints the initialization script for this shell")
                     .arg(
                         Arg::with_name("full")
                             .long("full")
-                            .help("prints the full initialization script for this shell")
+                            .about("prints the full initialization script for this shell")
                             .hidden(true),
                     ),
             );
@@ -35,11 +35,7 @@ impl Command for ShellInitCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ShellInitCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
     where
         C: Core,
     {
@@ -69,7 +65,7 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
         let shells = get_shells();
         completer.offer_many(shells.iter().map(|s| s.get_name()));
     }

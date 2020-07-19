@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::*;
 use crate::{search, tasks::*};
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct FixCommand {}
 
@@ -10,29 +10,29 @@ impl Command for FixCommand {
         String::from("fix")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
             .about("fixes the remote configuration for a repository")
-            .alias("i")
-            .after_help("Updates the remote configuration for a repository to match its directory location.")
+            .visible_alias("i")
+            .long_about("Updates the remote configuration for a repository to match its directory location.")
             .arg(Arg::with_name("repo")
-                    .help("The name of the repository to fix.")
+                    .about("The name of the repository to fix.")
                     .index(1))
             .arg(Arg::with_name("all")
                 .long("all")
-                .short("a")
-                .help("apply fixes to all matched repositories"))
+                .short('a')
+                .about("apply fixes to all matched repositories"))
             .arg(Arg::with_name("no-create-remote")
                 .long("no-create-remote")
-                .short("R")
-                .help("prevent the creation of a remote repository (on supported services)"))
+                .short('R')
+                .about("prevent the creation of a remote repository (on supported services)"))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for FixCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let tasks = sequence![
             GitRemote { name: "origin" },
             CreateRemote {
@@ -74,7 +74,7 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--all");
         completer.offer("--no-create-remote");
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));

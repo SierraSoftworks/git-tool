@@ -1,5 +1,5 @@
 use super::*;
-use clap::{Arg, SubCommand};
+use clap::Arg;
 
 pub struct CompleteCommand {}
 
@@ -7,29 +7,25 @@ impl Command for CompleteCommand {
     fn name(&self) -> String {
         String::from("complete")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> clap::App<'a> {
+        App::new(&self.name())
             .version("1.0")
             .about("provides command auto-completion")
-            .after_help("Provides realtime command and argument auto-completion for Git-Tool when using `git-tool shell-init`.")
+            .long_about("Provides realtime command and argument auto-completion for Git-Tool when using `git-tool shell-init`.")
             .arg(Arg::with_name("position")
                     .long("position")
-                    .help("The position of the cursor when the completion is requested")
+                    .about("The position of the cursor when the completion is requested")
                     .takes_value(true)
                     .default_value("-1"))
             .arg(Arg::with_name("args")
-                .help("The parameters being passed to Git-Tool for auto-completion.")
+                .about("The parameters being passed to Git-Tool for auto-completion.")
                 .index(1))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for CompleteCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
     where
         C: Core,
     {
@@ -51,7 +47,7 @@ impl<C: Core> CommandRunnable<C> for CompleteCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--position");
     }
 }
@@ -141,14 +137,13 @@ impl CompleteCommand {
 
         let complete_app = App::new("Git-Tool").subcommands(commands.iter().map(|x| x.app()));
 
-        complete_app
-            .get_matches_from_safe(true_args)
-            .map_err(|err| {
-                errors::user_with_internal(
-                "Failed to parse command line arguments for auto-completion.", 
+        complete_app.try_get_matches_from(true_args).map_err(|err| {
+            errors::user_with_internal(
+                "Failed to parse command line arguments for auto-completion.",
                 "Make sure that you are using valid Git-Tool command line arguments and try again.",
-                err)
-            })
+                errors::detailed_message(&err.to_string()),
+            )
+        })
     }
 }
 

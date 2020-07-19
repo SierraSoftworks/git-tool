@@ -10,7 +10,7 @@ edition = "2018"
 async-trait = "0.1"
 base64 = "0.12"
 chrono = "0.4"
-clap = { version = "2.33", features = ["yaml"] }
+clap = "3.0.0-beta.1"
 gtmpl = "0.5"
 http = "0.2"
 hyper = "0.13"
