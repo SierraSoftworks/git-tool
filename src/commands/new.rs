@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::*;
 use crate::tasks::*;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct NewCommand {}
 
@@ -10,37 +10,35 @@ impl Command for NewCommand {
         "new".into()
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(&self.name())
             .version("1.0")
             .about("creates a new repository")
-            .alias("new")
-            .alias("n")
-            .alias("create")
-            .after_help("Creates a new repository with the provided name.")
+            .visible_aliases(&vec!["n", "create"])
+            .long_about("Creates a new repository with the provided name.")
             .arg(
                 Arg::with_name("repo")
-                    .help("The name of the repository to create.")
+                    .about("The name of the repository to create.")
                     .index(1),
             )
             .arg(
                 Arg::with_name("open")
                     .long("open")
-                    .short("o")
-                    .help("opens the repository in your default application after it is created."),
+                    .short('o')
+                    .about("opens the repository in your default application after it is created."),
             )
             .arg(
                 Arg::with_name("no-create-remote")
                     .long("no-create-remote")
-                    .short("R")
-                    .help("prevent the creation of a remote repository (on supported services)"),
+                    .short('R')
+                    .about("prevent the creation of a remote repository (on supported services)"),
             )
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for NewCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
@@ -77,7 +75,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");
         match core.resolver().get_repos() {

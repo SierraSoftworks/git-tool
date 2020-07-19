@@ -1,5 +1,4 @@
 use super::*;
-use clap::SubCommand;
 
 pub struct ServicesCommand {}
 
@@ -7,21 +6,17 @@ impl Command for ServicesCommand {
     fn name(&self) -> String {
         String::from("services")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> clap::App<'a> {
+        App::new(&self.name())
             .version("1.0")
             .about("list services which can be used with Git-Tool")
-            .after_help("Gets the list of services that you have added to your configuration file. These services are responsible for hosting your Git repositories.")
+            .long_about("Gets the list of services that you have added to your configuration file. These services are responsible for hosting your Git repositories.")
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ServicesCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        _matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &C, _matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
         let mut output = core.output().writer();
 
         for svc in core.config().get_services() {
@@ -31,7 +26,7 @@ impl<C: Core> CommandRunnable<C> for ServicesCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches<'a>) {}
+    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 #[cfg(test)]

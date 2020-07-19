@@ -1,7 +1,7 @@
 use super::*;
 use crate::core::Target;
 use crate::search;
-use clap::{Arg, SubCommand};
+use clap::Arg;
 
 pub struct ListCommand {}
 
@@ -9,34 +9,29 @@ impl Command for ListCommand {
     fn name(&self) -> String {
         String::from("list")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> clap::App<'a> {
+        App::new(&self.name())
             .version("1.0")
-            .alias("ls")
-            .alias("ll")
+            .visible_aliases(&vec!["ls", "ll"])
             .about("list your repositories")
             .after_help("Gets the list of repositories managed by Git-Tool. These repositories can be opened using the `git-tool open` command.")
             .arg(Arg::with_name("filter")
-                .help("A filter which limits the repositories that are returned.")
+                .about("A filter which limits the repositories that are returned.")
                 .index(1))
             .arg(Arg::with_name("quiet")
                 .long("quiet")
-                .short("q")
-                .help("Prints only the name of the repository."))
+                .short('q')
+                .about("Prints only the name of the repository."))
             .arg(Arg::with_name("full")
                 .long("full")
-                .help("Prints detailed information about each repository.")
+                .about("Prints detailed information about each repository.")
                 .conflicts_with("quiet"))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ListCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
     where
         C: Core,
     {
@@ -109,7 +104,7 @@ URLs:
         Ok(0)
     }
 
-    async fn complete<'a>(&self, _core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(vec!["--quiet", "-q", "--full", "-f"]);
     }
 }

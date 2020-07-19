@@ -1,5 +1,5 @@
 use super::*;
-use clap::{Arg, SubCommand};
+use clap::Arg;
 
 pub struct AuthCommand {}
 
@@ -7,33 +7,29 @@ impl Command for AuthCommand {
     fn name(&self) -> String {
         String::from("auth")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> clap::App<'a> {
+        App::new(&self.name())
             .version("1.0")
             .about("configure authentication tokens")
-            .after_help("Configures the authentication tokens used by Git-Tool to create and manage your remote repositories.")
+            .long_about("Configures the authentication tokens used by Git-Tool to create and manage your remote repositories.")
             .arg(Arg::with_name("service")
                 .index(1)
-                .help("the service to configure an access token for")
+                .about("the service to configure an access token for")
                 .required(true))
             .arg(Arg::with_name("remove-token")
                 .long("delete")
-                .short("d")
-                .help("delete any access token associated with the service"))
+                .short('d')
+                .about("delete any access token associated with the service"))
                 .arg(Arg::with_name("token")
                     .long("token")
-                    .help("specifies the token to be set (don't use this unless you have to)")
+                    .about("specifies the token to be set (don't use this unless you have to)")
                     .takes_value(true))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for AuthCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
     where
         C: Core,
     {
@@ -58,7 +54,7 @@ impl<C: Core> CommandRunnable<C> for AuthCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_services().map(|s| s.get_domain()));
     }
 }

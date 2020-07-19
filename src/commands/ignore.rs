@@ -2,7 +2,7 @@ use super::async_trait;
 use super::online::gitignore;
 use super::Command;
 use super::*;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct IgnoreCommand {}
 
@@ -11,20 +11,20 @@ impl Command for IgnoreCommand {
         String::from("ignore")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
-            .alias("gitignore")
+            .visible_alias("gitignore")
             .about("generates a .gitignore file for the provided languages")
-            .help_message("This will manage your .gitignore file using the gitignore.io API to add and update languages.")
+            .long_about("This will manage your .gitignore file using the gitignore.io API to add and update languages.")
             .arg(Arg::with_name("path")
                     .long("path")
-                    .help("The path to the .gitignore file you wish to update.")
+                    .about("The path to the .gitignore file you wish to update.")
                     .default_value(".gitignore")
                     .value_name("GITIGNORE")
                     .takes_value(true))
             .arg(Arg::with_name("language")
-                    .help("The name of a language which should be added to your .gitignore file.")
+                    .about("The name of a language which should be added to your .gitignore file.")
                     .multiple(true)
                     .index(1))
     }
@@ -32,7 +32,7 @@ impl Command for IgnoreCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for IgnoreCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output().writer();
 
         match matches.occurrences_of("language") {
@@ -67,7 +67,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         match online::gitignore::list(core).await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}

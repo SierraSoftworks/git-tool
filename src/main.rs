@@ -57,16 +57,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .author("Benjamin Pannell <benjamin@pannell.dev>")
         .about("Simplify your Git repository management and stop thinking about where things belong.")
         .arg(Arg::with_name("config")
-                .short("c")
+                .short('c')
                 .long("config")
                 .env("GITTOOL_CONFIG")
                 .value_name("FILE")
-                .help("The path to your git-tool configuration file.")
+                .about("The path to your git-tool configuration file.")
                 .global(true)
                 .takes_value(true))
         .arg(Arg::with_name("update-resume-internal")
             .long("update-resume-internal")
-            .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
+            .about("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
             .takes_value(true)
             .hidden(true))
         .subcommands(commands.iter().map(|x| x.app()));
@@ -92,10 +92,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-async fn run<'a, 'b: 'a>(
-    app: &'a mut App<'a, 'b>,
+async fn run<'a>(
+    app: &'a mut App<'a>,
     commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
-    matches: ArgMatches<'b>,
+    matches: ArgMatches,
 ) -> Result<i32, errors::Error> {
     let mut core_builder = core::CoreBuilder::default();
 
@@ -110,10 +110,10 @@ async fn run<'a, 'b: 'a>(
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
-                .get_matches_from_safe(vec!["gt", "update", "--state", &state])
+                .try_get_matches_from(vec!["gt", "update", "--state", &state])
                 .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
                     "Please report this error to us on GitHub and use the manual update process until it is resolved.",
-                    e))?;
+                    errors::detailed_message(&e.to_string())))?;
 
             return cmd.run(&core, &matches).await;
         }

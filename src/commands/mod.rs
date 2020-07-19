@@ -31,13 +31,13 @@ mod update;
 
 pub trait Command: Send + Sync {
     fn name(&self) -> String;
-    fn app<'a, 'b>(&self) -> App<'a, 'b>;
+    fn app<'a>(&self) -> App<'a>;
 }
 
 #[async_trait]
 pub trait CommandRunnable<C: Core>: Command {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error>;
-    async fn complete<'a>(&self, core: &C, completer: &Completer, matches: &ArgMatches<'a>);
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error>;
+    async fn complete(&self, core: &C, completer: &Completer, matches: &ArgMatches);
 }
 
 pub fn default_commands() -> Vec<Arc<dyn CommandRunnable<DefaultCore>>> {

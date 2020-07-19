@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::core::Target;
 use super::*;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct InfoCommand {}
 
@@ -10,21 +10,21 @@ impl Command for InfoCommand {
         String::from("info")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
             .about("gets the details of a specific repository")
-            .alias("i")
-            .after_help("Gets the details of a specific repository, either the currently open one or one provided by its name or alias.")
+            .visible_alias("i")
+            .long_about("Gets the details of a specific repository, either the currently open one or one provided by its name or alias.")
             .arg(Arg::with_name("repo")
-                    .help("The name of the repository to get information about.")
+                    .about("The name of the repository to get information about.")
                     .index(1))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for InfoCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output().writer();
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
@@ -50,7 +50,7 @@ impl<C: Core> CommandRunnable<C> for InfoCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
 
         let default_svc = core

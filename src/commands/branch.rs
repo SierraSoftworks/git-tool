@@ -3,7 +3,7 @@ use super::*;
 use crate::core::Target;
 use crate::git;
 use crate::tasks::*;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg};
 
 pub struct BranchCommand {}
 
@@ -12,26 +12,25 @@ impl Command for BranchCommand {
         String::from("branch")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
-            .alias("b")
-            .alias("br")
+            .visible_aliases(&vec!["b", "br"])
             .about("checkout a specific branch from the current repository")
-            .help_message(
+            .long_about(
                 "This tool checks out a branch with the given name from the current repository.",
             )
             .arg(
                 Arg::with_name("branch")
                     .index(1)
-                    .help("The name of the branch you want to checkout"),
+                    .about("The name of the branch you want to checkout"),
             )
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for BranchCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
@@ -54,7 +53,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);

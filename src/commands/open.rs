@@ -2,7 +2,7 @@ use super::Command;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct OpenCommand {}
 
@@ -11,35 +11,34 @@ impl Command for OpenCommand {
         String::from("open")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
-            .alias("o")
-            .alias("run")
+            .visible_aliases(&vec!["o", "run"])
             .about("opens a repository using an application defined in your config")
-            .after_help("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
+            .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
             
 New applications can be configured either by making changes to your configuration, or by using the `git-tool config add` command to install them from the GitHub registry. For example, you can use `gt config add apps/bash` to configure `bash` as an available app.")
             .arg(Arg::with_name("app")
-                    .help("The name of the application to launch.")
+                    .about("The name of the application to launch.")
                     .index(1))
             .arg(Arg::with_name("repo")
-                    .help("The name of the repository to open.")
+                    .about("The name of the repository to open.")
                     .index(2))
             .arg(Arg::with_name("create")
                     .long("create")
-                    .short("c")
-                    .help("create the repository if it does not exist."))
+                    .short('c')
+                    .about("create the repository if it does not exist."))
             .arg(Arg::with_name("no-create-remote")
                     .long("no-create-remote")
-                    .short("R")
-                    .help("prevent the creation of a remote repository (on supported services)"))
+                    .short('R')
+                    .about("prevent the creation of a remote repository (on supported services)"))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for OpenCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_best_repo(target)?)
@@ -87,7 +86,7 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
         Ok(status)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--create");
         completer.offer("--no-create-remote");
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));

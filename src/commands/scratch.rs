@@ -1,7 +1,7 @@
 use super::async_trait;
 use super::*;
 use super::{core::Target, tasks, tasks::Task, Command};
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 
 pub struct ScratchCommand {}
 
@@ -10,19 +10,19 @@ impl Command for ScratchCommand {
         String::from("scratch")
     }
 
-    fn app<'a, 'b>(&self) -> App<'a, 'b> {
-        SubCommand::with_name(self.name().as_str())
+    fn app<'a>(&self) -> App<'a> {
+        App::new(self.name().as_str())
             .version("1.0")
-            .alias("s")
+            .visible_alias("s")
             .about("opens a scratchpad using an application defined in your config")
             .arg(
                 Arg::with_name("app")
-                    .help("The name of the application to launch.")
+                    .about("The name of the application to launch.")
                     .index(1),
             )
             .arg(
                 Arg::with_name("scratchpad")
-                    .help("The name of the scratchpad to open.")
+                    .about("The name of the scratchpad to open.")
                     .index(2),
             )
     }
@@ -30,7 +30,7 @@ impl Command for ScratchCommand {
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ScratchCommand {
-    async fn run<'a>(&self, core: &C, matches: &ArgMatches<'a>) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(
             core,
             matches.value_of("app"),
@@ -66,7 +66,7 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
         return Ok(status);
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         match core.resolver().get_scratchpads() {

@@ -1,6 +1,6 @@
 use super::*;
 use crate::update::{GitHubSource, Release, UpdateManager};
-use clap::{Arg, SubCommand};
+use clap::Arg;
 
 pub struct UpdateCommand {}
 
@@ -8,32 +8,28 @@ impl Command for UpdateCommand {
     fn name(&self) -> String {
         String::from("update")
     }
-    fn app<'a, 'b>(&self) -> clap::App<'a, 'b> {
-        SubCommand::with_name(&self.name())
+    fn app<'a>(&self) -> clap::App<'a> {
+        App::new(&self.name())
             .version("1.0")
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
-            .after_help("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
+            .long_about("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
             .arg(Arg::with_name("state")
                 .long("state")
-                .help("State information used to resume an update operation.")
+                .about("State information used to resume an update operation.")
                 .hidden(true)
                 .takes_value(true))
             .arg(Arg::with_name("list")
                 .long("list")
-                .help("Prints the list of available releases."))
+                .about("Prints the list of available releases."))
             .arg(Arg::with_name("version")
-                .help("The version you wish to update to. Defaults to the latest available version.")
+                .about("The version you wish to update to. Defaults to the latest available version.")
                 .index(1))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for UpdateCommand {
-    async fn run<'a>(
-        &self,
-        core: &C,
-        matches: &clap::ArgMatches<'a>,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
     where
         C: Core,
     {
@@ -116,7 +112,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         Ok(0)
     }
 
-    async fn complete<'a>(&self, core: &C, completer: &Completer, _matches: &ArgMatches<'a>) {
+    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
 
         match manager.get_releases(core).await {
