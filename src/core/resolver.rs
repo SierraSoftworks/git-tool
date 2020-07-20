@@ -115,7 +115,12 @@ impl Resolver for FileSystemResolver {
                 }
             },
             1 => Ok((*repos.first().unwrap()).clone()),
-            _ => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
+            _ => {
+                match repos.iter().find(|r| r.get_full_name() == name) {
+                    Some(repo) => Ok((*repo).clone()),
+                    None => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
+                }
+            }
         }
     }
 
@@ -447,7 +452,7 @@ mod tests {
         let resolver = get_resolver();
 
         let results = resolver.get_repos().unwrap();
-        assert_eq!(results.len(), 6);
+        assert_eq!(results.len(), 7);
 
         let example = results
             .iter()
@@ -469,7 +474,7 @@ mod tests {
         let svc = resolver.config.get_service("github.com").unwrap();
 
         let results = resolver.get_repos_for(svc).unwrap();
-        assert_eq!(results.len(), 4);
+        assert_eq!(results.len(), 5);
 
         let example = results
             .iter()
@@ -573,10 +578,26 @@ mod tests {
     }
 
     #[test]
+    fn get_best_repo_default_service_multiple_matches() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_best_repo("sierrasoftworks/test1").unwrap();
+        assert_eq!(example.get_domain(), "github.com");
+        assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir()
+                .join("github.com")
+                .join("sierrasoftworks")
+                .join("test1")
+        );
+    }
+
+    #[test]
     fn get_child_directories() {
         let children = super::get_child_directories(&get_dev_dir().join("github.com"), "*/*");
 
-        assert_eq!(children.len(), 4);
+        assert_eq!(children.len(), 5);
 
         assert!(children.iter().any(|p| p
             == &get_dev_dir()
