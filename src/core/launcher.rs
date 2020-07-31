@@ -5,7 +5,8 @@ use super::{
     Config, Target,
 };
 use async_trait::async_trait;
-use std::sync::Arc;
+use futures::{pin_mut, select, FutureExt};
+use std::{convert::TryInto, sync::Arc};
 use tokio::process::Command;
 
 #[async_trait]
@@ -38,14 +39,75 @@ impl Launcher for TokioLauncher {
             .map(|i| i.split("=").collect())
             .map(|i: Vec<&str>| (i[0], i[1]));
 
-        let status = Command::new(program)
+        let mut child = Command::new(program)
             .args(args)
             .current_dir(t.get_path())
             .envs(env_arg_tuples)
-            .spawn()?
-            .await?;
+            .spawn()?;
 
-        Ok(status.code().unwrap_or_default())
+        self.forward_signals(&mut child).await
+    }
+}
+
+impl TokioLauncher {
+    #[cfg(windows)]
+    async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
+        let fused_child = child.fuse();
+        pin_mut!(fused_child);
+
+        loop {
+            let ctrlc = tokio::signal::ctrl_c().fuse();
+            pin_mut!(ctrlc);
+
+            select! {
+                _ = ctrlc => {
+                    // We capture the Ctrl+C signal and ignore it so that the child process
+                    // can handle it as necessary.
+                },
+                status = fused_child => {
+                    return Ok(status?.code().unwrap_or_default());
+                }
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
+        let pid = nix::unistd::Pid::from_raw(child.id().try_into().map_err(|err| crate::errors::system_with_internal(
+            "Unable to convert child process ID to a valid PID. This may impact Git-Tool's ability to forward signals to a child application.",
+            "Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further.",
+            err))?);
+        let fused_child = child.fuse();
+
+        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
+        let mut sigterm =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+        let mut sigquit = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())?;
+
+        pin_mut!(fused_child);
+
+        loop {
+            let sigint = sigint.recv().fuse();
+            let sigterm = sigterm.recv().fuse();
+            let sigquit = sigquit.recv().fuse();
+
+            pin_mut!(sigint, sigterm, sigquit);
+
+            select! {
+                _ = sigint => {
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGINT)?;
+                },
+                _ = sigterm => {
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGTERM)?;
+                },
+                _ = sigquit => {
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGQUIT)?;
+                },
+                status = fused_child => {
+                    return Ok(status?.code().unwrap_or_default())
+                }
+            }
+        }
     }
 }
 
