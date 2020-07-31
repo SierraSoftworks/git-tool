@@ -62,7 +62,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .env("GITTOOL_CONFIG")
                 .value_name("FILE")
                 .about("The path to your git-tool configuration file.")
-                .global(true)
                 .takes_value(true))
         .arg(Arg::with_name("update-resume-internal")
             .long("update-resume-internal")

@@ -11,14 +11,15 @@ async-trait = "0.1"
 base64 = "0.12"
 chrono = "0.4"
 clap = "3.0.0-beta.1"
+futures = "0.3.5"
 gtmpl = "0.5"
 http = "0.2"
 hyper = "0.13"
-yup-hyper-mock = "4.0"
 hyper-tls = "0.4"
 itertools = "0.9"
 keyring = "0.9"
 log = "0.4"
+nix = "0.18.0"
 rpassword = "4.0"
 semver = "0.10"
 sentry = { version = "0.19", features = ["log", "test"] }
@@ -28,6 +29,7 @@ serde_yaml = "0.8"
 shell-words = "1.0"
 tempfile = "3.1"
 tokio = { version = "0.2", features = ["full"] }
+yup-hyper-mock = "4.0"
 
 [profile.release]
 debug = true
