@@ -20,7 +20,7 @@ itertools = "0.9"
 keyring = "0.9"
 log = "0.4"
 nix = "0.18.0"
-rpassword = "4.0"
+rpassword = "5.0"
 semver = "0.10"
 sentry = { version = "0.19", features = ["log", "test"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
