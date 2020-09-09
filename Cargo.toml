@@ -22,7 +22,7 @@ log = "0.4"
 nix = "0.18.0"
 rpassword = "5.0"
 semver = "0.10"
-sentry = { version = "0.19", features = ["log", "test"] }
+sentry = { version = "0.20", features = ["log", "test"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_yaml = "0.8"

@@ -6,8 +6,11 @@ use super::{
 };
 use async_trait::async_trait;
 use futures::{pin_mut, select, FutureExt};
-use std::{convert::TryInto, sync::Arc};
+use std::sync::Arc;
 use tokio::process::Command;
+
+#[cfg(unix)]
+use std::convert::TryInto;
 
 #[async_trait]
 pub trait Launcher: Send + Sync + From<Arc<Config>> {

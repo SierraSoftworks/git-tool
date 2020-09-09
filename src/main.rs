@@ -49,6 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .add_integration(sentry::integrations::log::LogIntegration::default()),
     ));
 
+    sentry::start_session();
+
     let commands = commands::default_commands();
     let version = version!("v");
 
@@ -74,6 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     match run(&mut app, commands, matches).await {
         Result::Ok(status) => {
+            sentry::end_session();
             raven.close(None);
             std::process::exit(status);
         }
@@ -85,6 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 sentry::capture_error(&err);
             }
 
+            sentry::end_session();
             raven.close(None);
             std::process::exit(1);
         }
