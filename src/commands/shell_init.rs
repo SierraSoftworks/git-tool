@@ -21,7 +21,7 @@ impl Command for ShellInitCommand {
                 App::new(shell.get_name())
                     .about("prints the initialization script for this shell")
                     .arg(
-                        Arg::with_name("full")
+                        Arg::new("full")
                             .long("full")
                             .about("prints the full initialization script for this shell")
                             .hidden(true),
@@ -42,7 +42,7 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
         let mut output = core.output().writer();
 
         match matches.subcommand() {
-            (name, Some(matches)) => {
+            Some((name, matches)) => {
                 let shells = get_shells();
                 let shell = shells.iter().find(|s| s.get_name() == name).ok_or(errors::user(
                     &format!("The shell '{}' is not currently supported by Git-Tool.", name),

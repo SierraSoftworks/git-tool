@@ -17,18 +17,18 @@ impl Command for NewCommand {
             .visible_aliases(&vec!["n", "create"])
             .long_about("Creates a new repository with the provided name.")
             .arg(
-                Arg::with_name("repo")
+                Arg::new("repo")
                     .about("The name of the repository to create.")
                     .index(1),
             )
             .arg(
-                Arg::with_name("open")
+                Arg::new("open")
                     .long("open")
                     .short('o')
                     .about("opens the repository in your default application after it is created."),
             )
             .arg(
-                Arg::with_name("no-create-remote")
+                Arg::new("no-create-remote")
                     .long("no-create-remote")
                     .short('R')
                     .about("prevent the creation of a remote repository (on supported services)"),

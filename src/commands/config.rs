@@ -27,11 +27,11 @@ impl Command for ConfigCommand {
                 .version("1.0")
                 .about("adds a configuration template to your current config file")
                 .long_about("Adds a configuration template from the Git-Tool online registry to your config file.")
-                .arg(Arg::with_name("id")
+                .arg(Arg::new("id")
                     .index(1)
                     .about("the id of the configuration template you want to add")
                     .required(true))
-                .arg(Arg::with_name("force")
+                .arg(Arg::new("force")
                     .long("force")
                     .short('f')
                     .about("overwrites any existing entries with those from the template.")))
@@ -40,14 +40,14 @@ impl Command for ConfigCommand {
                 .version("1.0")
                 .about("manage aliases for your repositories")
                 .long_about("Set or remove aliases for your repositories within your config file.")
-                .arg(Arg::with_name("delete")
+                .arg(Arg::new("delete")
                     .short('d')
                     .long("delete")
                     .about("delete the alias from your config file"))
-                .arg(Arg::with_name("alias")
+                .arg(Arg::new("alias")
                     .about("the name of the alias to manage")
                     .index(1))
-                .arg(Arg::with_name("repo")
+                .arg(Arg::new("repo")
                     .about("the fully qualified repository name")
                     .index(2)))
     }
@@ -57,7 +57,7 @@ impl Command for ConfigCommand {
 impl<C: Core> CommandRunnable<C> for ConfigCommand {
     async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
         match matches.subcommand() {
-            ("list", Some(_args)) => {
+            Some(("list", _args)) => {
                 let registry = crate::online::GitHubRegistry;
 
                 let entries = registry.get_entries(core).await?;
@@ -65,7 +65,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     writeln!(core.output().writer(), "{}", entry)?;
                 }
             }
-            ("add", Some(args)) => {
+            Some(("add", args)) => {
                 let id = args.value_of("id").ok_or(errors::user(
                     "You have not provided an ID for the config template you wish to add.",
                     "",
@@ -93,7 +93,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     }
                 }
             }
-            ("alias", Some(args)) => match args.value_of("alias") {
+            Some(("alias", args)) => match args.value_of("alias") {
                 Some(alias) => {
                     if args.is_present("delete") {
                         let mut cfg = core.config().clone();
@@ -155,8 +155,8 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
     async fn complete(&self, core: &C, completer: &Completer, matches: &ArgMatches) {
         match matches.subcommand() {
-            ("list", _) => {}
-            ("add", _) => {
+            Some(("list", _)) => {}
+            Some(("add", _)) => {
                 let registry = online::GitHubRegistry;
                 match registry.get_entries(core).await {
                     Ok(entries) => {
@@ -165,7 +165,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     _ => {}
                 }
             }
-            ("alias", Some(args)) => {
+            Some(("alias", args)) => {
                 if !args.is_present("alias") {
                     completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
                 } else {

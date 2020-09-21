@@ -21,7 +21,7 @@ impl Command for BranchCommand {
                 "This tool checks out a branch with the given name from the current repository.",
             )
             .arg(
-                Arg::with_name("branch")
+                Arg::new("branch")
                     .index(1)
                     .about("The name of the branch you want to checkout"),
             )

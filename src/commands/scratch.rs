@@ -16,12 +16,12 @@ impl Command for ScratchCommand {
             .visible_alias("s")
             .about("opens a scratchpad using an application defined in your config")
             .arg(
-                Arg::with_name("app")
+                Arg::new("app")
                     .about("The name of the application to launch.")
                     .index(1),
             )
             .arg(
-                Arg::with_name("scratchpad")
+                Arg::new("scratchpad")
                     .about("The name of the scratchpad to open.")
                     .index(2),
             )
