@@ -58,14 +58,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .version(version.as_str())
         .author("Benjamin Pannell <benjamin@pannell.dev>")
         .about("Simplify your Git repository management and stop thinking about where things belong.")
-        .arg(Arg::with_name("config")
+        .arg(Arg::new("config")
                 .short('c')
                 .long("config")
                 .env("GITTOOL_CONFIG")
                 .value_name("FILE")
                 .about("The path to your git-tool configuration file.")
                 .takes_value(true))
-        .arg(Arg::with_name("update-resume-internal")
+        .arg(Arg::new("update-resume-internal")
             .long("update-resume-internal")
             .about("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
             .takes_value(true)
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let matches = app.clone().get_matches();
 
-    match run(&mut app, commands, matches).await {
+    match run(app, commands, matches).await {
         Result::Ok(status) => {
             sentry::end_session();
             raven.close(None);
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn run<'a>(
-    app: &'a mut App<'a>,
+    mut app: App<'a>,
     commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
     matches: ArgMatches,
 ) -> Result<i32, errors::Error> {
