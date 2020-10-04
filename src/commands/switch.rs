@@ -1,8 +1,8 @@
 use super::super::errors;
 use super::*;
 use crate::core::Target;
+use crate::git;
 use crate::tasks::*;
-use crate::{core, git};
 use clap::{App, Arg};
 
 pub struct SwitchCommand {}
@@ -16,8 +16,8 @@ impl Command for SwitchCommand {
         App::new(self.name().as_str())
             .version("1.0")
             .alias("s")
-            .about("switches to the specified branch within the current repository")
-            .after_help(
+            .about("switches to the specified branch.")
+            .long_about(
                 "This command switches to the specified branch within the current repository.",
             )
             .arg(
@@ -28,6 +28,7 @@ impl Command for SwitchCommand {
             .arg(
                 Arg::new("create")
                     .short('c')
+                    .long("create")
                     .about("creates a new branch before switching to it."),
             )
     }
@@ -60,6 +61,7 @@ impl<C: Core> CommandRunnable<C> for SwitchCommand {
 
     async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
+            completer.offer("--create");
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);
             }
