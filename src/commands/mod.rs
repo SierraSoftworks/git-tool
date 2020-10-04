@@ -27,6 +27,7 @@ mod open;
 mod scratch;
 mod services;
 mod shell_init;
+mod switch;
 mod update;
 
 pub trait Command: Send + Sync {
@@ -61,5 +62,6 @@ pub fn commands<C: Core>() -> Vec<Arc<dyn CommandRunnable<C>>> {
         Arc::new(services::ServicesCommand {}),
         Arc::new(shell_init::ShellInitCommand {}),
         Arc::new(update::UpdateCommand {}),
+        Arc::new(switch::SwitchCommand {}),
     ]
 }
