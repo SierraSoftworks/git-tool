@@ -25,6 +25,7 @@ mod git_clone;
 mod git_commit;
 mod git_init;
 mod git_remote;
+mod git_switch;
 mod new_folder;
 mod write_file;
 
@@ -35,6 +36,7 @@ pub use git_clone::GitClone;
 pub use git_commit::GitCommit;
 pub use git_init::GitInit;
 pub use git_remote::GitRemote;
+pub use git_switch::GitSwitch;
 pub use new_folder::NewFolder;
 pub use sequence::Sequence;
 pub use write_file::WriteFile;

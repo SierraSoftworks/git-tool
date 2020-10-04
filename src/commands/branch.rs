@@ -118,9 +118,8 @@ mod tests {
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["branch", "feature/test"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => panic!("This command should not have succeeded"),
-            _ => {}
-        }
+        cmd.run(&core, &args)
+            .await
+            .expect_err("this command should not have succeeded");
     }
 }

@@ -7,6 +7,7 @@ mod commit;
 mod init;
 mod refs;
 mod remote;
+mod switch;
 
 pub use add::git_add;
 pub use branch::{git_branches, git_current_branch};
@@ -17,3 +18,4 @@ pub use commit::git_commit;
 pub use init::git_init;
 pub use refs::{git_rev_parse, git_update_ref};
 pub use remote::{git_remote_add, git_remote_list, git_remote_set_url};
+pub use switch::git_switch;
