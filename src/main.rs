@@ -17,7 +17,7 @@ extern crate tokio;
 
 use crate::commands::CommandRunnable;
 use crate::core::DefaultCore;
-use clap::{App, Arg, ArgMatches};
+use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
 
 #[macro_use]
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let mut app = App::new("Git-Tool")
         .version(version.as_str())
-        .author("Benjamin Pannell <benjamin@pannell.dev>")
+        .author(crate_authors!("\n"))
         .about("Simplify your Git repository management and stop thinking about where things belong.")
         .arg(Arg::new("config")
                 .short('c')
