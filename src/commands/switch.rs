@@ -15,7 +15,6 @@ impl Command for SwitchCommand {
     fn app<'a>(&self) -> App<'a> {
         App::new(self.name().as_str())
             .version("1.0")
-            .alias("s")
             .about("switches to the specified branch.")
             .long_about(
                 "This command switches to the specified branch within the current repository.",
