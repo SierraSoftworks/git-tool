@@ -10,7 +10,7 @@ pub async fn git_switch(repo: &path::Path, name: &str, create: bool) -> Result<(
             Command::new("git")
                 .current_dir(repo)
                 .arg("switch")
-                .arg("-c")
+                .arg("--create")
                 .arg(name),
         )
         .await?;
