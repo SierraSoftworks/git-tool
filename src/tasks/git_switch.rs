@@ -9,7 +9,13 @@ pub struct GitSwitch {
 #[async_trait::async_trait]
 impl<C: Core> Task<C> for GitSwitch {
     async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
-        git::git_switch(&repo.get_path(), &self.branch, self.create_if_missing).await
+        let mut create = self.create_if_missing;
+
+        if create && git::git_branches(&repo.get_path()).await?.contains(&self.branch) {
+            create = false;
+        }
+
+        git::git_switch(&repo.get_path(), &self.branch, create).await
     }
 
     async fn apply_scratchpad(
