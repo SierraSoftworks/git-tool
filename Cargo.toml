@@ -28,7 +28,7 @@ serde_json = "1.0"
 serde_yaml = "0.8"
 shell-words = "1.0"
 tempfile = "3.1"
-tokio = { version = "0.2", features = ["full"] }
+tokio = { version = "0.3", features = ["full"] }
 yup-hyper-mock = "4.0"
 
 [profile.release]
