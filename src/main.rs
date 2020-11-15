@@ -39,14 +39,17 @@ mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let logger = sentry::integrations::log::SentryLogger::new();
+    log::set_boxed_logger(Box::new(logger)).unwrap();
+    log::set_max_level(log::LevelFilter::Info);
+
     let raven = sentry::init((
         "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
         sentry::ClientOptions {
             release: Some(version!("git-tool@v").into()),
             default_integrations: true,
             ..Default::default()
-        }
-        .add_integration(sentry::integrations::log::LogIntegration::default()),
+        },
     ));
 
     sentry::start_session();
@@ -54,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let commands = commands::default_commands();
     let version = version!("v");
 
-    let mut app = App::new("Git-Tool")
+    let app = App::new("Git-Tool")
         .version(version.as_str())
         .author(crate_authors!("\n"))
         .about("Simplify your Git repository management and stop thinking about where things belong.")
@@ -76,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     match run(app, commands, matches).await {
         Result::Ok(status) => {
-            sentry::end_session();
+            sentry::end_session_with_status(sentry::protocol::SessionStatus::Exited);
             raven.close(None);
             std::process::exit(status);
         }
@@ -88,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 sentry::capture_error(&err);
             }
 
-            sentry::end_session();
+            sentry::end_session_with_status(sentry::protocol::SessionStatus::Crashed);
             raven.close(None);
             std::process::exit(1);
         }
