@@ -17,6 +17,13 @@ jobs:
           toolchain: nightly
           override: true
 
+      - name: Install grcov
+        uses: actions-rs/install@v0.1
+        with:
+          crate: grcov
+          version: latest
+          use-tool-cache: true
+
       - name: Check out code
         uses: actions/checkout@v1
 
