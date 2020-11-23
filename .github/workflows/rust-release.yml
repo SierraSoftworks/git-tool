@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@0.1.1
+        uses: mathrix-education/setup-sentry-cli@1.0.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -75,7 +75,7 @@ jobs:
           override: true
 
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@0.1.1
+        uses: mathrix-education/setup-sentry-cli@1.0.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -121,7 +121,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@0.1.1
+        uses: mathrix-education/setup-sentry-cli@1.0.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
