@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/grcov@v0.1
 
       - name: Upload code coverage
-        uses: codecov/codecov-action@v1.0.15
+        uses: codecov/codecov-action@v1.1.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info
