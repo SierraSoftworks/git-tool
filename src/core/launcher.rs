@@ -5,7 +5,7 @@ use super::{
     Config, Target,
 };
 use async_trait::async_trait;
-use futures::{pin_mut, select, FutureExt};
+use futures::{pin_mut, FutureExt};
 
 use std::sync::Arc;
 use tokio::process::Command;
@@ -56,19 +56,16 @@ impl Launcher for TokioLauncher {
 impl TokioLauncher {
     #[cfg(windows)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
-        let fused_child = child.fuse();
-        pin_mut!(fused_child);
-
         loop {
             let ctrlc = tokio::signal::ctrl_c().fuse();
             pin_mut!(ctrlc);
 
-            select! {
+            tokio::select! {
                 _ = ctrlc => {
                     // We capture the Ctrl+C signal and ignore it so that the child process
                     // can handle it as necessary.
                 },
-                status = fused_child => {
+                status = child.wait() => {
                     return Ok(status?.code().unwrap_or_default());
                 }
             }
