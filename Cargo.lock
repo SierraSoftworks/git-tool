@@ -2597,7 +2597,8 @@ dependencies = [
 
 [[package]]
 name = "yup-hyper-mock"
-version = "4.0.0"
+version = "5.14.0"
+source = "git+https://github.com/notheotherben/yup-hyper-mock#59028775c1103d38639c97220df3aab49e79cbfd"
 dependencies = [
  "futures",
  "hyper 0.14.2",

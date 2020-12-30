@@ -30,7 +30,7 @@ serde_yaml = "0.8"
 shell-words = "1.0"
 tempfile = "3.1"
 tokio = { version = "1.0", features = ["full"] }
-yup-hyper-mock = { path = "./vendor/yup-hyper-mock" }
+yup-hyper-mock = { git = "https://github.com/notheotherben/yup-hyper-mock" }
 
 [profile.release]
 debug = true
