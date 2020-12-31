@@ -101,7 +101,7 @@ features:
         let temp = tempdir().unwrap();
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|l| {})
+            .with_mock_launcher(|_l| {})
             .with_mock_resolver(|r| {
                 r.set_repo(Repo::new(
                     "github.com/git-fixtures/basic",

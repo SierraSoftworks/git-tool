@@ -210,7 +210,7 @@ impl SetupCommand {
         &self,
         core: &C,
         config_path: &Path,
-        prompter: &mut Prompter,
+        _prompter: &mut Prompter,
     ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
@@ -237,7 +237,7 @@ impl SetupCommand {
         &self,
         core: &C,
         config_path: &Path,
-        prompter: &mut Prompter,
+        _prompter: &mut Prompter,
     ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
@@ -273,7 +273,7 @@ impl SetupCommand {
         &self,
         core: &C,
         config_path: &Path,
-        prompter: &mut Prompter,
+        _prompter: &mut Prompter,
     ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
