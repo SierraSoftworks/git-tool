@@ -15,6 +15,7 @@ use crate::{
 mod apps;
 mod auth;
 mod branch;
+mod clone;
 mod complete;
 mod config;
 mod fix;
@@ -50,6 +51,7 @@ pub fn commands<C: Core>() -> Vec<Arc<dyn CommandRunnable<C>>> {
         Arc::new(apps::AppsCommand {}),
         Arc::new(auth::AuthCommand {}),
         Arc::new(branch::BranchCommand {}),
+        Arc::new(clone::CloneCommand {}),
         Arc::new(complete::CompleteCommand {}),
         Arc::new(config::ConfigCommand {}),
         Arc::new(fix::FixCommand {}),
