@@ -210,8 +210,8 @@ impl SetupCommand {
         Ok(())
     }
 
-    #[cfg(linux)]
-    fn prompt_setup_shell<C: Core>(&self, core: &C) -> Result<(), Error> {
+    #[cfg(target_os = "linux")]
+    fn prompt_setup_shell<C: Core>(&self, core: &C, config_path: &Path) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
         writeln!(
@@ -241,8 +241,8 @@ impl SetupCommand {
         Ok(())
     }
 
-    #[cfg(macos)]
-    fn prompt_setup_shell<C: Core>(&self, core: &C) -> Result<(), Error> {
+    #[cfg(target_os = "macos")]
+    fn prompt_setup_shell<C: Core>(&self, core: &C, config_path: &Path) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
         writeln!(
