@@ -144,7 +144,7 @@ where
             match tokio::fs::remove_file(path).await {
                 Err(e) if retries < 0 => return Err(e.into()),
                 Ok(_) => return Ok(()),
-                _ => tokio::time::delay_for(Duration::from_millis(500)).await,
+                _ => tokio::time::sleep(Duration::from_millis(500)).await,
             }
         }
 
@@ -159,7 +159,7 @@ where
             match tokio::fs::copy(from, to).await {
                 Err(e) if retries < 0 => return Err(e.into()),
                 Ok(_) => return Ok(()),
-                _ => tokio::time::delay_for(Duration::from_millis(500)).await,
+                _ => tokio::time::sleep(Duration::from_millis(500)).await,
             }
         }
 
