@@ -105,7 +105,7 @@ Then add the following:
 
 ```bash
 # ~/.bashrc
-alias gt="git-tool"
+alias gt="git-tool --config /your/path/to/git-tool.yml"
 eval "$(git-tool shell-init bash)"
 ```
 
@@ -119,7 +119,7 @@ Then add the following:
 
 ```zsh
 # ~/.zshrc
-alias gt="git-tool"
+alias gt="git-tool --config /your/path/to/git-tool.yml"
 eval "$(git-tool shell-init zsh)"
 ```
 
