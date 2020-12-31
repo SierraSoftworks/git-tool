@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::vec::Vec;
+use std::{collections::HashMap, path::Path};
 use std::{path, sync::Arc};
 
 use super::super::errors;
@@ -31,6 +31,12 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn with_dev_directory(&self, dev_dir: &Path) -> Self {
+        let mut into = self.clone();
+        into.dev_directory = dev_dir.to_owned();
+        into
+    }
+
     pub fn extend(&self, other: Self) -> Self {
         let mut into = self.clone();
         let from = other.clone();

@@ -27,6 +27,7 @@ mod new;
 mod open;
 mod scratch;
 mod services;
+mod setup;
 mod shell_init;
 mod switch;
 mod update;
@@ -62,6 +63,7 @@ pub fn commands<C: Core>() -> Vec<Arc<dyn CommandRunnable<C>>> {
         Arc::new(open::OpenCommand {}),
         Arc::new(scratch::ScratchCommand {}),
         Arc::new(services::ServicesCommand {}),
+        Arc::new(setup::SetupCommand {}),
         Arc::new(shell_init::ShellInitCommand {}),
         Arc::new(update::UpdateCommand {}),
         Arc::new(switch::SwitchCommand {}),
