@@ -76,7 +76,7 @@ complete -F _gittool_bash_autocomplete gt git-tool
         Shell {
             name: "zsh".into(),
             short_init: format!(
-                r#"source <("{app}" shell-init zsh --full"#,
+                r#"source <("{app}" shell-init zsh --full)"#,
                 app = args().next().unwrap_or("git-tool".to_string())
             ),
             long_init: format!(
