@@ -62,7 +62,7 @@ impl Resolver for FileSystemResolver {
 
         match self.get_repo(&cwd) {
             Ok(repo) => Ok(repo),
-            Err(e) => Err(errors::user_with_internal(
+            Err(e) => Err(errors::user_with_cause(
                 &format!("Current directory ('{}') is not a valid repository.", cwd.display()),
                 &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().canonicalize()?.display()),
                 e))
@@ -225,12 +225,17 @@ fn repo_from_relative_path<'a>(
     if name_parts.len() != name_length {
         Err(errors::user(
             &format!(
-                "The service '{}' requires a repository name in the form '{}', but we got '{}'.",
+                "The service '{}' requires a repository name in the form '{}/{}', but you provided '{}'.",
+                svc.get_domain(),
                 svc.get_domain(),
                 svc.get_pattern(),
                 relative_path.display()
             ),
-            "Make sure that your repository is correctly named for the service you are using.",
+            &format!(
+                "Make sure that you are using a repository name which looks like '{}/{}'.",
+                svc.get_domain(),
+                svc.get_pattern()
+            ),
         ))
     } else {
         Ok(Repo::new(
@@ -321,6 +326,7 @@ pub mod mocks {
                     "Mock Error".to_string(),
                     "Configure the mock to not throw an error".to_string(),
                     None,
+                    None,
                 )),
                 false => Ok(self.scratchpads.clone()),
             }
@@ -360,6 +366,7 @@ pub mod mocks {
                     "Mock Error".to_string(),
                     "Configure the mock to not throw an error".to_string(),
                     None,
+                    None,
                 )),
                 false => Ok(self.repos.clone()),
             }
@@ -370,6 +377,7 @@ pub mod mocks {
                 true => Err(Error::SystemError(
                     "Mock Error".to_string(),
                     "Configure the mock to not throw an error".to_string(),
+                    None,
                     None,
                 )),
                 false => Ok(self

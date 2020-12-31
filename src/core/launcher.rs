@@ -152,6 +152,7 @@ pub mod mocks {
                     "Mock Error".to_string(),
                     "Configure the mock to not throw an error".to_string(),
                     None,
+                    None,
                 ))
             } else {
                 Ok(self.status)

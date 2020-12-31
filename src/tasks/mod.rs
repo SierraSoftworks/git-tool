@@ -82,6 +82,7 @@ impl<C: Core> Task<C> for TestTask {
                 "Mock Error".to_string(),
                 "Configure the mock to not throw an error".to_string(),
                 None,
+                None,
             )),
             false => Ok(()),
         }
@@ -100,6 +101,7 @@ impl<C: Core> Task<C> for TestTask {
             true => Err(core::Error::SystemError(
                 "Mock Error".to_string(),
                 "Configure the mock to not throw an error".to_string(),
+                None,
                 None,
             )),
             false => Ok(()),
