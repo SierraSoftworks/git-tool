@@ -16,7 +16,7 @@ extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
-use crate::core::DefaultCore;
+use crate::core::{Core, DefaultCore, Output};
 use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
 
@@ -125,6 +125,10 @@ async fn run<'a>(
         }
     }
 
+    if core.config().get_config_file().is_none() {
+        writeln!(core.output().writer(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+    }
+
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
             sentry::add_breadcrumb(sentry::Breadcrumb {
@@ -144,8 +148,6 @@ async fn run<'a>(
         }
     }
 
-    warn!("You have not provided a valid command or command alias. Try running `git-tool open github.com/your/repo`.");
     app.print_help().unwrap_or_default();
-
     Ok(-1)
 }
