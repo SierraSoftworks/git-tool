@@ -285,7 +285,7 @@ mod tests {
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_input(|i| i.set_data(""))
+            .with_mock_input(|i| i.set_data("/home/test/dev\n\n"))
             .with_mock_output()
             .build();
 
@@ -297,8 +297,8 @@ mod tests {
 
         let output = core.output().to_string();
         assert!(
-            output.contains("shell"),
-            "the output should contain the default app"
+            output.contains("Step 4: Restart your terminal"),
+            "the output should contain the final setup steps"
         );
     }
 }

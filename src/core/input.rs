@@ -23,7 +23,7 @@ impl From<Arc<Config>> for StdinInput {
 #[cfg(test)]
 pub mod mocks {
     use super::*;
-    use std::{io::ErrorKind, sync::Mutex};
+    use std::sync::Mutex;
 
     pub struct MockInput {
         readable_data: Arc<Mutex<String>>,

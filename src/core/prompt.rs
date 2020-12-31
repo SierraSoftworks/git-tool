@@ -70,7 +70,7 @@ mod tests {
     fn prompt_eof() {
         let config = Arc::new(Config::default());
 
-        let mut input = MockInput::from(config.clone());
+        let input = MockInput::from(config.clone());
         let output = MockOutput::from(config.clone());
 
         assert_eq!(
