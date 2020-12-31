@@ -23,26 +23,18 @@ impl From<Arc<Config>> for StdinInput {
 #[cfg(test)]
 pub mod mocks {
     use super::*;
-    use std::sync::Mutex;
+    use std::sync::RwLock;
 
     pub struct MockInput {
-        readable_data: Arc<Mutex<String>>,
-    }
-
-    impl ToString for MockInput {
-        fn to_string(&self) -> String {
-            self.readable_data
-                .lock()
-                .map(|m| m.to_string())
-                .unwrap_or_default()
-        }
+        readable_data: Arc<RwLock<String>>,
+        position: Arc<RwLock<usize>>,
     }
 
     impl Input for MockInput {
         fn reader(&self) -> Box<dyn Read + Send> {
-            Box::new(MockOutputReader {
-                read_from: self.readable_data.clone(),
-                position: 0,
+            Box::new(MockInputReader {
+                readable_data: self.readable_data.clone(),
+                position: self.position.clone(),
             })
         }
     }
@@ -50,39 +42,59 @@ pub mod mocks {
     impl MockInput {
         pub fn set_data(&mut self, data: &str) {
             self.readable_data
-                .lock()
+                .write()
                 .map(|mut readable_data| readable_data.push_str(data))
                 .unwrap();
+
+            self.position.write().map(|mut pos| *pos = 0).unwrap();
         }
     }
 
     impl From<Arc<Config>> for MockInput {
         fn from(_: Arc<Config>) -> Self {
             Self {
-                readable_data: Arc::new(Mutex::new(String::new())),
+                readable_data: Arc::new(RwLock::new(String::new())),
+                position: Arc::new(RwLock::new(0)),
             }
         }
     }
 
-    struct MockOutputReader {
-        read_from: Arc<Mutex<String>>,
-        position: usize,
+    struct MockInputReader {
+        readable_data: Arc<RwLock<String>>,
+        position: Arc<RwLock<usize>>,
     }
 
-    impl Read for MockOutputReader {
-        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            self.read_from
-                .lock()
-                .and_then(|data| {
-                    let mut n = buf.len();
-                    if data.len() - self.position < n {
-                        n = data.len() - self.position;
-                    }
+    impl MockInputReader {
+        fn read_n(&mut self, n: usize) -> std::io::Result<String> {
+            self.readable_data
+                .read()
+                .map(|data| {
+                    self.position
+                        .write()
+                        .and_then(|mut pos| {
+                            let max_read = data.len() - *pos;
+                            let n = if n > max_read { max_read } else { n };
 
-                    buf[..n].copy_from_slice(&data.as_bytes()[self.position..n]);
-                    Ok(n)
+                            if n == 0 {
+                                return Ok(String::new());
+                            }
+
+                            let read = data[*pos..n].to_string();
+                            *pos += n;
+
+                            Ok(read)
+                        })
+                        .unwrap()
                 })
                 .map_err(|_| std::io::ErrorKind::Other.into())
+        }
+    }
+
+    impl Read for MockInputReader {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            let data = self.read_n(buf.len())?;
+            buf[..data.len()].copy_from_slice(data.as_bytes());
+            Ok(data.len())
         }
     }
 }

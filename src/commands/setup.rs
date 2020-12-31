@@ -1,4 +1,7 @@
-use crate::core::{prompt, Error};
+use crate::{
+    core::{Error, Prompter},
+    fs::to_native_path,
+};
 use std::{
     io::ErrorKind,
     path::{Path, PathBuf},
@@ -46,14 +49,16 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
         )?;
         writeln!(core.output().writer(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
 
-        let dev_directory = self.prompt_dev_directory(core)?;
+        let mut prompter = Prompter::new(core.input(), core.output());
+
+        let dev_directory = self.prompt_dev_directory(core, &mut prompter)?;
         writeln!(
             core.output().writer(),
             "\nGotcha, we'll store your projects in {}.",
             dev_directory.display()
         )?;
 
-        let config_path = self.prompt_config_path(core)?;
+        let config_path = self.prompt_config_path(core, &mut prompter)?;
         writeln!(
             core.output().writer(),
             "\nGotcha, we'll store your Git-Tool config in {}.",
@@ -62,16 +67,24 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
 
         match config_path.parent() {
             Some(parent) if !parent.exists() => {
-                std::fs::create_dir_all(parent)?;
+                std::fs::create_dir_all(parent).map_err(|err| errors::user_with_internal(
+                    &format!("We couldn't create the config file parent directory at '{}' due to a system error.", parent.display()),
+                    "For access denied errors, make sure you have write permission to the location containing your config file. If you run into trouble, please create a GitHub issue and we will try to help.",
+                    err
+                ))?;
             }
             _ => {}
         };
 
         let new_config = core.config().with_dev_directory(&dev_directory);
-        tokio::fs::write(&config_path, new_config.to_string()?).await?;
+        tokio::fs::write(&config_path, new_config.to_string()?).await.map_err(|err| errors::user_with_internal(
+            &format!("We couldn't write the new config file to '{}' due to a system error.", config_path.display()),
+            "For access denied errors, make sure you have write permission to the location containing your config file. If you run into trouble, please create a GitHub issue and we will try to help.",
+            err
+        ))?;
 
         writeln!(core.output().writer(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
-        self.prompt_setup_shell(core, &config_path)?;
+        self.prompt_setup_shell(core, &config_path, &mut prompter)?;
 
         Ok(0)
     }
@@ -80,7 +93,11 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
 }
 
 impl SetupCommand {
-    fn prompt_dev_directory<C: Core>(&self, core: &C) -> Result<PathBuf, Error> {
+    fn prompt_dev_directory<C: Core>(
+        &self,
+        core: &C,
+        prompter: &mut Prompter,
+    ) -> Result<PathBuf, Error> {
         let default_dir = match core.config().get_dev_directory().to_str() {
             Some(path) if !path.is_empty() => Some(path.to_owned()),
             _ => None,
@@ -94,9 +111,7 @@ impl SetupCommand {
             None => None,
         });
 
-        let dev_dir = prompt(
-            core.input(),
-            core.output(),
+        let dev_dir = prompter.prompt(
             &format!(
                 "Enter a directory to hold your repositories{}: ",
                 default_dir
@@ -132,10 +147,14 @@ impl SetupCommand {
             "Enter a valid path to a directory which Git-Tool can use to store your projects in.",
         ))?;
 
-        Ok(PathBuf::from(dev_dir))
+        Ok(to_native_path(dev_dir))
     }
 
-    fn prompt_config_path<C: Core>(&self, core: &C) -> Result<PathBuf, Error> {
+    fn prompt_config_path<C: Core>(
+        &self,
+        core: &C,
+        prompter: &mut Prompter,
+    ) -> Result<PathBuf, Error> {
         let default_path = core.config().get_config_file().or_else(|| {
             match ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
                 Some(dirs) => {
@@ -147,9 +166,7 @@ impl SetupCommand {
             }
         });
 
-        let config_path = prompt(
-            core.input(),
-            core.output(),
+        let config_path = prompter.prompt(
             &format!(
                 "Enter a path to your git-tool.yml config file{}: ",
                 default_path
@@ -185,11 +202,16 @@ impl SetupCommand {
             "Enter a valid path to a file where Git-Tool will store its configuration.",
         ))?;
 
-        Ok(PathBuf::from(config_path))
+        Ok(to_native_path(config_path))
     }
 
     #[cfg(windows)]
-    fn prompt_setup_shell<C: Core>(&self, core: &C, config_path: &Path) -> Result<(), Error> {
+    fn prompt_setup_shell<C: Core>(
+        &self,
+        core: &C,
+        config_path: &Path,
+        prompter: &mut Prompter,
+    ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
         writeln!(
@@ -211,7 +233,12 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "linux")]
-    fn prompt_setup_shell<C: Core>(&self, core: &C, config_path: &Path) -> Result<(), Error> {
+    fn prompt_setup_shell<C: Core>(
+        &self,
+        core: &C,
+        config_path: &Path,
+        prompter: &mut Prompter,
+    ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
         writeln!(
@@ -242,7 +269,12 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "macos")]
-    fn prompt_setup_shell<C: Core>(&self, core: &C, config_path: &Path) -> Result<(), Error> {
+    fn prompt_setup_shell<C: Core>(
+        &self,
+        core: &C,
+        config_path: &Path,
+        prompter: &mut Prompter,
+    ) -> Result<(), Error> {
         let mut writer = core.output().writer();
 
         writeln!(
@@ -277,15 +309,24 @@ impl SetupCommand {
 mod tests {
     use super::core::{Config, CoreBuilder};
     use super::*;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
 
+        let temp = tempdir().unwrap();
+
         let cfg = Config::default();
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_input(|i| i.set_data("/home/test/dev\n\n"))
+            .with_mock_input(|i| {
+                i.set_data(&format!(
+                    "{}\n{}\n",
+                    temp.path().display(),
+                    temp.path().join("config.yml").display()
+                ))
+            })
             .with_mock_output()
             .build();
 
@@ -296,6 +337,14 @@ mod tests {
         }
 
         let output = core.output().to_string();
+        assert!(
+            output.contains(&format!("{}", temp.path().display())),
+            "the output should contain the project directory"
+        );
+        assert!(
+            output.contains(&format!("{}", temp.path().join("config.yml").display())),
+            "the output should contain the config path"
+        );
         assert!(
             output.contains("Step 4: Restart your terminal"),
             "the output should contain the final setup steps"

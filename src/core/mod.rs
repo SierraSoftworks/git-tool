@@ -24,7 +24,7 @@ pub use config::Config;
 pub use input::Input;
 pub use launcher::Launcher;
 pub use output::Output;
-pub use prompt::prompt;
+pub use prompt::Prompter;
 pub use repo::Repo;
 pub use resolver::Resolver;
 pub use scratchpad::Scratchpad;
