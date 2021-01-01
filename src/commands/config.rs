@@ -1,3 +1,5 @@
+use crate::core::features;
+
 use super::async_trait;
 use super::Command;
 use super::*;
@@ -50,19 +52,32 @@ impl Command for ConfigCommand {
                 .arg(Arg::new("repo")
                     .about("the fully qualified repository name")
                     .index(2)))
+
+            .subcommand(App::new("feature")
+                .version("1.0")
+                .about("manage feature flags for Git-Tool")
+                .long_about("Set feature flags for Git-Tool within your config file.")
+                .arg(Arg::new("flag")
+                    .about("the name of the feature flag to set")
+                    .index(1))
+                .arg(Arg::new("enable")
+                    .about("whether the feature flag should be enabled or not (true/false)")
+                    .index(2)))
     }
 }
 
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ConfigCommand {
     async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+        let mut output = core.output().writer();
+
         match matches.subcommand() {
             Some(("list", _args)) => {
                 let registry = crate::online::GitHubRegistry;
 
                 let entries = registry.get_entries(core).await?;
                 for entry in entries {
-                    writeln!(core.output().writer(), "{}", entry)?;
+                    writeln!(output, "{}", entry)?;
                 }
             }
             Some(("add", args)) => {
@@ -74,8 +89,8 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                 let registry = crate::online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
 
-                writeln!(core.output().writer(), "Applying {}", entry.name)?;
-                writeln!(core.output().writer(), "> {}", entry.description)?;
+                writeln!(output, "Applying {}", entry.name)?;
+                writeln!(output, "> {}", entry.description)?;
 
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
@@ -89,7 +104,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                         tokio::fs::write(&path, cfg.to_string()?).await?;
                     }
                     None => {
-                        writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
+                        writeln!(output, "{}", cfg.to_string()?)?;
                     }
                 }
             }
@@ -104,7 +119,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                                 tokio::fs::write(&path, cfg.to_string()?).await?;
                             }
                             None => {
-                                writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
+                                writeln!(output, "{}", cfg.to_string()?)?;
                             }
                         }
 
@@ -121,32 +136,59 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                                     tokio::fs::write(&path, cfg.to_string()?).await?;
                                 }
                                 None => {
-                                    writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
+                                    writeln!(output, "{}", cfg.to_string()?)?;
                                 }
                             }
                         }
-                        None => {
-                            let mut output = core.output().writer();
-                            match core.config().get_alias(alias) {
-                                Some(repo) => {
-                                    writeln!(output, "{} = {}", alias, repo)?;
-                                }
-                                None => {
-                                    writeln!(output, "No alias exists with the name '{}'", alias)?;
-                                }
+                        None => match core.config().get_alias(alias) {
+                            Some(repo) => {
+                                writeln!(output, "{} = {}", alias, repo)?;
                             }
-                        }
+                            None => {
+                                writeln!(output, "No alias exists with the name '{}'", alias)?;
+                            }
+                        },
                     }
                 }
                 None => {
-                    let mut output = core.output().writer();
                     for (alias, repo) in core.config().get_aliases() {
                         writeln!(output, "{} = {}", alias, repo)?;
                     }
                 }
             },
+            Some(("feature", args)) => match args.value_of("flag") {
+                Some(flag) => match args.value_of("enable") {
+                    Some(value) if value == "true" || value == "false" => {
+                        let cfg = core.config().with_feature_flag(flag, value == "true");
+
+                        match cfg.get_config_file() {
+                            Some(path) => {
+                                tokio::fs::write(&path, cfg.to_string()?).await?;
+                            }
+                            None => {
+                                writeln!(output, "{}", cfg.to_string()?)?;
+                            }
+                        }
+                    }
+                    Some(invalid) => {
+                        writeln!(output, "Cannot set the feature flag {} to {} because only 'true' and 'false' are valid settings.", flag, invalid)?;
+                        return Ok(1);
+                    }
+                    None => {}
+                },
+                None => {
+                    for &feature in features::ALL.iter() {
+                        writeln!(
+                            output,
+                            "{} = {}",
+                            feature,
+                            core.config().get_features().has(feature)
+                        )?;
+                    }
+                }
+            },
             _ => {
-                writeln!(core.output().writer(), "{}", core.config().to_string()?)?;
+                writeln!(output, "{}", core.config().to_string()?)?;
             }
         }
 
@@ -184,8 +226,16 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
                     }
                 }
             }
+            Some(("feature", args)) => {
+                if !args.is_present("flag") {
+                    completer.offer_many(features::ALL.iter().map(|&v| v));
+                } else {
+                    completer.offer("true");
+                    completer.offer("false");
+                }
+            }
             _ => {
-                completer.offer_many(vec!["list", "add", "alias"]);
+                completer.offer_many(vec!["list", "add", "alias", "feature"]);
             }
         }
     }
@@ -485,6 +535,80 @@ aliases:
             "gt config alias test1",
             "",
             vec!["-d", "github.com/sierrasoftworks/test1"],
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn run_feature_set() {
+        let temp = tempfile::tempdir().unwrap();
+        tokio::fs::write(
+            temp.path().join("config.yml"),
+            r#"
+directory: /dev
+features:
+    http_transport: true
+            "#,
+        )
+        .await
+        .unwrap();
+
+        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(
+            cfg.get_features().has("http_transport"),
+            true,
+            "the config should have the feature enabled initially"
+        );
+
+        let core = CoreBuilder::default()
+            .with_config(&cfg)
+            .with_mock_output()
+            .build();
+
+        let cmd = ConfigCommand {};
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["config", "feature", "http_transport", "false"]);
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!(err.message()),
+        }
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(
+            new_cfg.get_features().has("http_transport"),
+            false,
+            "the feature should be set to false in the config file"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_feature_completion() {
+        let cfg = Config::from_str(&format!(
+            r#"
+directory: "{}"
+
+features:
+    http_transport: true
+"#,
+            get_dev_dir().to_str().unwrap().replace("\\", "\\\\")
+        ))
+        .unwrap();
+
+        test_completions_with_config(
+            &cfg,
+            "gt config feature",
+            "",
+            vec!["http_transport", "create_remote", "create_remote_private"],
+        )
+        .await;
+
+        test_completions_with_config(
+            &cfg,
+            "gt config feature http_transport",
+            "",
+            vec!["true", "false"],
         )
         .await;
     }

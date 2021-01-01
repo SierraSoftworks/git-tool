@@ -37,6 +37,12 @@ impl Config {
         into
     }
 
+    pub fn with_feature_flag(&self, flag: &str, enabled: bool) -> Self {
+        let mut into = self.clone();
+        into.features = self.features.to_builder().with(flag, enabled).build();
+        into
+    }
+
     pub fn extend(&self, other: Self) -> Self {
         let mut into = self.clone();
         let from = other.clone();
@@ -130,6 +136,7 @@ impl Config {
         }
     }
 
+    #[cfg(test)]
     pub fn from_str(yaml: &str) -> Result<Self, errors::Error> {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))

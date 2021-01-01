@@ -10,24 +10,21 @@ pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
 
 pub const TELEMETRY: &str = "telemetry";
 
+lazy_static! {
+    pub static ref ALL: Vec<&'static str> = vec![
+        HTTP_TRANSPORT,
+        CREATE_REMOTE,
+        CREATE_REMOTE_PRIVATE,
+        OPEN_NEW_REPO,
+        TELEMETRY
+    ];
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Features {
     #[serde(flatten)]
     flags: HashMap<String, bool>,
 }
-
-// {
-//     #[serde(default = "default_as_true")]
-//     native_clone: bool,
-//     #[serde(default = "default_as_true")]
-//     create_remote: bool,
-//     #[serde(default)]
-//     http_transport: bool,
-//     #[serde(default = "default_as_true")]
-//     create_remote_private: bool,
-//     #[serde(default)]
-//     open_new_repo_in_default_app: bool,
-// }
 
 impl Default for Features {
     fn default() -> Self {
@@ -45,6 +42,12 @@ impl Features {
 
     pub fn has(&self, flag: &str) -> bool {
         self.flags.get(flag).map(|&v| v).unwrap_or_default()
+    }
+
+    pub fn to_builder(&self) -> FeaturesBuilder {
+        FeaturesBuilder {
+            flags: self.flags.clone(),
+        }
     }
 }
 

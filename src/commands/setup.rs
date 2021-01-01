@@ -1,5 +1,5 @@
 use crate::{
-    core::{Config, Error, Prompter},
+    core::{Error, Prompter},
     fs::to_native_path,
 };
 use std::{
@@ -83,14 +83,7 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
         let new_config = core
             .config()
             .with_dev_directory(&dev_directory)
-            .extend(Config::from_str(&format!(
-                "
-directory: '' # Empty directory will be ignored in extend
-features:
-    telemetry: {}
-",
-                if enable_telemetry { "true" } else { "false" }
-            ))?);
+            .with_feature_flag("telemetry", enable_telemetry);
 
         tokio::fs::write(&config_path, new_config.to_string()?).await.map_err(|err| errors::user_with_internal(
             &format!("We couldn't write the new config file to '{}' due to a system error.", config_path.display()),
