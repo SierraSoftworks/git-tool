@@ -1,5 +1,5 @@
 use crate::{
-    core::{Error, Prompter},
+    core::{Config, Error, Prompter},
     fs::to_native_path,
 };
 use std::{
@@ -65,6 +65,10 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
             config_path.display()
         )?;
 
+        let enable_telemetry = prompter
+            .prompt_bool("Are you happy sharing crash reports with us automatically? [Y/n]: ")?
+            .unwrap_or(true);
+
         match config_path.parent() {
             Some(parent) if !parent.exists() => {
                 std::fs::create_dir_all(parent).map_err(|err| errors::user_with_internal(
@@ -76,7 +80,18 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
             _ => {}
         };
 
-        let new_config = core.config().with_dev_directory(&dev_directory);
+        let new_config = core
+            .config()
+            .with_dev_directory(&dev_directory)
+            .extend(Config::from_str(&format!(
+                "
+directory: '' # Empty directory will be ignored in extend
+features:
+    telemetry: {}
+",
+                if enable_telemetry { "true" } else { "false" }
+            ))?);
+
         tokio::fs::write(&config_path, new_config.to_string()?).await.map_err(|err| errors::user_with_internal(
             &format!("We couldn't write the new config file to '{}' due to a system error.", config_path.display()),
             "For access denied errors, make sure you have write permission to the location containing your config file. If you run into trouble, please create a GitHub issue and we will try to help.",
@@ -322,7 +337,7 @@ mod tests {
             .with_config(&cfg)
             .with_mock_input(|i| {
                 i.set_data(&format!(
-                    "{}\n{}\n",
+                    "{}\n{}\ny\n",
                     temp.path().display(),
                     temp.path().join("config.yml").display()
                 ))

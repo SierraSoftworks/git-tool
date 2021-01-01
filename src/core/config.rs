@@ -130,7 +130,6 @@ impl Config {
         }
     }
 
-    #[cfg(test)]
     pub fn from_str(yaml: &str) -> Result<Self, errors::Error> {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))

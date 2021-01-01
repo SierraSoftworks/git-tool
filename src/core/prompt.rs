@@ -62,6 +62,16 @@ impl Prompter {
 
         Ok(None)
     }
+
+    pub fn prompt_bool(&mut self, message: &str) -> Result<Option<bool>, Error> {
+        if let Some(answer) = self.prompt(message, |l| {
+            l.to_lowercase() == "y" || l.to_lowercase() == "n"
+        })? {
+            Ok(Some(answer.to_lowercase() == "y"))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]
