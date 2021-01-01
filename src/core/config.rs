@@ -142,14 +142,19 @@ impl Config {
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 errors::user_with_internal(
-            "We couldn't parse your configuration file.", 
-            "Please make sure that the YAML in your configuration file is correctly formatted.", 
-            e)
+                    "We couldn't parse your configuration file due to a YAML parser error.",
+                    "Check that the YAML in your configuration file is correctly formatted.",
+                    e,
+                )
             })
     }
 
     pub fn from_file(path: &path::Path) -> Result<Self, errors::Error> {
-        let f = std::fs::File::open(path)?;
+        let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
+            &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
+            "Check that your config file exists and is readable by the user running git-tool before trying again.",
+            err
+        ))?;
 
         let mut cfg = Config::from_reader(f)?;
         cfg.config_file = Some(path.to_path_buf());
@@ -165,16 +170,17 @@ impl Config {
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 errors::user_with_internal(
-            "We couldn't parse your configuration file.", 
-            "Please make sure that the YAML in your configuration file is correctly formatted.", 
-            e)
+                    "We couldn't parse your configuration file due to a YAML parser error.",
+                    "Check that the YAML in your configuration file is correctly formatted.",
+                    e,
+                )
             })
     }
 
     pub fn to_string(&self) -> Result<String, errors::Error> {
         serde_yaml::to_string(self).map_err(|e| {
             errors::system_with_internal(
-                "We couldn't serialize your configuration to YAML.",
+                "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
                 "Please report this issue on GitHub so that we can try and resolve it.",
                 e,
             )

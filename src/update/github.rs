@@ -174,7 +174,16 @@ impl GitHubSource {
 
                     while let Some(buf) = body.data().await {
                         let buf = buf?;
-                        into.write_all(&buf)?;
+                        into.write_all(&buf).map_err(|err| {
+                            errors::user_with_internal(
+                                &format!(
+                                    "Could not write data from '{}' to disk due to an OS-level error.",
+                                    uri
+                                ),
+                                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
+                                err,
+                            )
+                        })?;
                     }
 
                     return Ok(())

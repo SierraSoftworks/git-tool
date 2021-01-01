@@ -29,12 +29,25 @@ impl From<Arc<Config>> for FileSystemResolver {
 
 impl Resolver for FileSystemResolver {
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-        let dirs = self.config.get_scratch_directory().read_dir()?;
+        let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
+            &format!("Could not retrieve the list of directories within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
+            "Check that Git-Tool has permission to access this directory and try again.",
+            err
+        ))?;
 
         let mut scratchpads = vec![];
         for dir in dirs {
-            let dir_info = dir?;
-            if dir_info.file_type()?.is_dir() {
+            let dir_info = dir.map_err(|err| errors::user_with_internal(
+                &format!("Could not retrieve information about a directory within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
+                "Check that Git-Tool has permission to access this directory and try again.",
+                err
+            ))?;
+
+            if dir_info.file_type().map_err(|err| errors::user_with_internal(
+                &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir_info.path().display()),
+                "Check that Git-Tool has permission to access this directory and try again.",
+                err
+            ))?.is_dir() {
                 if let Some(name) = dir_info.file_name().to_str() {
                     scratchpads.push(Scratchpad::new(name, dir_info.path().to_path_buf()));
                 }
@@ -58,21 +71,34 @@ impl Resolver for FileSystemResolver {
     }
 
     fn get_current_repo(&self) -> Result<Repo, Error> {
-        let cwd = env::current_dir()?;
+        let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
+            "Could not determine your current working directory due to an OS-level error.",
+            "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
+            err
+        ))?;
 
         match self.get_repo(&cwd) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(errors::user_with_cause(
                 &format!("Current directory ('{}') is not a valid repository.", cwd.display()),
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().canonicalize()?.display()),
+                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().display()),
                 e))
         }
     }
 
     fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
-        let dev_dir = self.config.get_dev_directory().canonicalize()?;
+        let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
+            &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
+            "Check that the directory exists and that Git-Tool has permission to access it.",
+            err
+        ))?;
+
         let dir = if path.is_absolute() {
-            path.canonicalize()?
+            path.canonicalize().map_err(|err| errors::user_with_internal(
+                &format!("Could not determine the canonical path for the directory '{}' due to an OS-level error.", path.display()),
+                "Check that the directory exists and that Git-Tool has permission to access it.",
+                err
+            ))?
         } else {
             dev_dir.join(path)
         };
@@ -127,10 +153,18 @@ impl Resolver for FileSystemResolver {
     fn get_repos(&self) -> Result<Vec<Repo>, Error> {
         let mut repos = vec![];
 
-        for svc_dir in self.config.get_dev_directory().read_dir()? {
+        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
+            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
+            "Check that Git-Tool has permission to access this directory and try again.",
+            err
+        ))? {
             match svc_dir {
                 Ok(dir) => {
-                    if dir.file_type()?.is_dir() {
+                    if dir.file_type().map_err(|err| errors::user_with_internal(
+                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
+                        "Check that Git-Tool has permission to access this directory and try again.",
+                        err
+                    ))?.is_dir() {
                         match self.config.get_service(dir.file_name().to_str().unwrap()) {
                             Some(svc) => {
                                 repos.extend(self.get_repos_for(svc)?);

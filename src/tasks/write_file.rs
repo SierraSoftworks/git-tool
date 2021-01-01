@@ -1,3 +1,5 @@
+use crate::errors;
+
 use super::{core::Target, *};
 use std::path::PathBuf;
 
@@ -11,7 +13,16 @@ impl<'a, C: Core> Task<C> for WriteFile<'a> {
     async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path().join(&self.path);
 
-        tokio::fs::write(path, self.content).await?;
+        tokio::fs::write(&path, self.content).await.map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not write data to the repository file '{}' due to an OS-level error.",
+                    path.display()
+                ),
+                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
+                err,
+            )
+        })?;
 
         Ok(())
     }
@@ -23,7 +34,16 @@ impl<'a, C: Core> Task<C> for WriteFile<'a> {
     ) -> Result<(), core::Error> {
         let path = scratch.get_path().join(&self.path);
 
-        tokio::fs::write(path, self.content).await?;
+        tokio::fs::write(&path, self.content).await.map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not write data to the scratchpad file '{}' due to an OS-level error.",
+                    path.display()
+                ),
+                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
+                err,
+            )
+        })?;
 
         Ok(())
     }

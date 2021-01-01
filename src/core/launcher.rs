@@ -1,3 +1,5 @@
+use crate::errors;
+
 use super::app;
 use super::Error;
 use super::{
@@ -47,7 +49,12 @@ impl Launcher for TokioLauncher {
             .args(args)
             .current_dir(t.get_path())
             .envs(env_arg_tuples)
-            .spawn()?;
+            .spawn()
+            .map_err(|err| errors::user_with_internal(
+                &format!("Could not launch the application '{}' due to an OS-level error.", a.get_command()),
+                "Make sure that the program exists on your $PATH and is executable before trying again.",
+                err
+            ))?;
 
         self.forward_signals(&mut child).await
     }
@@ -66,7 +73,11 @@ impl TokioLauncher {
                     // can handle it as necessary.
                 },
                 status = child.wait() => {
-                    return Ok(status?.code().unwrap_or_default());
+                    return Ok(status.map_err(|err| errors::system_with_internal(
+                        "We could not determine the exit status code for the program you ran.",
+                        "Please report this error to us on GitHub so that we can work with you to investigate the cause.",
+                        err
+                    ))?.code().unwrap_or_default());
                 }
             }
         }
