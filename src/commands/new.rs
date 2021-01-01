@@ -37,8 +37,8 @@ impl Command for NewCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for NewCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for NewCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
@@ -74,7 +74,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");
         match core.resolver().get_repos() {
@@ -123,12 +123,9 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
-            .build();
+        crate::online::service::github::mocks::repo_created("test");
+
+        let core = Core::builder().with_config(&cfg).build();
 
         let repo = core
             .resolver()
@@ -157,12 +154,9 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
-            .build();
+        crate::online::service::github::mocks::repo_created("test");
+
+        let core = Core::builder().with_config(&cfg).build();
 
         let repo = core
             .resolver()

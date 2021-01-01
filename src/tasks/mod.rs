@@ -42,11 +42,11 @@ pub use sequence::Sequence;
 pub use write_file::WriteFile;
 
 #[async_trait]
-pub trait Task<C: Core> {
-    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error>;
+pub trait Task {
+    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error>;
     async fn apply_scratchpad(
         &self,
-        core: &C,
+        core: &Core,
         scratch: &core::Scratchpad,
     ) -> Result<(), core::Error>;
 }
@@ -71,8 +71,8 @@ impl Default for TestTask {
 
 #[cfg(test)]
 #[async_trait]
-impl<C: Core> Task<C> for TestTask {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for TestTask {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let mut r = self.ran_repo.lock().await;
 
         *r = Some(repo.clone());
@@ -90,7 +90,7 @@ impl<C: Core> Task<C> for TestTask {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         let mut s = self.ran_scratchpad.lock().await;

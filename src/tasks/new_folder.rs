@@ -5,8 +5,8 @@ use super::{core::Target, *};
 pub struct NewFolder {}
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for NewFolder {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for NewFolder {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
         std::fs::create_dir_all(&path).map_err(|err| {
@@ -25,7 +25,7 @@ impl<C: Core> Task<C> for NewFolder {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         let path = scratch.get_path();
@@ -56,7 +56,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -76,7 +76,7 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -93,7 +93,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -110,7 +110,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w19", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

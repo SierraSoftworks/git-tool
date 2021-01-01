@@ -23,8 +23,8 @@ impl Command for InfoCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for InfoCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for InfoCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
@@ -50,7 +50,7 @@ impl<C: Core> CommandRunnable<C> for InfoCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
 
         let default_svc = core
@@ -104,7 +104,7 @@ mod tests {
             )))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
 

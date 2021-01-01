@@ -29,8 +29,8 @@ impl Command for ScratchCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ScratchCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for ScratchCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(
             core,
             matches.value_of("app"),
@@ -66,7 +66,7 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
         return Ok(status);
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         match core.resolver().get_scratchpads() {
@@ -131,7 +131,7 @@ apps:
             MockResult::Return(Box::pin(async move { Ok(5) }))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
@@ -187,7 +187,7 @@ apps:
             MockResult::Return(Box::pin(async move { Ok(0) }))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -246,7 +246,7 @@ apps:
             MockResult::Return(Box::pin(async move { Ok(0) }))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -307,7 +307,7 @@ apps:
             MockResult::Return(Box::pin(async move { Ok(0) }))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -356,7 +356,7 @@ apps:
             panic!("It should not launch an app.");
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -420,7 +420,7 @@ apps:
             MockResult::Return(Box::pin(async move { Ok(0) }))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}

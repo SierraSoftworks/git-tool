@@ -24,18 +24,20 @@ impl Command for CompleteCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for CompleteCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
+impl CommandRunnable for CompleteCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error>
+where {
         let position: Option<usize> = matches
             .value_of("position")
             .map(|v| v.parse().unwrap_or_default());
 
         let args = matches.value_of("args").unwrap_or_default();
 
-        let commands = super::commands::<C>();
+        let commands = super::commands();
         let (cmd, filter) = self
             .extract_command_and_filter(args, position)
             .unwrap_or_default();
@@ -47,7 +49,7 @@ impl<C: Core> CommandRunnable<C> for CompleteCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--position");
     }
 }
@@ -86,11 +88,11 @@ impl CompleteCommand {
         Some((cmd, filter))
     }
 
-    fn get_responsible_command<C: Core>(
+    fn get_responsible_command(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
+        commands: &Vec<Arc<dyn CommandRunnable>>,
         args: &str,
-    ) -> Option<(Arc<dyn CommandRunnable<C>>, ArgMatches)> {
+    ) -> Option<(Arc<dyn CommandRunnable>, ArgMatches)> {
         match self.get_completion_matches(commands, args) {
             Ok(complete_matches) => {
                 for cmd in commands.iter() {
@@ -105,10 +107,10 @@ impl CompleteCommand {
         None
     }
 
-    async fn offer_completions<C: Core>(
+    async fn offer_completions(
         &self,
-        core: &C,
-        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
+        core: &Core,
+        commands: &Vec<Arc<dyn CommandRunnable>>,
         args: &str,
         completer: &Completer,
     ) {
@@ -124,9 +126,9 @@ impl CompleteCommand {
         }
     }
 
-    fn get_completion_matches<C: Core>(
+    fn get_completion_matches(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable<C>>>,
+        commands: &Vec<Arc<dyn CommandRunnable>>,
         args: &str,
     ) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)
@@ -149,7 +151,7 @@ impl CompleteCommand {
 
 #[cfg(test)]
 pub mod helpers {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
     use std::sync::Mutex;
@@ -180,7 +182,7 @@ pub mod helpers {
         let cmd = CompleteCommand {};
         let cmds = default_commands();
 
-        let core = CoreBuilder::default().with_config(cfg).build();
+        let core = Core::builder().with_config(cfg).build();
 
         let writer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let completer = Completer::new_for(filter, writer.clone());
@@ -213,14 +215,14 @@ pub mod helpers {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::helpers::*;
     use super::*;
 
     #[tokio::test]
     async fn run() {
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let cmd = CompleteCommand {};
         let args = cmd

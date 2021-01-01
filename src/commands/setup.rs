@@ -32,8 +32,12 @@ impl Command for SetupCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for SetupCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
+impl CommandRunnable for SetupCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         match core.config().get_config_file() {
             Some(path) if !matches.is_present("force") => {
                 Err(errors::user(
@@ -94,15 +98,11 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 impl SetupCommand {
-    fn prompt_dev_directory<C: Core>(
-        &self,
-        core: &C,
-        prompter: &mut Prompter,
-    ) -> Result<PathBuf, Error> {
+    fn prompt_dev_directory(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
         let default_dir = match core.config().get_dev_directory().to_str() {
             Some(path) if !path.is_empty() => Some(path.to_owned()),
             _ => None,
@@ -155,11 +155,7 @@ impl SetupCommand {
         Ok(to_native_path(dev_dir))
     }
 
-    fn prompt_config_path<C: Core>(
-        &self,
-        core: &C,
-        prompter: &mut Prompter,
-    ) -> Result<PathBuf, Error> {
+    fn prompt_config_path(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
         let default_path = core.config().get_config_file().or_else(|| {
             match ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
                 Some(dirs) => {
@@ -211,9 +207,9 @@ impl SetupCommand {
     }
 
     #[cfg(windows)]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
@@ -238,9 +234,9 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "linux")]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
@@ -274,9 +270,9 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "macos")]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
@@ -312,7 +308,7 @@ impl SetupCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use tempfile::tempdir;
 
@@ -323,7 +319,7 @@ mod tests {
         let temp = tempdir().unwrap();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 

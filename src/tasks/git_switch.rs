@@ -7,8 +7,8 @@ pub struct GitSwitch {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for GitSwitch {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for GitSwitch {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let mut create = self.create_if_missing;
 
         if create
@@ -24,7 +24,7 @@ impl<C: Core> Task<C> for GitSwitch {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -49,7 +49,7 @@ mod tests {
 
         crate::console::output::mock();
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -82,7 +82,7 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -114,7 +114,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

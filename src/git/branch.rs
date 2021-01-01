@@ -59,7 +59,7 @@ mod tests {
     async fn test_get_current_branch() {
         let temp = tempdir().unwrap();
         let repo = Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
-        let core = CoreBuilder::default()
+        let core = Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -92,7 +92,7 @@ mod tests {
     async fn test_get_branches() {
         let temp = tempdir().unwrap();
         let repo = Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
-        let core = CoreBuilder::default()
+        let core = Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

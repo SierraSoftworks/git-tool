@@ -31,8 +31,8 @@ impl Command for FixCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for FixCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for FixCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let tasks = sequence![
             GitRemote { name: "origin" },
             CreateRemote {
@@ -74,7 +74,7 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--all");
         completer.offer("--no-create-remote");
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
@@ -136,12 +136,9 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
-            .build();
+        crate::online::service::github::mocks::repo_created("exampleB");
+
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
 

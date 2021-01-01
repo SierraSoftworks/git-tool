@@ -631,7 +631,6 @@ dependencies = [
  "shell-words",
  "tempfile",
  "tokio 1.0.1",
- "yup-hyper-mock",
 ]
 
 [[package]]
@@ -2647,17 +2646,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39f0c922f1a334134dc2f7a8b67dc5d25f0735263feec974345ff706bcf20b0d"
 dependencies = [
  "linked-hash-map",
-]
-
-[[package]]
-name = "yup-hyper-mock"
-version = "5.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01da7b30633bf0a0a95443eb9dd524bda44c96072e19a7d0d775c96336d91d96"
-dependencies = [
- "futures",
- "hyper 0.14.2",
- "log",
- "mio 0.6.22",
- "tokio 1.0.1",
 ]

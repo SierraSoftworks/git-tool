@@ -22,8 +22,8 @@ impl Default for GitHubSource {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Source<C> for GitHubSource {
-    async fn get_releases(&self, core: &C) -> Result<Vec<Release>, crate::core::Error> {
+impl Source for GitHubSource {
+    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::core::Error> {
         let uri: Uri = format!("https://api.github.com/repos/{}/releases", self.repo).parse()?;
         info!("Making GET request to {} to check for new releases.", uri);
 
@@ -68,7 +68,7 @@ impl<C: Core> Source<C> for GitHubSource {
 
     async fn get_binary<W: std::io::Write + Send>(
         &self,
-        core: &C,
+        core: &Core,
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,
@@ -143,9 +143,9 @@ impl GitHubSource {
         variants
     }
 
-    async fn download_to_file<C: Core, W: std::io::Write + Send>(
+    async fn download_to_file<W: std::io::Write + Send>(
         &self,
-        core: &C,
+        core: &Core,
         uri: Uri,
         into: &mut W,
     ) -> Result<(), errors::Error> {
@@ -238,45 +238,59 @@ struct GitHubAsset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::CoreBuilder;
+    use crate::core::HttpClient;
     use std::{
         io::Write,
         sync::{Arc, Mutex},
     };
 
-    mock_connector_in_order!(MockGetReleasesFlow {
-r#"HTTP/1.1 200 OK
-Content-Type: application/vnd.github.v3+json
-Content-Length: 321
-
-[
-    {
-        "name": "Version 2.0.0",
-        "tag_name":"v2.0.0",
-        "body": "Example Release",
-        "prerelease": false,
-        "assets": [
-            { "name": "git-tool-windows-amd64.exe" },
-            { "name": "git-tool-linux-amd64" },
-            { "name": "git-tool-darwin-amd64" }
-        ]
+    pub fn mock_get_releases() {
+        HttpClient::mock(vec![
+            HttpClient::route(
+                "GET",
+                "https://api.github.com/repos/SierraSoftworks/git-tool/releases",
+                200,
+                r#"[
+                            {
+                                "name": "Version 2.0.0",
+                                "tag_name":"v2.0.0",
+                                "body": "Example Release",
+                                "prerelease": false,
+                                "assets": [
+                                    { "name": "git-tool-windows-amd64.exe" },
+                                    { "name": "git-tool-linux-amd64" },
+                                    { "name": "git-tool-darwin-amd64" }
+                                ]
+                            }
+                        ]"#,
+            ),
+            HttpClient::route(
+                "GET",
+                "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-windows-amd64.exe",
+                200,
+                r#"testdata"#,
+            ),
+            HttpClient::route(
+                "GET",
+                "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-linux-amd64",
+                200,
+                r#"testdata"#,
+            ),
+            HttpClient::route(
+                "GET",
+                "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-darwin-amd64",
+                200,
+                r#"testdata"#,
+            ),
+        ]);
     }
-]
-"#
-
-r#"HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Content-Length: 8
-
-testdata
-"#});
 
     #[tokio::test]
     async fn test_get_releases() {
         let source = GitHubSource::default();
-        let core = CoreBuilder::default()
-            .with_http_connector(MockGetReleasesFlow::default())
-            .build();
+        mock_get_releases();
+
+        let core = Core::builder().build();
 
         let releases = source.get_releases(&core).await.unwrap();
 
@@ -296,9 +310,9 @@ testdata
     #[tokio::test]
     async fn test_download() {
         let source = GitHubSource::default();
-        let core = CoreBuilder::default()
-            .with_http_connector(MockGetReleasesFlow::default())
-            .build();
+        mock_get_releases();
+
+        let core = Core::builder().build();
 
         let releases = source.get_releases(&core).await.unwrap();
         let latest =

@@ -3,6 +3,7 @@ mod auth;
 mod config;
 mod core;
 pub mod features;
+mod http;
 mod launcher;
 mod prompt;
 mod repo;
@@ -15,7 +16,8 @@ mod templates;
 use super::errors;
 pub use errors::Error;
 
-pub use self::core::{Core, CoreBuilder};
+pub use self::core::Core;
+pub use self::http::HttpClient;
 pub use app::App;
 pub use auth::KeyChain;
 pub use config::Config;
@@ -26,5 +28,3 @@ pub use resolver::Resolver;
 pub use scratchpad::Scratchpad;
 pub use service::Service;
 pub use target::Target;
-
-pub type DefaultCore = core::DefaultCore;

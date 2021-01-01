@@ -3,7 +3,6 @@ use crate::{core::Core, errors};
 use itertools::Itertools;
 use std::time::Duration;
 use std::{
-    marker::PhantomData,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -13,29 +12,25 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
-pub struct UpdateManager<C, S = super::github::GitHubSource>
+pub struct UpdateManager<S = super::github::GitHubSource>
 where
-    C: Core,
-    S: Source<C>,
+    S: Source,
 {
     pub target_application: PathBuf,
 
     pub variant: ReleaseVariant,
     pub source: S,
-
-    core_type: PhantomData<C>,
 }
 
-impl<C, S> UpdateManager<C, S>
+impl<S> UpdateManager<S>
 where
-    C: Core,
-    S: Source<C>,
+    S: Source,
 {
-    pub async fn get_releases(&self, core: &C) -> Result<Vec<Release>, errors::Error> {
+    pub async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error> {
         self.source.get_releases(core).await
     }
 
-    pub async fn update(&self, core: &C, release: &Release) -> Result<bool, errors::Error> {
+    pub async fn update(&self, core: &Core, release: &Release) -> Result<bool, errors::Error> {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
             temporary_application: Some(self.get_temp_app_path(release)),
@@ -199,18 +194,15 @@ where
     }
 }
 
-impl<C, S> Default for UpdateManager<C, S>
+impl<S> Default for UpdateManager<S>
 where
-    C: Core,
-    S: Source<C>,
+    S: Source,
 {
     fn default() -> Self {
         Self {
             target_application: PathBuf::from(std::env::args().nth(0).unwrap_or_default()),
             source: S::default(),
             variant: ReleaseVariant::default(),
-
-            core_type: PhantomData::default(),
         }
     }
 }

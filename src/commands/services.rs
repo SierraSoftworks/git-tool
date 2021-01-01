@@ -15,8 +15,12 @@ impl Command for ServicesCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ServicesCommand {
-    async fn run(&self, core: &C, _matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
+impl CommandRunnable for ServicesCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        _matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         let mut output = core.output();
 
         for svc in core.config().get_services() {
@@ -26,12 +30,12 @@ impl<C: Core> CommandRunnable<C> for ServicesCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
 
     #[tokio::test]
@@ -39,7 +43,7 @@ mod tests {
         let args = ArgMatches::default();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 

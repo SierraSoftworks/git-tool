@@ -34,11 +34,13 @@ impl Command for ShellInitCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ShellInitCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
+impl CommandRunnable for ShellInitCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error>
+where {
         let mut output = core.output();
 
         match matches.subcommand() {
@@ -65,7 +67,7 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let shells = get_shells();
         completer.offer_many(shells.iter().map(|s| s.get_name()));
     }
@@ -73,13 +75,13 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
 
     #[tokio::test]
     async fn run() {
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 

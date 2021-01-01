@@ -9,8 +9,8 @@ pub struct WriteFile<'a> {
 }
 
 #[async_trait::async_trait]
-impl<'a, C: Core> Task<C> for WriteFile<'a> {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl<'a> Task for WriteFile<'a> {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path().join(&self.path);
 
         tokio::fs::write(&path, self.content).await.map_err(|err| {
@@ -29,7 +29,7 @@ impl<'a, C: Core> Task<C> for WriteFile<'a> {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         let path = scratch.get_path().join(&self.path);
@@ -61,7 +61,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -93,7 +93,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

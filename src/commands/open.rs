@@ -37,8 +37,8 @@ New applications can be configured either by making changes to your configuratio
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for OpenCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for OpenCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_best_repo(target)?)
@@ -86,7 +86,7 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
         Ok(status)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--create");
         completer.offer("--no-create-remote");
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
@@ -147,7 +147,7 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let temp_path = temp.path().to_owned();
         Resolver::get_best_repo.mock_safe(move |_, name| {

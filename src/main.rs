@@ -3,9 +3,6 @@ extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
-#[cfg(test)]
-#[macro_use]
-extern crate yup_hyper_mock as hyper_mock;
 extern crate keyring;
 #[macro_use]
 extern crate lazy_static;
@@ -18,7 +15,7 @@ extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
-use crate::core::{features, Core, DefaultCore};
+use crate::core::features;
 use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
 use telemetry::Session;
@@ -86,10 +83,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 async fn run<'a>(
     mut app: App<'a>,
-    commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
+    commands: Vec<Arc<dyn CommandRunnable>>,
     matches: ArgMatches,
 ) -> Result<i32, errors::Error> {
-    let mut core_builder = core::CoreBuilder::default();
+    let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
         debug!("Loading configuration file.");

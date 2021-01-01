@@ -31,8 +31,8 @@ impl Command for IgnoreCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for IgnoreCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for IgnoreCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
         match matches.occurrences_of("language") {
@@ -71,7 +71,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         match online::gitignore::list(core).await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}
@@ -81,7 +81,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use clap::ArgMatches;
 
@@ -89,7 +89,7 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 

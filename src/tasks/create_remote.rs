@@ -12,8 +12,8 @@ impl Default for CreateRemote {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for CreateRemote {
-    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for CreateRemote {
+    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -40,7 +40,7 @@ impl<C: Core> Task<C> for CreateRemote {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -67,11 +67,10 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = core::CoreBuilder::default()
+        crate::online::service::github::mocks::repo_created("sierrasoftworks");
+
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
             .build();
         CreateRemote { enabled: true }
             .apply_repo(&core, &repo)
@@ -84,7 +83,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

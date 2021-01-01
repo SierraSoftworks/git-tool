@@ -29,8 +29,8 @@ impl Command for BranchCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for BranchCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for BranchCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
@@ -53,7 +53,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);
@@ -79,7 +79,7 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -113,7 +113,7 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

@@ -67,8 +67,8 @@ impl Command for ConfigCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ConfigCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for ConfigCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
         match matches.subcommand() {
@@ -207,7 +207,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, matches: &ArgMatches) {
         match matches.subcommand() {
             Some(("list", _)) => {}
             Some(("add", _)) => {
@@ -255,7 +255,7 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
     use clap::ArgMatches;
@@ -265,7 +265,7 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -287,7 +287,7 @@ mod tests {
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -313,7 +313,7 @@ mod tests {
     #[tokio::test]
     async fn run_add_no_file() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -345,7 +345,7 @@ mod tests {
         .unwrap();
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -383,7 +383,7 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -422,7 +422,7 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
@@ -455,7 +455,7 @@ aliases:
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
 
@@ -498,7 +498,7 @@ aliases:
             "the config should have an alias initially"
         );
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
 
@@ -566,7 +566,7 @@ features:
             "the config should have the feature enabled initially"
         );
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
 

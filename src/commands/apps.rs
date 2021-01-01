@@ -15,8 +15,12 @@ impl Command for AppsCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for AppsCommand {
-    async fn run(&self, core: &C, _matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
+impl CommandRunnable for AppsCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        _matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         for app in core.config().get_apps() {
             writeln!(core.output(), "{}", app.get_name())?;
         }
@@ -24,12 +28,12 @@ impl<C: Core> CommandRunnable<C> for AppsCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
 
     #[tokio::test]
@@ -37,7 +41,7 @@ mod tests {
         let args = ArgMatches::default();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 

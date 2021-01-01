@@ -24,8 +24,8 @@ impl Command for CloneCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for CloneCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for CloneCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.value_of("repo").ok_or(errors::user(
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone github.com/sierrasoftworks/git-tool'."))?;
@@ -42,7 +42,7 @@ impl<C: Core> CommandRunnable<C> for CloneCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         let default_svc = core
@@ -112,7 +112,7 @@ features:
             )))
         });
 
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::core::Launcher::run.mock_safe(|_, _app, _target| {
             panic!("No program should have been run");

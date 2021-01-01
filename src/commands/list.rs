@@ -30,11 +30,13 @@ impl Command for ListCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ListCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
+impl CommandRunnable for ListCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error>
+where {
         let mut output = core.output();
 
         let filter = match matches.value_of("filter") {
@@ -104,7 +106,7 @@ URLs:
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(vec!["--quiet", "-q", "--full", "-f"]);
     }
 }
@@ -119,7 +121,7 @@ mod tests {
 
     #[tokio::test]
     async fn run_normal() {
-        let core = CoreBuilder::default()
+        let core = Core::builder()
             .with_config(&Config::for_dev_directory(&get_dev_dir()))
             .build();
 
@@ -152,7 +154,7 @@ mod tests {
             ]))
         });
 
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         crate::console::output::mock();
 
         let cmd = ListCommand {};
@@ -174,7 +176,7 @@ mod tests {
             ]))
         });
 
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         let output = crate::console::output::mock();
 
         let cmd = ListCommand {};

@@ -14,12 +14,12 @@ impl Default for GitHubService {
 }
 
 #[async_trait]
-impl<C: Core> OnlineService<C> for GitHubService {
+impl OnlineService for GitHubService {
     fn handles(&self, service: &Service) -> bool {
         service.get_domain() == "github.com"
     }
 
-    async fn ensure_created(&self, core: &C, repo: &Repo) -> Result<(), Error> {
+    async fn ensure_created(&self, core: &Core, repo: &Repo) -> Result<(), Error> {
         let current_user = self.get_user_login(core).await?;
 
         let uri = if repo.get_namespace() == current_user {
@@ -56,7 +56,7 @@ impl<C: Core> OnlineService<C> for GitHubService {
 }
 
 impl GitHubService {
-    async fn get_user_login<C: Core>(&self, core: &C) -> Result<String, Error> {
+    async fn get_user_login(&self, core: &Core) -> Result<String, Error> {
         let uri: Uri = "https://api.github.com/user".parse()?;
 
         let user: Result<UserProfile, GitHubErrorResponse> = self
@@ -69,9 +69,9 @@ impl GitHubService {
         }
     }
 
-    async fn make_request<C: Core, T: DeserializeOwned>(
+    async fn make_request<T: DeserializeOwned>(
         &self,
-        core: &C,
+        core: &Core,
         method: &str,
         uri: Uri,
         body: Body,
@@ -180,20 +180,19 @@ struct GitHubError {
 
 #[cfg(test)]
 mod tests {
-    use super::mocks::*;
     use super::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn test_happy_path_user_repo() {
-        let http = NewRepoSuccessFlow::default();
-
         super::KeyChain::get_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = CoreBuilder::default().with_http_connector(http).build();
+        mocks::repo_created("test");
+
+        let core = Core::builder().build();
 
         let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -205,14 +204,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_happy_path_user_repo_exists() {
-        let http = NewRepoExistsFlow::default();
-
         super::KeyChain::get_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
-        let core = CoreBuilder::default().with_http_connector(http).build();
+        mocks::repo_exists("test");
+
+        let core = Core::builder().build();
 
         let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -225,36 +224,49 @@ mod tests {
 
 #[cfg(test)]
 pub mod mocks {
-    pub type NewRepoSuccessFlow = MockGitHubNewRepoSuccessFlow;
-    pub type NewRepoExistsFlow = MockGitHubNewRepoDuplicateFlow;
+    pub fn repo_created(org: &str) {
+        super::HttpClient::mock(vec![
+            super::HttpClient::route(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                "https://api.github.com/user/repos",
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                format!("https://api.github.com/orgs/{}/repos", org).as_str(),
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+        ]);
+    }
 
-    mock_connector_in_order!(MockGitHubNewRepoSuccessFlow {
-r#"HTTP/1.1 200 OK
-Content-Type: application/vnd.github.v3+json
-Content-Length: 16
-
-{"login":"test"}
-"#
-
-r#"HTTP/1.1 201 Created
-Content-Type: application/vnd.github.v3+json
-Content-Length: 11
-
-{"id":1234}
-"#});
-
-    mock_connector_in_order!(MockGitHubNewRepoDuplicateFlow {
-r#"HTTP/1.1 200 OK
-Content-Type: application/vnd.github.v3+json
-Content-Length: 16
-
-{"login":"test"}
-"#
-
-r#"HTTP/1.1 422 Unprocessable Entity
-Content-Type: application/vnd.github.v3+json
-Content-Length: 225
-
-{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}
-"#});
+    pub fn repo_exists(org: &str) {
+        super::HttpClient::mock(vec![
+            super::HttpClient::route(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                "https://api.github.com/user/repos",
+                422,
+                r#"{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                format!("https://api.github.com/orgs/{}/repos", org).as_str(),
+                422,
+                r#"{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}"#,
+            ),
+        ]);
+    }
 }

@@ -28,11 +28,12 @@ impl Command for AuthCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for AuthCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
+impl CommandRunnable for AuthCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         let service = matches.value_of("service").ok_or(errors::user(
             "You have not provided the name of the service you wish to authenticate.",
             "Please provide the name of the service when running this command: `git-tool auth github.com`."))?;
@@ -54,21 +55,21 @@ impl<C: Core> CommandRunnable<C> for AuthCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_services().map(|s| s.get_domain()));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_store() {
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
         core::KeyChain::set_token.mock_safe(|_, token, value| {
@@ -90,7 +91,7 @@ mod tests {
     #[tokio::test]
     async fn run_delete() {
         let cfg = Config::default();
-        let core = CoreBuilder::default().with_config(&cfg).build();
+        let core = Core::builder().with_config(&cfg).build();
 
         crate::console::output::mock();
         core::KeyChain::remove_token.mock_safe(|_, token| {
