@@ -19,6 +19,7 @@ hyper = { version = "0.14", features = ["client","http1","http2"] }
 hyper-tls = "0.5"
 itertools = "0.10"
 keyring = "0.10"
+lazy_static = "1.4"
 log = "0.4"
 nix = "0.19.1"
 once_cell = "1.5"

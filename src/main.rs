@@ -8,6 +8,8 @@ extern crate hyper;
 extern crate yup_hyper_mock as hyper_mock;
 extern crate keyring;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate log;
 extern crate rpassword;
 extern crate sentry;
@@ -16,9 +18,10 @@ extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
-use crate::core::{Core, DefaultCore, Output};
+use crate::core::{features, Core, DefaultCore, Output};
 use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
+use telemetry::Session;
 
 #[macro_use]
 mod macros;
@@ -32,6 +35,7 @@ mod fs;
 mod git;
 mod online;
 mod search;
+mod telemetry;
 mod update;
 
 #[cfg(test)]
@@ -39,20 +43,7 @@ mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let logger = sentry::integrations::log::SentryLogger::new();
-    log::set_boxed_logger(Box::new(logger)).unwrap();
-    log::set_max_level(log::LevelFilter::Info);
-
-    let raven = sentry::init((
-        "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
-        sentry::ClientOptions {
-            release: Some(version!("git-tool@v").into()),
-            default_integrations: true,
-            ..Default::default()
-        },
-    ));
-
-    sentry::start_session();
+    let session = Session::new();
 
     let commands = commands::default_commands();
     let version = version!("v");
@@ -79,20 +70,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     match run(app, commands, matches).await {
         Result::Ok(status) => {
-            sentry::end_session_with_status(sentry::protocol::SessionStatus::Exited);
-            raven.close(None);
+            session.complete();
             std::process::exit(status);
         }
         Result::Err(err) => {
             error!("{}", err.message());
             println!("{}", err.message());
 
-            if err.is_system() {
-                sentry::capture_error(&err);
-            }
-
-            sentry::end_session_with_status(sentry::protocol::SessionStatus::Crashed);
-            raven.close(None);
+            session.crash(err);
             std::process::exit(1);
         }
     }
@@ -106,13 +91,20 @@ async fn run<'a>(
     let mut core_builder = core::CoreBuilder::default();
 
     if let Some(cfg_file) = matches.value_of("config") {
+        debug!("Loading configuration file.");
         core_builder = core_builder.with_config_file(cfg_file)?;
     }
 
     let core = Arc::new(core_builder.build());
 
+    // If telemetry is disabled in the config file, then turn it off here.
+    if !core.config().get_features().has(features::TELEMETRY) {
+        telemetry::set_enabled(false);
+    }
+
     // Legacy update interoperability for compatibility with the Golang implementation
     if let Some(state) = matches.value_of("update-resume-internal") {
+        info!("Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command.");
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
@@ -121,11 +113,15 @@ async fn run<'a>(
                     "Please report this error to us on GitHub and use the manual update process until it is resolved.",
                     errors::detailed_message(&e.to_string())))?;
 
+            info!(
+                "Running update sub-command with state sourced from --update-resume-internal flag."
+            );
             return cmd.run(&core, &matches).await;
         }
     }
 
     if core.config().get_config_file().is_none() {
+        warn!("No configuration file has been loaded, continuing with defaults.");
         writeln!(core.output().writer(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
     }
 
