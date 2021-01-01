@@ -42,7 +42,7 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
 
         match matches.is_present("all") {
             true => {
-                let mut output = core.output().writer();
+                let mut output = core.output();
                 let filter = match matches.value_of("repo") {
                     Some(name) => name,
                     None => "",
@@ -106,8 +106,8 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
@@ -119,7 +119,7 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+        Resolver::get_best_repo.mock_safe(move |_, name| {
             assert_eq!(
                 name, "repo",
                 "it should be called with the name of the repo to be cloned"
@@ -131,18 +131,19 @@ mod tests {
             )))
         });
 
-        super::KeyChain::get_token.mock_safe(|_, token| {
+        KeyChain::get_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_output()
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
             .build();
+
+        crate::console::output::mock();
 
         // Prep the repo
         sequence![GitInit {}, GitRemote { name: "origin" }]

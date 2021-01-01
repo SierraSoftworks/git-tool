@@ -39,7 +39,7 @@ impl<C: Core> CommandRunnable<C> for ShellInitCommand {
     where
         C: Core,
     {
-        let mut output = core.output().writer();
+        let mut output = core.output();
 
         match matches.subcommand() {
             Some((name, matches)) => {
@@ -79,10 +79,9 @@ mod tests {
     #[tokio::test]
     async fn run() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ShellInitCommand {};
         let args = cmd.app().get_matches_from(vec!["shell-init", "powershell"]);
@@ -92,9 +91,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("Invoke-Expression"),
+            output.to_string().contains("Invoke-Expression"),
             "the output should include the setup script"
         );
     }

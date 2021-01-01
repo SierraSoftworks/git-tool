@@ -18,7 +18,7 @@ extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
-use crate::core::{features, Core, DefaultCore, Output};
+use crate::core::{features, Core, DefaultCore};
 use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
 use telemetry::Session;
@@ -29,6 +29,7 @@ mod macros;
 mod tasks;
 mod commands;
 mod completion;
+mod console;
 mod core;
 mod errors;
 mod fs;
@@ -122,7 +123,7 @@ async fn run<'a>(
 
     if core.config().get_config_file().is_none() {
         warn!("No configuration file has been loaded, continuing with defaults.");
-        writeln!(core.output().writer(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+        writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
     }
 
     for cmd in commands.iter() {

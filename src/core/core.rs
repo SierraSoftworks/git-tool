@@ -1,46 +1,36 @@
-use super::{Config, Error, Input, KeyChain, Launcher, Output, Resolver};
-use std::sync::Arc;
+use super::{Config, Error, KeyChain, Launcher, Resolver};
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
 pub trait Core: Send + Sync {
-    type Input: Input;
-    type Output: Output;
     type HyperConnector: hyper::client::connect::Connect + Clone + Send + Sync + 'static;
 
     fn config(&self) -> &Config;
     fn keychain(&self) -> &KeyChain;
     fn launcher(&self) -> &Launcher;
     fn resolver(&self) -> &Resolver;
-    fn input(&self) -> &Self::Input;
-    fn output(&self) -> &Self::Output;
+    fn input(&self) -> Box<dyn Read + Send>;
+    fn output(&self) -> Box<dyn Write + Send>;
     fn http_client(&self) -> &hyper::Client<Self::HyperConnector>;
 }
 
-pub struct DefaultCore<
-    I = super::DefaultInput,
-    O = super::DefaultOutput,
-    HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>,
-> where
-    I: Input,
-    O: Output,
+pub struct DefaultCore<HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>>
+where
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     config: Arc<Config>,
     launcher: Arc<Launcher>,
     resolver: Arc<Resolver>,
     keychain: Arc<KeyChain>,
-    input: Arc<I>,
-    output: Arc<O>,
     http_client: Arc<hyper::Client<HC, hyper::Body>>,
 }
 
-impl<I, O, HC> Core for DefaultCore<I, O, HC>
+impl<HC> Core for DefaultCore<HC>
 where
-    I: Input,
-    O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
-    type Input = I;
-    type Output = O;
     type HyperConnector = HC;
 
     fn config(&self) -> &Config {
@@ -59,12 +49,12 @@ where
         &self.resolver
     }
 
-    fn input(&self) -> &Self::Input {
-        &self.input
+    fn input(&self) -> Box<dyn Read + Send> {
+        crate::console::input::input()
     }
 
-    fn output(&self) -> &Self::Output {
-        &self.output
+    fn output(&self) -> Box<dyn Write + Send> {
+        crate::console::output::output()
     }
 
     fn http_client(&self) -> &hyper::Client<Self::HyperConnector> {
@@ -72,18 +62,11 @@ where
     }
 }
 
-pub struct CoreBuilder<
-    I = super::DefaultInput,
-    O = super::DefaultOutput,
-    HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>,
-> where
-    I: Input,
-    O: Output,
+pub struct CoreBuilder<HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>>
+where
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     config: Arc<Config>,
-    input: Arc<I>,
-    output: Arc<O>,
     http_connector: HC,
 }
 
@@ -92,37 +75,27 @@ impl Default for CoreBuilder {
         let config = Arc::new(Config::default());
         Self {
             config: config.clone(),
-            input: Arc::new(super::DefaultInput::from(config.clone())),
-            output: Arc::new(super::DefaultOutput::from(config.clone())),
             http_connector: hyper_tls::HttpsConnector::<hyper::client::HttpConnector>::new(),
         }
     }
 }
 
-impl<I, O> std::convert::Into<DefaultCore<I, O>> for CoreBuilder<I, O>
-where
-    I: Input,
-    O: Output,
-{
-    fn into(self) -> DefaultCore<I, O> {
+impl std::convert::Into<DefaultCore> for CoreBuilder {
+    fn into(self) -> DefaultCore {
         self.build()
     }
 }
 
-impl<I, O, HC> CoreBuilder<I, O, HC>
+impl<HC> CoreBuilder<HC>
 where
-    I: Input,
-    O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
-    pub fn build(self) -> DefaultCore<I, O, HC> {
+    pub fn build(self) -> DefaultCore<HC> {
         DefaultCore {
             config: self.config.clone(),
             launcher: Arc::new(Launcher::from(self.config.clone())),
             resolver: Arc::new(Resolver::from(self.config.clone())),
             keychain: Arc::new(KeyChain::from(self.config.clone())),
-            input: self.input,
-            output: self.output,
             http_client: Arc::new(hyper::Client::builder().build(self.http_connector)),
         }
     }
@@ -132,8 +105,6 @@ where
 
         Self {
             config: c.clone(),
-            input: Arc::new(I::from(c.clone())),
-            output: self.output,
             http_connector: self.http_connector,
         }
     }
@@ -145,45 +116,15 @@ where
     }
 
     #[cfg(test)]
-    pub fn with_mock_output(self) -> CoreBuilder<I, super::output::mocks::MockOutput, HC> {
-        let output = super::output::mocks::MockOutput::from(self.config.clone());
-
-        CoreBuilder {
-            config: self.config,
-            input: self.input,
-            output: Arc::new(output),
-            http_connector: self.http_connector,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn with_mock_input<S>(self, setup: S) -> CoreBuilder<super::input::mocks::MockInput, O, HC>
-    where
-        S: FnOnce(&mut super::input::mocks::MockInput),
-    {
-        let mut input = super::input::mocks::MockInput::from(self.config.clone());
-        setup(&mut input);
-
-        CoreBuilder {
-            config: self.config,
-            input: Arc::new(input),
-            output: self.output,
-            http_connector: self.http_connector,
-        }
-    }
-
-    #[cfg(test)]
     pub fn with_http_connector<S: hyper::client::connect::Connect>(
         self,
         connector: S,
-    ) -> CoreBuilder<I, O, S>
+    ) -> CoreBuilder<S>
     where
         S: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
     {
         CoreBuilder {
             config: self.config,
-            input: self.input,
-            output: self.output,
             http_connector: connector,
         }
     }

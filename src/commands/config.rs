@@ -69,7 +69,7 @@ impl Command for ConfigCommand {
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for ConfigCommand {
     async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output().writer();
+        let mut output = core.output();
 
         match matches.subcommand() {
             Some(("list", _args)) => {
@@ -265,10 +265,9 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
 
@@ -277,9 +276,10 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains(&core.config().to_string().unwrap()),
+            output
+                .to_string()
+                .contains(&core.config().to_string().unwrap()),
             "the output should contain the config"
         );
     }
@@ -287,10 +287,9 @@ mod tests {
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "list"]);
@@ -300,14 +299,13 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
-        println!("{}", output);
+        println!("{}", output.to_string());
         assert!(
-            output.contains("apps/bash\n"),
+            output.to_string().contains("apps/bash\n"),
             "the output should contain some apps"
         );
         assert!(
-            output.contains("services/github\n"),
+            output.to_string().contains("services/github\n"),
             "the output should contain some services"
         );
     }
@@ -315,10 +313,9 @@ mod tests {
     #[tokio::test]
     async fn run_add_no_file() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -330,10 +327,9 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
-        println!("{}", output);
+        println!("{}", output.to_string());
         assert!(
-            output.contains("name: bash\n"),
+            output.to_string().contains("name: bash\n"),
             "the output should contain the new config"
         );
     }
@@ -349,10 +345,9 @@ mod tests {
         .unwrap();
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -364,9 +359,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("Applying Bash\n> "),
+            output.to_string().contains("Applying Bash\n> "),
             "the output should describe what is being done"
         );
 
@@ -389,10 +383,9 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias"]);
@@ -402,14 +395,17 @@ aliases:
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
-        println!("{}", output);
+        println!("{}", output.to_string());
         assert!(
-            output.contains("test1 = example.com/tests/test1\n"),
+            output
+                .to_string()
+                .contains("test1 = example.com/tests/test1\n"),
             "the output should contain the aliases"
         );
         assert!(
-            output.contains("test2 = example.com/tests/test2\n"),
+            output
+                .to_string()
+                .contains("test2 = example.com/tests/test2\n"),
             "the output should contain the aliases"
         );
     }
@@ -426,10 +422,9 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias", "test1"]);
@@ -439,10 +434,11 @@ aliases:
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
-        println!("{}", output);
+        println!("{}", output.to_string());
         assert!(
-            output.contains("test1 = example.com/tests/test1\n"),
+            output
+                .to_string()
+                .contains("test1 = example.com/tests/test1\n"),
             "the output should contain the alias"
         );
     }
@@ -459,10 +455,9 @@ aliases:
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args =
@@ -503,10 +498,9 @@ aliases:
             "the config should have an alias initially"
         );
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -572,10 +566,9 @@ features:
             "the config should have the feature enabled initially"
         );
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd

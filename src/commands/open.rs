@@ -119,8 +119,8 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
     use tempfile::tempdir;
 
@@ -150,7 +150,7 @@ features:
         let core = CoreBuilder::default().with_config(&cfg).build();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+        Resolver::get_best_repo.mock_safe(move |_, name| {
             assert_eq!(
                 name, "repo",
                 "it should be called with the name of the repo to be cloned"
@@ -162,7 +162,7 @@ features:
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",

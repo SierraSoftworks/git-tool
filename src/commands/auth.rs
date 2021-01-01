@@ -68,11 +68,9 @@ mod tests {
     #[tokio::test]
     async fn run_store() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
 
+        crate::console::output::mock();
         core::KeyChain::set_token.mock_safe(|_, token, value| {
             assert_eq!(token, "github.com", "the correct token should be saved");
             assert_eq!(value, "12345", "the correct value should be saved");
@@ -92,11 +90,9 @@ mod tests {
     #[tokio::test]
     async fn run_delete() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
 
+        crate::console::output::mock();
         core::KeyChain::remove_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be removed");
             MockResult::Return(Ok(()))

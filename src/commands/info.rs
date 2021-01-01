@@ -25,7 +25,7 @@ impl Command for InfoCommand {
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for InfoCommand {
     async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output().writer();
+        let mut output = core.output();
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => core.resolver().get_current_repo()?,
@@ -80,8 +80,8 @@ impl<C: Core> CommandRunnable<C> for InfoCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
@@ -92,7 +92,7 @@ mod tests {
 
         let cfg = Config::from_str("directory: /dev").unwrap();
 
-        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+        Resolver::get_best_repo.mock_safe(move |_, name| {
             assert_eq!(
                 name, "repo",
                 "it should be called with the name of the repo to be cloned"
@@ -104,10 +104,9 @@ mod tests {
             )))
         });
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        crate::console::output::mock();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}

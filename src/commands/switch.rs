@@ -90,7 +90,7 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "github.com/sierrasoftworks/test-git-switch-command",
                 temp.path().join("repo").into(),
@@ -149,7 +149,7 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "github.com/sierrasoftworks/test-git-switch-command",
                 temp.path().join("repo").into(),
@@ -212,7 +212,7 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "github.com/sierrasoftworks/test-git-switch-command",
                 temp.path().join("repo").into(),
@@ -270,7 +270,7 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(&temp.path()))
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "github.com/sierrasoftworks/test-git-switch-command",
                 temp.path().join("repo").into(),

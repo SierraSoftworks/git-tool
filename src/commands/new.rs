@@ -103,8 +103,8 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
@@ -118,7 +118,7 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        super::KeyChain::get_token.mock_safe(|_, token| {
+        KeyChain::get_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
@@ -152,7 +152,7 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        super::KeyChain::get_token.mock_safe(|_, token| {
+        KeyChain::get_token.mock_safe(|_, token| {
             assert_eq!(token, "github.com", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });

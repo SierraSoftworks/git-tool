@@ -72,8 +72,8 @@ impl<C: Core> CommandRunnable<C> for CloneCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
     use tempfile::tempdir;
 
@@ -100,7 +100,7 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+        Resolver::get_best_repo.mock_safe(move |_, name| {
             assert_eq!(
                 name, "repo",
                 "it should be called with the name of the repo to be cloned"

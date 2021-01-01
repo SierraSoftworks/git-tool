@@ -9,7 +9,7 @@ use std::{io::Write, vec::Vec};
 
 use crate::{
     completion::Completer,
-    core::{Core, DefaultCore, KeyChain, Output, Resolver},
+    core::{Core, DefaultCore},
 };
 
 mod apps;

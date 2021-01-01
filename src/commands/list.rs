@@ -35,7 +35,7 @@ impl<C: Core> CommandRunnable<C> for ListCommand {
     where
         C: Core,
     {
-        let mut output = core.output().writer();
+        let mut output = core.output();
 
         let filter = match matches.value_of("filter") {
             Some(name) => name,
@@ -121,8 +121,9 @@ mod tests {
     async fn run_normal() {
         let core = CoreBuilder::default()
             .with_config(&Config::for_dev_directory(&get_dev_dir()))
-            .with_mock_output()
             .build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ListCommand {};
 
@@ -133,9 +134,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains(
+            output.to_string().contains(
                 "github.com/sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"
             ),
             "the output should contain the repos"
@@ -152,7 +152,8 @@ mod tests {
             ]))
         });
 
-        let core = CoreBuilder::default().with_mock_output().build();
+        let core = CoreBuilder::default().build();
+        crate::console::output::mock();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
@@ -173,7 +174,8 @@ mod tests {
             ]))
         });
 
-        let core = CoreBuilder::default().with_mock_output().build();
+        let core = CoreBuilder::default().build();
+        let output = crate::console::output::mock();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);
@@ -183,13 +185,12 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("example.com/ns1/a\n"),
+            output.to_string().contains("example.com/ns1/a\n"),
             "the output should contain the first match"
         );
         assert!(
-            output.contains("example.com/ns1/b\n"),
+            output.to_string().contains("example.com/ns1/b\n"),
             "the output should contain the second match"
         );
     }

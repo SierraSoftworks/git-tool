@@ -18,7 +18,7 @@ impl Command for AppsCommand {
 impl<C: Core> CommandRunnable<C> for AppsCommand {
     async fn run(&self, core: &C, _matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
         for app in core.config().get_apps() {
-            writeln!(core.output().writer(), "{}", app.get_name())?;
+            writeln!(core.output(), "{}", app.get_name())?;
         }
 
         Ok(0)
@@ -37,10 +37,9 @@ mod tests {
         let args = ArgMatches::default();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = AppsCommand {};
         match cmd.run(&core, &args).await {
@@ -48,9 +47,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("shell"),
+            output.to_string().contains("shell"),
             "the output should contain the default app"
         );
     }

@@ -80,8 +80,8 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Scratchpad};
     use super::*;
+    use crate::core::*;
     use mocktopus::mocking::*;
 
     #[tokio::test]
@@ -108,14 +108,14 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_current_scratchpad.mock_safe(move |_| {
+        Resolver::get_current_scratchpad.mock_safe(move |_| {
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w01",
                 temp_path.join("scratch").join("2020w01").into(),
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",
@@ -165,14 +165,14 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_current_scratchpad.mock_safe(move |_| {
+        Resolver::get_current_scratchpad.mock_safe(move |_| {
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w01",
                 temp_path.join("scratch").join("2020w01").into(),
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",
@@ -219,7 +219,7 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_scratchpad.mock_safe(move |_, name| {
+        Resolver::get_scratchpad.mock_safe(move |_, name| {
             assert_eq!(
                 name, "2020w07",
                 "it should attempt to resolve the correct scratchpad name"
@@ -231,7 +231,7 @@ apps:
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",
@@ -280,7 +280,7 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_scratchpad.mock_safe(move |_, name| {
+        Resolver::get_scratchpad.mock_safe(move |_, name| {
             assert_eq!(
                 name, "2020w07",
                 "it should attempt to resolve the correct scratchpad name"
@@ -292,7 +292,7 @@ apps:
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",
@@ -340,7 +340,7 @@ apps:
         ))
         .unwrap();
 
-        super::Resolver::get_scratchpad.mock_safe(move |_, name| {
+        Resolver::get_scratchpad.mock_safe(move |_, name| {
             assert_eq!(
                 name, "2020w07",
                 "it should attempt to resolve the correct scratchpad name"
@@ -352,7 +352,7 @@ apps:
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(|_, _app, _target| {
+        Launcher::run.mock_safe(|_, _app, _target| {
             panic!("It should not launch an app.");
         });
 
@@ -388,7 +388,7 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        super::Resolver::get_scratchpad.mock_safe(move |_, name| {
+        Resolver::get_scratchpad.mock_safe(move |_, name| {
             assert_eq!(
                 name, "2020w07",
                 "it should attempt to resolve the correct scratchpad name"
@@ -400,7 +400,7 @@ apps:
             )))
         });
 
-        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+        Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(
                 app.get_name(),
                 "test-app",

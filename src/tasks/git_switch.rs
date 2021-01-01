@@ -47,9 +47,10 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
+        crate::console::output::mock();
+
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
             .build();
 
         sequence![
@@ -83,8 +84,9 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
             .build();
+
+        crate::console::output::mock();
 
         sequence![
             GitInit {},
@@ -114,8 +116,9 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
             .build();
+
+        crate::console::output::mock();
 
         let task = GitSwitch {
             branch: "test".into(),

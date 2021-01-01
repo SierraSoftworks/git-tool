@@ -33,7 +33,7 @@ impl Command for IgnoreCommand {
 #[async_trait]
 impl<C: Core> CommandRunnable<C> for IgnoreCommand {
     async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output().writer();
+        let mut output = core.output();
 
         match matches.occurrences_of("language") {
             0 => {
@@ -89,10 +89,9 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = IgnoreCommand {};
 
@@ -101,9 +100,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("visualstudio"),
+            output.to_string().contains("visualstudio"),
             "the ignore list should be printed"
         );
     }

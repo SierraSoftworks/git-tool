@@ -33,7 +33,7 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
     where
         C: Core,
     {
-        let mut output = core.output().writer();
+        let mut output = core.output();
 
         let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",
@@ -132,10 +132,9 @@ mod tests {
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = UpdateCommand {};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
@@ -145,9 +144,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("  v1.5.6\n"),
+            output.to_string().contains("  v1.5.6\n"),
             "the output should contain a list of versions"
         );
     }

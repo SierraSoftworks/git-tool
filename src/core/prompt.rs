@@ -3,10 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    core::{Input, Output},
-    errors,
-};
+use crate::{console, errors};
 
 use super::Error;
 
@@ -16,14 +13,10 @@ pub struct Prompter {
 }
 
 impl Prompter {
-    pub fn new<I, O>(input: &I, output: &O) -> Self
-    where
-        I: Input,
-        O: Output,
-    {
+    pub fn new() -> Self {
         Self {
-            writer: Arc::new(Mutex::new(output.writer())),
-            reader: Arc::new(Mutex::new(BufReader::new(input.reader()))),
+            writer: Arc::new(Mutex::new(console::output::output())),
+            reader: Arc::new(Mutex::new(BufReader::new(console::input::input()))),
         }
     }
 
@@ -76,21 +69,14 @@ impl Prompter {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use super::*;
-    use crate::core::{input::mocks::MockInput, output::mocks::MockOutput, Config};
 
     #[test]
     fn prompt_for_any() {
-        let config = Arc::new(Config::default());
+        console::input::mock("123\n");
+        let output = console::output::mock();
 
-        let mut input = MockInput::from(config.clone());
-        let output = MockOutput::from(config.clone());
-
-        input.set_data("123\n");
-
-        let mut prompter = Prompter::new(&input, &output);
+        let mut prompter = Prompter::new();
 
         assert_eq!(
             prompter
@@ -107,11 +93,10 @@ mod tests {
 
     #[test]
     fn prompt_eof() {
-        let config = Arc::new(Config::default());
+        console::input::mock("");
+        let output = console::output::mock();
 
-        let input = MockInput::from(config.clone());
-        let output = MockOutput::from(config.clone());
-        let mut prompter = Prompter::new(&input, &output);
+        let mut prompter = Prompter::new();
 
         assert_eq!(
             prompter
@@ -128,13 +113,10 @@ mod tests {
 
     #[test]
     fn prompt_retry() {
-        let config = Arc::new(Config::default());
+        console::input::mock("\nnan\n123\n");
+        let output = console::output::mock();
 
-        let mut input = MockInput::from(config.clone());
-        let output = MockOutput::from(config.clone());
-        input.set_data("\nnan\n123\n");
-
-        let mut prompter = Prompter::new(&input, &output);
+        let mut prompter = Prompter::new();
 
         assert_eq!(
             prompter
@@ -154,13 +136,10 @@ mod tests {
 
     #[test]
     fn prompt_multiple() {
-        let config = Arc::new(Config::default());
+        console::input::mock("a\nb\n");
+        let output = console::output::mock();
 
-        let mut input = MockInput::from(config.clone());
-        let output = MockOutput::from(config.clone());
-        input.set_data("a\nb\n");
-
-        let mut prompter = Prompter::new(&input, &output);
+        let mut prompter = Prompter::new();
 
         assert_eq!(
             prompter.prompt("First prompt: ", |_| true).unwrap(),

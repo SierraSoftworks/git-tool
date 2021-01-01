@@ -45,7 +45,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
 
                 for branch in branches {
                     let prefix = if branch == current_branch { "* " } else { "  " };
-                    writeln!(core.output().writer(), "{}{}", prefix, branch)?;
+                    writeln!(core.output(), "{}{}", prefix, branch)?;
                 }
             }
         };
@@ -81,10 +81,11 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        crate::console::output::mock();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "github.com/sierrasoftworks/test-git-checkout-command",
                 temp.path().join("repo").into(),
@@ -114,10 +115,11 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
             .build();
 
-        super::Resolver::get_current_repo.mock_safe(move |_| {
+        crate::console::output::mock();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(Repo::new(
                 "example.com/test/cmd-branch",
                 temp.path().to_path_buf(),
