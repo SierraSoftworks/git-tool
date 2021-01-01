@@ -1,3 +1,5 @@
+use crate::errors;
+
 use super::{core::Target, *};
 
 pub struct NewFolder {}
@@ -7,7 +9,16 @@ impl<C: Core> Task<C> for NewFolder {
     async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
-        std::fs::create_dir_all(path)?;
+        std::fs::create_dir_all(&path).map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not create the repository directory '{}' due to an OS-level error.",
+                    path.display()
+                ),
+                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                err,
+            )
+        })?;
 
         Ok(())
     }
@@ -19,7 +30,16 @@ impl<C: Core> Task<C> for NewFolder {
     ) -> Result<(), core::Error> {
         let path = scratch.get_path();
 
-        std::fs::create_dir_all(path)?;
+        std::fs::create_dir_all(&path).map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not create the scratchpad directory '{}' due to an OS-level error.",
+                    path.display()
+                ),
+                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                err,
+            )
+        })?;
 
         Ok(())
     }

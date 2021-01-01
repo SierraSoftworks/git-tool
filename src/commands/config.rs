@@ -86,7 +86,11 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
                 match cfg.get_config_file() {
                     Some(path) => {
-                        tokio::fs::write(&path, cfg.to_string()?).await?;
+                        tokio::fs::write(&path, cfg.to_string()?).await.map_err(|err| errors::user_with_internal(
+                            &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
+                            "Make sure that Git-Tool has permission to write to your config file and then try again.",
+                            err
+                        ))?;
                     }
                     None => {
                         writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
@@ -101,7 +105,11 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
                         match cfg.get_config_file() {
                             Some(path) => {
-                                tokio::fs::write(&path, cfg.to_string()?).await?;
+                                tokio::fs::write(&path, cfg.to_string()?).await.map_err(|err| errors::user_with_internal(
+                                    &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
+                                    "Make sure that Git-Tool has permission to write to your config file and then try again.",
+                                    err
+                                ))?;
                             }
                             None => {
                                 writeln!(core.output().writer(), "{}", cfg.to_string()?)?;
@@ -118,7 +126,11 @@ impl<C: Core> CommandRunnable<C> for ConfigCommand {
 
                             match cfg.get_config_file() {
                                 Some(path) => {
-                                    tokio::fs::write(&path, cfg.to_string()?).await?;
+                                    tokio::fs::write(&path, cfg.to_string()?).await.map_err(|err| errors::user_with_internal(
+                                        &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
+                                        "Make sure that Git-Tool has permission to write to your config file and then try again.",
+                                        err
+                                    ))?;
                                 }
                                 None => {
                                     writeln!(core.output().writer(), "{}", cfg.to_string()?)?;

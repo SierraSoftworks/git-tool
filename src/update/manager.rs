@@ -56,7 +56,16 @@ where
                 release.version,
                 app.display()
             );
-            let mut app_file = std::fs::File::create(&app)?;
+            let mut app_file = std::fs::File::create(&app).map_err(|err| {
+                errors::user_with_internal(
+                    &format!(
+                        "Could not create the new application file '{}' due to an OS-level error.",
+                        app.display()
+                    ),
+                    "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
+                    err,
+                )
+            })?;
             self.source
                 .get_binary(core, release, variant, &mut app_file)
                 .await?;
@@ -136,13 +145,18 @@ where
     }
 
     async fn delete_file(&self, path: &Path) -> Result<(), errors::Error> {
-        let mut retries = 10;
+        let max_retries = 10;
+        let mut retries = max_retries;
 
         while retries >= 0 {
             retries -= 1;
 
             match tokio::fs::remove_file(path).await {
-                Err(e) if retries < 0 => return Err(e.into()),
+                Err(e) if retries < 0 => return Err(errors::user_with_internal(
+                    &format!("Could not remove the old application file '{}' after {} retries.", path.display(), max_retries),
+                    "This probably means that Git-Tool is still running in another terminal. Please exit any running Git-Tool processes (including shells launched by it) before trying again.",
+                    e
+                )),
                 Ok(_) => return Ok(()),
                 _ => tokio::time::sleep(Duration::from_millis(500)).await,
             }
@@ -152,12 +166,17 @@ where
     }
 
     async fn copy_file(&self, from: &Path, to: &Path) -> Result<(), errors::Error> {
-        let mut retries = 10;
+        let max_retries = 10;
+        let mut retries = max_retries;
 
         while retries > 0 {
             retries -= 1;
             match tokio::fs::copy(from, to).await {
-                Err(e) if retries < 0 => return Err(e.into()),
+                Err(e) if retries < 0 => return Err(errors::user_with_internal(
+                    &format!("Could not copy the new application file '{}' to overwrite the old application file '{}' after {} retries.", from.display(), to.display(), max_retries),
+                    "This probably means that Git-Tool is still running in another terminal. Please exit any running Git-Tool processes (including shells launched by it) before trying again.",
+                    e
+                )),
                 Ok(_) => return Ok(()),
                 _ => tokio::time::sleep(Duration::from_millis(500)).await,
             }
