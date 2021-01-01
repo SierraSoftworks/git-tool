@@ -74,6 +74,7 @@ impl<C: Core> CommandRunnable<C> for CloneCommand {
 mod tests {
     use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -101,7 +102,6 @@ features:
         let temp = tempdir().unwrap();
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_l| {})
             .with_mock_resolver(|r| {
                 r.set_repo(Repo::new(
                     "github.com/git-fixtures/basic",
@@ -110,11 +110,13 @@ features:
             })
             .build();
 
+        crate::core::Launcher::run.mock_safe(|_, _app, _target| {
+            panic!("No program should have been run");
+        });
+
         match cmd.run(&core, &args).await {
             Ok(status) => {
                 assert_eq!(status, 0);
-                let launches = core.launcher().launches.lock().await;
-                assert!(launches.len() == 0);
             }
             Err(err) => panic!(err.message()),
         }

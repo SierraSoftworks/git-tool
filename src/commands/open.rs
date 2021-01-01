@@ -121,6 +121,7 @@ impl<C: Core> CommandRunnable<C> for OpenCommand {
 mod tests {
     use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -148,9 +149,6 @@ features:
         let temp = tempdir().unwrap();
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|l| {
-                l.status = 5;
-            })
             .with_mock_resolver(|r| {
                 r.set_repo(Repo::new(
                     "github.com/git-fixtures/basic",
@@ -159,14 +157,28 @@ features:
             })
             .build();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("repo"),
+                "the target should be launched in the correct directory"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(5) }))
+        });
+
         match cmd.run(&core, &args).await {
             Ok(status) => {
-                assert_eq!(status, 5);
-                let launches = core.launcher().launches.lock().await;
-                assert!(launches.len() == 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.target_path, temp.path().join("repo"))
+                assert_eq!(
+                    status, 5,
+                    "the status code of the child app should be forwarded"
+                );
             }
             Err(err) => panic!(err.message()),
         }

@@ -6,8 +6,10 @@ use super::{
     templates::{render, render_list},
     Config, Target,
 };
-use async_trait::async_trait;
 use futures::{pin_mut, FutureExt};
+
+#[cfg(test)]
+use mocktopus::macros::*;
 
 use std::sync::Arc;
 use tokio::process::Command;
@@ -15,26 +17,20 @@ use tokio::process::Command;
 #[cfg(unix)]
 use std::convert::TryInto;
 
-#[async_trait]
-pub trait Launcher: Send + Sync + From<Arc<Config>> {
-    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
-}
-
-pub struct TokioLauncher {
+#[cfg_attr(test, mockable)]
+pub struct Launcher {
     config: Arc<Config>,
 }
 
-impl From<Arc<Config>> for TokioLauncher {
+impl From<Arc<Config>> for Launcher {
     fn from(config: Arc<Config>) -> Self {
-        Self {
-            config: config.clone(),
-        }
+        Launcher { config }
     }
 }
 
-#[async_trait]
-impl Launcher for TokioLauncher {
-    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
+#[cfg_attr(test, mockable)]
+impl Launcher {
+    pub async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
         let context = t.template_context(&self.config);
 
         let program = render(a.get_command(), context.clone())?;
@@ -58,9 +54,7 @@ impl Launcher for TokioLauncher {
 
         self.forward_signals(&mut child).await
     }
-}
 
-impl TokioLauncher {
     #[cfg(windows)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
         loop {
@@ -126,53 +120,6 @@ impl TokioLauncher {
 }
 
 #[cfg(test)]
-pub mod mocks {
-    use super::*;
-    use tokio::sync::Mutex;
-
-    #[derive(Default)]
-    pub struct MockLauncher {
-        pub launches: Arc<Mutex<Vec<MockLaunch>>>,
-        pub status: i32,
-        pub return_error: bool,
-    }
-
-    impl From<Arc<Config>> for MockLauncher {
-        fn from(_: Arc<Config>) -> Self {
-            Default::default()
-        }
-    }
-
-    pub struct MockLaunch {
-        pub app: app::App,
-        pub target_path: std::path::PathBuf,
-    }
-
-    #[async_trait]
-    impl Launcher for MockLauncher {
-        async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
-            let mut launches = self.launches.lock().await;
-
-            launches.push(MockLaunch {
-                app: a.clone(),
-                target_path: std::path::PathBuf::from(t.get_path()),
-            });
-
-            if self.return_error {
-                Err(Error::SystemError(
-                    "Mock Error".to_string(),
-                    "Configure the mock to not throw an error".to_string(),
-                    None,
-                    None,
-                ))
-            } else {
-                Ok(self.status)
-            }
-        }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::super::Scratchpad;
     use super::*;
@@ -197,7 +144,7 @@ mod tests {
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
-        let launcher = TokioLauncher::from(config);
+        let launcher = Launcher::from(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
@@ -217,7 +164,7 @@ mod tests {
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
-        let launcher = TokioLauncher::from(config);
+        let launcher = Launcher::from(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);

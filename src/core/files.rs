@@ -4,23 +4,19 @@ use async_trait::async_trait;
 use super::Config;
 use std::sync::Arc;
 
-#[async_trait]
-pub trait FileSource: Send + Sync + From<Arc<Config>> + Clone {
-    async fn read(&self, path: &std::path::Path) -> Result<String, Error>;
-    async fn write(&self, path: &std::path::Path, content: String) -> Result<(), Error>;
-}
+#[cfg(test)]
+use mocktopus::macros::*;
 
-#[derive(Copy, Clone)]
-pub struct FileSystemSource {}
+#[cfg_attr(test, mockable)]
+pub struct FileSource {}
 
-impl From<Arc<Config>> for FileSystemSource {
+impl From<Arc<Config>> for FileSource {
     fn from(_: Arc<Config>) -> Self {
         Self{}
     }
 }
 
-#[async_trait]
-impl FileSource for FileSystemSource {
+impl FileSource {
     async fn read(&self, path: &std::path::Path) -> Result<String, Error> {
         let mut file = tokio::fs::File::open(path).await?;
 

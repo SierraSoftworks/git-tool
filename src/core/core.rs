@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 pub trait Core: Send + Sync {
     type KeyChain: KeyChain;
-    type Launcher: Launcher;
     type Resolver: Resolver;
     type Input: Input;
     type Output: Output;
@@ -11,7 +10,7 @@ pub trait Core: Send + Sync {
 
     fn config(&self) -> &Config;
     fn keychain(&self) -> &Self::KeyChain;
-    fn launcher(&self) -> &Self::Launcher;
+    fn launcher(&self) -> &Launcher;
     fn resolver(&self) -> &Self::Resolver;
     fn input(&self) -> &Self::Input;
     fn output(&self) -> &Self::Output;
@@ -20,21 +19,19 @@ pub trait Core: Send + Sync {
 
 pub struct DefaultCore<
     K = super::DefaultKeyChain,
-    L = super::DefaultLauncher,
     R = super::DefaultResolver,
     I = super::DefaultInput,
     O = super::DefaultOutput,
     HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>,
 > where
     K: KeyChain,
-    L: Launcher,
     R: Resolver,
     I: Input,
     O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     config: Arc<Config>,
-    launcher: Arc<L>,
+    launcher: Arc<Launcher>,
     resolver: Arc<R>,
     keychain: Arc<K>,
     input: Arc<I>,
@@ -42,17 +39,15 @@ pub struct DefaultCore<
     http_client: Arc<hyper::Client<HC, hyper::Body>>,
 }
 
-impl<K, L, R, I, O, HC> Core for DefaultCore<K, L, R, I, O, HC>
+impl<K, R, I, O, HC> Core for DefaultCore<K, R, I, O, HC>
 where
     K: KeyChain,
-    L: Launcher,
     R: Resolver,
     I: Input,
     O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     type KeyChain = K;
-    type Launcher = L;
     type Resolver = R;
     type Input = I;
     type Output = O;
@@ -66,7 +61,7 @@ where
         &self.keychain
     }
 
-    fn launcher(&self) -> &Self::Launcher {
+    fn launcher(&self) -> &Launcher {
         &self.launcher
     }
 
@@ -89,21 +84,18 @@ where
 
 pub struct CoreBuilder<
     K = super::DefaultKeyChain,
-    L = super::DefaultLauncher,
     R = super::DefaultResolver,
     I = super::DefaultInput,
     O = super::DefaultOutput,
     HC = hyper_tls::HttpsConnector<hyper::client::HttpConnector>,
 > where
     K: KeyChain,
-    L: Launcher,
     R: Resolver,
     I: Input,
     O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     config: Arc<Config>,
-    launcher: Arc<L>,
     resolver: Arc<R>,
     keychain: Arc<K>,
     input: Arc<I>,
@@ -116,7 +108,6 @@ impl Default for CoreBuilder {
         let config = Arc::new(Config::default());
         Self {
             config: config.clone(),
-            launcher: Arc::new(super::DefaultLauncher::from(config.clone())),
             resolver: Arc::new(super::DefaultResolver::from(config.clone())),
             keychain: Arc::new(super::DefaultKeyChain::from(config.clone())),
             input: Arc::new(super::DefaultInput::from(config.clone())),
@@ -126,32 +117,30 @@ impl Default for CoreBuilder {
     }
 }
 
-impl<K, L, R, I, O> std::convert::Into<DefaultCore<K, L, R, I, O>> for CoreBuilder<K, L, R, I, O>
+impl<K, R, I, O> std::convert::Into<DefaultCore<K, R, I, O>> for CoreBuilder<K, R, I, O>
 where
     K: KeyChain,
-    L: Launcher,
     R: Resolver,
     I: Input,
     O: Output,
 {
-    fn into(self) -> DefaultCore<K, L, R, I, O> {
+    fn into(self) -> DefaultCore<K, R, I, O> {
         self.build()
     }
 }
 
-impl<K, L, R, I, O, HC> CoreBuilder<K, L, R, I, O, HC>
+impl<K, R, I, O, HC> CoreBuilder<K, R, I, O, HC>
 where
-    L: Launcher,
     R: Resolver,
     K: KeyChain,
     I: Input,
     O: Output,
     HC: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
-    pub fn build(self) -> DefaultCore<K, L, R, I, O, HC> {
+    pub fn build(self) -> DefaultCore<K, R, I, O, HC> {
         DefaultCore {
-            config: self.config,
-            launcher: self.launcher,
+            config: self.config.clone(),
+            launcher: Arc::new(Launcher::from(self.config.clone())),
             resolver: self.resolver,
             keychain: self.keychain,
             input: self.input,
@@ -165,7 +154,6 @@ where
 
         Self {
             config: c.clone(),
-            launcher: Arc::new(L::from(c.clone())),
             resolver: Arc::new(R::from(c.clone())),
             keychain: Arc::new(K::from(c.clone())),
             input: Arc::new(I::from(c.clone())),
@@ -184,7 +172,7 @@ where
     pub fn with_mock_keychain<S>(
         self,
         setup: S,
-    ) -> CoreBuilder<super::auth::mocks::MockKeyChain, L, R, I, O, HC>
+    ) -> CoreBuilder<super::auth::mocks::MockKeyChain, R, I, O, HC>
     where
         S: FnOnce(&mut super::auth::mocks::MockKeyChain),
     {
@@ -193,31 +181,8 @@ where
 
         CoreBuilder {
             config: self.config,
-            launcher: self.launcher,
             resolver: self.resolver,
             keychain: Arc::new(keychain),
-            input: self.input,
-            output: self.output,
-            http_connector: self.http_connector,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn with_mock_launcher<S>(
-        self,
-        setup: S,
-    ) -> CoreBuilder<K, super::launcher::mocks::MockLauncher, R, I, O, HC>
-    where
-        S: FnOnce(&mut super::launcher::mocks::MockLauncher),
-    {
-        let mut launcher = super::launcher::mocks::MockLauncher::from(self.config.clone());
-        setup(&mut launcher);
-
-        CoreBuilder {
-            config: self.config,
-            launcher: Arc::new(launcher),
-            resolver: self.resolver,
-            keychain: self.keychain,
             input: self.input,
             output: self.output,
             http_connector: self.http_connector,
@@ -228,7 +193,7 @@ where
     pub fn with_mock_resolver<S>(
         self,
         setup: S,
-    ) -> CoreBuilder<K, L, super::resolver::mocks::MockResolver, I, O, HC>
+    ) -> CoreBuilder<K, super::resolver::mocks::MockResolver, I, O, HC>
     where
         S: FnOnce(&mut super::resolver::mocks::MockResolver),
     {
@@ -237,7 +202,6 @@ where
 
         CoreBuilder {
             config: self.config,
-            launcher: self.launcher,
             resolver: Arc::new(resolver),
             keychain: self.keychain,
             input: self.input,
@@ -247,12 +211,11 @@ where
     }
 
     #[cfg(test)]
-    pub fn with_mock_output(self) -> CoreBuilder<K, L, R, I, super::output::mocks::MockOutput, HC> {
+    pub fn with_mock_output(self) -> CoreBuilder<K, R, I, super::output::mocks::MockOutput, HC> {
         let output = super::output::mocks::MockOutput::from(self.config.clone());
 
         CoreBuilder {
             config: self.config,
-            launcher: self.launcher,
             resolver: self.resolver,
             keychain: self.keychain,
             input: self.input,
@@ -265,7 +228,7 @@ where
     pub fn with_mock_input<S>(
         self,
         setup: S,
-    ) -> CoreBuilder<K, L, R, super::input::mocks::MockInput, O, HC>
+    ) -> CoreBuilder<K, R, super::input::mocks::MockInput, O, HC>
     where
         S: FnOnce(&mut super::input::mocks::MockInput),
     {
@@ -274,7 +237,6 @@ where
 
         CoreBuilder {
             config: self.config,
-            launcher: self.launcher,
             resolver: self.resolver,
             keychain: self.keychain,
             input: Arc::new(input),
@@ -287,13 +249,12 @@ where
     pub fn with_http_connector<S: hyper::client::connect::Connect>(
         self,
         connector: S,
-    ) -> CoreBuilder<K, L, R, I, O, S>
+    ) -> CoreBuilder<K, R, I, O, S>
     where
         S: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
     {
         CoreBuilder {
             config: self.config,
-            launcher: self.launcher,
             resolver: self.resolver,
             keychain: self.keychain,
             input: self.input,

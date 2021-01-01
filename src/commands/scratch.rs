@@ -82,6 +82,7 @@ impl<C: Core> CommandRunnable<C> for ScratchCommand {
 mod tests {
     use super::core::{Config, CoreBuilder};
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_no_args() {
@@ -106,26 +107,29 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("scratch").join("2020w01"),
+                "the app should be launched in the correct directory"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(5) }))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|l| {
-                l.status = 5;
-            })
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
-                let launches = core.launcher().launches.lock().await;
-                assert_eq!(launches.len(), 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(
-                    launch.target_path,
-                    temp.path().join("scratch").join("2020w01")
-                );
-                assert_eq!(status, 5);
+                assert_eq!(status, 5, "it should forward the status code from the app");
             }
             Err(err) => panic!(err.message()),
         }
@@ -154,24 +158,28 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("scratch").join("2020w01"),
+                "the app should be launched in the correct directory"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(0) }))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                let launches = core.launcher().launches.lock().await;
-                assert_eq!(launches.len(), 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(
-                    launch.target_path,
-                    temp.path().join("scratch").join("2020w01")
-                );
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }
@@ -199,24 +207,28 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("scratch").join("2020w07"),
+                "the app should be launched in the correct directory"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(0) }))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                let launches = core.launcher().launches.lock().await;
-                assert_eq!(launches.len(), 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(
-                    launch.target_path,
-                    core.config().get_scratch_directory().join("2020w07")
-                );
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }
@@ -246,24 +258,28 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("scratch").join("2020w07"),
+                "the app should be launched in the correct directory"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(0) }))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                let launches = core.launcher().launches.lock().await;
-                assert_eq!(launches.len(), 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(
-                    launch.target_path,
-                    temp.path().join("scratch").join("2020w07")
-                );
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }
@@ -293,16 +309,17 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(|_, _app, _target| {
+            panic!("It should not launch an app.");
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                panic!("It should not launch an app.");
-            }
+            Ok(_) => {}
             Err(_) => {}
         }
     }
@@ -330,28 +347,33 @@ apps:
         ))
         .unwrap();
 
+        crate::core::Launcher::run.mock_safe(move |_, app, target| {
+            assert_eq!(
+                app.get_name(),
+                "test-app",
+                "it should launch the correct app"
+            );
+            assert_eq!(
+                target.get_path(),
+                temp.path().join("scratch").join("2020w07"),
+                "the app should be launched in the correct directory"
+            );
+
+            assert!(
+                target.get_path().exists(),
+                "the target directory should be created"
+            );
+
+            MockResult::Return(Box::pin(async move { Ok(0) }))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_launcher(|_| {})
             .with_mock_resolver(|_| {})
             .build();
 
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                let launches = core.launcher().launches.lock().await;
-                assert_eq!(launches.len(), 1);
-
-                let launch = &launches[0];
-                assert_eq!(launch.app.get_name(), "test-app");
-                assert_eq!(
-                    launch.target_path,
-                    temp.path().join("scratch").join("2020w07")
-                );
-
-                assert_eq!(launch.target_path.exists(), true);
-
-                std::fs::remove_dir(launch.target_path.clone()).unwrap();
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }

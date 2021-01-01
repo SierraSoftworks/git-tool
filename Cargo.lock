@@ -619,6 +619,7 @@ dependencies = [
  "keyring",
  "lazy_static",
  "log",
+ "mocktopus",
  "nix",
  "once_cell",
  "rpassword",
@@ -1116,6 +1117,26 @@ checksum = "5a33c1b55807fbed163481b5ba66db4b2fa6cde694a5027be10fb724206c5897"
 dependencies = [
  "socket2",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "mocktopus"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e82cc9bc6ad53161f3086d963cf114e8766687a9115dbd32e1cc078a3751b30"
+dependencies = [
+ "mocktopus_macros",
+]
+
+[[package]]
+name = "mocktopus_macros"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "760f176b690cc61061abaa8b85f9a06d04505ce19397553d720542ce5e1b3cf2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -32,7 +32,6 @@ pub use service::Service;
 pub use target::Target;
 
 pub type DefaultCore = core::DefaultCore;
-pub type DefaultLauncher = launcher::TokioLauncher;
 pub type DefaultResolver = resolver::FileSystemResolver;
 pub type DefaultKeyChain = auth::SystemKeyChain;
 pub type DefaultInput = input::StdinInput;
