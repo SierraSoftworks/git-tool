@@ -182,17 +182,18 @@ struct GitHubError {
 mod tests {
     use super::mocks::*;
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn test_happy_path_user_repo() {
         let http = NewRepoSuccessFlow::default();
 
-        let core = CoreBuilder::default()
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(http)
-            .build();
+        super::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
+        let core = CoreBuilder::default().with_http_connector(http).build();
 
         let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -206,12 +207,12 @@ mod tests {
     async fn test_happy_path_user_repo_exists() {
         let http = NewRepoExistsFlow::default();
 
-        let core = CoreBuilder::default()
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(http)
-            .build();
+        super::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
+        let core = CoreBuilder::default().with_http_connector(http).build();
 
         let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();

@@ -63,6 +63,7 @@ impl<C: Core> CommandRunnable<C> for AuthCommand {
 mod tests {
     use super::core::{Config, CoreBuilder};
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_store() {
@@ -70,19 +71,20 @@ mod tests {
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
-            .with_mock_keychain(|_| {})
             .build();
 
-        assert!(core.keychain().get_token("github.com").is_err());
+        core::KeyChain::set_token.mock_safe(|_, token, value| {
+            assert_eq!(token, "github.com", "the correct token should be saved");
+            assert_eq!(value, "12345", "the correct value should be saved");
+            MockResult::Return(Ok(()))
+        });
 
         let cmd = AuthCommand {};
         let args = cmd
             .app()
             .get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                assert_eq!(core.keychain().get_token("github.com").unwrap(), "12345");
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }
@@ -93,8 +95,12 @@ mod tests {
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
-            .with_mock_keychain(|k| k.set_token("github.com", "example").unwrap())
             .build();
+
+        core::KeyChain::remove_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be removed");
+            MockResult::Return(Ok(()))
+        });
 
         assert!(core.keychain().get_token("github.com").is_ok());
 
@@ -103,9 +109,7 @@ mod tests {
             .app()
             .get_matches_from(vec!["auth", "github.com", "--delete"]);
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                assert!(core.keychain().get_token("github.com").is_err());
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }

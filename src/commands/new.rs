@@ -105,6 +105,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 mod tests {
     use super::core::{Config, CoreBuilder};
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_partial() {
@@ -117,11 +118,13 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
+        super::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
@@ -149,11 +152,13 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
+        super::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )

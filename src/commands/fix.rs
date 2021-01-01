@@ -131,12 +131,14 @@ mod tests {
             )))
         });
 
+        super::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )

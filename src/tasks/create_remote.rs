@@ -51,6 +51,7 @@ impl<C: Core> Task<C> for CreateRemote {
 mod tests {
     use super::*;
     use crate::core::{Config, KeyChain, Target};
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -61,11 +62,13 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
+        KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
@@ -83,12 +86,6 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
             .build();
 
         let task = CreateRemote { enabled: true };

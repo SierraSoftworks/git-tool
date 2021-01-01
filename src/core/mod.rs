@@ -32,6 +32,5 @@ pub use service::Service;
 pub use target::Target;
 
 pub type DefaultCore = core::DefaultCore;
-pub type DefaultKeyChain = auth::SystemKeyChain;
 pub type DefaultInput = input::StdinInput;
 pub type DefaultOutput = output::StdoutOutput;
