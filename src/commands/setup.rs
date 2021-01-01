@@ -9,7 +9,7 @@ use std::{
 };
 
 use clap::Arg;
-use directories::{ProjectDirs, UserDirs};
+use directories_next::{ProjectDirs, UserDirs};
 
 use super::*;
 
