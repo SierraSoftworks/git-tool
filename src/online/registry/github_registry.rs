@@ -49,10 +49,14 @@ impl<C: Core> Registry<C> for GitHubRegistry {
 
                 Ok(entries)
             }
-            http::StatusCode::TOO_MANY_REQUESTS => Err(errors::user(
-                "GitHub has rate limited requests from your IP address.",
-                "Please wait until GitHub removes this rate limit before trying again.",
-            )),
+            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
+                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
+                Err(errors::user_with_internal(
+                    "GitHub has rate limited requests from your IP address.",
+                    "Please wait until GitHub removes this rate limit before trying again.",
+                    inner_error,
+                ))
+            }
             status => {
                 let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
@@ -82,10 +86,12 @@ impl<C: Core> Registry<C> for GitHubRegistry {
                     &format!("Could not find {} in the Git-Tool registry.", id),
                     "Please make sure that you've selected a configuration entry which exists in the registry. You can check this with `git-tool config list`."))
             },
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                Err(errors::user(
+            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
+                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
+                Err(errors::user_with_internal(
                     "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again."))
+                    "Please wait until GitHub removes this rate limit before trying again.",
+                    inner_error))
             },
             status => {
                 let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
