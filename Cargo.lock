@@ -617,6 +617,7 @@ dependencies = [
  "hyper-tls 0.5.0",
  "itertools 0.10.0",
  "keyring",
+ "lazy_static",
  "log",
  "nix",
  "once_cell",

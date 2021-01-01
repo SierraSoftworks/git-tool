@@ -124,13 +124,12 @@ impl Config {
             dev_directory: dir.to_path_buf(),
             scratch_directory: None,
             features: features::Features::builder()
-                .with_use_http_transport(true)
+                .with(features::HTTP_TRANSPORT, true)
                 .build(),
             ..Default::default()
         }
     }
 
-    #[cfg(test)]
     pub fn from_str(yaml: &str) -> Result<Self, errors::Error> {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))

@@ -85,9 +85,8 @@ impl Error {
     }
 
     pub fn message(&self) -> String {
-        let (description, internal) = match self {
-            Error::UserError(description, _, _, internal)
-            | Error::SystemError(description, _, _, internal) => (description, internal),
+        let description = match self {
+            Error::UserError(description, ..) | Error::SystemError(description, ..) => description,
         };
 
         let hero_message = match self {
