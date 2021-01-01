@@ -130,6 +130,7 @@ impl Config {
             dev_directory: dir.to_path_buf(),
             scratch_directory: None,
             features: features::Features::builder()
+                .with_defaults()
                 .with(features::HTTP_TRANSPORT, true)
                 .build(),
             ..Default::default()
@@ -156,7 +157,7 @@ impl Config {
             err
         ))?;
 
-        let mut cfg = Config::from_reader(f)?;
+        let mut cfg = Config::default().extend(Config::from_reader(f)?);
         cfg.config_file = Some(path.to_path_buf());
 
         Ok(cfg)
