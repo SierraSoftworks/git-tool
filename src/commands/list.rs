@@ -30,12 +30,14 @@ impl Command for ListCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ListCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
-        let mut output = core.output().writer();
+impl CommandRunnable for ListCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error>
+where {
+        let mut output = core.output();
 
         let filter = match matches.value_of("filter") {
             Some(name) => name,
@@ -104,7 +106,7 @@ URLs:
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(vec!["--quiet", "-q", "--full", "-f"]);
     }
 }
@@ -114,14 +116,16 @@ mod tests {
     use super::core::*;
     use super::*;
     use crate::test::get_dev_dir;
+    use mocktopus::mocking::*;
     use std::path::PathBuf;
 
     #[tokio::test]
     async fn run_normal() {
-        let core = CoreBuilder::default()
+        let core = Core::builder()
             .with_config(&Config::for_dev_directory(&get_dev_dir()))
-            .with_mock_output()
             .build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ListCommand {};
 
@@ -132,9 +136,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains(
+            output.to_string().contains(
                 "github.com/sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"
             ),
             "the output should contain the repos"
@@ -143,16 +146,16 @@ mod tests {
 
     #[tokio::test]
     async fn run_search_full() {
-        let core = CoreBuilder::default()
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repos(vec![
-                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-                ])
-            })
-            .build();
+        Resolver::get_repos.mock_safe(|_| {
+            MockResult::Return(Ok(vec![
+                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+            ]))
+        });
+
+        let core = Core::builder().build();
+        crate::console::output::mock();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
@@ -165,16 +168,16 @@ mod tests {
 
     #[tokio::test]
     async fn run_search_quiet() {
-        let core = CoreBuilder::default()
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repos(vec![
-                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-                ])
-            })
-            .build();
+        Resolver::get_repos.mock_safe(|_| {
+            MockResult::Return(Ok(vec![
+                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+            ]))
+        });
+
+        let core = Core::builder().build();
+        let output = crate::console::output::mock();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);
@@ -184,13 +187,12 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("example.com/ns1/a\n"),
+            output.to_string().contains("example.com/ns1/a\n"),
             "the output should contain the first match"
         );
         assert!(
-            output.contains("example.com/ns1/b\n"),
+            output.to_string().contains("example.com/ns1/b\n"),
             "the output should contain the second match"
         );
     }

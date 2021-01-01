@@ -28,11 +28,12 @@ impl Command for AuthCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for AuthCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
+impl CommandRunnable for AuthCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         let service = matches.value_of("service").ok_or(errors::user(
             "You have not provided the name of the service you wish to authenticate.",
             "Please provide the name of the service when running this command: `git-tool auth github.com`."))?;
@@ -54,35 +55,35 @@ impl<C: Core> CommandRunnable<C> for AuthCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_services().map(|s| s.get_domain()));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_store() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .with_mock_keychain(|_| {})
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
 
-        assert!(core.keychain().get_token("github.com").is_err());
+        crate::console::output::mock();
+        core::KeyChain::set_token.mock_safe(|_, token, value| {
+            assert_eq!(token, "github.com", "the correct token should be saved");
+            assert_eq!(value, "12345", "the correct value should be saved");
+            MockResult::Return(Ok(()))
+        });
 
         let cmd = AuthCommand {};
         let args = cmd
             .app()
             .get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                assert_eq!(core.keychain().get_token("github.com").unwrap(), "12345");
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }
@@ -90,22 +91,20 @@ mod tests {
     #[tokio::test]
     async fn run_delete() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .with_mock_keychain(|k| k.set_token("github.com", "example").unwrap())
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
 
-        assert!(core.keychain().get_token("github.com").is_ok());
+        crate::console::output::mock();
+        core::KeyChain::remove_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be removed");
+            MockResult::Return(Ok(()))
+        });
 
         let cmd = AuthCommand {};
         let args = cmd
             .app()
             .get_matches_from(vec!["auth", "github.com", "--delete"]);
         match cmd.run(&core, &args).await {
-            Ok(_) => {
-                assert!(core.keychain().get_token("github.com").is_err());
-            }
+            Ok(_) => {}
             Err(err) => panic!(err.message()),
         }
     }

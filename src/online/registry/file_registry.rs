@@ -14,8 +14,8 @@ impl FileRegistry {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Registry<C> for FileRegistry {
-    async fn get_entries(&self, _core: &C) -> Result<Vec<String>, Error> {
+impl Registry for FileRegistry {
+    async fn get_entries(&self, _core: &Core) -> Result<Vec<String>, Error> {
         let mut entries = Vec::new();
 
         for entry in read_dir(&self.path).map_err(|err| {
@@ -80,7 +80,7 @@ impl<C: Core> Registry<C> for FileRegistry {
         Ok(entries)
     }
 
-    async fn get_entry(&self, _core: &C, id: &str) -> Result<Entry, Error> {
+    async fn get_entry(&self, _core: &Core, id: &str) -> Result<Entry, Error> {
         let path = self.path.join(to_native_path(format!("{}.yaml", id)));
         let contents = read_to_string(&path).map_err(|err| {
             errors::user_with_internal(
@@ -114,7 +114,7 @@ mod tests {
     #[tokio::test]
     async fn get_entries() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
 
         let entries = registry.get_entries(&core).await.unwrap();
         assert_ne!(entries.len(), 0);
@@ -124,7 +124,7 @@ mod tests {
     #[tokio::test]
     async fn get_entry() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
 
         let entry = registry.get_entry(&core, "apps/bash").await.unwrap();
         assert_eq!(entry.name, "Bash");
@@ -139,7 +139,7 @@ mod registry_compliance {
     #[tokio::test]
     async fn registry_validation() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
 
         let mut valid = true;
         for entry in registry.get_entries(&core).await.unwrap() {
@@ -159,7 +159,7 @@ mod registry_compliance {
     }
 
     async fn validate_entry(registry: &FileRegistry, name: &str) -> Result<bool, Error> {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         let entry = registry.get_entry(&core, name).await?;
         let mut valid = true;
 

@@ -15,9 +15,13 @@ impl Command for ServicesCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for ServicesCommand {
-    async fn run(&self, core: &C, _matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
-        let mut output = core.output().writer();
+impl CommandRunnable for ServicesCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        _matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
+        let mut output = core.output();
 
         for svc in core.config().get_services() {
             writeln!(output, "{}", svc.get_domain())?;
@@ -26,12 +30,12 @@ impl<C: Core> CommandRunnable<C> for ServicesCommand {
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
 
     #[tokio::test]
@@ -39,10 +43,9 @@ mod tests {
         let args = ArgMatches::default();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = ServicesCommand {};
         match cmd.run(&core, &args).await {
@@ -50,9 +53,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("github.com\n"),
+            output.to_string().contains("github.com\n"),
             "the output should contain each service"
         );
     }

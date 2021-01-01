@@ -2,8 +2,8 @@ use super::{errors, Error};
 use crate::core::Core;
 use hyper::StatusCode;
 
-pub async fn add_or_update<C: Core>(
-    core: &C,
+pub async fn add_or_update(
+    core: &Core,
     content: &str,
     new_languages: Vec<&str>,
 ) -> Result<String, Error> {
@@ -32,7 +32,7 @@ pub async fn add_or_update<C: Core>(
     Ok(managed.into())
 }
 
-pub async fn list<C: Core>(core: &C) -> Result<Vec<String>, Error> {
+pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
     let uri = "https://www.toptal.com/developers/gitignore/api/list".parse()?;
     let response = core.http_client().get(uri).await?;
 
@@ -47,7 +47,7 @@ pub async fn list<C: Core>(core: &C) -> Result<Vec<String>, Error> {
         .collect())
 }
 
-pub async fn ignore<C: Core>(core: &C, langs: Vec<&str>) -> Result<String, Error> {
+pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     if langs.is_empty() {
         return Ok("".to_string());
     }
@@ -138,11 +138,11 @@ impl GitIgnoreFileSection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::CoreBuilder;
+    use crate::core::Core;
 
     #[tokio::test]
     async fn get_list() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match list(&core).await {
             Ok(items) => {
                 assert!(!items.is_empty());
@@ -157,7 +157,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_ignore() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match ignore(&core, vec!["csharp"]).await {
             Ok(ignore) => {
                 assert_ne!(ignore, String::from(""));
@@ -224,7 +224,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_empty() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(&core, "", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
@@ -236,7 +236,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_no_languages() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(&core, "", vec![]).await {
             Ok(result) => {
                 assert_eq!(result, "");
@@ -247,7 +247,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_invalid_language() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(&core, "", vec!["thisisnotareallanguage"]).await {
             Ok(_result) => {
                 panic!("It should return an error, not succeed");
@@ -260,7 +260,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_existing_unmanaged() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(&core, "/tmp", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
@@ -273,7 +273,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_existing_same_langs() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(
             &core,
             "
@@ -298,7 +298,7 @@ bin/
 
     #[tokio::test]
     async fn add_or_update_existing_new_langs() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         match add_or_update(
             &core,
             "

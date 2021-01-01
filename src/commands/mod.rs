@@ -7,10 +7,7 @@ use clap::{App, ArgMatches};
 use std::sync::Arc;
 use std::{io::Write, vec::Vec};
 
-use crate::{
-    completion::Completer,
-    core::{Core, DefaultCore, KeyChain, Launcher, Output, Resolver},
-};
+use crate::{completion::Completer, core::Core};
 
 mod apps;
 mod auth;
@@ -38,16 +35,16 @@ pub trait Command: Send + Sync {
 }
 
 #[async_trait]
-pub trait CommandRunnable<C: Core>: Command {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error>;
-    async fn complete(&self, core: &C, completer: &Completer, matches: &ArgMatches);
+pub trait CommandRunnable: Command {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error>;
+    async fn complete(&self, core: &Core, completer: &Completer, matches: &ArgMatches);
 }
 
-pub fn default_commands() -> Vec<Arc<dyn CommandRunnable<DefaultCore>>> {
+pub fn default_commands() -> Vec<Arc<dyn CommandRunnable>> {
     commands()
 }
 
-pub fn commands<C: Core>() -> Vec<Arc<dyn CommandRunnable<C>>> {
+pub fn commands() -> Vec<Arc<dyn CommandRunnable>> {
     vec![
         Arc::new(apps::AppsCommand {}),
         Arc::new(auth::AuthCommand {}),

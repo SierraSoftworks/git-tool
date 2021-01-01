@@ -619,6 +619,7 @@ dependencies = [
  "keyring",
  "lazy_static",
  "log",
+ "mocktopus",
  "nix",
  "once_cell",
  "rpassword",
@@ -630,7 +631,6 @@ dependencies = [
  "shell-words",
  "tempfile",
  "tokio 1.0.1",
- "yup-hyper-mock",
 ]
 
 [[package]]
@@ -1116,6 +1116,26 @@ checksum = "5a33c1b55807fbed163481b5ba66db4b2fa6cde694a5027be10fb724206c5897"
 dependencies = [
  "socket2",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "mocktopus"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e82cc9bc6ad53161f3086d963cf114e8766687a9115dbd32e1cc078a3751b30"
+dependencies = [
+ "mocktopus_macros",
+]
+
+[[package]]
+name = "mocktopus_macros"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "760f176b690cc61061abaa8b85f9a06d04505ce19397553d720542ce5e1b3cf2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2626,17 +2646,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39f0c922f1a334134dc2f7a8b67dc5d25f0735263feec974345ff706bcf20b0d"
 dependencies = [
  "linked-hash-map",
-]
-
-[[package]]
-name = "yup-hyper-mock"
-version = "5.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01da7b30633bf0a0a95443eb9dd524bda44c96072e19a7d0d775c96336d91d96"
-dependencies = [
- "futures",
- "hyper 0.14.2",
- "log",
- "mio 0.6.22",
- "tokio 1.0.1",
 ]

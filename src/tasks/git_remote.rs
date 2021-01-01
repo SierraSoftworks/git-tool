@@ -15,8 +15,8 @@ impl Default for GitRemote<'static> {
 }
 
 #[async_trait::async_trait]
-impl<'a, C: Core> Task<C> for GitRemote<'a> {
-    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl<'a> Task for GitRemote<'a> {
+    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let service = core.config().get_service(&repo.get_domain()).ok_or(
             errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
@@ -42,7 +42,7 @@ impl<'a, C: Core> Task<C> for GitRemote<'a> {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -64,7 +64,7 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 
@@ -80,7 +80,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
 

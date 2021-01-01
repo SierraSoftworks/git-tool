@@ -4,14 +4,14 @@ use crate::{core::Target, git};
 pub struct GitInit {}
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for GitInit {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for GitInit {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_init(&repo.get_path()).await
     }
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -33,7 +33,7 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
         let task = GitInit {};
@@ -47,7 +47,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
             .build();
         let task = GitInit {};

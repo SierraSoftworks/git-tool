@@ -28,18 +28,20 @@ impl Command for UpdateCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for UpdateCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error>
-    where
-        C: Core,
-    {
-        let mut output = core.output().writer();
+impl CommandRunnable for UpdateCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error>
+where {
+        let mut output = core.output();
 
         let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
             err))?;
-        let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
         let resume_successful = match matches.value_of("state") {
             Some(state) => {
@@ -112,8 +114,8 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
-        let manager: UpdateManager<C, GitHubSource> = UpdateManager::default();
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
         match manager.get_releases(core).await {
             Ok(releases) => {
@@ -126,16 +128,15 @@ impl<C: Core> CommandRunnable<C> for UpdateCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
 
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = UpdateCommand {};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
@@ -145,9 +146,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("  v1.5.6\n"),
+            output.to_string().contains("  v1.5.6\n"),
             "the output should contain a list of versions"
         );
     }

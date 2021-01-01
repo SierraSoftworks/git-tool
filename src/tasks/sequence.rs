@@ -1,19 +1,19 @@
 use super::*;
 use std::sync::Arc;
 
-pub struct Sequence<C: Core> {
-    tasks: Vec<Arc<dyn Task<C> + Send + Sync>>,
+pub struct Sequence {
+    tasks: Vec<Arc<dyn Task + Send + Sync>>,
 }
 
-impl<C: Core> Sequence<C> {
-    pub fn new(tasks: Vec<Arc<dyn Task<C> + Send + Sync>>) -> Self {
+impl Sequence {
+    pub fn new(tasks: Vec<Arc<dyn Task + Send + Sync>>) -> Self {
         Self { tasks }
     }
 }
 
 #[async_trait]
-impl<C: Core> Task<C> for Sequence<C> {
-    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for Sequence {
+    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(core, repo).await?;
         }
@@ -23,7 +23,7 @@ impl<C: Core> Task<C> for Sequence<C> {
 
     async fn apply_scratchpad(
         &self,
-        core: &C,
+        core: &Core,
         scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
@@ -45,7 +45,7 @@ mod tests {
         let seq = Sequence::new(vec![]);
         let repo = get_repo();
         let scratch = get_scratch();
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::from_str("directory: /dev").unwrap())
             .build();
 
@@ -60,7 +60,7 @@ mod tests {
         let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let repo = get_repo();
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::from_str("directory: /dev").unwrap())
             .build();
 
@@ -80,7 +80,7 @@ mod tests {
         let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let scratch = get_scratch();
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::from_str("directory: /dev").unwrap())
             .build();
 

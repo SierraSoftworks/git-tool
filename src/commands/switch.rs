@@ -31,12 +31,11 @@ impl Command for SwitchCommand {
                     .about("don't create the branch if it doesn't exist."),
             )
     }
-
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for SwitchCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for SwitchCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
@@ -59,7 +58,7 @@ impl<C: Core> CommandRunnable<C> for SwitchCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             completer.offer("--create");
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
@@ -74,6 +73,7 @@ mod tests {
 
     use super::*;
     use crate::core::*;
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -86,10 +86,16 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         sequence!(
             // Run a `git init` to setup the repo
@@ -139,10 +145,16 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         sequence!(
@@ -173,7 +185,9 @@ mod tests {
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch","-N", "feature/test"]);
+        let args: ArgMatches = cmd
+            .app()
+            .get_matches_from(vec!["switch", "-N", "feature/test"]);
         cmd.run(&core, &args)
             .await
             .expect("this command should have succeeded");
@@ -194,10 +208,16 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         sequence!(
@@ -228,7 +248,9 @@ mod tests {
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch","-N", "feature/test2"]);
+        let args: ArgMatches = cmd
+            .app()
+            .get_matches_from(vec!["switch", "-N", "feature/test2"]);
         cmd.run(&core, &args)
             .await
             .expect_err("this command should not have succeeded");
@@ -244,19 +266,23 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
+        let core = core::Core::builder()
+            .with_config(&core::Config::for_dev_directory(&temp.path()))
             .build();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd
-            .app()
-            .get_matches_from(vec!["switch", "feature/test"]);
+        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch", "feature/test"]);
         cmd.run(&core, &args).await.unwrap();
 
         assert!(repo.valid(), "the repository should still be valid");

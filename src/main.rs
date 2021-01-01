@@ -3,9 +3,6 @@ extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
 extern crate hyper;
-#[cfg(test)]
-#[macro_use]
-extern crate yup_hyper_mock as hyper_mock;
 extern crate keyring;
 #[macro_use]
 extern crate lazy_static;
@@ -18,7 +15,7 @@ extern crate serde_json;
 extern crate tokio;
 
 use crate::commands::CommandRunnable;
-use crate::core::{features, Core, DefaultCore, Output};
+use crate::core::features;
 use clap::{crate_authors, App, Arg, ArgMatches};
 use std::sync::Arc;
 use telemetry::Session;
@@ -29,6 +26,7 @@ mod macros;
 mod tasks;
 mod commands;
 mod completion;
+mod console;
 mod core;
 mod errors;
 mod fs;
@@ -85,10 +83,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 async fn run<'a>(
     mut app: App<'a>,
-    commands: Vec<Arc<dyn CommandRunnable<DefaultCore>>>,
+    commands: Vec<Arc<dyn CommandRunnable>>,
     matches: ArgMatches,
 ) -> Result<i32, errors::Error> {
-    let mut core_builder = core::CoreBuilder::default();
+    let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
         debug!("Loading configuration file.");
@@ -122,7 +120,7 @@ async fn run<'a>(
 
     if core.config().get_config_file().is_none() {
         warn!("No configuration file has been loaded, continuing with defaults.");
-        writeln!(core.output().writer(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+        writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
     }
 
     for cmd in commands.iter() {

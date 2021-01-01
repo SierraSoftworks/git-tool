@@ -7,11 +7,15 @@ pub struct GitSwitch {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for GitSwitch {
-    async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for GitSwitch {
+    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let mut create = self.create_if_missing;
 
-        if create && git::git_branches(&repo.get_path()).await?.contains(&self.branch) {
+        if create
+            && git::git_branches(&repo.get_path())
+                .await?
+                .contains(&self.branch)
+        {
             create = false;
         }
 
@@ -20,7 +24,7 @@ impl<C: Core> Task<C> for GitSwitch {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -29,7 +33,7 @@ impl<C: Core> Task<C> for GitSwitch {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::{Config, Repo};
+    use crate::core::Config;
 
     use super::*;
     use crate::tasks::GitInit;
@@ -43,15 +47,10 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        crate::console::output::mock();
+
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
 
         sequence![
@@ -83,16 +82,11 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
+
+        crate::console::output::mock();
 
         sequence![
             GitInit {},
@@ -120,16 +114,11 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
+
+        crate::console::output::mock();
 
         let task = GitSwitch {
             branch: "test".into(),

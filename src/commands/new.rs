@@ -37,8 +37,8 @@ impl Command for NewCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for NewCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for NewCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
@@ -74,7 +74,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");
         match core.resolver().get_repos() {
@@ -103,8 +103,9 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
     use super::*;
+    use crate::core::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_partial() {
@@ -117,15 +118,14 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
-            .build();
+        KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
+        crate::online::service::github::mocks::repo_created("test");
+
+        let core = Core::builder().with_config(&cfg).build();
 
         let repo = core
             .resolver()
@@ -149,15 +149,14 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
-            .build();
+        KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
+        crate::online::service::github::mocks::repo_created("test");
+
+        let core = Core::builder().with_config(&cfg).build();
 
         let repo = core
             .resolver()

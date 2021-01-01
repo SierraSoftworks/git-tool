@@ -5,11 +5,11 @@ use std::io;
 use std::path::PathBuf;
 
 #[async_trait::async_trait]
-pub trait Source<C: Core>: Default + Send + Sync {
-    async fn get_releases(&self, core: &C) -> Result<Vec<Release>, errors::Error>;
+pub trait Source: Default + Send + Sync {
+    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error>;
     async fn get_binary<W: io::Write + Send>(
         &self,
-        core: &C,
+        core: &Core,
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,

@@ -29,8 +29,8 @@ impl Command for BranchCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for BranchCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for BranchCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.value_of("branch") {
@@ -45,7 +45,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
 
                 for branch in branches {
                     let prefix = if branch == current_branch { "* " } else { "  " };
-                    writeln!(core.output().writer(), "{}{}", prefix, branch)?;
+                    writeln!(core.output(), "{}{}", prefix, branch)?;
                 }
             }
         };
@@ -53,7 +53,7 @@ impl<C: Core> CommandRunnable<C> for BranchCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(branches);
@@ -66,6 +66,7 @@ mod tests {
 
     use super::*;
     use crate::core::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn checkout_branch_inside_repo() {
@@ -78,11 +79,18 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        crate::console::output::mock();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-checkout-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();
@@ -105,16 +113,18 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
+
+        crate::console::output::mock();
+
+        Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(Repo::new(
+                "example.com/test/cmd-branch",
+                temp.path().to_path_buf(),
+            )))
+        });
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["branch", "feature/test"]);
 

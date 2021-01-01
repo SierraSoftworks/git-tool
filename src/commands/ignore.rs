@@ -31,9 +31,9 @@ impl Command for IgnoreCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for IgnoreCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output().writer();
+impl CommandRunnable for IgnoreCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+        let mut output = core.output();
 
         match matches.occurrences_of("language") {
             0 => {
@@ -71,7 +71,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         match online::gitignore::list(core).await {
             Ok(langs) => completer.offer_many(langs),
             _ => {}
@@ -81,7 +81,7 @@ impl<C: Core> CommandRunnable<C> for IgnoreCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use clap::ArgMatches;
 
@@ -89,10 +89,9 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_output()
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
 
         let cmd = IgnoreCommand {};
 
@@ -101,9 +100,8 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains("visualstudio"),
+            output.to_string().contains("visualstudio"),
             "the ignore list should be printed"
         );
     }

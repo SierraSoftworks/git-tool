@@ -12,8 +12,8 @@ impl Default for CreateRemote {
 }
 
 #[async_trait::async_trait]
-impl<C: Core> Task<C> for CreateRemote {
-    async fn apply_repo(&self, core: &C, repo: &core::Repo) -> Result<(), core::Error> {
+impl Task for CreateRemote {
+    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -40,7 +40,7 @@ impl<C: Core> Task<C> for CreateRemote {
 
     async fn apply_scratchpad(
         &self,
-        _core: &C,
+        _core: &Core,
         _scratch: &core::Scratchpad,
     ) -> Result<(), core::Error> {
         Ok(())
@@ -51,6 +51,7 @@ impl<C: Core> Task<C> for CreateRemote {
 mod tests {
     use super::*;
     use crate::core::{Config, KeyChain, Target};
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -61,14 +62,15 @@ mod tests {
             temp.path().join("repo").into(),
         );
 
-        let core = core::CoreBuilder::default()
+        KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
+        crate::online::service::github::mocks::repo_created("sierrasoftworks");
+
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
             .build();
         CreateRemote { enabled: true }
             .apply_repo(&core, &repo)
@@ -81,14 +83,8 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
 
-        let core = core::CoreBuilder::default()
+        let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
-            .with_mock_keychain(|s| {
-                s.set_token("github.com", "test_token").unwrap();
-            })
-            .with_http_connector(
-                crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
-            )
             .build();
 
         let task = CreateRemote { enabled: true };

@@ -32,8 +32,12 @@ impl Command for SetupCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for SetupCommand {
-    async fn run(&self, core: &C, matches: &clap::ArgMatches) -> Result<i32, crate::core::Error> {
+impl CommandRunnable for SetupCommand {
+    async fn run(
+        &self,
+        core: &Core,
+        matches: &clap::ArgMatches,
+    ) -> Result<i32, crate::core::Error> {
         match core.config().get_config_file() {
             Some(path) if !matches.is_present("force") => {
                 Err(errors::user(
@@ -43,24 +47,21 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
             _ => {}
         };
 
-        writeln!(
-            core.output().writer(),
-            "Welcome to the Git-Tool setup wizard."
-        )?;
-        writeln!(core.output().writer(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
+        writeln!(core.output(), "Welcome to the Git-Tool setup wizard.")?;
+        writeln!(core.output(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
 
-        let mut prompter = Prompter::new(core.input(), core.output());
+        let mut prompter = Prompter::new();
 
         let dev_directory = self.prompt_dev_directory(core, &mut prompter)?;
         writeln!(
-            core.output().writer(),
+            core.output(),
             "\nGotcha, we'll store your projects in {}.",
             dev_directory.display()
         )?;
 
         let config_path = self.prompt_config_path(core, &mut prompter)?;
         writeln!(
-            core.output().writer(),
+            core.output(),
             "\nGotcha, we'll store your Git-Tool config in {}.",
             config_path.display()
         )?;
@@ -91,21 +92,17 @@ impl<C: Core> CommandRunnable<C> for SetupCommand {
             err
         ))?;
 
-        writeln!(core.output().writer(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
+        writeln!(core.output(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
         self.prompt_setup_shell(core, &config_path, &mut prompter)?;
 
         Ok(0)
     }
 
-    async fn complete(&self, _core: &C, _completer: &Completer, _matches: &ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 impl SetupCommand {
-    fn prompt_dev_directory<C: Core>(
-        &self,
-        core: &C,
-        prompter: &mut Prompter,
-    ) -> Result<PathBuf, Error> {
+    fn prompt_dev_directory(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
         let default_dir = match core.config().get_dev_directory().to_str() {
             Some(path) if !path.is_empty() => Some(path.to_owned()),
             _ => None,
@@ -137,7 +134,7 @@ impl SetupCommand {
                     Ok(_) => { true },
                     Err(err) if err.kind() == ErrorKind::NotFound => { true },
                     Err(err) => {
-                        writeln!(core.output().writer(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
+                        writeln!(core.output(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
                         false
                     }
                 }
@@ -158,11 +155,7 @@ impl SetupCommand {
         Ok(to_native_path(dev_dir))
     }
 
-    fn prompt_config_path<C: Core>(
-        &self,
-        core: &C,
-        prompter: &mut Prompter,
-    ) -> Result<PathBuf, Error> {
+    fn prompt_config_path(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
         let default_path = core.config().get_config_file().or_else(|| {
             match ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
                 Some(dirs) => {
@@ -192,7 +185,7 @@ impl SetupCommand {
                     Ok(_) => { true },
                     Err(err) if err.kind() == ErrorKind::NotFound => { true },
                     Err(err) => {
-                        writeln!(core.output().writer(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
+                        writeln!(core.output(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
                         false
                     }
                 }
@@ -214,13 +207,13 @@ impl SetupCommand {
     }
 
     #[cfg(windows)]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
-        let mut writer = core.output().writer();
+        let mut writer = core.output();
 
         writeln!(
             writer,
@@ -241,13 +234,13 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "linux")]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
-        let mut writer = core.output().writer();
+        let mut writer = core.output();
 
         writeln!(
             writer,
@@ -277,13 +270,13 @@ impl SetupCommand {
     }
 
     #[cfg(target_os = "macos")]
-    fn prompt_setup_shell<C: Core>(
+    fn prompt_setup_shell(
         &self,
-        core: &C,
+        core: &Core,
         config_path: &Path,
         _prompter: &mut Prompter,
     ) -> Result<(), Error> {
-        let mut writer = core.output().writer();
+        let mut writer = core.output();
 
         writeln!(
             writer,
@@ -315,7 +308,7 @@ impl SetupCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder};
+    use super::core::Config;
     use super::*;
     use tempfile::tempdir;
 
@@ -326,17 +319,15 @@ mod tests {
         let temp = tempdir().unwrap();
 
         let cfg = Config::default();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_input(|i| {
-                i.set_data(&format!(
-                    "{}\n{}\ny\n",
-                    temp.path().display(),
-                    temp.path().join("config.yml").display()
-                ))
-            })
-            .with_mock_output()
-            .build();
+        let core = Core::builder().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
+
+        crate::console::input::mock(&format!(
+            "{}\n{}\ny\n",
+            temp.path().display(),
+            temp.path().join("config.yml").display()
+        ));
 
         let cmd = SetupCommand {};
         match cmd.run(&core, &args).await {
@@ -344,17 +335,20 @@ mod tests {
             Err(err) => panic!(err.message()),
         }
 
-        let output = core.output().to_string();
         assert!(
-            output.contains(&format!("{}", temp.path().display())),
+            output
+                .to_string()
+                .contains(&format!("{}", temp.path().display())),
             "the output should contain the project directory"
         );
         assert!(
-            output.contains(&format!("{}", temp.path().join("config.yml").display())),
+            output
+                .to_string()
+                .contains(&format!("{}", temp.path().join("config.yml").display())),
             "the output should contain the config path"
         );
         assert!(
-            output.contains("Step 4: Restart your terminal"),
+            output.to_string().contains("Step 4: Restart your terminal"),
             "the output should contain the final setup steps"
         );
     }

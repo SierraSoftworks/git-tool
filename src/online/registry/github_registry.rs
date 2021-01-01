@@ -6,8 +6,8 @@ use serde::Deserialize;
 pub struct GitHubRegistry;
 
 #[async_trait::async_trait]
-impl<C: Core> Registry<C> for GitHubRegistry {
-    async fn get_entries(&self, core: &C) -> Result<Vec<String>, Error> {
+impl Registry for GitHubRegistry {
+    async fn get_entries(&self, core: &Core) -> Result<Vec<String>, Error> {
         let uri: Uri = format!(
             "https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true"
         )
@@ -67,7 +67,7 @@ impl<C: Core> Registry<C> for GitHubRegistry {
         }
     }
 
-    async fn get_entry(&self, core: &C, id: &str) -> Result<Entry, Error> {
+    async fn get_entry(&self, core: &Core, id: &str) -> Result<Entry, Error> {
         let uri = format!(
             "https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{}.yaml",
             id
@@ -123,7 +123,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_entries() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         let registry = GitHubRegistry;
 
         let entries = registry.get_entries(&core).await.unwrap();
@@ -133,7 +133,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_entry() {
-        let core = CoreBuilder::default().build();
+        let core = Core::builder().build();
         let registry = GitHubRegistry;
 
         let entry = registry.get_entry(&core, "apps/bash").await.unwrap();

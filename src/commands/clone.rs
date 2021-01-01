@@ -24,8 +24,8 @@ impl Command for CloneCommand {
 }
 
 #[async_trait]
-impl<C: Core> CommandRunnable<C> for CloneCommand {
-    async fn run(&self, core: &C, matches: &ArgMatches) -> Result<i32, errors::Error> {
+impl CommandRunnable for CloneCommand {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.value_of("repo").ok_or(errors::user(
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone github.com/sierrasoftworks/git-tool'."))?;
@@ -42,7 +42,7 @@ impl<C: Core> CommandRunnable<C> for CloneCommand {
         Ok(0)
     }
 
-    async fn complete(&self, core: &C, completer: &Completer, _matches: &ArgMatches) {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         let default_svc = core
@@ -72,8 +72,9 @@ impl<C: Core> CommandRunnable<C> for CloneCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use crate::core::*;
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -99,22 +100,27 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_launcher(|_l| {})
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "github.com/git-fixtures/basic",
-                    temp.path().join("repo").into(),
-                ));
-            })
-            .build();
+        Resolver::get_best_repo.mock_safe(move |_, name| {
+            assert_eq!(
+                name, "repo",
+                "it should be called with the name of the repo to be cloned"
+            );
+
+            MockResult::Return(Ok(Repo::new(
+                "github.com/git-fixtures/basic",
+                temp.path().join("repo").into(),
+            )))
+        });
+
+        let core = Core::builder().with_config(&cfg).build();
+
+        crate::core::Launcher::run.mock_safe(|_, _app, _target| {
+            panic!("No program should have been run");
+        });
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
                 assert_eq!(status, 0);
-                let launches = core.launcher().launches.lock().await;
-                assert!(launches.len() == 0);
             }
             Err(err) => panic!(err.message()),
         }
