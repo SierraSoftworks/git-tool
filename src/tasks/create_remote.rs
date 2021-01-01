@@ -1,5 +1,5 @@
 use super::*;
-use crate::errors;
+use crate::{core::features, errors};
 
 pub struct CreateRemote {
     pub enabled: bool,
@@ -18,7 +18,7 @@ impl<C: Core> Task<C> for CreateRemote {
             return Ok(());
         }
 
-        if !core.config().get_features().create_remote() {
+        if !core.config().get_features().has(features::CREATE_REMOTE) {
             return Ok(());
         }
 

@@ -124,7 +124,7 @@ impl Config {
             dev_directory: dir.to_path_buf(),
             scratch_directory: None,
             features: features::Features::builder()
-                .with_use_http_transport(true)
+                .with(features::HTTP_TRANSPORT, true)
                 .build(),
             ..Default::default()
         }

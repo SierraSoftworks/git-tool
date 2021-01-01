@@ -2,7 +2,7 @@ mod app;
 mod auth;
 mod config;
 mod core;
-mod features;
+pub mod features;
 mod input;
 mod launcher;
 mod output;

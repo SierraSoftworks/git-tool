@@ -1,5 +1,8 @@
 use super::*;
-use crate::{core::Target, errors, git};
+use crate::{
+    core::{features, Target},
+    errors, git,
+};
 
 pub struct GitRemote<'a> {
     pub name: &'a str,
@@ -20,7 +23,7 @@ impl<'a, C: Core> Task<C> for GitRemote<'a> {
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
         )?;
 
-        let url = if core.config().get_features().use_http_transport() {
+        let url = if core.config().get_features().has(features::HTTP_TRANSPORT) {
             service.get_http_url(repo)?
         } else {
             service.get_git_url(repo)?

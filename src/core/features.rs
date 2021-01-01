@@ -1,105 +1,82 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-fn default_as_true() -> bool {
-    true
-}
+pub const HTTP_TRANSPORT: &str = "http_transport";
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+pub const CREATE_REMOTE: &str = "create_remote";
+pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
+
+pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
+
+pub const TELEMETRY: &str = "telemetry";
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Features {
-    #[serde(default = "default_as_true")]
-    native_clone: bool,
-    #[serde(default = "default_as_true")]
-    create_remote: bool,
-    #[serde(default)]
-    http_transport: bool,
-    #[serde(default = "default_as_true")]
-    create_remote_private: bool,
-    #[serde(default)]
-    open_new_repo_in_default_app: bool,
+    #[serde(flatten)]
+    flags: HashMap<String, bool>,
 }
+
+// {
+//     #[serde(default = "default_as_true")]
+//     native_clone: bool,
+//     #[serde(default = "default_as_true")]
+//     create_remote: bool,
+//     #[serde(default)]
+//     http_transport: bool,
+//     #[serde(default = "default_as_true")]
+//     create_remote_private: bool,
+//     #[serde(default)]
+//     open_new_repo_in_default_app: bool,
+// }
 
 impl Default for Features {
     fn default() -> Self {
-        Self {
-            native_clone: false,
-            create_remote: true,
-            http_transport: false,
-            create_remote_private: true,
-            open_new_repo_in_default_app: false,
-        }
+        Self::builder().build()
     }
 }
 
 impl Features {
-    #[cfg(test)]
     pub fn builder() -> FeaturesBuilder {
         FeaturesBuilder {
-            create_remote: true,
-            create_remote_private: true,
-            http_transport: false,
+            flags: HashMap::new(),
         }
+        .with_defaults()
     }
 
-    pub fn use_http_transport(&self) -> bool {
-        self.http_transport
-    }
-
-    pub fn create_remote(&self) -> bool {
-        self.create_remote
-    }
-
-    pub fn create_remote_private(&self) -> bool {
-        self.create_remote_private
-    }
-
-    pub fn open_new_repo_in_default_app(&self) -> bool {
-        self.open_new_repo_in_default_app
+    pub fn has(&self, flag: &str) -> bool {
+        self.flags.get(flag).map(|&v| v).unwrap_or_default()
     }
 }
 
-#[cfg(test)]
 pub struct FeaturesBuilder {
-    create_remote: bool,
-    create_remote_private: bool,
-    http_transport: bool,
+    flags: HashMap<String, bool>,
 }
 
-#[cfg(test)]
 impl FeaturesBuilder {
-    pub fn with_create_remote(self, enabled: bool) -> Self {
-        Self {
-            create_remote: enabled,
-            create_remote_private: self.create_remote_private,
-            http_transport: self.http_transport,
-        }
+    pub fn with(self, flag: &str, enabled: bool) -> Self {
+        let mut flags = self.flags;
+        flags.insert(flag.into(), enabled);
+        Self { flags }
     }
 
-    pub fn with_use_http_transport(self, enabled: bool) -> Self {
-        Self {
-            create_remote: self.create_remote,
-            create_remote_private: self.create_remote_private,
-            http_transport: enabled,
-        }
+    pub fn with_defaults(self) -> Self {
+        self.with(CREATE_REMOTE, true)
+            .with(CREATE_REMOTE_PRIVATE, true)
+            .with(TELEMETRY, true)
     }
 
     pub fn build(self) -> Features {
-        Features {
-            create_remote: self.create_remote,
-            http_transport: self.http_transport,
-            create_remote_private: self.create_remote_private,
-            ..Default::default()
-        }
+        Features { flags: self.flags }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Features;
+    use super::{Features, CREATE_REMOTE, HTTP_TRANSPORT};
 
     #[test]
     fn default() {
-        assert_eq!(Features::default().native_clone, false);
-        assert_eq!(Features::default().create_remote, true);
-        assert_eq!(Features::default().http_transport, false);
+        assert_eq!(Features::default().has(CREATE_REMOTE), true);
+        assert_eq!(Features::default().has(HTTP_TRANSPORT), false);
     }
 }

@@ -1,6 +1,6 @@
 use super::super::errors;
 use super::*;
-use crate::tasks::*;
+use crate::{core::features, tasks::*};
 use clap::{App, Arg, ArgMatches};
 
 pub struct NewCommand {}
@@ -62,8 +62,7 @@ impl<C: Core> CommandRunnable<C> for NewCommand {
 
         tasks.apply_repo(core, &repo).await?;
 
-        if matches.is_present("open") || core.config().get_features().open_new_repo_in_default_app()
-        {
+        if matches.is_present("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
             let app = core.config().get_default_app().ok_or(errors::user(
                 "No default application available.",
                 "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;

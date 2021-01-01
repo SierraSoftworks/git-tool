@@ -30,7 +30,10 @@ impl<C: Core> OnlineService<C> for GitHubService {
 
         let new_repo = NewRepo {
             name: repo.get_name(),
-            private: core.config().get_features().create_remote_private(),
+            private: core
+                .config()
+                .get_features()
+                .has(features::CREATE_REMOTE_PRIVATE),
         };
 
         let req_body = serde_json::to_vec(&new_repo)?;
