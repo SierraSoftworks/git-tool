@@ -66,6 +66,7 @@ mod tests {
 
     use super::*;
     use crate::core::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn checkout_branch_inside_repo() {
@@ -81,8 +82,14 @@ mod tests {
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-checkout-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();
@@ -108,13 +115,14 @@ mod tests {
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(Repo::new(
+                "example.com/test/cmd-branch",
+                temp.path().to_path_buf(),
+            )))
+        });
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["branch", "feature/test"]);
 

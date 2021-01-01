@@ -108,6 +108,7 @@ impl<C: Core> CommandRunnable<C> for FixCommand {
 mod tests {
     use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run() {
@@ -118,6 +119,18 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
+        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+            assert_eq!(
+                name, "repo",
+                "it should be called with the name of the repo to be cloned"
+            );
+
+            MockResult::Return(Ok(Repo::new(
+                "github.com/exampleB/test",
+                temp.path().into(),
+            )))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
@@ -127,19 +140,13 @@ mod tests {
             .with_http_connector(
                 crate::online::service::github::mocks::NewRepoSuccessFlow::default(),
             )
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "github.com/exampleB/test",
-                    temp.path().to_path_buf(),
-                ));
-            })
             .build();
 
         // Prep the repo
         sequence![GitInit {}, GitRemote { name: "origin" }]
             .apply_repo(
                 &core,
-                &Repo::new("github.com/exampleA/test", temp.path().to_path_buf()),
+                &Repo::new("github.com/exampleA/test", cfg.get_dev_directory().into()),
             )
             .await
             .unwrap();

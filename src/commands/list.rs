@@ -114,6 +114,7 @@ mod tests {
     use super::core::*;
     use super::*;
     use crate::test::get_dev_dir;
+    use mocktopus::mocking::*;
     use std::path::PathBuf;
 
     #[tokio::test]
@@ -143,16 +144,15 @@ mod tests {
 
     #[tokio::test]
     async fn run_search_full() {
-        let core = CoreBuilder::default()
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repos(vec![
-                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-                ])
-            })
-            .build();
+        Resolver::get_repos.mock_safe(|_| {
+            MockResult::Return(Ok(vec![
+                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+            ]))
+        });
+
+        let core = CoreBuilder::default().with_mock_output().build();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
@@ -165,16 +165,15 @@ mod tests {
 
     #[tokio::test]
     async fn run_search_quiet() {
-        let core = CoreBuilder::default()
-            .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repos(vec![
-                    Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                    Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                    Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-                ])
-            })
-            .build();
+        Resolver::get_repos.mock_safe(|_| {
+            MockResult::Return(Ok(vec![
+                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+            ]))
+        });
+
+        let core = CoreBuilder::default().with_mock_output().build();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);

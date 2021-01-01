@@ -11,7 +11,11 @@ impl<C: Core> Task<C> for GitSwitch {
     async fn apply_repo(&self, _core: &C, repo: &core::Repo) -> Result<(), core::Error> {
         let mut create = self.create_if_missing;
 
-        if create && git::git_branches(&repo.get_path()).await?.contains(&self.branch) {
+        if create
+            && git::git_branches(&repo.get_path())
+                .await?
+                .contains(&self.branch)
+        {
             create = false;
         }
 
@@ -29,7 +33,7 @@ impl<C: Core> Task<C> for GitSwitch {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::{Config, Repo};
+    use crate::core::Config;
 
     use super::*;
     use crate::tasks::GitInit;
@@ -46,12 +50,6 @@ mod tests {
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
 
         sequence![
@@ -86,12 +84,6 @@ mod tests {
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
 
         sequence![
@@ -123,12 +115,6 @@ mod tests {
         let core = core::CoreBuilder::default()
             .with_config(&Config::for_dev_directory(temp.path()))
             .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "example.com/test/cmd-branch",
-                    temp.path().to_path_buf(),
-                ))
-            })
             .build();
 
         let task = GitSwitch {

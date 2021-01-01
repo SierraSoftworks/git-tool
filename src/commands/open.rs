@@ -147,15 +147,20 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "github.com/git-fixtures/basic",
-                    temp.path().join("repo").into(),
-                ));
-            })
-            .build();
+        let core = CoreBuilder::default().with_config(&cfg).build();
+
+        let temp_path = temp.path().to_owned();
+        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+            assert_eq!(
+                name, "repo",
+                "it should be called with the name of the repo to be cloned"
+            );
+
+            MockResult::Return(Ok(Repo::new(
+                "github.com/git-fixtures/basic",
+                temp_path.join("repo").into(),
+            )))
+        });
 
         crate::core::Launcher::run.mock_safe(move |_, app, target| {
             assert_eq!(

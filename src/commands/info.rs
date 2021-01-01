@@ -82,6 +82,7 @@ impl<C: Core> CommandRunnable<C> for InfoCommand {
 mod tests {
     use super::core::{Config, CoreBuilder, Repo};
     use super::*;
+    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run() {
@@ -91,15 +92,21 @@ mod tests {
 
         let cfg = Config::from_str("directory: /dev").unwrap();
 
+        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+            assert_eq!(
+                name, "repo",
+                "it should be called with the name of the repo to be cloned"
+            );
+
+            MockResult::Return(Ok(Repo::new(
+                "github.com/sierrasoftworks/git-tool",
+                std::path::PathBuf::from("/test"),
+            )))
+        });
+
         let core = CoreBuilder::default()
             .with_config(&cfg)
             .with_mock_output()
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "github.com/sierrasoftworks/git-tool",
-                    std::path::PathBuf::from("/test"),
-                ));
-            })
             .build();
 
         match cmd.run(&core, &args).await {

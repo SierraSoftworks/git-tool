@@ -4,31 +4,23 @@ use chrono::prelude::*;
 use std::env;
 use std::sync::Arc;
 
-pub trait Resolver: Send + Sync + From<Arc<Config>> {
-    fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
-    fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
-    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error>;
+#[cfg(test)]
+use mocktopus::macros::*;
 
-    fn get_current_repo(&self) -> Result<Repo, Error>;
-    fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error>;
-    fn get_repos(&self) -> Result<Vec<Repo>, Error>;
-    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error>;
-
-    fn get_best_repo(&self, name: &str) -> Result<Repo, Error>;
-}
-
-pub struct FileSystemResolver {
+#[cfg_attr(test, mockable)]
+pub struct Resolver {
     config: Arc<Config>,
 }
 
-impl From<Arc<Config>> for FileSystemResolver {
+impl From<Arc<Config>> for Resolver {
     fn from(config: Arc<Config>) -> Self {
         Self { config }
     }
 }
 
-impl Resolver for FileSystemResolver {
-    fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
+#[cfg_attr(test, mockable)]
+impl Resolver {
+    pub fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
         let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
             &format!("Could not retrieve the list of directories within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
             "Check that Git-Tool has permission to access this directory and try again.",
@@ -57,20 +49,20 @@ impl Resolver for FileSystemResolver {
         Ok(scratchpads)
     }
 
-    fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
+    pub fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name.clone(),
             self.config.get_scratch_directory().join(name.clone()),
         ))
     }
 
-    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
+    pub fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
         let time = Local::now();
 
         self.get_scratchpad(&time.format("%Yw%V").to_string())
     }
 
-    fn get_current_repo(&self) -> Result<Repo, Error> {
+    pub fn get_current_repo(&self) -> Result<Repo, Error> {
         let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
             "Could not determine your current working directory due to an OS-level error.",
             "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
@@ -86,13 +78,12 @@ impl Resolver for FileSystemResolver {
         }
     }
 
-    fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
+    pub fn get_repo(&self, path: &std::path::PathBuf) -> Result<Repo, Error> {
         let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
             &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
             "Check that the directory exists and that Git-Tool has permission to access it.",
             err
         ))?;
-
         let dir = if path.is_absolute() {
             path.canonicalize().map_err(|err| errors::user_with_internal(
                 &format!("Could not determine the canonical path for the directory '{}' due to an OS-level error.", path.display()),
@@ -118,7 +109,7 @@ impl Resolver for FileSystemResolver {
         }
     }
 
-    fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
+    pub fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
         let true_name =
             std::path::PathBuf::from(self.config.get_alias(name).unwrap_or(name.to_string()));
 
@@ -150,7 +141,7 @@ impl Resolver for FileSystemResolver {
         }
     }
 
-    fn get_repos(&self) -> Result<Vec<Repo>, Error> {
+    pub fn get_repos(&self) -> Result<Vec<Repo>, Error> {
         let mut repos = vec![];
 
         for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
@@ -183,7 +174,7 @@ impl Resolver for FileSystemResolver {
         Ok(repos)
     }
 
-    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
+    pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !svc.get_pattern().split("/").all(|p| p == "*") {
             return Err(errors::user(
                 &format!("The glob pattern used for the '{}' service was invalid.", svc.get_domain()),
@@ -203,6 +194,7 @@ impl Resolver for FileSystemResolver {
     }
 }
 
+#[cfg_attr(test, mockable)]
 fn service_from_relative_path<'a>(
     config: &'a Config,
     relative_path: &std::path::PathBuf,
@@ -230,6 +222,7 @@ fn service_from_relative_path<'a>(
     }
 }
 
+#[cfg_attr(test, mockable)]
 fn repo_from_relative_path<'a>(
     config: &'a Config,
     relative_path: &std::path::PathBuf,
@@ -279,12 +272,14 @@ fn repo_from_relative_path<'a>(
     }
 }
 
+#[cfg_attr(test, mockable)]
 fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
     let depth = pattern.split("/").count();
 
     get_directory_tree_to_depth(from, depth)
 }
 
+#[cfg_attr(test, mockable)]
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
         return vec![from.clone()];
@@ -314,126 +309,9 @@ fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<s
 }
 
 #[cfg(test)]
-pub mod mocks {
-    use super::*;
-
-    pub struct MockResolver {
-        config: Arc<Config>,
-        repo: Option<Repo>,
-        repos: Vec<Repo>,
-        scratchpads: Vec<Scratchpad>,
-        current_date: DateTime<Local>,
-        error: bool,
-    }
-
-    impl From<Arc<Config>> for MockResolver {
-        fn from(cfg: Arc<Config>) -> Self {
-            Self {
-                config: cfg,
-                repo: None,
-                repos: Vec::new(),
-                scratchpads: Vec::new(),
-                current_date: Local.ymd(2020, 01, 02).and_hms(03, 04, 05),
-                error: false,
-            }
-        }
-    }
-
-    impl MockResolver {
-        pub fn set_repo(&mut self, repo: Repo) {
-            self.repo = Some(repo)
-        }
-
-        pub fn set_repos(&mut self, repos: Vec<Repo>) {
-            self.repos = repos
-        }
-
-        pub fn set_scratchpads(&mut self, scratchpads: Vec<Scratchpad>) {
-            self.scratchpads = scratchpads
-        }
-    }
-
-    impl Resolver for MockResolver {
-        fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-            match self.error {
-                true => Err(Error::SystemError(
-                    "Mock Error".to_string(),
-                    "Configure the mock to not throw an error".to_string(),
-                    None,
-                    None,
-                )),
-                false => Ok(self.scratchpads.clone()),
-            }
-        }
-        fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
-            Ok(Scratchpad::new(
-                name.clone(),
-                self.config.get_scratch_directory().join(name.clone()),
-            ))
-        }
-
-        fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
-            self.get_scratchpad(&self.current_date.format("%Yw%V").to_string())
-        }
-
-        fn get_current_repo(&self) -> Result<Repo, Error> {
-            match self.repo.clone() {
-                Some(repo) => Ok(repo),
-                None => Err(errors::user(
-                    "Current directory is not a valid repository.",
-                    "Make sure that you are currently within a repository contained within your development directory."))
-            }
-        }
-
-        fn get_repo(&self, _path: &std::path::PathBuf) -> Result<Repo, Error> {
-            match self.repo.clone() {
-                Some(repo) => Ok(repo),
-                None => Err(errors::user(
-                    "Current directory is not a valid repository.",
-                    "Make sure that you are currently within a repository contained within your development directory."))
-            }
-        }
-
-        fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-            match self.error {
-                true => Err(Error::SystemError(
-                    "Mock Error".to_string(),
-                    "Configure the mock to not throw an error".to_string(),
-                    None,
-                    None,
-                )),
-                false => Ok(self.repos.clone()),
-            }
-        }
-
-        fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-            match self.error {
-                true => Err(Error::SystemError(
-                    "Mock Error".to_string(),
-                    "Configure the mock to not throw an error".to_string(),
-                    None,
-                    None,
-                )),
-                false => Ok(self
-                    .repos
-                    .iter()
-                    .filter(|r| r.get_domain() == svc.get_domain())
-                    .map(|r| r.clone())
-                    .collect()),
-            }
-        }
-
-        fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
-            let path = std::path::PathBuf::from(name);
-            self.get_repo(&path)
-        }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::super::Target;
-    use super::{Config, FileSystemResolver, Resolver};
+    use super::{Config, Resolver};
     use crate::test::get_dev_dir;
     use chrono::prelude::*;
     use std::{path, sync::Arc};
@@ -663,9 +541,9 @@ mod tests {
                 .join("test2")));
     }
 
-    fn get_resolver() -> FileSystemResolver {
+    fn get_resolver() -> Resolver {
         let config = Arc::new(Config::for_dev_directory(&get_dev_dir()));
 
-        FileSystemResolver::from(config)
+        Resolver::from(config)
     }
 }

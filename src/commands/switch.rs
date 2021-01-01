@@ -31,7 +31,6 @@ impl Command for SwitchCommand {
                     .about("don't create the branch if it doesn't exist."),
             )
     }
-
 }
 
 #[async_trait]
@@ -74,6 +73,7 @@ mod tests {
 
     use super::*;
     use crate::core::*;
+    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -88,8 +88,14 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         sequence!(
             // Run a `git init` to setup the repo
@@ -141,8 +147,14 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         sequence!(
@@ -173,7 +185,9 @@ mod tests {
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch","-N", "feature/test"]);
+        let args: ArgMatches = cmd
+            .app()
+            .get_matches_from(vec!["switch", "-N", "feature/test"]);
         cmd.run(&core, &args)
             .await
             .expect("this command should have succeeded");
@@ -196,8 +210,14 @@ mod tests {
 
         let core = core::CoreBuilder::default()
             .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         sequence!(
@@ -228,7 +248,9 @@ mod tests {
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch","-N", "feature/test2"]);
+        let args: ArgMatches = cmd
+            .app()
+            .get_matches_from(vec!["switch", "-N", "feature/test2"]);
         cmd.run(&core, &args)
             .await
             .expect_err("this command should not have succeeded");
@@ -245,18 +267,22 @@ mod tests {
         );
 
         let core = core::CoreBuilder::default()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
-            .with_mock_resolver(|r| r.set_repo(repo.clone()))
+            .with_config(&core::Config::for_dev_directory(&temp.path()))
             .build();
+
+        super::Resolver::get_current_repo.mock_safe(move |_| {
+            MockResult::Return(Ok(core::Repo::new(
+                "github.com/sierrasoftworks/test-git-switch-command",
+                temp.path().join("repo").into(),
+            )))
+        });
 
         // Run a `git init` to setup the repo
         tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();
 
         assert!(repo.valid(), "the repository should exist and be valid");
 
-        let args: ArgMatches = cmd
-            .app()
-            .get_matches_from(vec!["switch", "feature/test"]);
+        let args: ArgMatches = cmd.app().get_matches_from(vec!["switch", "feature/test"]);
         cmd.run(&core, &args).await.unwrap();
 
         assert!(repo.valid(), "the repository should still be valid");

@@ -100,15 +100,19 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        let core = CoreBuilder::default()
-            .with_config(&cfg)
-            .with_mock_resolver(|r| {
-                r.set_repo(Repo::new(
-                    "github.com/git-fixtures/basic",
-                    temp.path().join("repo").into(),
-                ));
-            })
-            .build();
+        super::Resolver::get_best_repo.mock_safe(move |_, name| {
+            assert_eq!(
+                name, "repo",
+                "it should be called with the name of the repo to be cloned"
+            );
+
+            MockResult::Return(Ok(Repo::new(
+                "github.com/git-fixtures/basic",
+                temp.path().join("repo").into(),
+            )))
+        });
+
+        let core = CoreBuilder::default().with_config(&cfg).build();
 
         crate::core::Launcher::run.mock_safe(|_, _app, _target| {
             panic!("No program should have been run");
