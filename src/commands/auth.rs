@@ -99,8 +99,6 @@ mod tests {
             MockResult::Return(Ok(()))
         });
 
-        assert!(core.keychain().get_token("github.com").is_ok());
-
         let cmd = AuthCommand {};
         let args = cmd
             .app()
