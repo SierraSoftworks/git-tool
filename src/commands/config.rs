@@ -186,7 +186,14 @@ impl CommandRunnable for ConfigCommand {
                         writeln!(output, "Cannot set the feature flag {} to {} because only 'true' and 'false' are valid settings.", flag, invalid)?;
                         return Ok(1);
                     }
-                    None => {}
+                    None => {
+                        writeln!(
+                            output,
+                            "{} = {}",
+                            flag,
+                            core.config().get_features().has(flag)
+                        )?;
+                    }
                 },
                 None => {
                     for &feature in features::ALL.iter() {
