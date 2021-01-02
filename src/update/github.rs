@@ -236,13 +236,8 @@ struct GitHubAsset {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+pub mod mocks {
     use crate::core::HttpClient;
-    use std::{
-        io::Write,
-        sync::{Arc, Mutex},
-    };
 
     pub fn mock_get_releases() {
         HttpClient::mock(vec![
@@ -284,11 +279,20 @@ mod tests {
             ),
         ]);
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        io::Write,
+        sync::{Arc, Mutex},
+    };
 
     #[tokio::test]
     async fn test_get_releases() {
         let source = GitHubSource::default();
-        mock_get_releases();
+        mocks::mock_get_releases();
 
         let core = Core::builder().build();
 
@@ -310,7 +314,7 @@ mod tests {
     #[tokio::test]
     async fn test_download() {
         let source = GitHubSource::default();
-        mock_get_releases();
+        mocks::mock_get_releases();
 
         let core = Core::builder().build();
 
