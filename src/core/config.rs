@@ -64,7 +64,11 @@ impl Config {
         if !from.apps.is_empty() {
             into.apps = from.apps.clone();
         }
-        into.features = from.features;
+
+        into.features = features::Features::builder()
+            .with_features(&into.features)
+            .with_features(&from.features)
+            .build();
 
         for (k, v) in from.aliases.iter() {
             into.aliases.insert(k.clone(), v.clone());
