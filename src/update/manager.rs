@@ -12,6 +12,9 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
+#[cfg(test)]
+use mocktopus::macros::*;
+
 pub struct UpdateManager<S = super::github::GitHubSource>
 where
     S: Source,
@@ -118,7 +121,10 @@ where
 
         Ok(true)
     }
+}
 
+#[cfg_attr(test, mockable)]
+impl<S: Source> UpdateManager<S> {
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
         let state_json = serde_json::to_string(state)?;
         let mut cmd = Command::new(app_path);
@@ -211,4 +217,223 @@ where
 mod windows {
     pub const DETACHED_PROCESS: u32 = 0x00000008;
     pub const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use super::*;
+    use mocktopus::mocking::*;
+    use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn test_update() {
+        let core = Core::builder().build();
+        let temp = tempdir().unwrap();
+
+        let app_path = temp.path().join("app").to_owned();
+        let temp_app_path = temp.path().join("app-temp").to_owned();
+
+        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
+        manager.target_application = app_path.clone();
+
+        let launched = Arc::new(Mutex::new(false));
+
+        github::mocks::mock_get_releases();
+
+        {
+            let launched = launched.clone();
+            let temp_app_path = temp_app_path.clone();
+            UpdateManager::<GitHubSource>::launch.mock_safe(move |_, app, state| {
+                assert_eq!(app, temp_app_path, "it should launch the temporary app");
+
+                assert!(app.exists(), "the launched app should exist");
+
+                assert_eq!(
+                    state.phase,
+                    UpdatePhase::Replace,
+                    "it should launch the temp app in replace mode"
+                );
+
+                assert_eq!(
+                    app_path,
+                    state.target_application.clone().unwrap().as_path(),
+                    "it should pass the correct app path to the temporary app"
+                );
+
+                assert_eq!(
+                    state.temporary_application.clone().unwrap(),
+                    temp_app_path,
+                    "it should pass the correct temp app path to the temporary app"
+                );
+
+                launched
+                    .lock()
+                    .map(|mut v| *v = true)
+                    .expect("we should be able to set launched to true");
+
+                MockResult::Return(Ok(()))
+            });
+        }
+
+        {
+            let temp_app_path = temp_app_path.clone();
+            UpdateManager::<GitHubSource>::get_temp_app_path
+                .mock_safe(move |_, _release| MockResult::Return(temp_app_path.clone()));
+        }
+
+        let releases = manager
+            .get_releases(&core)
+            .await
+            .expect("we should receive a release entry");
+
+        let latest_release =
+            Release::get_latest(releases.iter()).expect("we should receive a latest release entry");
+
+        let has_update = manager
+            .update(&core, &latest_release)
+            .await
+            .expect("the update operation should succeed");
+
+        assert!(has_update, "the update should be applied");
+        assert!(
+            launched.lock().map(|v| *v).unwrap(),
+            "the temporary app should have been launched"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_update_resume() {
+        let temp = tempdir().unwrap();
+
+        let app_path = temp.path().join("app").to_owned();
+        let temp_app_path = temp.path().join("app-temp").to_owned();
+
+        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
+        manager.target_application = app_path.clone();
+
+        let launched = Arc::new(Mutex::new(false));
+
+        {
+            let launched = launched.clone();
+            let app_path = app_path.clone();
+            let temp_app_path = temp_app_path.clone();
+            UpdateManager::<GitHubSource>::launch.mock_safe(move |_, app, state| {
+                assert_eq!(app, app_path, "it should launch the updated app");
+
+                assert!(app.exists(), "the launched app should exist");
+
+                assert_eq!(
+                    std::fs::read_to_string(app)
+                        .expect("we should be able to read the contents of the app"),
+                    "new",
+                    "the app binary should have been replaced with the new binary"
+                );
+
+                assert_eq!(
+                    state.phase,
+                    UpdatePhase::Cleanup,
+                    "it should launch the app in cleanup mode"
+                );
+
+                assert_eq!(
+                    app_path,
+                    state.target_application.clone().unwrap().as_path(),
+                    "it should pass the correct app path to the temporary app"
+                );
+
+                assert_eq!(
+                    state.temporary_application.clone().unwrap(),
+                    temp_app_path,
+                    "it should pass the correct temp app path to the temporary app"
+                );
+
+                launched
+                    .lock()
+                    .map(|mut v| *v = true)
+                    .expect("we should be able to set launched to true");
+
+                MockResult::Return(Ok(()))
+            });
+        }
+
+        {
+            let temp_app_path = temp_app_path.clone();
+            UpdateManager::<GitHubSource>::get_temp_app_path
+                .mock_safe(move |_, _release| MockResult::Return(temp_app_path.clone()));
+        }
+
+        {
+            std::fs::write(&app_path, "original")
+                .expect("we should be able to write a payload to the app path");
+            std::fs::write(&temp_app_path, "new")
+                .expect("we should be able to write a payload to the temp app path");
+        }
+
+        let state = UpdateState {
+            phase: UpdatePhase::Replace,
+            target_application: Some(app_path.clone()),
+            temporary_application: Some(temp_app_path.clone()),
+        };
+
+        let has_update = manager
+            .resume(&state)
+            .await
+            .expect("the update operation should succeed");
+
+        assert!(has_update, "the update should be applied");
+        assert!(
+            launched.lock().map(|v| *v).unwrap(),
+            "the temporary app should have been launched"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_update_cleanup() {
+        let temp = tempdir().unwrap();
+
+        let app_path = temp.path().join("app").to_owned();
+        let temp_app_path = temp.path().join("app-temp").to_owned();
+
+        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
+        manager.target_application = app_path.clone();
+
+        {
+            UpdateManager::<GitHubSource>::launch.mock_safe(move |_, _app, _state| {
+                panic!("It should not launch an app");
+            });
+        }
+
+        {
+            let temp_app_path = temp_app_path.clone();
+            UpdateManager::<GitHubSource>::get_temp_app_path
+                .mock_safe(move |_, _release| MockResult::Return(temp_app_path.clone()));
+        }
+
+        {
+            std::fs::write(&app_path, "original")
+                .expect("we should be able to write a payload to the app path");
+            std::fs::write(&temp_app_path, "new")
+                .expect("we should be able to write a payload to the temp app path");
+        }
+
+        let state = UpdateState {
+            phase: UpdatePhase::Cleanup,
+            target_application: Some(app_path.clone()),
+            temporary_application: Some(temp_app_path.clone()),
+        };
+
+        let has_update = manager
+            .resume(&state)
+            .await
+            .expect("the update operation should succeed");
+
+        assert!(has_update, "the update should be applied");
+        assert!(app_path.exists(), "the app should still be present");
+        assert!(
+            !temp_app_path.exists(),
+            "the temp app should have been removed"
+        );
+    }
 }
