@@ -197,3 +197,96 @@ impl fmt::Display for BasicInternalError {
         write!(f, "{}", self.message)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_description() {
+        assert_eq!(
+            user(
+                "Something bad happened",
+                "Avoid bad things happening in future"
+            )
+            .description(),
+            "Something bad happened"
+        );
+
+        assert_eq!(
+            system(
+                "Something bad happened",
+                "Avoid bad things happening in future"
+            )
+            .description(),
+            "Something bad happened"
+        );
+    }
+
+    #[test]
+    fn test_message_basic() {
+        assert_eq!(
+            user(
+                "Something bad happened.",
+                "Avoid bad things happening in future"
+            )
+            .message(),
+            "Oh no! Something bad happened.\n\nTo try and fix this, you can:\n - Avoid bad things happening in future"
+        );
+
+        assert_eq!(
+            system(
+                "Something bad happened.",
+                "Avoid bad things happening in future"
+            )
+            .message(),
+            "Whoops! Something bad happened. (This isn't your fault)\n\nTo try and fix this, you can:\n - Avoid bad things happening in future"
+        );
+    }
+
+    #[test]
+    fn test_message_cause() {
+        assert_eq!(
+            user_with_cause(
+                "Something bad happened.",
+                "Avoid bad things happening in future",
+                user("You got rate limited by GitHub.", "Wait a few minutes and try again.")
+            )
+            .message(),
+            "Oh no! Something bad happened.\n\nThis was caused by:\n - You got rate limited by GitHub.\n\nTo try and fix this, you can:\n - Wait a few minutes and try again.\n - Avoid bad things happening in future"
+        );
+
+        assert_eq!(
+            system_with_cause(
+                "Something bad happened.",
+                "Avoid bad things happening in future",
+                system("You got rate limited by GitHub.", "Wait a few minutes and try again.")
+            )
+            .message(),
+            "Whoops! Something bad happened. (This isn't your fault)\n\nThis was caused by:\n - You got rate limited by GitHub.\n\nTo try and fix this, you can:\n - Wait a few minutes and try again.\n - Avoid bad things happening in future"
+        );
+    }
+
+    #[test]
+    fn test_message_internal() {
+        assert_eq!(
+            user_with_internal(
+                "Something bad happened.",
+                "Avoid bad things happening in future",
+                detailed_message("You got rate limited")
+            )
+            .message(),
+            "Oh no! Something bad happened.\n\nThis was caused by:\n - You got rate limited\n\nTo try and fix this, you can:\n - Avoid bad things happening in future"
+        );
+
+        assert_eq!(
+            system_with_internal(
+                "Something bad happened.",
+                "Avoid bad things happening in future",
+                detailed_message("You got rate limited")
+            )
+            .message(),
+            "Whoops! Something bad happened. (This isn't your fault)\n\nThis was caused by:\n - You got rate limited\n\nTo try and fix this, you can:\n - Avoid bad things happening in future"
+        );
+    }
+}
