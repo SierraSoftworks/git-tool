@@ -68,6 +68,15 @@ impl FeaturesBuilder {
             .with(TELEMETRY, true)
     }
 
+    pub fn with_features(self, features: &Features) -> Self {
+        let mut flags = self.flags;
+        for (key, &val) in features.flags.iter() {
+            flags.insert(key.clone(), val);
+        }
+
+        Self { flags }
+    }
+
     pub fn build(self) -> Features {
         Features { flags: self.flags }
     }
