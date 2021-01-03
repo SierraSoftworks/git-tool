@@ -1,5 +1,5 @@
 use super::*;
-use crate::update::{GitHubSource, Release, UpdateManager};
+use crate::update::{GitHubSource, Release, ReleaseVariant, UpdateManager};
 use clap::Arg;
 
 pub struct UpdateCommand {}
@@ -75,12 +75,15 @@ where {
         }
 
         let releases = manager.get_releases(core).await?;
+        let current_variant = ReleaseVariant::default();
 
         if matches.is_present("list") {
             for release in releases {
                 let mut style = " ";
                 if release.version == current_version {
                     style = "*";
+                } else if release.get_variant(&current_variant).is_none() {
+                    style = "!"
                 }
 
                 writeln!(output, "{} {}", style, release.id)?;
@@ -90,7 +93,9 @@ where {
         }
 
         let mut target_release =
-            Release::get_latest(releases.iter().filter(|r| r.version > current_version));
+            Release::get_latest(releases.iter().filter(|&r| {
+                r.get_variant(&current_variant).is_some() && r.version > current_version
+            }));
 
         if let Some(target_version) = matches.value_of("version") {
             target_release = releases.iter().find(|r| r.id == target_version);
@@ -119,7 +124,13 @@ where {
 
         match manager.get_releases(core).await {
             Ok(releases) => {
-                completer.offer_many(releases.iter().map(|r| &r.id));
+                let current_variant = ReleaseVariant::default();
+                completer.offer_many(
+                    releases
+                        .iter()
+                        .filter(|&r| r.get_variant(&current_variant).is_some())
+                        .map(|r| &r.id),
+                );
             }
             _ => {}
         }
