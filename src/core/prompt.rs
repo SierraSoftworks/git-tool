@@ -56,13 +56,17 @@ impl Prompter {
         Ok(None)
     }
 
-    pub fn prompt_bool(&mut self, message: &str) -> Result<Option<bool>, Error> {
+    pub fn prompt_bool(
+        &mut self,
+        message: &str,
+        default: Option<bool>,
+    ) -> Result<Option<bool>, Error> {
         if let Some(answer) = self.prompt(message, |l| {
             l.to_lowercase() == "y" || l.to_lowercase() == "n"
         })? {
             Ok(Some(answer.to_lowercase() == "y"))
         } else {
-            Ok(None)
+            Ok(default)
         }
     }
 }
@@ -152,5 +156,29 @@ mod tests {
         );
 
         assert_eq!(output.to_string(), "First prompt: Second prompt: ");
+    }
+
+    #[test]
+    fn prompt_boolean() {
+        console::input::mock("y\nn\n\n\n");
+        let output = console::output::mock();
+
+        let mut prompter = Prompter::new();
+
+        assert_eq!(
+            prompter.prompt_bool("Works? [y/N]: ", Some(false)).unwrap(),
+            Some(true),
+        );
+        assert_eq!(output.to_string(), "Works? [y/N]: ");
+
+        assert_eq!(
+            prompter.prompt_bool("Works? [Y/n]: ", Some(true)).unwrap(),
+            Some(false),
+        );
+        assert_eq!(
+            prompter.prompt_bool("Works? [Y/n]: ", Some(true)).unwrap(),
+            Some(true),
+        );
+        assert_eq!(prompter.prompt_bool("Works? [Y/n]: ", None).unwrap(), None,);
     }
 }

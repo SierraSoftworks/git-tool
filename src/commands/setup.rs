@@ -67,7 +67,10 @@ impl CommandRunnable for SetupCommand {
         )?;
 
         let enable_telemetry = prompter
-            .prompt_bool("Are you happy sharing crash reports with us automatically? [Y/n]: ")?
+            .prompt_bool(
+                "Are you happy sharing crash reports with us automatically? [Y/n]: ",
+                Some(true),
+            )?
             .unwrap_or(true);
 
         match config_path.parent() {
