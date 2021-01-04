@@ -43,6 +43,10 @@ gt s
 
 Make sure you download the latest [release][] for your platform and place it in a directory on your `$PATH`.
 
+**NOTE** If you're on Windows, you may need to install the Microsoft Visual C++ Re-distributable package. You can find these
+on Microsoft's website [here](https://support.microsoft.com/en-ie/help/2977003/the-latest-supported-visual-c-downloads). If you
+are missing this, Git-Tool will not run from the command line and running the binary directly will display an error dialog.
+
 #### Step 2: Ensure that you can run `git-tool`
 
 ```

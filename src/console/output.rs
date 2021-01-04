@@ -29,6 +29,15 @@ pub mod mocks {
         written_data: Arc<Mutex<String>>,
     }
 
+    impl MockOutput {
+        pub fn clear(&self) {
+            self.written_data
+                .lock()
+                .map(|mut m| m.clear())
+                .unwrap_or_default();
+        }
+    }
+
     impl Default for MockOutput {
         fn default() -> Self {
             Self {
