@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::vec::Vec;
 use std::{collections::HashMap, path::Path};
+use std::{env::consts::OS, vec::Vec};
 use std::{path, sync::Arc};
 
 use super::super::errors;
@@ -268,12 +268,19 @@ impl Default for Config {
     fn default() -> Self {
         let dev_dir = path::PathBuf::from(std::env::var("DEV_DIRECTORY").unwrap_or_default());
 
+        let default_shell = match OS {
+            "linux" => "bash",
+            "macos" => "zsh",
+            "windows" => "powershell",
+            _ => "bash",
+        };
+
         Self {
             config_file: None,
             dev_directory: dev_dir,
             scratch_directory: None,
             apps: vec![
-                Arc::new(app::App::builder().with_name("shell").with_command("bash").into()),
+                Arc::new(app::App::builder().with_name("shell").with_command(default_shell).into()),
             ],
             services: vec![
                 Arc::new(service::Service::builder()
