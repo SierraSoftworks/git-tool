@@ -72,7 +72,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             std::process::exit(status);
         }
         Result::Err(err) => {
-            error!("{}", err.message());
             println!("{}", err.message());
 
             session.crash(err);
