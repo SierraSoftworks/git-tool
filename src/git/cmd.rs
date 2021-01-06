@@ -18,10 +18,10 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
 
     if !output.status.success() {
         match output.status.code() {
-            Some(code) => Err(errors::system_with_internal(
-                &format!("Git exited with a non-zero exit code ({}).", code),
+            Some(code) => Err(errors::system_with_cause(
+                "Git exited with a failure status code.",
                 "Please check the output printed by Git to determine why the command failed and take appropriate action.",
-                errors::detailed_message(&output_text))),
+                errors::system(&format!("{:?} exited with status code {}.", cmd, code), &output_text))),
             None => Err(errors::system_with_internal(
                 "Git exited prematurely because it received an unexpected signal.",
                 "Please check the output printed by Git to determine why the command failed and take appropriate action.",
