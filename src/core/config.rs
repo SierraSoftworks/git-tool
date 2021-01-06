@@ -333,7 +333,6 @@ mod tests {
                 match cfg.get_app("shell") {
                     Some(app) => {
                         assert_eq!(app.get_name(), "shell");
-                        assert_eq!(app.get_command(), "bash");
                     }
                     _ => panic!("expected that the shell app would be registered"),
                 }
