@@ -109,10 +109,17 @@ where {
                     writeln!(output, "Shutting down to complete the update operation.")?;
                 }
             },
-            None => {
+            None if matches.is_present("version") => {
                 return Err(errors::user(
-                    "Could not find an available update which matches your update criteria.",
+                    "Could not find an available update for your platform matching the version you provided.",
                     "If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`."))
+            },
+            None => {
+                writeln!(
+                    output,
+                    "It doesn't look like there is an update available for your platform yet."
+                )?;
+                writeln!(output, "If you would like to rollback to a specific version, you can do so with `gt update v{}`.", version!())?;
             }
         }
 
