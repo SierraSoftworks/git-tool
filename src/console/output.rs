@@ -17,6 +17,7 @@ pub fn mock() -> mocks::MockOutput {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub mod mocks {
     use super::*;
     use std::{

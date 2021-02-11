@@ -54,6 +54,7 @@ pub fn system(description: &str, advice: &str) -> Error {
     Error::SystemError(description.to_string(), advice.to_string(), None, None)
 }
 
+#[allow(dead_code)]
 pub fn system_with_cause(description: &str, advice: &str, cause: Error) -> Error {
     Error::SystemError(
         description.to_string(),
