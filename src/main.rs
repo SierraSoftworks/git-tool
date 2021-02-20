@@ -117,11 +117,6 @@ async fn run<'a>(
         }
     }
 
-    if core.config().get_config_file().is_none() {
-        warn!("No configuration file has been loaded, continuing with defaults.");
-        writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
-    }
-
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
             sentry::add_breadcrumb(sentry::Breadcrumb {
