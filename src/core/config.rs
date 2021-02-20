@@ -308,8 +308,8 @@ impl Default for Config {
                     .with_domain("dev.azure.com")
                     .with_pattern("*/*/*")
                     .with_website("https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}")
-                    .with_git_url("git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git")
-                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}.git")
+                    .with_git_url("git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}")
+                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}")
                     .into()),
             ],
             aliases: HashMap::new(),
