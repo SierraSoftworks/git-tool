@@ -39,6 +39,11 @@ New applications can be configured either by making changes to your configuratio
 #[async_trait]
 impl CommandRunnable for OpenCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+        if core.config().get_config_file().is_none() {
+            warn!("No configuration file has been loaded, continuing with defaults.");
+            writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+        }
+
         let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_best_repo(target)?)
