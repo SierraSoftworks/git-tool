@@ -99,22 +99,23 @@ impl Error {
             }
         };
 
-        match self.caused_by() {
-            Some(cause) => {
+        match (self.caused_by(), self.advice()) {
+            (Some(cause), Some(advice)) => {
                 format!(
                     "{}\n\nThis was caused by:\n{}\n\nTo try and fix this, you can:\n{}",
-                    hero_message,
-                    cause,
-                    self.advice()
+                    hero_message, cause, advice
                 )
             }
-            None => {
+            (Some(cause), None) => {
+                format!("{}\n\nThis was caused by:\n{}", hero_message, cause)
+            }
+            (None, Some(advice)) => {
                 format!(
                     "{}\n\nTo try and fix this, you can:\n{}",
-                    hero_message,
-                    self.advice()
+                    hero_message, advice
                 )
             }
+            (None, None) => hero_message,
         }
     }
 
@@ -135,7 +136,7 @@ impl Error {
         }
     }
 
-    fn advice(&self) -> String {
+    fn advice(&self) -> Option<String> {
         let (advice, cause) = match self {
             Error::UserError(_, advice, cause, _) | Error::SystemError(_, advice, cause, _) => {
                 (advice, cause)
@@ -144,8 +145,13 @@ impl Error {
 
         match cause {
             // We bias towards the most specific advice first (i.e. the lowest-level error) because that's most likely to be correct.
-            Some(cause) => format!("{}\n - {}", cause.advice(), advice),
-            None => format!(" - {}", advice),
+            Some(cause) => match cause.advice() {
+                Some(cause_advice) if !cause_advice.is_empty() => {
+                    Some(format!("{}\n - {}", cause_advice, advice))
+                }
+                _ => Some(format!(" - {}", advice)),
+            },
+            None => Some(format!(" - {}", advice)),
         }
     }
 
