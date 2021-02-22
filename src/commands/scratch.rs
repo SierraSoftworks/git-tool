@@ -137,7 +137,7 @@ apps:
             Ok(status) => {
                 assert_eq!(status, 5, "it should forward the status code from the app");
             }
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -191,7 +191,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -250,7 +250,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -311,7 +311,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -424,7 +424,7 @@ apps:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 }

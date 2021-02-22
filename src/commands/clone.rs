@@ -122,7 +122,7 @@ features:
             Ok(status) => {
                 assert_eq!(status, 0);
             }
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 }

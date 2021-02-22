@@ -344,7 +344,7 @@ mod tests {
                     _ => panic!("expected that the shell app would be registered"),
                 }
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -365,7 +365,7 @@ mod tests {
                     None => panic!("The default apps should be present."),
                 }
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -398,7 +398,7 @@ apps:
                     None => {}
                 }
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 

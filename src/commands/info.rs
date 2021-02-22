@@ -110,7 +110,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 }

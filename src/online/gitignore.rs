@@ -151,7 +151,7 @@ mod tests {
                     assert_ne!(item, String::from(""));
                 }
             }
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -162,7 +162,7 @@ mod tests {
             Ok(ignore) => {
                 assert_ne!(ignore, String::from(""));
             }
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -230,7 +230,7 @@ bin/
                 assert!(result.contains("## @languages: rust\n"));
                 assert!(result.contains("/target/\n"));
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -241,7 +241,7 @@ bin/
             Ok(result) => {
                 assert_eq!(result, "");
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -267,7 +267,7 @@ bin/
                 assert!(result.contains("/target/\n"));
                 assert!(result.contains("/tmp\n"));
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -292,7 +292,7 @@ bin/
                 assert!(result.contains("/target/\n"));
                 assert!(!result.contains("/test\n"));
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 
@@ -317,7 +317,7 @@ bin/
                 assert!(result.contains("/target/\n"));
                 assert!(!result.contains("/test\n"));
             }
-            Err(e) => panic!(e.message()),
+            Err(e) => panic!("{}", e.message()),
         }
     }
 }

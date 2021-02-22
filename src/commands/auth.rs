@@ -84,7 +84,7 @@ mod tests {
             .get_matches_from(vec!["auth", "github.com", "--token", "12345"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 
@@ -105,7 +105,7 @@ mod tests {
             .get_matches_from(vec!["auth", "github.com", "--delete"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 }

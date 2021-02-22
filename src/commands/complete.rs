@@ -230,7 +230,7 @@ mod tests {
             .get_matches_from(vec!["gt", "--position", "14", "git-tool apps "]);
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 

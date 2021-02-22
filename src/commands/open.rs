@@ -190,7 +190,7 @@ features:
                     "the status code of the child app should be forwarded"
                 );
             }
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
     }
 }

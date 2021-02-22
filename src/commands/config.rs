@@ -280,7 +280,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         assert!(
@@ -303,7 +303,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         println!("{}", output.to_string());
@@ -331,7 +331,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         println!("{}", output.to_string());
@@ -363,7 +363,7 @@ mod tests {
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         assert!(
@@ -399,7 +399,7 @@ aliases:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         println!("{}", output.to_string());
@@ -438,7 +438,7 @@ aliases:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         println!("{}", output.to_string());
@@ -473,7 +473,7 @@ aliases:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
@@ -516,7 +516,7 @@ aliases:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
@@ -584,7 +584,7 @@ features:
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();

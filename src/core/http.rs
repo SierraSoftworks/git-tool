@@ -89,7 +89,7 @@ mod mocks {
                 }
             }
 
-            panic!(format!("Unrecognized route {} {}", req.method(), req.uri()));
+            panic!("Unrecognized route {} {}", req.method(), req.uri());
         });
     }
 }

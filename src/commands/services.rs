@@ -50,7 +50,7 @@ mod tests {
         let cmd = ServicesCommand {};
         match cmd.run(&core, &args).await {
             Ok(_) => {}
-            Err(err) => panic!(err.message()),
+            Err(err) => panic!("{}", err.message()),
         }
 
         assert!(
