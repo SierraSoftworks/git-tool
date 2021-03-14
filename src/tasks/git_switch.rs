@@ -14,7 +14,8 @@ impl Task for GitSwitch {
         if create
             && git::git_branches(&repo.get_path())
                 .await?
-                .contains(&self.branch)
+                .iter()
+                .any(|v| v == &self.branch || v == &format!("origin/{}", &self.branch))
         {
             create = false;
         }
