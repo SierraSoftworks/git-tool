@@ -23,9 +23,9 @@ pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Erro
     let output = git_cmd(
         Command::new("git")
             .current_dir(repo)
-            .arg("for-each-ref")
-            .arg("--format=%(refname:lstrip=2)")
-            .arg("refs/heads/"),
+            .arg("branch")
+            .arg("-a")
+            .arg("--format=%(refname:lstrip=2)"),
     )
     .await?;
 
