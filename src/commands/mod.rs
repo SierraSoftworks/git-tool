@@ -11,7 +11,6 @@ use crate::{completion::Completer, core::Core};
 
 mod apps;
 mod auth;
-mod branch;
 mod clone;
 mod complete;
 mod config;
@@ -48,7 +47,6 @@ pub fn commands() -> Vec<Arc<dyn CommandRunnable>> {
     vec![
         Arc::new(apps::AppsCommand {}),
         Arc::new(auth::AuthCommand {}),
-        Arc::new(branch::BranchCommand {}),
         Arc::new(clone::CloneCommand {}),
         Arc::new(complete::CompleteCommand {}),
         Arc::new(config::ConfigCommand {}),

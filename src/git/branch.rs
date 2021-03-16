@@ -3,6 +3,7 @@ use crate::errors;
 use std::{collections::HashSet, path};
 use tokio::process::Command;
 
+#[allow(dead_code)]
 pub async fn git_current_branch(repo: &path::Path) -> Result<String, errors::Error> {
     info!("Running `git symbolic-ref --short -q HEAD` to get the current branch name");
     Ok(git_cmd(
