@@ -173,8 +173,8 @@ pub mod helpers {
         );
     }
 
-    pub async fn test_completions_with_config(
-        cfg: &Config,
+    pub async fn test_completions_with_core(
+        core: &Core,
         args: &str,
         filter: &str,
         contains: Vec<&str>,
@@ -182,11 +182,9 @@ pub mod helpers {
         let cmd = CompleteCommand {};
         let cmds = default_commands();
 
-        let core = Core::builder().with_config(cfg).build();
-
         let writer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let completer = Completer::new_for(filter, writer.clone());
-        cmd.offer_completions(&core, &cmds, args, &completer).await;
+        cmd.offer_completions(core, &cmds, args, &completer).await;
 
         let output = String::from_utf8(writer.lock().unwrap().to_vec()).unwrap();
 
@@ -204,6 +202,17 @@ pub mod helpers {
                 item
             );
         }
+    }
+
+    pub async fn test_completions_with_config(
+        cfg: &Config,
+        args: &str,
+        filter: &str,
+        contains: Vec<&str>,
+    ) {
+        let core = Core::builder().with_config(cfg).build();
+
+        test_completions_with_core(&core, args, filter, contains).await;
     }
 
     pub async fn test_completions(args: &str, filter: &str, contains: Vec<&str>) {
