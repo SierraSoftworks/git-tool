@@ -119,10 +119,9 @@ impl Resolver {
         }
 
         let all_repos = self.get_repos()?;
-        let repos: Vec<&Repo> = all_repos
-            .iter()
-            .filter(|r| search::matches(&(r.get_domain() + &r.get_full_name()), name))
-            .collect();
+        let repos: Vec<&Repo> = search::best_matches_by(name, all_repos.iter(), |r| {
+            format!("{}/{}", r.get_domain(), r.get_full_name())
+        });
 
         match repos.len() {
             0 => {

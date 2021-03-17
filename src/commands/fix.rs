@@ -49,8 +49,8 @@ impl CommandRunnable for FixCommand {
                 };
 
                 let repos = core.resolver().get_repos()?;
-                for repo in repos.iter().filter(|r| {
-                    search::matches(&format!("{}/{}", r.get_domain(), r.get_full_name()), filter)
+                for repo in search::best_matches_by(filter, repos.iter(), |r| {
+                    format!("{}/{}", r.get_domain(), r.get_full_name())
                 }) {
                     writeln!(
                         output,
