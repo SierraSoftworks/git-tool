@@ -1,5 +1,8 @@
 use crate::search::matches;
-use std::sync::{Arc, Mutex};
+use std::{
+    fmt::Display,
+    sync::{Arc, Mutex},
+};
 
 pub struct Completer {
     filter: Arc<String>,
@@ -32,17 +35,31 @@ impl Completer {
         }
     }
 
-    pub fn offer_many<S, T>(&self, completions: S)
+    pub fn offer_many<S>(&self, completions: S)
     where
-        S: IntoIterator<Item = T>,
-        T: Into<String>,
+        S: IntoIterator,
+        S::Item: AsRef<str> + Display + Clone,
     {
-        for item in completions {
-            self.offer(&item.into());
-        }
+        self.output
+            .lock()
+            .map(|mut out| {
+                for completion in crate::search::best_matches(&self.filter, completions) {
+                    if has_whitespace(&completion) {
+                        writeln!(out, "'{}'", &completion).unwrap_or_default();
+                    } else {
+                        writeln!(out, "{}", &completion).unwrap_or_default();
+                    }
+                }
+            })
+            .unwrap_or_default();
     }
 }
 
-fn has_whitespace(value: &str) -> bool {
-    value.split_ascii_whitespace().skip(1).next().is_some()
+fn has_whitespace<T: AsRef<str>>(value: T) -> bool {
+    value
+        .as_ref()
+        .split_ascii_whitespace()
+        .skip(1)
+        .next()
+        .is_some()
 }
