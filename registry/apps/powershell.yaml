@@ -1,4 +1,4 @@
----
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
 name: PowerShell
 description: Launches the powershell instance within a project directory.
 version: 1.0.0
@@ -7,7 +7,15 @@ configs:
     app:
       name: ps
       command: powershell.exe
+      args:
+        - "-NoExit"
+        - "-Command"
+        - "$host.ui.RawUI.WindowTitle = '{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}'"
   - platform: linux
     app:
       name: pwsh
       command: pwsh
+      args:
+        - "-NoExit"
+        - "-Command"
+        - "$host.ui.RawUI.WindowTitle = '{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}'"

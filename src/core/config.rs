@@ -14,6 +14,9 @@ pub struct Config {
     #[serde(skip)]
     config_file: Option<path::PathBuf>,
 
+    #[serde(rename = "$schema")]
+    schema: Option<String>,
+
     #[serde(rename = "directory")]
     dev_directory: path::PathBuf,
     #[serde(default, rename = "scratchpads")]
@@ -183,13 +186,21 @@ impl Config {
     }
 
     pub fn to_string(&self) -> Result<String, errors::Error> {
-        serde_yaml::to_string(self).map_err(|e| {
+        let config = serde_yaml::to_string(self).map_err(|e| {
             errors::system_with_internal(
                 "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
                 "Please report this issue on GitHub so that we can try and resolve it.",
                 e,
             )
-        })
+        })?;
+
+        match &self.schema {
+            Some(schema) => Ok(format!(
+                "# yaml-language-server: $schema={}\n{}",
+                schema, config
+            )),
+            None => Ok(config),
+        }
     }
 
     pub fn get_config_file(&self) -> Option<path::PathBuf> {
@@ -276,6 +287,7 @@ impl Default for Config {
         };
 
         Self {
+            schema: Some("https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json".into()),
             config_file: None,
             dev_directory: dev_dir,
             scratch_directory: None,

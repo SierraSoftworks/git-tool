@@ -1,4 +1,4 @@
----
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
 name: Bash
 description: Launches the bash shell within a project directory.
 version: 1.0.0

@@ -1,7 +1,7 @@
 use std::env::args;
 
 pub struct Shell {
-    name: String,
+    name: &'static str,
     short_init: String,
     long_init: String,
 }
@@ -23,7 +23,7 @@ impl Shell {
 pub fn get_shells() -> Vec<Shell> {
     vec![
         Shell {
-            name: "powershell".into(),
+            name: "powershell",
             short_init: format!(
                 r#"Invoke-Expression (@(&"{app}" shell-init powershell --full) -join "`n")"#,
                 app = args().next().unwrap_or("git-tool".to_string())
@@ -42,7 +42,7 @@ param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
             ),
         },
         Shell {
-            name: "bash".into(),
+            name: "bash",
             short_init: format!(
                 r#"
 if [ "${{BASH_VERSINFO[0]}}" -gt 4 ] || ([ "${{BASH_VERSINFO[0]}}" -eq 4 ] && [ "${{BASH_VERSINFO[1]}}" -ge 1 ])
@@ -74,7 +74,7 @@ complete -F _gittool_bash_autocomplete gt git-tool
             ),
         },
         Shell {
-            name: "zsh".into(),
+            name: "zsh",
             short_init: format!(
                 r#"source <("{app}" shell-init zsh --full)"#,
                 app = args().next().unwrap_or("git-tool".to_string())
@@ -89,6 +89,17 @@ _gittool_zsh_autocomplete() {{
     
 compdef _gittool_zsh_autocomplete gt git-tool
             "#,
+                app = args().next().unwrap_or("git-tool".to_string())
+            ),
+        },
+        Shell {
+            name: "fish",
+            short_init: format!(
+                r#"complete -f -c {app} "({app} complete)"#,
+                app = args().next().unwrap_or("git-tool".to_string())
+            ),
+            long_init: format!(
+                r#"complete -f -c {app} "({app} complete)"#,
                 app = args().next().unwrap_or("git-tool".to_string())
             ),
         },

@@ -1,4 +1,5 @@
 ---
+$schema: https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json
 directory: C:\\dev
 services:
   - domain: github.com
