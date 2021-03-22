@@ -12,6 +12,9 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use windows::*;
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 #[cfg(test)]
 use mocktopus::macros::*;
 
@@ -67,6 +70,8 @@ where
             self.source
                 .get_binary(core, release, variant, &mut app_file)
                 .await?;
+
+            self.prepare_app_file(&app)?;
         }
 
         self.resume(&state).await
@@ -120,6 +125,40 @@ where
         self.delete_file(&update_source).await?;
 
         Ok(true)
+    }
+
+    #[cfg(unix)]
+    fn prepare_app_file(&self, file: &std::path::Path) -> Result<(), errors::Error> {
+        let mut perms = std::fs::metadata(file).map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not gather permissions information for '{}' due to an OS-level error.",
+                    file.display()
+                ),
+                "Check that Git-Tool has permission to read this file and that the parent directory exists.",
+                err,
+            )
+        })?.permissions();
+
+        // u=rwx,g=rwx,o=rx
+        perms.set_mode(0o775);
+        std::fs::set_permissions(file, perms).map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not set executable permissions on '{}' due to an OS-level error.",
+                    file.display()
+                ),
+                "Check that Git-Tool has permission to modify permissions for this file and that the parent directory exists.",
+                err,
+            )
+        })?;
+
+        Ok(())
+    }
+
+    #[cfg(not(unix))]
+    fn prepare_app_file(&self, _file: &std::path::Path) -> Result<(), errors::Error> {
+        Ok(())
     }
 }
 
