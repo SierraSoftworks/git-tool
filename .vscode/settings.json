@@ -1,8 +1,7 @@
 {
     "editor.formatOnSave": true,
-    "json.schemaDownload.enable": true,
     "yaml.schemas": {
-        "https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json": "/config/*.yml",
+        "https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json": "config/*.yml",
         "https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json": "registry/**/*.yaml"
     }
 }
