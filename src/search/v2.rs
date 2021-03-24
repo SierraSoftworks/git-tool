@@ -6,14 +6,14 @@ where
     T::Item: AsRef<str> + Clone,
 {
     let matcher = SequenceMatcher::new(sequence);
-    matcher.order_by(values, |v| v)
+    matcher.order_by(values, |v| v.to_owned())
 }
 
 pub fn best_matches_by<'a, T, F, K>(sequence: &str, values: T, to_key: F) -> Vec<T::Item>
 where
     T: IntoIterator,
     T::Item: Clone + 'a,
-    F: Fn(T::Item) -> K,
+    F: Fn(&T::Item) -> K,
     K: AsRef<str>,
 {
     let matcher = SequenceMatcher::new(sequence);
@@ -39,7 +39,7 @@ impl<'a> SequenceMatcher<'a> {
     where
         T: IntoIterator,
         T::Item: Clone + 'b,
-        F: Fn(T::Item) -> K,
+        F: Fn(&T::Item) -> K,
         K: AsRef<str>,
     {
         if self.pattern.is_empty() {
@@ -48,9 +48,10 @@ impl<'a> SequenceMatcher<'a> {
 
         values
             .into_iter()
-            .map(|v| (v.clone(), self.score(to_key(v))))
+            .map(|v| (v.clone(), self.score(to_key(&v))))
             .filter(|(_, score)| score.is_some())
             .map(|(item, score)| (item, score.unwrap()))
+            .sorted_unstable_by_key(|(v, _score)| to_key(v).as_ref().len())
             .sorted_by(|(_, score1), (_, score2)| {
                 score2
                     .partial_cmp(score1)
@@ -196,6 +197,11 @@ mod tests {
                 ]
             ),
             vec!["github.com/spartan563/test1"]
-        )
+        );
+
+        assert_eq!(
+            best_matches("main", vec!["main123", "main", "main456",]),
+            vec!["main", "main123", "main456"]
+        );
     }
 }
