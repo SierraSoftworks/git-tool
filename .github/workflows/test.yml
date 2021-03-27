@@ -67,6 +67,7 @@ jobs:
           toolchain: nightly
           target: ${{ matrix.target }}
           override: true
+          components: llvm-tools-preview
 
       - name: cargo install grcov
         if: matrix.os == 'linux'
