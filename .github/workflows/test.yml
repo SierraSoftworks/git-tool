@@ -3,9 +3,12 @@ on:
   push:
     paths-ignore:
       - "docs/**"
+env:
+  GRCOV_VERSION: 0.7.1
+
 jobs:
   test:
-    name: Test
+    name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
     strategy:
       fail-fast: true
@@ -40,6 +43,13 @@ jobs:
       - name: Setup Rust caching
         uses: Swatinem/rust-cache@v1
 
+      - name: Cache grcov binary
+        uses: actions/cache@v1
+        if: matrix.os == 'linux'
+        with:
+          path: ~/.cargo/bin/grcov
+          key: ${{ runner.os }}-grcov-${{ env.GRCOV_VERSION }}
+
       - name: Get Rust Nightly
         id: rust
         uses: actions-rs/toolchain@v1
@@ -49,10 +59,8 @@ jobs:
           override: true
 
       - name: cargo install grcov
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: grcov
+        if: matrix.os == 'linux'
+        run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
 
       - name: Prepare Git for Tests
         run: |
@@ -65,14 +73,15 @@ jobs:
           command: test
           args: --all-features --no-fail-fast
         env:
-          CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
+          RUSTFLAGS: "-Zinstrument-coverage"
 
       - name: grcov
-        uses: actions-rs/grcov@v0.1
+        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../**' --ignore '/*' -o ./lcov.info
+        if: matrix.os == 'linux'
 
       - name: codecov upload
         uses: codecov/codecov-action@v1
+        if: matrix.os == 'linux'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info
