@@ -67,9 +67,6 @@ jobs:
           git config --global user.email "test@example.com"
           git config --global init.defaultBranch "main"
 
-      - name: cargo build
-        run: cargo build --all-features --target ${{ matrix.target }}
-
       - name: cargo test
         run: cargo test --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
