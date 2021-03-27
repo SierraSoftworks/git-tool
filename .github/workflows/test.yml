@@ -10,6 +10,7 @@ jobs:
   test:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         include:
@@ -18,11 +19,21 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
+          - arch: i386
+            run_on: windows-latest
+            os: windows
+            target: i686-pc-windows-gnu
+            experimental: true
           # Linux builds
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
+          - arch: i386
+            os: linux
+            run_on: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            experimental: true
           # Apple MacOS builds
           - arch: amd64
             run_on: macos-latest
