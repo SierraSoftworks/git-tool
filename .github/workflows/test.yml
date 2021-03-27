@@ -13,6 +13,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
+        experimental: [false]
         include:
           # Windows builds
           - arch: amd64
