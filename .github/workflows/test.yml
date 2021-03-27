@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         experimental: [false]
+        coverage: [false]
         include:
           # Windows builds
           - arch: amd64
@@ -30,6 +31,7 @@ jobs:
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
+            coverage: true
           - arch: i386
             os: linux
             run_on: ubuntu-latest
@@ -56,7 +58,7 @@ jobs:
 
       - name: Cache grcov binary
         uses: actions/cache@v1
-        if: matrix.os == 'linux'
+        if: matrix.coverage
         with:
           path: ~/.cargo/bin/grcov
           key: ${{ runner.os }}-grcov-${{ env.GRCOV_VERSION }}
@@ -71,7 +73,7 @@ jobs:
           components: llvm-tools-preview
 
       - name: cargo install grcov
-        if: matrix.os == 'linux'
+        if: matrix.coverage
         run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
 
       - name: Prepare Git for Tests
@@ -87,11 +89,11 @@ jobs:
 
       - name: grcov
         run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --llvm --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
-        if: matrix.os == 'linux'
+        if: matrix.coverage
 
       - name: codecov upload
         uses: codecov/codecov-action@v1
-        if: matrix.os == 'linux'
+        if: matrix.coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info
