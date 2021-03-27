@@ -6,18 +6,33 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.run_on }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Windows builds
+          - arch: amd64
+            os: windows
+            run_on: windows-latest
+            target: x86_64-pc-windows-gnu
+          # Linux builds
+          - arch: amd64
+            run_on: ubuntu-latest
+            os: linux
+            target: x86_64-unknown-linux-gnu
+          # Apple MacOS builds
+          - arch: amd64
+            run_on: macos-latest
+            os: darwin
+            target: x86_64-apple-darwin
+
     steps:
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-
-        # This allows us to run this action using https://github.com/nektos/act
-      - name: Install dependencies for act
-        if: ${{ env.ACT }}
-        run: |
-          sudo apt-get install -y gcc g++ libssl-dev
+        if: matrix.os == 'linux'
 
       - name: Check out code
         uses: actions/checkout@v2
@@ -30,6 +45,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          target: ${{ matrix.target }}
           override: true
 
       - name: cargo install grcov
