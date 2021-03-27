@@ -76,7 +76,7 @@ jobs:
           RUSTFLAGS: "-Zinstrument-coverage"
 
       - name: grcov
-        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../**' --ignore '/*' -o ./lcov.info
+        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --llvm --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
         if: matrix.os == 'linux'
 
       - name: codecov upload
