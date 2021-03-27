@@ -19,11 +19,11 @@ jobs:
           - arch: amd64
             os: windows
             run_on: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
           - arch: i386
             run_on: windows-latest
             os: windows
-            target: i686-pc-windows-gnu
+            target: i686-pc-windows-msvc
             experimental: true
           # Linux builds
           - arch: amd64
