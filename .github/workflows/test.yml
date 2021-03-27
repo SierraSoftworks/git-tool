@@ -11,7 +11,6 @@ jobs:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
     strategy:
-      fail-fast: true
       matrix:
         include:
           # Windows builds
