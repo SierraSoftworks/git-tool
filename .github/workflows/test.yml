@@ -66,12 +66,13 @@ jobs:
         run: |
           git config --global user.name "Test User"
           git config --global user.email "test@example.com"
+          git config --global init.defaultBranch "main"
+
+      - name: cargo build
+        run: cargo build --all-features --target ${{ matrix.target }}
 
       - name: cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --no-fail-fast
+        run: cargo test --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
           RUSTFLAGS: "-Zinstrument-coverage"
 
