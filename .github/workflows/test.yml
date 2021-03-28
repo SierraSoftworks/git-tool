@@ -39,10 +39,10 @@ jobs:
             target: x86_64-apple-darwin
 
     steps:
-      - name: apt-get install libdbus
+      - name: apt-get install libdbus libssl-dev
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+          sudo apt-get install -y libdbus-1-3 libdbus-1-dev libssl-dev
         if: matrix.os == 'linux'
 
       - uses: actions/checkout@v2
