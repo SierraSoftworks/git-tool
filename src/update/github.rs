@@ -27,16 +27,26 @@ impl Source for GitHubSource {
         let uri: Uri = format!("https://api.github.com/repos/{}/releases", self.repo).parse()?;
         info!("Making GET request to {} to check for new releases.", uri);
 
-        let req = hyper::Request::get(uri)
-            .header("User-Agent", version!("Git-Tool/v"))
-            .body(hyper::Body::empty())
-            .map_err(|e| {
-                errors::system_with_internal(
-                    "Unable to construct web request for Git-Tool releases.",
-                    "Please report this error to us by opening a ticket in GitHub.",
-                    e,
-                )
-            })?;
+        // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
+        // environment to bypass rate limiting restrictions.
+        // TODO: We should probably support using the users github.com token here to avoid rate limiting
+        #[allow(unused_mut)]
+        let mut req = hyper::Request::get(uri).header("User-Agent", version!("Git-Tool/"));
+        #[cfg(test)]
+        {
+            req = match std::env::var("GITHUB_TOKEN") {
+                Ok(var) if !var.is_empty() => req.header("Authorization", format!("token {}", var)),
+                _ => req,
+            }
+        }
+
+        let req = req.body(hyper::Body::empty()).map_err(|e| {
+            errors::system_with_internal(
+                "Unable to construct web request for Git-Tool releases.",
+                "Please report this error to us by opening a ticket in GitHub.",
+                e,
+            )
+        })?;
 
         let resp = core.http_client().request(req).await?;
         debug!(
@@ -52,7 +62,7 @@ impl Source for GitHubSource {
 
                 self.get_releases_from_response(releases)
             }
-            http::StatusCode::TOO_MANY_REQUESTS => Err(errors::user(
+            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => Err(errors::user(
                 "GitHub has rate limited requests from your IP address.",
                 "Please wait until GitHub removes this rate limit before trying again.",
             )),
@@ -155,16 +165,29 @@ impl GitHubSource {
         while recursion_limit > 0 {
             recursion_limit -= 1;
 
-            let req = hyper::Request::get(current_uri)
-                .header("User-Agent", version!("Git-Tool/v"))
-                .body(hyper::Body::empty())
-                .map_err(|e| {
-                    errors::system_with_internal(
-                        "Unable to construct web request for Git-Tool releases.",
-                        "Please report this error to us by opening a ticket in GitHub.",
-                        e,
-                    )
-                })?;
+            // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
+            // environment to bypass rate limiting restrictions.
+            // TODO: We should probably support using the users github.com token here to avoid rate limiting
+            #[allow(unused_mut)]
+            let mut req =
+                hyper::Request::get(current_uri).header("User-Agent", version!("Git-Tool/"));
+            #[cfg(test)]
+            {
+                req = match std::env::var("GITHUB_TOKEN") {
+                    Ok(var) if !var.is_empty() => {
+                        req.header("Authorization", format!("token {}", var))
+                    }
+                    _ => req,
+                }
+            }
+
+            let req = req.body(hyper::Body::empty()).map_err(|e| {
+                errors::system_with_internal(
+                    "Unable to construct web request for Git-Tool releases.",
+                    "Please report this error to us by opening a ticket in GitHub.",
+                    e,
+                )
+            })?;
 
             let resp = core.http_client().request(req).await?;
 
@@ -202,7 +225,7 @@ impl GitHubSource {
                     current_uri = new_location.parse()?;
                     continue;
                 },
-                http::StatusCode::TOO_MANY_REQUESTS => {
+                http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
                     return Err(errors::user(
                         "GitHub has rate limited requests from your IP address.",
                         "Please wait until GitHub removes this rate limit before trying again."))

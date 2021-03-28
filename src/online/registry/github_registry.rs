@@ -13,16 +13,26 @@ impl Registry for GitHubRegistry {
         )
         .parse()?;
 
-        let req = hyper::Request::get(uri)
-            .header("User-Agent", version!("Git-Tool/"))
-            .body(hyper::Body::empty())
-            .map_err(|e| {
-                errors::system_with_internal(
-                    "Unable to construct web request for Git-Tool registry entries.",
-                    "Please report this error to us by opening a ticket in GitHub.",
-                    e,
-                )
-            })?;
+        // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
+        // environment to bypass rate limiting restrictions.
+        // TODO: We should probably support using the users github.com token here to avoid rate limiting
+        #[allow(unused_mut)]
+        let mut req = hyper::Request::get(uri).header("User-Agent", version!("Git-Tool/"));
+        #[cfg(test)]
+        {
+            req = match std::env::var("GITHUB_TOKEN") {
+                Ok(var) if !var.is_empty() => req.header("Authorization", format!("token {}", var)),
+                _ => req,
+            }
+        }
+
+        let req = req.body(hyper::Body::empty()).map_err(|e| {
+            errors::system_with_internal(
+                "Unable to construct web request for Git-Tool registry entries.",
+                "Please report this error to us by opening a ticket in GitHub.",
+                e,
+            )
+        })?;
 
         let resp = core.http_client().request(req).await?;
 

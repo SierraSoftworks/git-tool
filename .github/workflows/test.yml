@@ -1,0 +1,82 @@
+name: Test Changes
+on:
+  push:
+    paths-ignore:
+      - "docs/**"
+env:
+  GRCOV_VERSION: 0.7.1
+
+jobs:
+  test:
+    name: ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.run_on }}
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            os: windows
+            run_on: windows-latest
+            target: x86_64-pc-windows-gnu
+          - arch: amd64
+            run_on: ubuntu-latest
+            os: linux
+            target: x86_64-unknown-linux-gnu
+            coverage: true
+          - arch: amd64
+            run_on: macos-latest
+            os: darwin
+            target: x86_64-apple-darwin
+
+    steps:
+      - name: apt-get install libdbus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+        if: matrix.os == 'linux'
+
+      - uses: actions/checkout@v2
+
+      - name: cache ~/.cargo
+        uses: Swatinem/rust-cache@v1
+
+      - name: rustup install nightly
+        id: rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          override: true
+          components: llvm-tools-preview
+
+      - name: cargo install grcov
+        uses: SierraSoftworks/setup-grcov@v1
+        if: matrix.coverage || false
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: git config
+        run: |
+          git config --global user.name "Test User"
+          git config --global user.email "test@example.com"
+          git config --global init.defaultBranch "main"
+
+      - name: cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: "-Zinstrument-coverage"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG_CONFIG_ALLOW_CROSS: "1"
+
+      - name: grcov
+        run: grcov . --binary-path target/${{ matrix.target }}/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
+        if: matrix.coverage || false
+
+      - name: codecov upload
+        uses: codecov/codecov-action@v1
+        if: matrix.coverage || false
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./lcov.info
