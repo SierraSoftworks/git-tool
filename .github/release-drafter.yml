@@ -3,22 +3,20 @@ tag-template: "v$NEXT_PATCH_VERSION"
 categories:
   - title: "New Features"
     labels:
-      - "feat"
+      - feature
+      - enhancement
   - title: "Fixes and Improvements"
     labels:
-      - "fix"
-      - "refactor"
-      - "tweak"
+      - refactor
+      - bug
   - title: "Documentation Updates"
     labels:
-      - doc
       - docs
   - title: "Maintenance"
     labels:
-      - "ci"
-      - "repo"
-      - "chore"
-      - "chore(deps)"
+      - dependencies
+
+category-template: "### $TITLE"
 
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 template: |
@@ -35,3 +33,18 @@ version-resolver:
       - feat
       - minor
   default: patch
+
+autolabeler:
+  - label: chore
+    branch:
+      - '/chore\/.+/'
+  - label: feature
+    branch:
+      - '/feature\/.+/'
+      - '/feat\/.+/'
+  - label: bug
+    branch:
+      - '/fix\/.+/'
+  - label: docs
+    files:
+      - "*.md"
