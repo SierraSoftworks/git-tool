@@ -76,7 +76,7 @@ jobs:
       #   run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
 
       - name: cargo install grcov
-        uses: ./.github/actions/grcov
+        uses: SierraSoftworks/setup-grcov@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -87,7 +87,10 @@ jobs:
           git config --global init.defaultBranch "main"
 
       - name: cargo test
-        run: cargo test --all-features --no-fail-fast --target ${{ matrix.target }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
           RUSTFLAGS: "-Zinstrument-coverage"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
