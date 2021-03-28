@@ -57,30 +57,24 @@ jobs:
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
             extension: .exe
-          - arch: "386"
-            run_on: windows-latest
-            os: windows
-            target: i686-pc-windows-gnu
-            extension: .exe
-            experimental: true
-            cross: true
+
           # Linux builds
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
           - arch: "386"
             os: linux
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
-            cross: true
-          - arch: arm64
-            run_on: ubuntu-latest
-            os: linux
-            target: aarch64-unknown-linux-gnu
-            experimental: true
-            cross: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-9-i686-linux-gnu gcc-i686-linux-gnu gcc-multilib
+
           # Apple MacOS builds
           - arch: amd64
             run_on: macos-latest
@@ -91,14 +85,15 @@ jobs:
             os: darwin
             target: aarch64-apple-darwin
             experimental: true
-            cross: true
+            setup: |
+              echo "Updating to XCode 12.3 with Apple ARM (M1) support"
+              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
+              sudo xcode-select -s "/Applications/Xcode_12.3.app"
 
     steps:
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libdbus-1-3 libdbus-1-dev
-        if: matrix.os == 'linux'
+      - name: setup dependencies
+        run: ${{ matrix.setup }}
+        if: matrix.setup
 
       - name: Get Rust Stable
         uses: actions-rs/toolchain@v1
@@ -122,17 +117,8 @@ jobs:
         with:
           name: cargofile
 
-      - name: cross build
-        uses: actions-rs/cargo@v1
-        if: matrix.cross
-        with:
-          use-cross: true
-          command: build
-          args: --release --target ${{ matrix.target }}
-
       - name: cargo build
         uses: actions-rs/cargo@v1
-        if: "!matrix.cross"
         with:
           command: build
           args: --release --target ${{ matrix.target }}
