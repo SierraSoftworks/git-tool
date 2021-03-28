@@ -66,14 +66,14 @@ jobs:
             setup: |
               sudo apt-get update
               sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-          - arch: "386"
-            os: linux
-            run_on: ubuntu-latest
-            target: i686-unknown-linux-gnu
-            experimental: true
-            setup: |
-              sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-9-i686-linux-gnu gcc-i686-linux-gnu
+          # - arch: "386"
+          #   os: linux
+          #   run_on: ubuntu-latest
+          #   target: i686-unknown-linux-gnu
+          #   experimental: true
+          #   setup: |
+          #     sudo apt-get update
+          #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-multilib
 
           # Apple MacOS builds
           - arch: amd64

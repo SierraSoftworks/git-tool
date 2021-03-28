@@ -20,22 +20,34 @@ jobs:
             target: x86_64-pc-windows-gnu
 
           - arch: amd64
-            run_on: ubuntu-latest
+            run_on: ubuntu-20.04
             os: linux
             target: x86_64-unknown-linux-gnu
             coverage: true
             setup: |
               sudo apt-get update
               sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-          - arch: "386"
-            os: linux
-            run_on: ubuntu-latest
-            target: i686-unknown-linux-gnu
-            experimental: true
-            skiptests: true
-            setup: |
-              sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-9-i686-linux-gnu gcc-i686-linux-gnu
+          # - arch: "386"
+          #   os: linux
+          #   run_on: ubuntu-20.04
+          #   target: i686-unknown-linux-gnu
+          #   experimental: true
+          #   skiptests: true
+          #   setup: |
+          #     sudo apt-get update
+          #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+          # - arch: "arm64"
+          #   os: linux
+          #   run_on: ubuntu-20.04
+          #   target: aarch64-unknown-linux-gnu
+          #   experimental: true
+          #   skiptests: true
+          #   setup: |
+          #     sudo apt-get update
+          #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-aarch64-linux-gnu lld
+
+          #     # Ensure that the libgcc
+          #     sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
 
           - arch: amd64
             run_on: macos-latest
