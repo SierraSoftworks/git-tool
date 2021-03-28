@@ -8,14 +8,20 @@ Head on over and download the executable for your platform.
  - **Windows** users on 64-bit platforms should download `git-tool-windows-amd64.exe`.
  - **Linux** users on 64-bit platforms should download `git-tool-linux-amd64`.
  - **MacOS** users on Intel platforms should download `git-tool-darwin-amd64` while those on Apple Silicon should download `git-tool-darwin-arm64`.
-
- If your platform is not supported, please reach out by creating a [GitHub Issue](https://github.com/SierraSoftworks/git-tool/issues/new/choose)
- and we will try to help.
 :::
 
 
 Once you have downloaded the latest Git-Tool executable, rename it to `git-tool` and place it in a directory which is on your `$PATH`.
 On Linux and MacOS machines, you may need to use `chmod +x git-tool` to mark the program as executable.
+
+### Using Cargo
+If you'd prefer, or if we don't (yet) provide pre-built releases for your platform, you can build
+Git-Tool yourself using `cargo`. Note that you'll need to have [rust installed](https://www.rust-lang.org/tools/install)
+for this to work.
+
+```bash
+cargo install --git https://github.com/SierraSoftworks/git-tool.git
+```
 
 ## Setting up your `PATH`
 
