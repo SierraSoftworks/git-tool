@@ -57,7 +57,7 @@ jobs:
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
             extension: .exe
-          - arch: i386
+          - arch: "386"
             run_on: windows-latest
             os: windows
             target: i686-pc-windows-gnu
@@ -68,7 +68,7 @@ jobs:
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
-          - arch: i386
+          - arch: "386"
             os: linux
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
