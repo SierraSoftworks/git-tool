@@ -10,13 +10,10 @@ jobs:
   test:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
       matrix:
-        coverage: [false]
-        experimental: [false]
         include:
-          # Windows builds
           - arch: amd64
             os: windows
             run_on: windows-latest
@@ -64,7 +61,7 @@ jobs:
 
       - name: cargo install grcov
         uses: SierraSoftworks/setup-grcov@v1
-        if: matrix.coverage
+        if: matrix.coverage || false
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,12 +82,12 @@ jobs:
           PKG_CONFIG_ALLOW_CROSS: "1"
 
       - name: grcov
-        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --llvm --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
-        if: matrix.coverage
+        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
+        if: matrix.coverage || false
 
       - name: codecov upload
         uses: codecov/codecov-action@v1
-        if: matrix.coverage
+        if: matrix.coverage || false
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info
