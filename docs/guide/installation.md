@@ -5,9 +5,9 @@ We publish the latest Git-Tool releases on [GitHub][release] for all of our supp
 Head on over and download the executable for your platform.
 
 ::: tip
- - **Windows** users on `x86_64` platforms should download `git-tool-windows-amd64.exe`.
- - **Linux** users on `x86_64` platforms should download `git-tool-linux-amd64`.
- - **MacOS** users on `x86_64` or `arm64` platforms should download `git-tool-darwin-amd64`.
+ - **Windows** users on 64-bit platforms should download `git-tool-windows-amd64.exe`.
+ - **Linux** users on 64-bit platforms should download `git-tool-linux-amd64`.
+ - **MacOS** users on Intel platforms should download `git-tool-darwin-amd64` while those on Apple Silicon should download `git-tool-darwin-arm64`.
 
  If your platform is not supported, please reach out by creating a [GitHub Issue](https://github.com/SierraSoftworks/git-tool/issues/new/choose)
  and we will try to help.
