@@ -54,12 +54,12 @@ jobs:
           - arch: amd64
             os: windows
             run_on: windows-latest
-            target: x86_64-pc-windows-msvc
+            target: x86_64-pc-windows-gnu
             extension: .exe
           - arch: i386
             run_on: windows-latest
             os: windows
-            target: i686-pc-windows-msvc
+            target: i686-pc-windows-gnu
             extension: .exe
           # Linux builds
           - arch: amd64
@@ -124,18 +124,18 @@ jobs:
 
       - name: Upload Debug Symbols to Sentry
         run: |
-          sentry-cli upload-dif -o sierra-softworks -p git-tool --include-sources ./target/${{ matrix.target }}
+          sentry-cli upload-dif -o sierra-softworks -p git-tool --include-sources ./target/${{ matrix.target }}/release/
 
       - name: Strip Debug Symbols
         run: |
-          strip --strip-debug target/${{ matrix.target }}/git-tool${{ matrix.extension }}
+          strip --strip-debug target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}
         if: matrix.os == 'linux'
 
       - name: Upload GitHub Release Artifacts
         uses: Shopify/upload-to-release@v1
         with:
           name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
-          path: "target/${{ matrix.target }}/git-tool${{ matrix.extension }}"
+          path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           content-type: application/octet-stream
 
