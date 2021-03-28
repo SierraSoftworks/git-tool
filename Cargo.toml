@@ -6,6 +6,9 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "git-tool"
+
 [dependencies]
 async-trait = "0.1"
 base64 = "0.13"
@@ -16,8 +19,6 @@ futures = "0.3"
 gtmpl = "0.6"
 human-errors = "0.1.1"
 http = "0.2"
-hyper = { version = "0.14", features = ["client","http1","http2"] }
-hyper-tls = "0.5"
 itertools = "0.10"
 keyring = "0.10"
 lazy_static = "1.4"
@@ -25,17 +26,19 @@ log = "0.4"
 nix = "0.20.0"
 once_cell = "1.7"
 rpassword = "5.0"
+reqwest = { version = "0.11.2", default-features = false, features = ["rustls-tls", "json", "stream"] }
 semver = "0.11"
-sentry = { version = "0.22", features = ["log","test"] }
+sentry = { version = "0.22", default-features = false, features = ["reqwest", "log", "rustls"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_yaml = "0.8"
 shell-words = "1.0"
-tokio = { version = "1.4", features = ["full"] }
+tokio = { version = "1.4", features = ["rt", "time", "fs", "process", "macros", "signal"] }
 
 [dev-dependencies]
 mocktopus = "0.7.10"
 tempfile = "3.2"
+sentry = { version = "0.22", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 
 [profile.release]
 debug = true

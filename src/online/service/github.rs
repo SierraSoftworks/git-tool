@@ -1,7 +1,6 @@
 use super::*;
 use crate::errors;
-use http::{Request, StatusCode, Uri};
-use hyper::Body;
+use reqwest::{Method, Request, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -23,9 +22,9 @@ impl OnlineService for GitHubService {
         let current_user = self.get_user_login(core).await?;
 
         let uri = if repo.get_namespace() == current_user {
-            format!("https://api.github.com/user/repos").parse()?
+            format!("https://api.github.com/user/repos")
         } else {
-            format!("https://api.github.com/orgs/{}/repos", repo.get_namespace()).parse()?
+            format!("https://api.github.com/orgs/{}/repos", repo.get_namespace())
         };
 
         let new_repo = NewRepo {
@@ -40,9 +39,9 @@ impl OnlineService for GitHubService {
         let new_repo_resp: Result<NewRepoResponse, GitHubErrorResponse> = self
             .make_request(
                 core,
-                "POST",
-                uri,
-                Body::from(req_body),
+                Method::POST,
+                &uri,
+                req_body,
                 vec![StatusCode::CREATED],
             )
             .await?;
@@ -57,10 +56,14 @@ impl OnlineService for GitHubService {
 
 impl GitHubService {
     async fn get_user_login(&self, core: &Core) -> Result<String, Error> {
-        let uri: Uri = "https://api.github.com/user".parse()?;
-
         let user: Result<UserProfile, GitHubErrorResponse> = self
-            .make_request(core, "GET", uri, Body::empty(), vec![StatusCode::OK])
+            .make_request(
+                core,
+                Method::GET,
+                "https://api.github.com/user",
+                "",
+                vec![StatusCode::OK],
+            )
             .await?;
 
         match user {
@@ -69,43 +72,44 @@ impl GitHubService {
         }
     }
 
-    async fn make_request<T: DeserializeOwned>(
+    async fn make_request<B: Into<reqwest::Body>, T: DeserializeOwned>(
         &self,
         core: &Core,
-        method: &str,
-        uri: Uri,
-        body: Body,
+        method: Method,
+        uri: &str,
+        body: B,
         acceptable: Vec<StatusCode>,
     ) -> Result<Result<T, GitHubErrorResponse>, Error> {
+        let url = uri.parse().map_err(|e| {
+            errors::system_with_internal(
+                &format!("Unable to parse GitHub API URL '{}'.", uri),
+                "Please report this error to us by opening an issue on GitHub.",
+                e,
+            )
+        })?;
+
         let token = core.keychain().get_token("github.com")?;
 
-        let req = Request::builder()
-            .uri(&uri)
-            .method(method)
-            .header("User-Agent", version!("Git-Tool/v"))
-            .header("Accept", "application/vnd.github.v3+json")
-            .header("Authorization", format!("token {}", token))
-            .body(body)
-            .map_err(|e| {
-                errors::system_with_internal(
-                    "Unable to construct web request for GitHub.",
-                    "Please report this error to us by opening a ticket in GitHub.",
-                    e,
-                )
-            })?;
+        let mut req = Request::new(method, url);
+
+        *req.body_mut() = Some(body.into());
+
+        let headers = req.headers_mut();
+
+        headers.append("User-Agent", version!("Git-Tool/v").parse()?);
+        headers.append("Accept", "application/vnd.github.v3+json".parse()?);
+        headers.append("Authorization", format!("token {}", token).parse()?);
 
         let resp = core.http_client().request(req).await?;
 
         match resp.status() {
             status if acceptable.contains(&status) => {
-                let body = hyper::body::to_bytes(resp.into_body()).await?;
-                let result = serde_json::from_slice(&body)?;
+                let result = resp.json().await?;
 
                 Ok(Ok(result))
             }
             status => {
-                let body = hyper::body::to_bytes(resp.into_body()).await?;
-                let mut result: GitHubErrorResponse = serde_json::from_slice(&body)?;
+                let mut result: GitHubErrorResponse = resp.json().await?;
                 result.http_status_code = status;
 
                 Ok(Err(result))

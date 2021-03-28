@@ -1,6 +1,5 @@
 use super::{system_with_internal, user, user_with_internal, Error};
-use http::uri::InvalidUri;
-use hyper::StatusCode;
+use http::{uri::InvalidUri, StatusCode};
 use std::{convert, fmt::Debug};
 
 impl convert::From<InvalidUri> for Error {
@@ -13,9 +12,9 @@ impl convert::From<InvalidUri> for Error {
     }
 }
 
-impl convert::From<hyper::Error> for Error {
-    fn from(err: hyper::Error) -> Self {
-        if err.is_user() {
+impl convert::From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        if err.is_redirect() {
             user_with_internal(
                 "We could not complete a web request to due to a redirect loop.",
                 "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.", 
@@ -34,11 +33,8 @@ impl convert::From<hyper::Error> for Error {
     }
 }
 
-impl<T> convert::From<hyper::Response<T>> for Error
-where
-    T: Debug,
-{
-    fn from(resp: hyper::Response<T>) -> Self {
+impl convert::From<reqwest::Response> for Error {
+    fn from(resp: reqwest::Response) -> Self {
         match resp.status() {
             StatusCode::NOT_FOUND => user(
                 "We received a 404 Not Found response when sending a web request.",
@@ -52,34 +48,38 @@ where
             _ => system_with_internal(
                 format!("We received a {} status code when making a web request.", resp.status()).as_str(),
                 "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
-                HyperResponseError::from(resp))
+                ResponseError::from(resp))
         }
+    }
+}
+
+impl convert::From<http::header::InvalidHeaderValue> for Error {
+    fn from(err: http::header::InvalidHeaderValue) -> Self {
+        system_with_internal(
+            "Could not parse header value due to an internal error.",
+            "Please report this error to us by creating an issue on GitHub.",
+            err,
+        )
     }
 }
 
 #[derive(Debug)]
-pub struct HyperResponseError {
+pub struct ResponseError {
     pub status_code: StatusCode,
     pub body: Option<String>,
 }
 
-impl HyperResponseError {
-    pub async fn with_body<T>(resp: hyper::Response<T>) -> Self
-    where
-        T: hyper::body::HttpBody,
-    {
+impl ResponseError {
+    pub async fn with_body(resp: reqwest::Response) -> Self {
         Self {
             status_code: resp.status(),
-            body: hyper::body::to_bytes(resp.into_body())
-                .await
-                .ok()
-                .and_then(|data| String::from_utf8(data.to_vec()).ok()),
+            body: resp.text().await.ok(),
         }
     }
 }
 
-impl<T> From<hyper::Response<T>> for HyperResponseError {
-    fn from(resp: hyper::Response<T>) -> Self {
+impl From<reqwest::Response> for ResponseError {
+    fn from(resp: reqwest::Response) -> Self {
         Self {
             status_code: resp.status(),
             body: None,
@@ -87,7 +87,7 @@ impl<T> From<hyper::Response<T>> for HyperResponseError {
     }
 }
 
-impl std::fmt::Display for HyperResponseError {
+impl std::fmt::Display for ResponseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(body) = self.body.clone() {
             write!(
@@ -108,4 +108,4 @@ impl std::fmt::Display for HyperResponseError {
     }
 }
 
-impl std::error::Error for HyperResponseError {}
+impl std::error::Error for ResponseError {}
