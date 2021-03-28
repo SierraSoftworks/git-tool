@@ -86,16 +86,25 @@ jobs:
           git config --global user.email "test@example.com"
           git config --global init.defaultBranch "main"
 
-      - name: cargo test
+      - name: cross test
         uses: actions-rs/cargo@v1
+        if: matrix.cross
         with:
-          use-cross: ${{ matrix.cross || false }}
+          use-cross: true
           command: test
           args: --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
-          RUSTFLAGS: ${{ matrix.coverage && '-Zinstrument-coverage' || '' }}"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG_CONFIG_ALLOW_CROSS: "1"
+
+      - name: cargo test
+        uses: actions-rs/cargo@v1
+        if: "!matrix.cross"
+        with:
+          command: test
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: -Zinstrument-coverage
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: grcov
         run: grcov . --binary-path target/${{ matrix.target }}/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
