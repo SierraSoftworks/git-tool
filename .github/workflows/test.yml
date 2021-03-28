@@ -16,7 +16,7 @@ jobs:
           - arch: amd64
             os: windows
             run_on: windows-latest
-            target: x86_64-pc-windows-msvc
+            target: x86_64-pc-windows-gnu
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
@@ -71,7 +71,7 @@ jobs:
           PKG_CONFIG_ALLOW_CROSS: "1"
 
       - name: grcov
-        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
+        run: grcov . --binary-path target/${{ matrix.target }}/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
         if: matrix.coverage || false
 
       - name: codecov upload
