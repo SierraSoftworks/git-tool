@@ -10,6 +10,7 @@ jobs:
   test:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
       matrix:
         include:
@@ -17,15 +18,40 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
+          - arch: "386"
+            run_on: windows-latest
+            os: windows
+            target: i686-pc-windows-gnu
+            extension: .exe
+            experimental: true
+            cross: true
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
             coverage: true
+          - arch: "386"
+            os: linux
+            run_on: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            experimental: true
+            cross: true
+          - arch: arm64
+            run_on: ubuntu-latest
+            os: linux
+            target: aarch64-unknown-linux-gnu
+            experimental: true
+            cross: true
           - arch: amd64
             run_on: macos-latest
             os: darwin
             target: x86_64-apple-darwin
+          - arch: arm64
+            run_on: macos-latest
+            os: darwin
+            target: aarch64-apple-darwin
+            experimental: true
+            cross: true
 
     steps:
       - name: apt-get install libdbus
@@ -60,15 +86,25 @@ jobs:
           git config --global user.email "test@example.com"
           git config --global init.defaultBranch "main"
 
+      - name: cross test
+        uses: actions-rs/cargo@v1
+        if: matrix.cross
+        with:
+          use-cross: true
+          command: test
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: cargo test
         uses: actions-rs/cargo@v1
+        if: "!matrix.cross"
         with:
           command: test
           args: --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
-          RUSTFLAGS: "-Zinstrument-coverage"
+          RUSTFLAGS: -Zinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG_CONFIG_ALLOW_CROSS: "1"
 
       - name: grcov
         run: grcov . --binary-path target/${{ matrix.target }}/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
