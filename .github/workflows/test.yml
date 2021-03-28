@@ -19,29 +19,40 @@ jobs:
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
           - arch: "386"
-            run_on: windows-latest
+            run_on: ubuntu-latest
             os: windows
             target: i686-pc-windows-gnu
             extension: .exe
             experimental: true
-            cross: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y mingw-w64
+
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
             coverage: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
           - arch: "386"
             os: linux
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
-            cross: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
           - arch: arm64
             run_on: ubuntu-latest
             os: linux
             target: aarch64-unknown-linux-gnu
             experimental: true
-            cross: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+
           - arch: amd64
             run_on: macos-latest
             os: darwin
@@ -51,14 +62,14 @@ jobs:
             os: darwin
             target: aarch64-apple-darwin
             experimental: true
-            cross: true
+            setup: |
+              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
+              sudo xcode-select -s "/Applications/Xcode_12.3.app"
 
     steps:
-      - name: apt-get install libdbus
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-        if: matrix.os == 'linux'
+      - name: setup dependencies
+        run: ${{ matrix.setup }}
+        if: matrix.setup
 
       - uses: actions/checkout@v2
 
