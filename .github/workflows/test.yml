@@ -10,10 +10,11 @@ jobs:
   test:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
-    continue-on-error: ${{ matrix.experimental || false }}
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         coverage: [false]
+        experimental: [false]
         include:
           # Windows builds
           - arch: amd64
@@ -25,7 +26,6 @@ jobs:
             os: windows
             target: i686-pc-windows-msvc
             experimental: true
-          # Linux builds
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
@@ -36,33 +36,24 @@ jobs:
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
-          # Apple MacOS builds
           - arch: amd64
             run_on: macos-latest
             os: darwin
             target: x86_64-apple-darwin
 
     steps:
-      - name: Install Dependencies
+      - name: apt-get install libdbus
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-3 libdbus-1-dev
         if: matrix.os == 'linux'
 
-      - name: Check out code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Setup Rust caching
+      - name: cache ~/.cargo
         uses: Swatinem/rust-cache@v1
 
-      # - name: Cache grcov binary
-      #   uses: actions/cache@v1
-      #   if: matrix.coverage
-      #   with:
-      #     path: ~/.cargo/bin/grcov
-      #     key: ${{ runner.os }}-grcov-${{ env.GRCOV_VERSION }}
-
-      - name: Get Rust Nightly
+      - name: rustup install nightly
         id: rust
         uses: actions-rs/toolchain@v1
         with:
@@ -71,16 +62,13 @@ jobs:
           override: true
           components: llvm-tools-preview
 
-      # - name: cargo install grcov
-      #   if: matrix.coverage
-      #   run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
-
       - name: cargo install grcov
         uses: SierraSoftworks/setup-grcov@v1
+        if: matrix.coverage
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare Git for Tests
+      - name: git config
         run: |
           git config --global user.name "Test User"
           git config --global user.email "test@example.com"
