@@ -1,22 +1,35 @@
-name-template: 'Version $NEXT_PATCH_VERSION'
-tag-template: 'v$NEXT_PATCH_VERSION'
+name-template: "Version $NEXT_PATCH_VERSION"
+tag-template: "v$NEXT_PATCH_VERSION"
 categories:
-  - title: '🚀 Features'
+  - title: "New Features"
     labels:
-      - 'feat'
-  - title: '🐛 Bug Fixes'
+      - "feat"
+  - title: "Fixes and Improvements"
     labels:
-      - 'fix'
-  - title: '🧰 Maintenance'
+      - "fix"
+      - "refactor"
+  - title: "Documentation Updates"
     labels:
-      - 'chore'
-      - 'refactor'
-      - 'ci'
-      - 'doc'
-      - 'repo'
-    
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+      - doc
+      - docs
+  - title: "Maintenance"
+    labels:
+      - "ci"
+      - "repo"
+      - "chore"
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 template: |
-  ## Changes
+  ## What's Changed
 
   $CHANGES
+
+version-resolver:
+  major:
+    labels:
+      - major
+  minor:
+    labels:
+      - feat
+      - minor
+  default: patch
