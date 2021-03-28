@@ -18,15 +18,6 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
-          - arch: "386"
-            run_on: ubuntu-latest
-            os: windows
-            target: i686-pc-windows-gnu
-            extension: .exe
-            experimental: true
-            setup: |
-              sudo apt-get update
-              sudo apt-get install -y mingw-w64
 
           - arch: amd64
             run_on: ubuntu-latest
@@ -41,17 +32,19 @@ jobs:
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
+            skiptests: true
             setup: |
               sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev libssl-dev
           - arch: arm64
             run_on: ubuntu-latest
             os: linux
             target: aarch64-unknown-linux-gnu
             experimental: true
+            skiptests: true
             setup: |
               sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev libssl-dev
 
           - arch: amd64
             run_on: macos-latest
@@ -62,7 +55,9 @@ jobs:
             os: darwin
             target: aarch64-apple-darwin
             experimental: true
+            skiptests: true
             setup: |
+              echo "Updating to XCode 12.3 with Apple ARM (M1) support"
               sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
               sudo xcode-select -s "/Applications/Xcode_12.3.app"
 
@@ -97,19 +92,16 @@ jobs:
           git config --global user.email "test@example.com"
           git config --global init.defaultBranch "main"
 
-      - name: cross test
+      - name: cargo build
         uses: actions-rs/cargo@v1
-        if: matrix.cross
+        if: matrix.skiptests
         with:
-          use-cross: true
-          command: test
-          args: --all-features --no-fail-fast --target ${{ matrix.target }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          command: build
+          args: --all-features --target ${{ matrix.target }}
 
       - name: cargo test
         uses: actions-rs/cargo@v1
-        if: "!matrix.cross"
+        if: "!matrix.skiptests"
         with:
           command: test
           args: --all-features --no-fail-fast --target ${{ matrix.target }}
