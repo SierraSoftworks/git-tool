@@ -63,6 +63,7 @@ jobs:
             target: i686-pc-windows-gnu
             extension: .exe
             experimental: true
+            cross: true
           # Linux builds
           - arch: amd64
             run_on: ubuntu-latest
@@ -73,11 +74,13 @@ jobs:
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
+            cross: true
           - arch: arm64
             run_on: ubuntu-latest
             os: linux
             target: aarch64-unknown-linux-gnu
             experimental: true
+            cross: true
           # Apple MacOS builds
           - arch: amd64
             run_on: macos-latest
@@ -88,6 +91,7 @@ jobs:
             os: darwin
             target: aarch64-apple-darwin
             experimental: true
+            cross: true
 
     steps:
       - name: Install Dependencies
@@ -121,7 +125,7 @@ jobs:
       - name: Build Release
         uses: actions-rs/cargo@v1
         with:
-          use-cross: true
+          use-cross: ${{ matrix.cross || false }}
           command: build
           args: --release --target ${{ matrix.target }}
         env:

@@ -18,27 +18,30 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-gnu
-          - arch: i386
+          - arch: "386"
             run_on: windows-latest
             os: windows
             target: i686-pc-windows-gnu
             extension: .exe
             experimental: true
+            cross: true
           - arch: amd64
             run_on: ubuntu-latest
             os: linux
             target: x86_64-unknown-linux-gnu
             coverage: true
-          - arch: i386
+          - arch: "386"
             os: linux
             run_on: ubuntu-latest
             target: i686-unknown-linux-gnu
             experimental: true
+            cross: true
           - arch: arm64
             run_on: ubuntu-latest
             os: linux
             target: aarch64-unknown-linux-gnu
             experimental: true
+            cross: true
           - arch: amd64
             run_on: macos-latest
             os: darwin
@@ -48,6 +51,7 @@ jobs:
             os: darwin
             target: aarch64-apple-darwin
             experimental: true
+            cross: true
 
     steps:
       - name: apt-get install libdbus
@@ -85,6 +89,7 @@ jobs:
       - name: cargo test
         uses: actions-rs/cargo@v1
         with:
+          use-cross: ${{ matrix.cross || false }}
           command: test
           args: --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
