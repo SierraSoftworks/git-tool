@@ -86,6 +86,7 @@ jobs:
         run: cargo test --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
           RUSTFLAGS: "-Zinstrument-coverage"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: grcov
         run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --llvm --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
