@@ -122,14 +122,20 @@ jobs:
         with:
           name: cargofile
 
-      - name: Build Release
+      - name: cross build
         uses: actions-rs/cargo@v1
+        if: matrix.cross
         with:
-          use-cross: ${{ matrix.cross || false }}
+          use-cross: true
           command: build
           args: --release --target ${{ matrix.target }}
-        env:
-          PKG_CONFIG_ALLOW_CROSS: "1"
+
+      - name: cargo build
+        uses: actions-rs/cargo@v1
+        if: "!matrix.cross"
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
 
       - name: Upload Debug Symbols to Sentry
         run: |

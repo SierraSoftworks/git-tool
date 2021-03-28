@@ -2,7 +2,6 @@ extern crate base64;
 extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
-extern crate hyper;
 extern crate keyring;
 #[macro_use]
 extern crate lazy_static;

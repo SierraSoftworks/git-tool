@@ -1,6 +1,5 @@
 use super::{errors, Error};
 use crate::core::Core;
-use hyper::StatusCode;
 
 pub async fn add_or_update(
     core: &Core,
@@ -33,16 +32,24 @@ pub async fn add_or_update(
 }
 
 pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
-    let uri = "https://www.toptal.com/developers/gitignore/api/list".parse()?;
+    let uri = "https://www.toptal.com/developers/gitignore/api/list"
+        .parse()
+        .map_err(|e| {
+            errors::system_with_internal(
+                "Could not parse gitignore.io URL.",
+                "Please report this error to us by creating an issue on GitHub.",
+                e,
+            )
+        })?;
     let response = core.http_client().get(uri).await?;
 
     if !response.status().is_success() {
         return Err(response.into());
     }
 
-    let content = hyper::body::to_bytes(response.into_body()).await?;
+    let content = response.text().await?;
     Ok(content
-        .split(|c: &u8| *c == 0x0a || *c == 0x2c)
+        .split(|c: char| c == ',' || c == '\n')
         .map(|slice| String::from_utf8(Vec::from(slice)).unwrap_or_default())
         .collect())
 }
@@ -56,10 +63,17 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
         "https://www.toptal.com/developers/gitignore/api/{}",
         langs.join(",")
     )
-    .parse()?;
+    .parse()
+    .map_err(|e| {
+        errors::system_with_internal(
+            "Could not parse gitignore.io URL.",
+            "Please report this error to us by creating an issue on GitHub.",
+            e,
+        )
+    })?;
     let response = core.http_client().get(uri).await?;
 
-    if response.status() == StatusCode::NOT_FOUND {
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(errors::user(
             "We could not find one of the languages you requested.",
             "Check that the languages you've provided are all available using the 'gt ignore' command."));
@@ -69,9 +83,7 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
         return Err(response.into());
     }
 
-    let body = hyper::body::to_bytes(response.into_body()).await?;
-    let content = String::from_utf8(body.to_vec()).unwrap_or_default();
-    Ok(content)
+    Ok(response.text().await?)
 }
 
 struct GitIgnoreFileSection {

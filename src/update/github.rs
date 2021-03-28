@@ -1,7 +1,6 @@
 use super::*;
 use crate::{core::Core, errors};
-use http::Uri;
-use hyper::body::HttpBody;
+use futures::StreamExt;
 use serde::Deserialize;
 use std::env::consts::{ARCH, OS};
 
@@ -24,31 +23,10 @@ impl Default for GitHubSource {
 #[async_trait::async_trait]
 impl Source for GitHubSource {
     async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::core::Error> {
-        let uri: Uri = format!("https://api.github.com/repos/{}/releases", self.repo).parse()?;
+        let uri = format!("https://api.github.com/repos/{}/releases", self.repo);
         info!("Making GET request to {} to check for new releases.", uri);
 
-        // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
-        // environment to bypass rate limiting restrictions.
-        // TODO: We should probably support using the users github.com token here to avoid rate limiting
-        #[allow(unused_mut)]
-        let mut req = hyper::Request::get(uri).header("User-Agent", version!("Git-Tool/"));
-        #[cfg(test)]
-        {
-            req = match std::env::var("GITHUB_TOKEN") {
-                Ok(var) if !var.is_empty() => req.header("Authorization", format!("token {}", var)),
-                _ => req,
-            }
-        }
-
-        let req = req.body(hyper::Body::empty()).map_err(|e| {
-            errors::system_with_internal(
-                "Unable to construct web request for Git-Tool releases.",
-                "Please report this error to us by opening a ticket in GitHub.",
-                e,
-            )
-        })?;
-
-        let resp = core.http_client().request(req).await?;
+        let resp = self.get(core, &uri).await?;
         debug!(
             "Received HTTP {} {} from GitHub when requesting releases.",
             resp.status().as_u16(),
@@ -56,18 +34,19 @@ impl Source for GitHubSource {
         );
 
         match resp.status() {
-            http::StatusCode::OK => {
-                let body = hyper::body::to_bytes(resp.into_body()).await?;
-                let releases: Vec<GitHubRelease> = serde_json::from_slice(&body)?;
+            reqwest::StatusCode::OK => {
+                let releases: Vec<GitHubRelease> = resp.json().await?;
 
                 self.get_releases_from_response(releases)
             }
-            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => Err(errors::user(
-                "GitHub has rate limited requests from your IP address.",
-                "Please wait until GitHub removes this rate limit before trying again.",
-            )),
+            reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
+                Err(errors::user(
+                    "GitHub has rate limited requests from your IP address.",
+                    "Please wait until GitHub removes this rate limit before trying again.",
+                ))
+            }
             status => {
-                let inner_error = errors::hyper::HyperResponseError::with_body(resp).await;
+                let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
                     &format!("Received an HTTP {} response from GitHub when attempting to list items in the Git-Tool registry.", status),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
@@ -83,17 +62,64 @@ impl Source for GitHubSource {
         variant: &ReleaseVariant,
         into: &mut W,
     ) -> Result<(), crate::core::Error> {
-        let uri: Uri = format!(
+        let uri = format!(
             "https://github.com/{}/releases/download/{}/{}",
             self.repo, release.id, variant.id
-        )
-        .parse()?;
+        );
 
-        self.download_to_file(core, uri, into).await
+        self.download_to_file(core, &uri, into).await
     }
 }
 
 impl GitHubSource {
+    async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, errors::Error> {
+        let uri: reqwest::Url = url.parse().map_err(|e| {
+            errors::system_with_internal(
+                &format!("Unable to parse GitHub API URL '{}'.", url),
+                "Please report this error to us by opening a ticket in GitHub.",
+                e,
+            )
+        })?;
+
+        // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
+        // environment to bypass rate limiting restrictions.
+        // TODO: We should probably support using the users github.com token here to avoid rate limiting
+        #[allow(unused_mut)]
+        let mut req = reqwest::Request::new(reqwest::Method::GET, uri);
+
+        req.headers_mut().append(
+            "User-Agent",
+            version!("Git-Tool/").parse().map_err(|e| {
+                errors::system_with_internal(
+                    &format!(
+                        "Unable to parse Git-Tool user agent header {}.",
+                        version!("Git-Tool/")
+                    ),
+                    "Please report this error to us by opening a ticket in GitHub.",
+                    e,
+                )
+            })?,
+        );
+
+        #[cfg(test)]
+        {
+            if let Ok(token) = std::env::var("GITHUB_TOKEN") {
+                req.headers_mut().append(
+                    "Authorization",
+                    format!("token {}", token).parse().map_err(|e| {
+                        errors::system_with_internal(
+                            "Unable to parse GITHUB_TOKEN authorization header.",
+                            "Please report this error to us by opening a ticket in GitHub.",
+                            e,
+                        )
+                    })?,
+                );
+            }
+        }
+
+        core.http_client().request(req).await
+    }
+
     fn get_releases_from_response(
         &self,
         releases: Vec<GitHubRelease>,
@@ -156,91 +182,42 @@ impl GitHubSource {
     async fn download_to_file<W: std::io::Write + Send>(
         &self,
         core: &Core,
-        uri: Uri,
+        uri: &str,
         into: &mut W,
     ) -> Result<(), errors::Error> {
-        let mut recursion_limit = 5;
-        let mut current_uri = uri.clone();
+        let resp = self.get(core, uri).await?;
 
-        while recursion_limit > 0 {
-            recursion_limit -= 1;
+        match resp.status() {
+            http::StatusCode::OK => {
+                let mut stream = resp.bytes_stream();
 
-            // NOTE: This allows us to consume the GITHUB_TOKEN environment variable in the test
-            // environment to bypass rate limiting restrictions.
-            // TODO: We should probably support using the users github.com token here to avoid rate limiting
-            #[allow(unused_mut)]
-            let mut req =
-                hyper::Request::get(current_uri).header("User-Agent", version!("Git-Tool/"));
-            #[cfg(test)]
-            {
-                req = match std::env::var("GITHUB_TOKEN") {
-                    Ok(var) if !var.is_empty() => {
-                        req.header("Authorization", format!("token {}", var))
-                    }
-                    _ => req,
+                while let Some(buf) = stream.next().await {
+                    let buf = buf?;
+                    into.write_all(&buf).map_err(|err| {
+                        errors::user_with_internal(
+                            &format!(
+                                "Could not write data from '{}' to disk due to an OS-level error.",
+                                uri
+                            ),
+                            "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
+                            err,
+                        )
+                    })?;
                 }
-            }
 
-            let req = req.body(hyper::Body::empty()).map_err(|e| {
-                errors::system_with_internal(
-                    "Unable to construct web request for Git-Tool releases.",
-                    "Please report this error to us by opening a ticket in GitHub.",
-                    e,
-                )
-            })?;
-
-            let resp = core.http_client().request(req).await?;
-
-            match resp.status() {
-                http::StatusCode::OK => {
-                    let mut body = resp.into_body();
-
-                    while let Some(buf) = body.data().await {
-                        let buf = buf?;
-                        into.write_all(&buf).map_err(|err| {
-                            errors::user_with_internal(
-                                &format!(
-                                    "Could not write data from '{}' to disk due to an OS-level error.",
-                                    uri
-                                ),
-                                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
-                                err,
-                            )
-                        })?;
-                    }
-
-                    return Ok(())
-                },
-                http::StatusCode::FOUND | http::StatusCode::MOVED_PERMANENTLY => {
-                    let new_location = resp.headers().get("Location")
-                        .ok_or(errors::system(
-                    "GitHub returned a redirect response without an appropriate Location header.",
-                    "Please report this issue to us on GitHub so that we can investigate and implement a fix/workaround for the problem."))
-                    .and_then(|h| h.to_str()
-                        .map_err(|e| errors::system_with_internal(
-                            "GitHub returned a redirect response without an appropriate Location header.",
-                            "Please report this issue to us on GitHub so that we can investigate and implement a fix/workaround for the problem.",
-                            e)))?;
-
-                    current_uri = new_location.parse()?;
-                    continue;
-                },
-                http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
-                    return Err(errors::user(
-                        "GitHub has rate limited requests from your IP address.",
-                        "Please wait until GitHub removes this rate limit before trying again."))
-                },
-                status => {
-                    return Err(errors::system(
-                        &format!("Received an HTTP {} response from GitHub when attempting to download the update for your platform ({}).", status, uri),
-                        "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."))
-                }
+                return Ok(())
+            },
+            reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
+                return Err(errors::user(
+                    "GitHub has rate limited requests from your IP address.",
+                    "Please wait until GitHub removes this rate limit before trying again."))
+            },
+            status => {
+                return Err(errors::system(
+                    &format!("Received an HTTP {} response from GitHub when attempting to download the update for your platform ({}).", status, uri),
+                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."))
             }
         }
-
-        Err(errors::system(
-            &format!("Reached redirect limit when attempting to download the update for your platform ({})", uri),
-            "Please report this issue to us on GitHub so that we can investigate and implement a fix/workaround for the problem."))
     }
 }
 

@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
-use http::{Request, Response, Uri};
-use hyper::client::HttpConnector;
-use hyper::{Body, Client};
+use reqwest::{Client, Request, Response};
 
-use super::{errors, Config, Error};
+use super::{Config, Error};
 
 #[cfg(test)]
 use mocktopus::macros::*;
@@ -14,22 +12,14 @@ pub struct HttpClient {}
 
 #[cfg_attr(test, mockable)]
 impl HttpClient {
-    pub async fn get(&self, uri: Uri) -> Result<Response<Body>, Error> {
-        let req = Request::builder()
-            .method("GET")
-            .uri(uri.clone())
-            .body(Body::empty())
-            .map_err(|err| errors::system_with_internal(
-                &format!("Unable to construct web request to '{}' due to an internal error.", uri),
-                "Please report this issue to us on GitHub so that we can work with you to resolve it.",
-                err))?;
-
+    pub async fn get(&self, uri: reqwest::Url) -> Result<Response, Error> {
+        let req = Request::new(reqwest::Method::GET, uri);
         Ok(self.request(req).await?)
     }
 
-    pub async fn request(&self, req: Request<Body>) -> Result<Response<Body>, Error> {
-        let client = Client::builder().build(hyper_tls::HttpsConnector::<HttpConnector>::new());
-        Ok(client.request(req).await?)
+    pub async fn request(&self, req: Request) -> Result<Response, Error> {
+        let client = Client::new();
+        Ok(client.execute(req).await?)
     }
 
     #[cfg(test)]
@@ -75,21 +65,22 @@ mod mocks {
     pub fn mock(routes: Vec<Route>) {
         HttpClient::request.mock_safe(move |_, req| {
             for route in routes.iter() {
-                if req.method().to_string() == route.method && req.uri().to_string() == route.path {
+                if req.method().to_string() == route.method && req.url().to_string() == route.path {
                     let status = route.status;
                     let body = route.body.clone();
 
                     return MockResult::Return(Box::pin(async move {
-                        Ok(Response::builder()
+                        Ok(http::Response::builder()
                             .header("Content-Type", "application/vnd.github.v3+json")
                             .status(status)
-                            .body(Body::from(body))
-                            .unwrap())
+                            .body(body)
+                            .unwrap()
+                            .into())
                     }));
                 }
             }
 
-            panic!("Unrecognized route {} {}", req.method(), req.uri());
+            panic!("Unrecognized route {} {}", req.method(), req.url());
         });
     }
 }
