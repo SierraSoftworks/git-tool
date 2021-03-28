@@ -35,7 +35,7 @@ jobs:
             skiptests: true
             setup: |
               sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev libssl-dev
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-i686-linux-gnu gcc-multilib
           - arch: arm64
             run_on: ubuntu-latest
             os: linux
@@ -44,7 +44,7 @@ jobs:
             skiptests: true
             setup: |
               sudo apt-get update
-              sudo apt-get install -y libdbus-1-3 libdbus-1-dev libssl-dev
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-aarch64-linux-gnu
 
           - arch: amd64
             run_on: macos-latest
