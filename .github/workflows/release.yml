@@ -137,7 +137,7 @@ jobs:
         if: matrix.os == 'linux'
 
       - name: Upload GitHub Release Artifacts
-        uses: Shopify/upload-to-release@v1
+        uses: Shopify/upload-to-release@v1.0.1
         with:
           name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
           path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
