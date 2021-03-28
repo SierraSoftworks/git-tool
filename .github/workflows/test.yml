@@ -55,12 +55,12 @@ jobs:
       - name: Setup Rust caching
         uses: Swatinem/rust-cache@v1
 
-      - name: Cache grcov binary
-        uses: actions/cache@v1
-        if: matrix.coverage
-        with:
-          path: ~/.cargo/bin/grcov
-          key: ${{ runner.os }}-grcov-${{ env.GRCOV_VERSION }}
+      # - name: Cache grcov binary
+      #   uses: actions/cache@v1
+      #   if: matrix.coverage
+      #   with:
+      #     path: ~/.cargo/bin/grcov
+      #     key: ${{ runner.os }}-grcov-${{ env.GRCOV_VERSION }}
 
       - name: Get Rust Nightly
         id: rust
@@ -71,9 +71,14 @@ jobs:
           override: true
           components: llvm-tools-preview
 
+      # - name: cargo install grcov
+      #   if: matrix.coverage
+      #   run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
+
       - name: cargo install grcov
-        if: matrix.coverage
-        run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov --version $GRCOV_VERSION; fi
+        uses: ./.github/actions/grcov
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare Git for Tests
         run: |
