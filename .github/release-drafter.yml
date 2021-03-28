@@ -8,6 +8,7 @@ categories:
     labels:
       - "fix"
       - "refactor"
+      - "tweak"
   - title: "Documentation Updates"
     labels:
       - doc
@@ -17,6 +18,7 @@ categories:
       - "ci"
       - "repo"
       - "chore"
+      - "chore(deps)"
 
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 template: |
