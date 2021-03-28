@@ -17,7 +17,9 @@ const platformAssets = {
     'darwin': 'grcov-osx-x86_64.tar.bz2'
 }
 
-try {
+runAction().then(() => { }).catch(err => core.setFailed(err.message))
+
+async function runAction() {
     const version = core.getInput("version", { required: false }) || "latest"
     const githubToken = core.getInput("github-token", { required: true })
 
@@ -57,7 +59,4 @@ try {
         core.addPath(".installed/grcov")
         core.info(`Installed mozilla/grcov@${release.tag_name}`)
     })
-
-} catch (err) {
-    core.setFailed(err.message)
 }

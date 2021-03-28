@@ -78,7 +78,7 @@ jobs:
       - name: cargo install grcov
         uses: ./.github/actions/grcov
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare Git for Tests
         run: |
