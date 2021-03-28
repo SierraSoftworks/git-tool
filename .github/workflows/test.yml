@@ -10,10 +10,9 @@ jobs:
   test:
     name: ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.run_on }}
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
       matrix:
-        experimental: [false]
         coverage: [false]
         include:
           # Windows builds
