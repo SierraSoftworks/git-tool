@@ -1,6 +1,8 @@
 use super::*;
-use keyring::Keyring;
 use std::sync::Arc;
+
+#[cfg(feature = "auth")]
+use keyring::Keyring;
 
 #[cfg(test)]
 use mocktopus::macros::*;
@@ -14,6 +16,7 @@ impl From<Arc<Config>> for KeyChain {
     }
 }
 
+#[cfg(feature = "auth")]
 #[cfg_attr(test, mockable)]
 impl KeyChain {
     pub fn get_token(&self, service: &str) -> Result<String, Error> {
@@ -29,6 +32,26 @@ impl KeyChain {
 
     pub fn remove_token(&self, service: &str) -> Result<(), Error> {
         Keyring::new("git-tool", service).delete_password()?;
+        Ok(())
+    }
+}
+
+#[cfg(not(feature = "auth"))]
+#[cfg_attr(test, mockable)]
+#[allow(dead_code)]
+impl KeyChain {
+    pub fn get_token(&self, _service: &str) -> Result<String, Error> {
+        Err(errors::user(
+            "This version of Git-Tool was compiled without support for authentication.",
+            "Use a version of Git-Tool which supports authentication, or compile Git-Tool yourself with --features=auth.",
+        ))
+    }
+
+    pub fn set_token(&self, _service: &str, _token: &str) -> Result<(), Error> {
+        Ok(())
+    }
+
+    pub fn remove_token(&self, _service: &str) -> Result<(), Error> {
         Ok(())
     }
 }

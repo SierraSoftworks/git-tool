@@ -1,5 +1,4 @@
 use super::*;
-use crate::{core::features, errors};
 
 pub struct CreateRemote {
     pub enabled: bool,
@@ -13,17 +12,22 @@ impl Default for CreateRemote {
 
 #[async_trait::async_trait]
 impl Task for CreateRemote {
+    #[cfg(feature = "auth")]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         if !self.enabled {
             return Ok(());
         }
 
-        if !core.config().get_features().has(features::CREATE_REMOTE) {
+        if !core
+            .config()
+            .get_features()
+            .has(core::features::CREATE_REMOTE)
+        {
             return Ok(());
         }
 
         let service = core.config().get_service(&repo.get_domain()).ok_or(
-            errors::user(
+            crate::errors::user(
                 &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
                 &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
         )?;
@@ -35,6 +39,11 @@ impl Task for CreateRemote {
             online_service.ensure_created(core, repo).await?;
         }
 
+        Ok(())
+    }
+
+    #[cfg(not(feature = "auth"))]
+    async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
         Ok(())
     }
 
@@ -55,6 +64,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg(feature = "auth")]
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(

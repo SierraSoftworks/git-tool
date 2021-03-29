@@ -10,6 +10,7 @@ pub trait OnlineService: Send + Sync {
     async fn ensure_created(&self, core: &Core, repo: &Repo) -> Result<(), Error>;
 }
 
+#[allow(dead_code)]
 pub fn services() -> Vec<Arc<dyn OnlineService>> {
     vec![Arc::new(github::GitHubService::default())]
 }

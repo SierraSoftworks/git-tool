@@ -36,18 +36,19 @@ jobs:
           #   setup: |
           #     sudo apt-get update
           #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-          # - arch: "arm64"
-          #   os: linux
-          #   run_on: ubuntu-20.04
-          #   target: aarch64-unknown-linux-gnu
-          #   experimental: true
-          #   skiptests: true
-          #   setup: |
-          #     sudo apt-get update
-          #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-aarch64-linux-gnu lld
+          - arch: "arm64"
+            os: linux
+            run_on: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+            experimental: true
+            skiptests: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y gcc-aarch64-linux-gnu lld
 
-          #     # Ensure that the libgcc
-          #     sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
+              # Ensure that the libgcc
+              sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
+            flags: --no-default-features
 
           - arch: amd64
             run_on: macos-latest
@@ -108,14 +109,14 @@ jobs:
         if: matrix.skiptests
         with:
           command: build
-          args: --all-features --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: cargo test
         uses: actions-rs/cargo@v1
         if: "!matrix.skiptests && !matrix.coverage"
         with:
           command: test
-          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+          args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -124,7 +125,7 @@ jobs:
         if: "!matrix.skiptests && matrix.coverage"
         with:
           command: test
-          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+          args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
         env:
           RUSTFLAGS: -Zinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

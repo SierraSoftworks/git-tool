@@ -74,6 +74,18 @@ jobs:
           #   setup: |
           #     sudo apt-get update
           #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev gcc-multilib
+          - arch: "arm64"
+            os: linux
+            run_on: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+            experimental: true
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y gcc-aarch64-linux-gnu lld
+
+              # Ensure that the libgcc
+              sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
+            flags: --no-default-features
 
           # Apple MacOS builds
           - arch: amd64
@@ -120,7 +132,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target ${{ matrix.target }}
+          args: --release --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: Upload Debug Symbols to Sentry
         run: |
