@@ -6,7 +6,7 @@ Head on over and download the executable for your platform.
 
 ::: tip
  - **Windows** users on 64-bit platforms should download `git-tool-windows-amd64.exe`.
- - **Linux** users on 64-bit platforms should download `git-tool-linux-amd64`.
+ - **Linux** users on x86_64 platforms should download `git-tool-linux-amd64` while those on ARM64 platforms should download `git-tool-linux-arm64`.
  - **MacOS** users on Intel platforms should download `git-tool-darwin-amd64` while those on Apple Silicon should download `git-tool-darwin-arm64`.
 :::
 
@@ -19,9 +19,46 @@ If you'd prefer, or if we don't (yet) provide pre-built releases for your platfo
 Git-Tool yourself using `cargo`. Note that you'll need to have [rust installed](https://www.rust-lang.org/tools/install)
 for this to work.
 
-```bash
+::: warning
+Git-Tool depends on `libdbus` to integrate with the Keychain on common Linux distros.
+If you do not have a system keychain, or cannot get a version of `libdbus` and `libdbus-dev`
+for your platform, you can build Git-Tool with `--no-default-features` to disable
+keychain support.
+
+With keychain support disabled, the [`gt auth`](../commands/config.md#auth) command
+will no longer be available and the [`create_remote`](../config/features.md#create-remote)
+feature will be disabled.
+:::
+
+:::: code-group
+
+::: code-group-item Windows
+```powershell
 cargo install --git https://github.com/SierraSoftworks/git-tool.git
 ```
+:::
+
+::: code-group-item Linux (with Keychain)
+```bash
+# Install libdbus-1-3 and libdbus-1-dev
+sudo apt update && sudo apt install -y libdbus-1-dev libdbus-1-3
+cargo install --git https://github.com/SierraSoftworks/git-tool.git
+```
+:::
+
+::: code-group-item Linux (without Keychain)
+```bash
+# If your platform doesn't support dbus or the Linux Keychain, you can disable the auth feature
+cargo install --git https://github.com/SierraSoftworks/git-tool.git --no-default-features
+```
+:::
+
+::: code-group-item MacOS
+```powershell
+cargo install --git https://github.com/SierraSoftworks/git-tool.git
+```
+:::
+::::
 
 ## Setting up your `PATH`
 
