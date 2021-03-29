@@ -131,6 +131,12 @@ mod tests {
             )))
         });
 
+        #[cfg(feature = "auth")]
+        KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "github.com", "the correct token should be requested");
+            MockResult::Return(Ok("test_token".into()))
+        });
+
         crate::online::service::github::mocks::repo_created("exampleB");
 
         let core = Core::builder().with_config(&cfg).build();
