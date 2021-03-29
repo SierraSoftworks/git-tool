@@ -103,7 +103,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@1
+        uses: mathrix-education/setup-sentry-cli@1.1.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -149,7 +149,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@1
+        uses: mathrix-education/setup-sentry-cli@1.1.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
