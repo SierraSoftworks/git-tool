@@ -79,6 +79,16 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          profile: minimal
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: rustup install nightly llvm-tools-preview
+        id: rust
+        uses: actions-rs/toolchain@v1
+        if: matrix.coverage || false
+        with:
+          toolchain: nightly
           target: ${{ matrix.target }}
           override: true
           components: llvm-tools-preview
