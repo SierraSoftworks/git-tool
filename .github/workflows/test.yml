@@ -7,7 +7,7 @@ env:
   GRCOV_VERSION: 0.7.1
 
 jobs:
-  test:
+  test-platforms:
     name: ${{ matrix.os }}-${{ matrix.arch }}-test
     runs-on: ${{ matrix.run_on }}
     continue-on-error: ${{ matrix.experimental || false }}
@@ -75,7 +75,6 @@ jobs:
         uses: Swatinem/rust-cache@v1
 
       - name: rustup install nightly
-        id: rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -84,7 +83,6 @@ jobs:
           override: true
 
       - name: rustup install nightly llvm-tools-preview
-        id: rust
         uses: actions-rs/toolchain@v1
         if: matrix.coverage || false
         with:
@@ -132,3 +130,10 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info
+
+  test-done:
+    name: Tests Complete
+    needs: test-platforms
+    runs-on: ubuntu-20.04
+    steps:
+      - run: echo "Tests Complete for All Platforms"
