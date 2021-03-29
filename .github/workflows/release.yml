@@ -43,7 +43,7 @@ jobs:
           path: Cargo.toml
 
   build:
-    name: Build
+    name: ${{ matrix.os }}-${{ matrix.arch }}-release
     runs-on: ${{ matrix.run_on }}
     continue-on-error: true
     needs:
