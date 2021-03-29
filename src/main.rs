@@ -2,12 +2,10 @@ extern crate base64;
 extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
-extern crate keyring;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate rpassword;
 extern crate sentry;
 #[macro_use]
 extern crate serde_json;

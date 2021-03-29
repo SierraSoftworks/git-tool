@@ -10,6 +10,8 @@ use std::{io::Write, vec::Vec};
 use crate::{completion::Completer, core::Core};
 
 mod apps;
+
+#[cfg(feature = "auth")]
 mod auth;
 mod clone;
 mod complete;
@@ -46,6 +48,7 @@ pub fn default_commands() -> Vec<Arc<dyn CommandRunnable>> {
 pub fn commands() -> Vec<Arc<dyn CommandRunnable>> {
     vec![
         Arc::new(apps::AppsCommand {}),
+        #[cfg(feature = "auth")]
         Arc::new(auth::AuthCommand {}),
         Arc::new(clone::CloneCommand {}),
         Arc::new(complete::CompleteCommand {}),

@@ -1,6 +1,7 @@
 pub use human_errors::detailed_message;
 
 mod base64;
+#[cfg(feature = "auth")]
 mod keyring;
 #[cfg(unix)]
 mod nix;
