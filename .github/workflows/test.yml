@@ -115,7 +115,7 @@ jobs:
         if: "!matrix.skiptests"
         with:
           command: test
-          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+          args: --all-features --no-fail-fast --target ${{ matrix.target }} --verbose
         env:
           RUSTFLAGS: -Zinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
