@@ -55,7 +55,7 @@ jobs:
           - arch: amd64
             os: windows
             run_on: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             extension: .exe
 
           # Linux builds
