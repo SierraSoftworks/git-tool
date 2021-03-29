@@ -112,10 +112,19 @@ jobs:
 
       - name: cargo test
         uses: actions-rs/cargo@v1
-        if: "!matrix.skiptests"
+        if: "!matrix.skiptests && !matrix.coverage"
         with:
           command: test
-          args: --all-features --no-fail-fast --target ${{ matrix.target }} --verbose
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: cargo test +coverage
+        uses: actions-rs/cargo@v1
+        if: "!matrix.skiptests && matrix.coverage"
+        with:
+          command: test
+          args: --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
           RUSTFLAGS: -Zinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
