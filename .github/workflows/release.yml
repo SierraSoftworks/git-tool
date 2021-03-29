@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.1.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -45,7 +45,7 @@ jobs:
   build:
     name: Build
     runs-on: ${{ matrix.run_on }}
-    continue-on-error: ${{ matrix.experimental || false }}
+    continue-on-error: true
     needs:
       - version
     strategy:
@@ -84,7 +84,6 @@ jobs:
             run_on: macos-latest
             os: darwin
             target: aarch64-apple-darwin
-            experimental: true
             setup: |
               echo "Updating to XCode 12.3 with Apple ARM (M1) support"
               sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
@@ -103,7 +102,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.1.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -149,7 +148,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathrix-education/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.1.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
