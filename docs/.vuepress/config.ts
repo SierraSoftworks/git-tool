@@ -17,6 +17,7 @@ export default defineUserConfig<DefaultThemeOptions>({
   head: [
     ['meta', { name: "description", content: "Documentation for Git-Tool, a powerful command-line helper which keeps your Git repositories organized automatically." }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['script', { defer: true, src: 'https://static.cloudflareinsights.com/beacon.min.js', 'data-cf-beacon': '{"token": "e2a0df0a8bdc4902939764910f86dcd9"}' }]
   ],
 
   bundler: "@vuepress/bundler-vite",
