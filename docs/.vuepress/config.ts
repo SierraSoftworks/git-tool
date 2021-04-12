@@ -1,4 +1,5 @@
 import { defineUserConfig, PageHeader, DefaultThemeOptions } from 'vuepress-vite'
+import { path } from '@vuepress/utils'
 
 function htmlDecode(input: string): string {
   return input.replace("&#39;", "'").replace("&amp;", "&").replace("&quot;", '"')
@@ -16,11 +17,14 @@ export default defineUserConfig<DefaultThemeOptions>({
 
   head: [
     ['meta', { name: "description", content: "Documentation for Git-Tool, a powerful command-line helper which keeps your Git repositories organized automatically." }],
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
-    ['script', { defer: true, src: 'https://static.cloudflareinsights.com/beacon.min.js', 'data-cf-beacon': '{"token": "e2a0df0a8bdc4902939764910f86dcd9"}' }]
+    ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
 
   bundler: "@vuepress/bundler-vite",
+
+  clientAppEnhanceFiles: [
+    path.resolve(__dirname, "enhance", "cloudflare.analytics.js")
+  ],
 
   extendsPageData(page, app) {
     const fixedHeaders = page.headers || []
