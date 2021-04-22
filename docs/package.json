@@ -26,6 +26,6 @@
   "homepage": "https://github.com/SierraSoftworks/git-tool-docs#readme",
   "devDependencies": {
     "@vuepress/plugin-google-analytics": "2.0.0-beta.8",
-    "vuepress-vite": "2.0.0-beta.8"
+    "vuepress-vite": "2.0.0-beta.9"
   }
 }
