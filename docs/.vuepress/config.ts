@@ -38,8 +38,9 @@ export default defineUserConfig<DefaultThemeOptions>({
   themeConfig: {
     logo: 'https://cdn.sierrasoftworks.com/logos/icon.png',
 
-    docsRepo: "SierraSoftworks/git-tool-docs",
     repo: "SierraSoftworks/git-tool",
+    docsRepo: "SierraSoftworks/git-tool",
+    docsDir: 'docs',
     navbar: [
       {
         text: "Getting Started",
