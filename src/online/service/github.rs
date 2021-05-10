@@ -154,9 +154,17 @@ impl Into<errors::Error> for GitHubErrorResponse {
                     "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.")
             },
             http::StatusCode::FORBIDDEN => {
-                errors::user(
+                errors::user_with_internal(
                     &format!("You do not have permission to perform this action on GitHub: {}", self.message),
                     "Check your GitHub account permissions for this organization or repository and try again.",
+                    errors::detailed_message(&format!("{:?}", self)),
+                )
+            },
+            http::StatusCode::NOT_FOUND => {
+                errors::user_with_internal(
+                    "We could not create the GitHub repo because the organization or user you specified could not be found.",
+                    "Check that you have specified the correct organization or user in the repository name and try again.",
+                    errors::detailed_message(&format!("{:?}", self))
                 )
             },
             http::StatusCode::TOO_MANY_REQUESTS => {
