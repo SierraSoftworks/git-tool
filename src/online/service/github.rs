@@ -153,6 +153,12 @@ impl Into<errors::Error> for GitHubErrorResponse {
                     "You have not provided a valid authentication token for github.com.",
                     "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.")
             },
+            http::StatusCode::FORBIDDEN => {
+                errors::user(
+                    &format!("You do not have permission to perform this action on GitHub: {}", self.message),
+                    "Check your GitHub account permissions for this organization or repository and try again.",
+                )
+            },
             http::StatusCode::TOO_MANY_REQUESTS => {
                 errors::user(
                     "GitHub has rate limited requests from your IP address.",
