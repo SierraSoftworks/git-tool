@@ -131,7 +131,7 @@ jobs:
           name: cargofile
 
       - name: cargo build
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         with:
           command: build
           args: --release --target ${{ matrix.target }} ${{ matrix.flags }}
