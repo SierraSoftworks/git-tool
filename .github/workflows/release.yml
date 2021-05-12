@@ -109,7 +109,7 @@ jobs:
         if: matrix.setup
 
       - name: Get Rust Stable
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           override: true
