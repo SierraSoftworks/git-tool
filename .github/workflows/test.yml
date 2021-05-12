@@ -105,14 +105,14 @@ jobs:
           git config --global init.defaultBranch "main"
 
       - name: cargo build
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         if: matrix.skiptests
         with:
           command: build
           args: --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: cargo test
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         if: "!matrix.skiptests && !matrix.coverage"
         with:
           command: test
@@ -121,7 +121,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: cargo test +coverage
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         if: "!matrix.skiptests && matrix.coverage"
         with:
           command: test
