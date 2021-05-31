@@ -9,14 +9,14 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
           project: git-tool
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Create Sentry Release
         run: |
@@ -109,21 +109,21 @@ jobs:
         if: matrix.setup
 
       - name: Get Rust Stable
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           override: true
           target: ${{ matrix.target }}
 
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
           project: git-tool
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Fetch Versioned Cargo.toml
         uses: actions/download-artifact@v2
@@ -131,7 +131,7 @@ jobs:
           name: cargofile
 
       - name: cargo build
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@v1.0.3
         with:
           command: build
           args: --release --target ${{ matrix.target }} ${{ matrix.flags }}
@@ -162,7 +162,7 @@ jobs:
 
     steps:
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.1.0
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
           token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
