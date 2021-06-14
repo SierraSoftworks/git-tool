@@ -17,7 +17,7 @@ pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
     template(tmpl, context).map_err(|e| errors::user_with_internal(
         format!("We couldn't render your template '{}'.", tmpl).as_str(),
         "Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/",
-        errors::detailed_message(&e)))
+        errors::detailed_message(&e.to_string())))
 }
 
 pub fn render_list<S: AsRef<str>>(
