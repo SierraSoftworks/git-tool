@@ -33,7 +33,7 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_yaml = "0.8"
 shell-words = "1.0"
-tokio = { version = "1.6", features = ["rt", "time", "fs", "process", "macros", "signal"] }
+tokio = { version = "1.7", features = ["rt", "time", "fs", "process", "macros", "signal"] }
 
 [dev-dependencies]
 mocktopus = "0.7.11"
