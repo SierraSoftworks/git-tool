@@ -248,16 +248,3 @@ cargo test
 ```
 
 [git-tool]: https://github.com/SierraSoftworks/git-tool
-
-
-<script>
-import FileTree from "../../../components/FileTree.vue"
-import RegistryBrowser from "../../../components/Registry.vue"
-
-export default {
-  components: {
-    FileTree,
-    RegistryBrowser
-  }
-}
-</script>

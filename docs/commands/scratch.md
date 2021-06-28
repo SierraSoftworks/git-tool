@@ -56,13 +56,3 @@ You don't need to use our naming scheme if you don't want to, just run `gt s som
 we'll create a `something` folder for you with no complaints. *This can be useful if you
 have an important project which you don't want to lose track of.*
 :::
-
-<script>
-import FileTree from "../../../components/FileTree.vue"
-
-export default {
-  components: {
-    FileTree
-  }
-}
-</script>

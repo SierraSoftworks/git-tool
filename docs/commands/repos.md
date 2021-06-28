@@ -184,13 +184,3 @@ gt fix --all github.com/SierraSoftworks/
 The quickest way to update a repo's `origin` is to `mv $REPO $NEW_REPO` and then run
 `gt fix $NEW_REPO`.
 :::
-
-<script>
-import FileTree from "../../../components/FileTree.vue"
-
-export default {
-  components: {
-    FileTree
-  }
-}
-</script>

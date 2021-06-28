@@ -64,13 +64,3 @@ gt s
 <ClientOnly>
     <Contributors repo="SierraSoftworks/git-tool" />
 </ClientOnly>
-
-<script>
-import Contributors from "../../components/Contributors.vue"
-
-export default {
-  components: {
-    Contributors
-  }
-}
-</script>

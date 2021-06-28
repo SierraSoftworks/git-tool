@@ -128,8 +128,12 @@ export default defineUserConfig<DefaultThemeOptions>({
   },
 
   plugins: [
-    ["@vuepress/plugin-google-analytics", { id: "G-BF54T4NKMN" }]
+    ["@vuepress/plugin-google-analytics", { id: "G-BF54T4NKMN" }],
+    [
+      '@vuepress/plugin-register-components',
+      {
+        componentsDir: path.resolve(__dirname, './components'),
+      },
+    ]
   ]
-
-
 })

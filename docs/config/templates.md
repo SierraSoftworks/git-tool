@@ -72,14 +72,3 @@ construct:
     - **HttpURL**: https://github.com/SierraSoftworks/git-tool.git <Badge text="optional" type="warning" vertical="middle" />
 
 </FileTree>
-
-
-<script>
-import FileTree from "../../../components/FileTree.vue"
-
-export default {
-  components: {
-    FileTree
-  }
-}
-</script>
