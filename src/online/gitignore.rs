@@ -240,7 +240,7 @@ bin/
         match add_or_update(&core, "", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
-                assert!(result.contains("/target/\n"));
+                assert!(result.contains("target/\n"));
             }
             Err(e) => panic!("{}", e.message()),
         }
@@ -276,7 +276,7 @@ bin/
         match add_or_update(&core, "/tmp", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
-                assert!(result.contains("/target/\n"));
+                assert!(result.contains("target/\n"));
                 assert!(result.contains("/tmp\n"));
             }
             Err(e) => panic!("{}", e.message()),
@@ -301,7 +301,7 @@ bin/
         {
             Ok(result) => {
                 assert!(result.contains("## @languages: go,rust\n"));
-                assert!(result.contains("/target/\n"));
+                assert!(result.contains("target/\n"));
                 assert!(!result.contains("/test\n"));
             }
             Err(e) => panic!("{}", e.message()),
@@ -326,7 +326,7 @@ bin/
         {
             Ok(result) => {
                 assert!(result.contains("## @languages: go,rust\n"));
-                assert!(result.contains("/target/\n"));
+                assert!(result.contains("target/\n"));
                 assert!(!result.contains("/test\n"));
             }
             Err(e) => panic!("{}", e.message()),
