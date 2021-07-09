@@ -586,6 +586,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "494b4d60369511e7dea41cf646832512a94e542f68bb9c49e54518e0f468eb47"
 
 [[package]]
+name = "httpdate"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6456b8a6c8f33fee7d958fcd1b60d55b11940a79e63ae87013e6d22e26034440"
+
+[[package]]
 name = "human-errors"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -605,7 +611,7 @@ dependencies = [
  "http",
  "http-body",
  "httparse",
- "httpdate",
+ "httpdate 0.3.2",
  "itoa",
  "pin-project",
  "socket2",
@@ -1259,22 +1265,24 @@ checksum = "5f3aac57ee7f3272d8395c6e4f502f434f0e289fcd62876f70daa008c20dcabe"
 
 [[package]]
 name = "sentry"
-version = "0.22.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f27c425b07c7186018e2ef9ac3a25b01dae78b05a7ef604d07f216b9f59b42b4"
+checksum = "546b9b6f76c26c60ffbcf0b7136e15169fe13d43949b4aadb7c1edc1c3f3a26f"
 dependencies = [
- "httpdate",
+ "httpdate 1.0.1",
  "reqwest",
  "sentry-core",
  "sentry-log",
+ "tokio",
 ]
 
 [[package]]
 name = "sentry-core"
-version = "0.22.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbbe485e384cb5540940e65d729820ffcbedc0c902fcb27081e44dacfe6a0c34"
+checksum = "f9a957270c9a430218f8031c866493061a27e35a70250e9527f093563a33ce6b"
 dependencies = [
+ "chrono",
  "lazy_static",
  "rand 0.8.3",
  "sentry-types",
@@ -1284,9 +1292,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-log"
-version = "0.22.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "647143f672410ae5f242acd40f9f8f39729aff5ac7e856d91450fdfc30c2e960"
+checksum = "66da5759b0704a2fb0d420863b0795ea3429739e188ff67fff82bb13dcd3cc50"
 dependencies = [
  "log",
  "sentry-core",
@@ -1294,9 +1302,9 @@ dependencies = [
 
 [[package]]
 name = "sentry-types"
-version = "0.22.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5e777cff85b44538ac766a9604676b7180d01d2566e76b2ac41426c734498c"
+checksum = "f4dd2266fee014a86e250e98e389191ecd23be546b5c42b6a2fb9af2972fadac"
 dependencies = [
  "chrono",
  "debugid",
