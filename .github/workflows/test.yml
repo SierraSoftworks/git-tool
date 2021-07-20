@@ -135,7 +135,7 @@ jobs:
         if: matrix.coverage || false
 
       - name: codecov upload
-        uses: codecov/codecov-action@v1.5.2
+        uses: codecov/codecov-action@v2.0.1
         if: matrix.coverage || false
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
