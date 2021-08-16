@@ -1,8 +1,5 @@
 name: Test Changes
-on:
-  push:
-    paths-ignore:
-      - "docs/**"
+on: [push]
 env:
   GRCOV_VERSION: 0.8.0
 
