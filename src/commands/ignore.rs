@@ -25,7 +25,7 @@ impl Command for IgnoreCommand {
                     .takes_value(true))
             .arg(Arg::new("language")
                     .about("The name of a language which should be added to your .gitignore file.")
-                    .multiple(true)
+                    .multiple_values(true)
                     .index(1))
     }
 }
