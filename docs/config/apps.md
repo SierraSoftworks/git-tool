@@ -48,7 +48,9 @@ This is the program which will be launched by Git-Tool for this app entry. You c
 command: /usr/bin/bash
 ```
 
-::: tip Git-Tool will set the current working directory of the program to that of the scratchpad or repo you are launching it in. If you need to change this, you can do so using a spawned shell and `cd`. :::
+{% hint style="success" %}
+Git-Tool will set the current working directory of the program to that of the scratchpad or repo you are launching it in. If you need to change this, you can do so using a spawned shell and `cd`.
+{% endhint %}
 
 ### `args`
 

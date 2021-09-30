@@ -54,7 +54,9 @@ For those who prefer a visual representation of what the registry looks like.
 
 Here is an example of what a registry template might look like and you are welcome to use it as the basis for your own. Keep reading for more information on what each field does and how to use them \(or just wing it, if you're already familiar with how Git-Tool's [apps](apps.md) and [services](services.md) are defined\).
 
-::: warning We usually avoid bundling apps and services into a single file, but if you've got a compelling reason to do so - then we can certainly make an exception. _The example below includes both apps and services to show how to use them, not because it's a good idea._ :::
+{% hint style="warning" %}
+We usually avoid bundling apps and services into a single file, but if you've got a compelling reason to do so - then we can certainly make an exception. _The example below includes both apps and services to show how to use them, not because it's a good idea._
+{% endhint %}
 
 ```yaml
 # yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
@@ -171,7 +173,9 @@ configs:
 
 When creating a config template which adds a [service](services.md), you will use the `service` field to provide a service definition as you would in your normal [config file](services.md). All of the normal [service](services.md) fields are supported.
 
-::: warning If you specify the `app` field, you will not be able to provide the `service` field in the same entry. Add a new item to the `configs` array if you need to do this. :::
+{% hint style="warning" %}
+If you specify the `app` field, you will not be able to provide the `service` field in the same entry. Add a new item to the `configs` array if you need to do this.
+{% endhint %}
 
 ```yaml
 configs:
