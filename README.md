@@ -37,5 +37,3 @@ gt i dev.azure.com/sierrasoftworks/opensource/git-tool
 # Open your shell in the current week's scratch directory
 gt s
 ```
-
-[release]: https://github.com/SierraSoftworks/git-tool/releases
