@@ -16,7 +16,7 @@ You can download the latest version of Git-Tool from our [GitHub releases](https
 
 {% tabs %}
 {% tab title="PowerShell" %}
-```text
+```bash
 # $PROFILE.CurrentUserAllHosts
 
 $env:GITTOOL_CONFIG="${env:HOME}/git-tool.yml"
@@ -77,7 +77,7 @@ features:
 
 ## Step \#3: [Linking to GitHub](github.md)
 
-Git-Tool &lt;3 GitHub and can automatically create repositories there whenever you run `gt new`.
+Git-Tool 💕 GitHub and can automatically create repositories there whenever you run [`gt new`](../commands/repos.md#new).
 
 To set this up, generate a [new Personal Access Token](https://github.com/settings/tokens/new?scopes=repo) with the `repo` scope and run the following command to store it in your local keychain.
 
