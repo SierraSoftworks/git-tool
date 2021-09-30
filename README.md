@@ -4,7 +4,7 @@
 
 Git Tool is a powerful tool for managing your Git repositories, storing them in
 a consistent folder structure and simplifying access when you need it. The best
-place to get started is by reading our [documentation](https:/git-tool.sierrasoftworks.com).
+place to get started is by reading our [documentation](https://git-tool.sierrasoftworks.com).
 
 ## Features
 
