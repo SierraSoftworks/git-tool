@@ -1,4 +1,8 @@
-# Basic Usage
+---
+description: Quickly get a feel for how to use Git-Tool
+---
+
+# Usage
 
 Git-Tool has a ton of useful commands, but you can probably get away with knowing only three of them. Let's run through `gt open`, `gt new` and `gt scratch` and show you how they work!
 
@@ -18,19 +22,21 @@ You can also launch a specific application if you'd prefer.
 gt o code github.com/SierraSoftworks/git-tool
 ```
 
-::: tip Take a look at Git-Tool's config [registry](../config/registry.md) for a quick way to add applications to your config. :::
+{% hint style="info" %}
+Take a look at Git-Tool's config [registry](../config/registry.md) for a quick way to add applications to your config.
+{% endhint %}
 
 ## Creating a new Repo
 
 Okay, opening a repo is pretty easy - but how about creating a new one? Well, Git-Tool takes care of all of that for you too. Let's try creating a quick test repo to play around in.
 
-```text
+```bash
 gt n --no-create-remote github.com/YOURUSER/git-tool-example1
 ```
 
-If you'd like to open up the repo you just created \(usually we do\) you can either pass the `-o` command line option, or you can set the [`open_new_repo_in_default_app`](../config/features.md#open-new-repo-in-default-app) feature flag.
+If you'd like to open up the repo you just created \(usually we do\) you can either pass the `-o` command line option, or you can set the [`open_new_repo_in_default_app`](../config/features.md#open_new_repo_in_default_app) feature flag.
 
-```text
+```bash
 # Tell Git-Tool to automatically open all new repos in your default app
 gt config feature open_new_repo_in_default_app true
 
@@ -38,7 +44,9 @@ gt config feature open_new_repo_in_default_app true
 gt n -o --no-create-remote github.com/YOURUSER/git-tool-example2
 ```
 
-::: tip We're using the [`--no-create-remote`](../commands/repos.md#new) option here to prevent Git-Tool from automatically setting up a GitHub repo, but you can leave that out when creating real repositories. You can also permanently disable this feature by disabling the [`create_remote`](../config/features.md#create-remote) feature flag. :::
+{% hint style="info" %}
+We're using the [`--no-create-remote`](../commands/repos.md#new) option here to prevent Git-Tool from automatically setting up a GitHub repo, but you can leave that out when creating real repositories. You can also permanently disable this feature by disabling the [`create_remote`](../config/features.md#create_remote) feature flag.
+{% endhint %}
 
 ## Toying around
 
@@ -62,5 +70,5 @@ gt s shell
 
 ## More
 
-Of course, this is just the tip of the iceberg, take a look at the [commands reference](../commands/) to get an idea of everything Git-Tool can do.
+Of course, this is just the tip of the iceberg, take a look at the [commands reference](../commands/overview.md) to get an idea of everything Git-Tool can do.
 

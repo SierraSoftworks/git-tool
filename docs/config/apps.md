@@ -1,10 +1,18 @@
+---
+description: >-
+  Configure the applications that Git-Tool will launch for you when opening a
+  repo.
+---
+
 # Applications
 
 Git Tool has the ability to launch applications within the context of your repositories. This is useful when you want to quickly open a shell or your favourite editor and start working, however you can also add a wide range of other applications there.
 
 The quickest way to add applications to your config is to use the [`gt config add`](../commands/config.md#config-add) command to install apps from the [registry](registry.md). If your favourite app isn't there already, feel free to add it by following the [contribution guide](registry.md#contributing).
 
-::: tip The first application in your config file will be launched by default if you do not specify an application in your command. :::
+{% hint style="success" %}
+The first application in your config file will be launched by default if you do not specify an application in your command.
+{% endhint %}
 
 Here's an example of an app which uses all of the configuration options to launch a Visual Studio developer command prompt in your repo. For more information on what each of these properties do, keep reading.
 
@@ -61,5 +69,7 @@ environment:
  - 'MESSAGE=Hello {{ .Target.Name }}'
 ```
 
-::: tip **Did you notice that `.Target.Name`?** Git-Tool's apps \(and services\) support [templates](templates.md), so you can gather information about the repository or scratchpad you're targeting and tailor your call appropriately. :::
+{% hint style="info" %}
+**Did you notice that `.Target.Name`?** Git-Tool's apps \(and services\) support [templates](templates.md), so you can gather information about the repository or scratchpad you're targeting and tailor your call appropriately.
+{% endhint %}
 

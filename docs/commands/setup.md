@@ -1,3 +1,7 @@
+---
+description: These commands are used to set up and manage your Git-Tool installation.
+---
+
 # Setup
 
 ## update
@@ -6,11 +10,13 @@ We like to think that we're pretty good at updating Git-Tool to ensure that it i
 
 To help with that, we added the `gt update` command which will automatically download the latest version of Git-Tool for your operating system \(if we support it in our release builds\).
 
-::: warning We use an \[three-phase update strategy\]\[update-strategy\] for Git-Tool and, as a result, we can't update it if other instances are currently running. **To make sure the update completes successfully, close down all running instances of Git-Tool \(including shells it has launched\) before updating.** :::
+{% hint style="warning" %}
+We use an [three-phase update strategy](https://blog.sierrasoftworks.com/2019/10/15/app-updates/) for Git-Tool and, as a result, we can't update it if other instances are currently running. **To make sure the update completes successfully, close down all running instances of Git-Tool \(including shells it has launched\) before updating.**
+{% endhint %}
 
 ### Example
 
-```text
+```bash
 # Update to the latest available release for your OS
 gt update
 
@@ -24,51 +30,49 @@ The `gt shell-init` command is part of the magic that provides cross-platform au
 
 It is responsible for generating a runnable shell command which initializes everything needed by Git-Tool for your environment.
 
-::: tip Take a look at the [shell setup guide](https://github.com/SierraSoftworks/git-tool/tree/2b7ce3382def384346bcf67cbee482aae6841139/docs/guide/shell-init.md) for detailed instructions on setting up your shell environment to get the most out of Git-Tool. :::
+{% hint style="info" %}
+Take a look at the [shell setup guide](../guide/installation.md#setting-up-your-shell) for detailed instructions on setting up your shell environment to get the most out of Git-Tool.
+{% endhint %}
 
 ### Example
 
-:::: code-group ::: code-group-item PowerShell
-
-```text
+{% tabs %}
+{% tab title="PowerShell" %}
+```bash
 # $PROFILE.CurrentUserAllHosts
 Invoke-Expression (&git-tool shell-init powershell)
 ```
+{% endtab %}
 
-:::
-
-::: code-group-item bash
-
+{% tab title="bash" %}
 ```bash
 # ~/.bashrc
 eval "$(git-tool shell-init bash)"
 ```
+{% endtab %}
 
-:::
-
-::: code-group-item zsh
-
+{% tab title="zsh" %}
 ```bash
 # ~/.zshrc
 eval "$(git-tool shell-init zsh)"
 ```
+{% endtab %}
 
-:::
-
-::: code-group-item fish
-
+{% tab title="fish" %}
 ```bash
 # ~/config.fish
 complete -f -c git-tool -a "(git-tool complete)"
 ```
-
-::: ::::
+{% endtab %}
+{% endtabs %}
 
 ## complete 
 
 The `gt complete` command is part of the internal autocomplete plumbing used by Git-Tool. It is a flagrant copy of the [dotnet CLI autocomplete](https://docs.microsoft.com/en-us/dotnet/core/tools/enable-tab-autocomplete) interface and accepts a combination of the current command input and the position of the cursor \(if provided\) to generate suggestions.
 
-::: warning This command is part of Git-Tool's internal API and may change without notice and without a major version bump. Please avoid depending on its semantics and instead use `gt shell-init` to configure your environment. :::
+{% hint style="danger" %}
+This command is part of Git-Tool's internal API and may change without notice and without a major version bump. Please avoid depending on its semantics and instead use `gt shell-init` to configure your environment.
+{% endhint %}
 
 ### Options
 
@@ -79,6 +83,4 @@ The `gt complete` command is part of the internal autocomplete plumbing used by 
 ```text
 gt complete "gt o git-too"
 ```
-
-\[update-strategy\]: [https://blog.sierrasoftworks.com/2019/10/15/app-updates/](https://blog.sierrasoftworks.com/2019/10/15/app-updates/)
 

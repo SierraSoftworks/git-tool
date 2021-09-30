@@ -1,8 +1,16 @@
-# Updating Git-Tool
+---
+description: >-
+  How to use Git-Tool's built in automatic update functionality to always have
+  the latest features.
+---
 
-Git Tool includes support for self-updating, however it doesn't do this automatically. Here's how to perform an update of your Git Tool installation quickly and easily from your command line.
+# Updates
 
-:warning: **NOTE** This process will only work when upgrading from \(and to\) versions of Git Tool &gt;= `1.4.0`.
+Git-Tool includes support for self-updating, however it doesn't do this automatically. Here's how to perform an update of your Git Tool installation quickly and easily from your command line.
+
+{% hint style="warning" %}
+**NOTE** This process will only work when upgrading from \(and to\) versions of Git Tool &gt;= `1.4.0`
+{% endhint %}
 
 ## Listing Updates
 

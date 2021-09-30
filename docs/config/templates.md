@@ -1,6 +1,10 @@
+---
+description: Learn how to use templates to super-charge your Git-Tool configuration.
+---
+
 # Templates
 
-Git-Tool uses [Go templates](https://golang.org/pkg/text/template/) to allow [applications](apps.md) and [services](services.md) you add to your [config](./) to access information about the repositories and scratchpads they are targeting. This lets you do some pretty powerful stuff, including handling repositories and scratchpads differently if you want to.
+Git-Tool uses [Go templates](https://golang.org/pkg/text/template/) to allow [applications](apps.md) and [services](services.md) you add to your [config](overview.md) to access information about the repositories and scratchpads they are targeting. This lets you do some pretty powerful stuff, including handling repositories and scratchpads differently if you want to.
 
 ## Interpolation
 
@@ -22,7 +26,8 @@ The `.Target` property will always be available with all of its children, so it 
 
 If you are targeting repositories \(either because you're writing a service entry, in which case this is implied\), or because your application only makes sense within the context of a repository, then the `.Service` and `.Repo` properties will be available.
 
-::: tip Go's template language allows you to conditionally use properties, if they exist, with the following construct:
+{% hint style="info" %}
+Go's template language allows you to conditionally use properties, if they exist, with the following construct:
 
 ```text
 {{ with .Repo }}
@@ -32,8 +37,29 @@ If you are targeting repositories \(either because you're writing a service entr
     {{ .Target.Name }}
 {{ end }}
 ```
+{% endhint %}
 
-:::
-
- - . - Target - \*\*Name\*\*: SierraSoftworks/git-tool - \*\*Path\*\*: /home/bpannell/dev/github.com/SierraSoftworks/git-tool - \*\*Exists\*\*: \`true\` - Service - \*\*Domain\*\*: github.com - \*\*Pattern\*\*: \\*/\\* - \*\*DirectoryGlob\*\* \\*/\\* - Repo - Service - \*\*Domain\*\*: github.com - \*\*Pattern\*\*: \\*/\\* - \*\*DirectoryGlob\*\* \\*/\\* - \*\*Domain\*\*: github.com - \*\*FullName\*\*: SierraSoftworks/git-tool - \*\*Name\*\*: git-tool - \*\*Namespace\*\*: SierraSoftworks - \*\*Path\*\*: /home/bpannell/dev/github.com/SierraSoftworks/git-tool - \*\*Exists\*\*: \`true\` - \*\*Valid\*\*: \`true\` - \*\*Website\*\*: https://github.com/SierraSoftworks/git-tool - \*\*GitURL\*\*: git@github.com:SierraSoftworks/git-tool.git - \*\*HttpURL\*\*: https://github.com/SierraSoftworks/git-tool.git
+* Target
+  * **Name**: SierraSoftworks/git-tool
+  * **Path**: /home/bpannell/dev/github.com/SierraSoftworks/git-tool
+  * **Exists**: `true`
+* Service \(**optional**\)
+  * **Domain**: github.com
+  * **Pattern**: \*/\*
+  * **DirectoryGlob**: \*/\*
+* Repo \(**optional**\)
+  * Service
+    * **Domain**: github.com
+    * **Pattern**: \*/\*
+    * **DirectoryGlob**: \*/\*
+  * **Domain**: github.com
+  * **FullName**: SierraSoftworks/git-tool
+  * **Name**: git-tool
+  * **Namespace**: SierraSoftworks
+  * **Path**: /home/bpannell/dev/github.com/SierraSoftworks/git-tool
+  * **Exists**: `true`
+  * **Valid**: `true`
+  * **Website**: ****https://github.com/SierraSoftworks/git-tool
+  * **GitURL**: git@github.com:SierraSoftworks/git-tool.git
+  * **HttpURL**: https://github.com/SierraSoftworks/git-tool.git
 

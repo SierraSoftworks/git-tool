@@ -1,14 +1,20 @@
+---
+description: >-
+  Learn how to quickly make changes to your Git-Tool config without leaving the
+  command line.
+---
+
 # Config Management
 
-## config
+## config __
 
-The `gt config` command will print your current [`config.yml`](../config/) file to `stdout`. It's a great way to quickly view your config, save it or share it.
+The `gt config` command will print your current [`config.yml`](../config/overview.md) file to `stdout`. It's a great way to quickly view your config, save it or share it.
 
 The `gt config` command also has a series of sub-commands which allow you to manage your config without needing to kick open a text editor \(along with autocomplete suggestions\).
 
 #### Example
 
-```text
+```bash
 # Show your current config
 gt config
 ```
@@ -17,11 +23,13 @@ gt config
 
 Git-Tool has a [registry](../config/registry.md) of useful apps and services which you can easily add to your configuration. The `gt config list` command will show you the items available in this registry and you can install any of them using [`gt config add`](config.md#config-add).
 
-::: tip Anyone is welcome to contribute their own templates to the Git-Tool registry, take a look at the [registry](../config/registry.md) documentation for information on how to do so. :::
+{% hint style="info" %}
+Anyone is welcome to contribute their own templates to the Git-Tool registry, take a look at the [registry](../config/registry.md) documentation for information on how to do so.
+{% endhint %}
 
 #### Example
 
-```text
+```bash
 # List the apps and services which can be added to your config automatically
 gt config list
 ```
@@ -38,7 +46,7 @@ If you find something in the Git-Tool [registry](../config/registry.md) which yo
 
 #### Example
 
-```text
+```bash
 # Install the Visual Studio developer prompt app
 gt config add apps/visualstudio
 
@@ -52,7 +60,9 @@ Git-Tool allows you to setup aliases for repositories you use often. These alias
 
 When using any Git-Tool command which expects a repository name, you can provide the alias instead. For example: `gt o blog`.
 
-::: tip Aliases are a great way to distinguish between repos with similar or generic names. Try something like `gt config alias blog github.com/SierraSoftworks/blog` :::
+{% hint style="info" %}
+Aliases are a great way to distinguish between repos with similar or generic names. Try something like `gt config alias blog github.com/SierraSoftworks/blog`
+{% endhint %}
 
 #### Options
 
@@ -60,7 +70,7 @@ When using any Git-Tool command which expects a repository name, you can provide
 
 #### Example
 
-```text
+```bash
 # Add an alias for git-tool
 gt config alias gt github.com/SierraSoftworks/git-tool
 
@@ -75,11 +85,13 @@ gt config alias -d gt
 
 Git-Tool uses [feature flags](../config/features.md) as a means of tweaking behaviour depending on your individual preferences. This command allows you to quickly view the feature flags you have set and modify their values, all with lovely autocomplete support.
 
-::: tip For the full list of feature flags, take a look at the [configuration docs](../config/features.md). :::
+{% hint style="info" %}
+For the full list of feature flags, take a look at the [configuration docs](../config/features.md).
+{% endhint %}
 
 #### Example
 
-```text
+```bash
 # Check the status of all of your feature flags
 gt config feature
 
@@ -94,7 +106,9 @@ gt config feature telemetry
 
 The `gt auth` command allows you to manage the authentication tokens used to connect to remote repository hosts like GitHub.
 
-::: warning These access tokens are stored in your local system keychain for a bit of extra security, however if you are using a shared computer or are concerned about the physical security of your device, it is best to avoid this feature. :::
+{% hint style="warning" %}
+These access tokens are stored in your local system keychain for a bit of extra security, however if you are using a shared computer or are concerned about the physical security of your device, it is best to avoid this feature.
+{% endhint %}
 
 #### Options
 
@@ -102,7 +116,7 @@ The `gt auth` command allows you to manage the authentication tokens used to con
 
 #### Example
 
-```text
+```bash
 # Store an access token for github.com
 gt auth github.com
 
@@ -119,7 +133,7 @@ The `gt apps` command provides you with a list of all of the applications you ha
 
 #### Example
 
-```text
+```bash
 # List the apps you have added to your configuration
 gt apps
 ```
@@ -130,7 +144,7 @@ The `gt services` command provides you with a list of all of the services you ha
 
 #### Example
 
-```text
+```bash
 # List the services you have added to your configuration
 gt services
 ```

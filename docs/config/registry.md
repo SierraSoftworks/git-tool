@@ -1,10 +1,16 @@
+---
+description: >-
+  Quickly configure Git-Tool by installing configuration snippets maintained by
+  the community.
+---
+
 # Registry
 
 Writing your own [service](services.md) and [application](apps.md) entries can sometimes be a bit more work than we're feeling like and since Git-Tool is meant to make your life easier, not harder, we figured it would be a good idea to try and simplify this part for you as well.
 
 To solve the problem, we added a central registry of config templates which you can search through and install with the [`gt config add`](../commands/config.md#config-add) command. This makes the process of setting up your Git-Tool config as easy as doing the following:
 
-```text
+```bash
 # Get a list of all the apps and services available to me
 gt config list
 
@@ -21,7 +27,7 @@ gt config add services/azure-devops
 
 ## Browse
 
-To get the latest list of apps and services in the registry, you can always use [`gt config list`](../commands/config.md#config-list) straight from your command line. Of course, here's the list if you're interested :wink:.
+To get the latest list of apps and services in the registry, you can always use [`gt config list`](../commands/config.md#config-list) straight from your command line. You can also [browse the templates on GitHub](https://github.com/SierraSoftworks/git-tool/tree/main/registry).
 
 ## Contributing
 
@@ -29,11 +35,20 @@ Thanks for choosing to contribute to the Git-Tool community :heart:! We'd like t
 
 ### Registry
 
-Git-Tool's registry is simply a folder hosted on \[GitHub\]\[git-tool\]. Specifically, it's the `registry` folder in the Git-Tool repo. Within this folder are folders for `apps` and `services` to help keep things organized.
+Git-Tool's registry is simply a folder hosted on [GitHub](https://github.com/SierraSoftworks/git-tool/tree/main/registry). Specifically, it's the `registry` folder in the Git-Tool repo. Within this folder are folders for `apps` and `services` to help keep things organized.
 
 For those who prefer a visual representation of what the registry looks like.
 
- - \[github.com/SierraSoftworks/git-tool\]\[git-tool\] - registry/ - apps/ - bash.yaml - \*your-app.yaml\* ← :rocket: - services/ - github.yaml - \*your-service.yaml\* ← :rocket:
+```text
+.
+└── registry/
+    ├── apps/
+    │   ├── bash.yaml
+→   │   └── your-app.yaml
+    └── services/
+        ├── github.yaml
+→       └── your-service.yaml
+```
 
 ### Example Template
 
@@ -71,15 +86,15 @@ configs:
 
 ### Template Structure
 
-Registry templates are `yaml` files \(with the `.yaml` extension\) which Git-Tool will use to update your local config. They have a bit of metadata to explain to humans what they do, but the most important part is the list of `configs` which tell Git-Tool how to modify your local [config](./) file.
+Registry templates are `yaml` files \(with the `.yaml` extension\) which Git-Tool will use to update your local config. They have a bit of metadata to explain to humans what they do, but the most important part is the list of `configs` which tell Git-Tool how to modify your local [config](overview.md) file.
 
-::: tip We publish a [JSONSchema](https://json-schema.org) schema for Git-Tool templates which your editor can use to give you autocomplete and automatic validation. To include it, just add the following to the top of your template.
+{% hint style="success" %}
+We publish a [JSONSchema](https://json-schema.org) schema for Git-Tool templates which your editor can use to give you autocomplete and automatic validation. To include it, just add the following to the top of your template.
 
 ```yaml
 # yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
 ```
-
-:::
+{% endhint %}
 
 #### `name`
 
@@ -111,7 +126,7 @@ version: 1.0.0
 
 #### `configs`
 
-This is where the heart of the template fits in. The `configs` field is a list \(array\) of config templates which Git-Tool will apply to your [config](./) file. These templates can either be for an [app](apps.md) or a [service](services.md) and require that you specify the `platform` that they support. Keep reading for details on what fields you use within each config.
+This is where the heart of the template fits in. The `configs` field is a list \(array\) of config templates which Git-Tool will apply to your [config](overview.md) file. These templates can either be for an [app](apps.md) or a [service](services.md) and require that you specify the `platform` that they support. Keep reading for details on what fields you use within each config.
 
 ```yaml
 configs:
@@ -183,11 +198,9 @@ Our automated test suite on GitHub will check your PR to make sure that your tem
 
 You can also run this same test suite locally if you have `rust` installed on your machine by cloning the Git-Tool repo and running `cargo test` in it. If you already have Git-Tool set up, this is as easy as:
 
-```text
+```bash
 # Replace this with your Git-Tool fork, if you have one
 gt o github.com/SierraSoftworks/git-tool
 cargo test
 ```
-
-\[git-tool\]: [https://github.com/SierraSoftworks/git-tool](https://github.com/SierraSoftworks/git-tool)
 

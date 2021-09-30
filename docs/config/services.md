@@ -1,3 +1,7 @@
+---
+description: Configure Git-Tool to talk to any Git hosting service you want.
+---
+
 # Services
 
 Git Tool has been written to support a wide range of Git servers and allows you to add your own via the config file. This enables you to interact with most common hosted Git services as well as your own on-premise ones.
@@ -17,7 +21,9 @@ services:
 
 ## Configuration
 
-::: tip Git-Tool supports [templates](templates.md) in both the service and app definitions. These can be used to access information about the repository that is being targeted by a given command. :::
+{% hint style="info" %}
+Git-Tool supports [templates](templates.md) in both the service and app definitions. These can be used to access information about the repository that is being targeted by a given command.
+{% endhint %}
 
 ### `domain`
 
@@ -35,7 +41,9 @@ The `website` property configures the template which is used to generate URLs fo
 website: "https://github.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}"
 ```
 
-::: tip You can use `.Service.Domain` to access the `domain` field for the current service, making it easier to copy-paste service definitions for similar services running on different domains \(like GitHub Enterprise and Gitea\). :::
+{% hint style="success" %}
+You can use `.Service.Domain` to access the `domain` field for the current service, making it easier to copy-paste service definitions for similar services running on different domains \(like GitHub Enterprise and Gitea\).
+{% endhint %}
 
 ### `gitUrl`
 
