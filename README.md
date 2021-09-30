@@ -2,20 +2,19 @@
 
 **Simplify checking out your Git repositories in a structured directory space**
 
-Git Tool is a powerful tool for managing your Git repositories, storing them in
-a consistent folder structure and simplifying access when you need it.
+Git Tool is a powerful tool for managing your Git repositories, storing them in a consistent folder structure and simplifying access when you need it.
 
 ## Features
 
-- **Quickly open repositories** whether they are already cloned locally or not, using your favourite Git services and a concise folder structure.
-- **Launch applications** within the context of your repositories quickly and consistently.
-- **Weekly scratchpads** to help organize random work and doodles with minimal effort.
-- **Aliases** to make opening your most common repositories as quick as possible.
-- **Fast autocompletion** on all platforms with support for "sequence search" (`ssgt` matches `SierraSoftworks/git-tool`) as found in Sublime and VSCode.
+* **Quickly open repositories** whether they are already cloned locally or not, using your favourite Git services and a concise folder structure.
+* **Launch applications** within the context of your repositories quickly and consistently.
+* **Weekly scratchpads** to help organize random work and doodles with minimal effort.
+* **Aliases** to make opening your most common repositories as quick as possible.
+* **Fast autocompletion** on all platforms with support for "sequence search" \(`ssgt` matches `SierraSoftworks/git-tool`\) as found in Sublime and VSCode.
 
 ## Example
 
-```powershell
+```text
 # Open the sierrasoftworks/git-tool repo in your default app (bash by default)
 # This will clone the repo automatically if you don't have it yet.
 gt o sierrasoftworks/git-tool
@@ -39,24 +38,22 @@ gt s
 
 ## Installation
 
-#### Step 1: Download the latest Release
+### Step 1: Download the latest Release
 
-Make sure you download the latest [release][] for your platform and place it in a directory on your `$PATH`.
+Make sure you download the latest [release](https://github.com/SierraSoftworks/git-tool/releases) for your platform and place it in a directory on your `$PATH`.
 
-**NOTE** If you're on Windows, you may need to install the Microsoft Visual C++ Re-distributable package. You can find these
-on Microsoft's website [here](https://support.microsoft.com/en-ie/help/2977003/the-latest-supported-visual-c-downloads). If you
-are missing this, Git-Tool will not run from the command line and running the binary directly will display an error dialog.
+**NOTE** If you're on Windows, you may need to install the Microsoft Visual C++ Re-distributable package. You can find these on Microsoft's website [here](https://support.microsoft.com/en-ie/help/2977003/the-latest-supported-visual-c-downloads). If you are missing this, Git-Tool will not run from the command line and running the binary directly will display an error dialog.
 
-#### Step 2: Ensure that you can run `git-tool`
+### Step 2: Ensure that you can run `git-tool`
 
-```
+```text
 λ git-tool --version
 gt version 1.2.13+1
 ```
 
-#### Step 3: Configure your Installation
+### Step 3: Configure your Installation
 
-Add a `git-config.yml` file somewhere and fill it in with the following (modifying your directory to match your chosen development folder).
+Add a `git-config.yml` file somewhere and fill it in with the following \(modifying your directory to match your chosen development folder\).
 
 ```yaml
 ---
@@ -80,15 +77,15 @@ apps:
 
 Then update your environment to inform `git-tool` of your config file. While you're at it, enable autocomplete.
 
-##### Windows
+#### Windows
 
-```powershell
+```text
 notepad $PROFILE.CurrentUserAllHosts
 ```
 
 Then add the following and save.
 
-```powershell
+```text
 # The path to your git-tool config file.
 $env:GITTOOL_CONFIG = "C:\dev\git-tool.yml"
 
@@ -99,7 +96,7 @@ New-Alias -Name gt -Value "git-tool.exe"
 Invoke-Expression (&git-tool shell-init powershell)
 ```
 
-##### Linux
+#### Linux
 
 ```bash
 vi ~/.bashrc
@@ -114,15 +111,15 @@ alias gt="git-tool"
 eval "$(git-tool shell-init bash)"
 ```
 
-##### MacOS
+#### MacOS
 
-```zsh
+```text
 vi ~/.zshrc
 ```
 
 Then add the following:
 
-```zsh
+```text
 # ~/.zshrc
 export GITTOOL_CONFIG="/your/path/to/git-tool.yml"
 alias gt="git-tool"
@@ -133,7 +130,7 @@ eval "$(git-tool shell-init zsh)"
 
 Git Tool has been written to support a wide range of Git servers and allows you to add your own via the config file.
 
-#### Azure DevOps
+### Azure DevOps
 
 ```yaml
 services:
@@ -144,7 +141,7 @@ services:
     pattern: "*/*/*"
 ```
 
-#### BitBucket
+### BitBucket
 
 ```yaml
 services:
@@ -155,7 +152,7 @@ services:
     pattern: "*/*"
 ```
 
-#### GitLab
+### GitLab
 
 ```yaml
 services:
@@ -166,20 +163,15 @@ services:
     pattern: "*/*"
 ```
 
-#### Custom
+### Custom
 
-When adding a custom service, you will need to ensure that you provide the various templates necessary for generating URLs
-as well as the glob `pattern` which will be used to identify repositories within the service's development directory. In
-the case of most Git services, this will be `*/*` (corresponding to the organization name and repository name); however some
-services like Azure DevOps make use of different patterns.
+When adding a custom service, you will need to ensure that you provide the various templates necessary for generating URLs as well as the glob `pattern` which will be used to identify repositories within the service's development directory. In the case of most Git services, this will be `*/*` \(corresponding to the organization name and repository name\); however some services like Azure DevOps make use of different patterns.
 
 ## Adding new Apps
 
-Git Tool has the ability to launch applications within the context of your repositories. This is useful when you want to
-quickly open a shell or your favourite editor and start working, however you can also add a wide range of other applications
-there. Here are a few examples.
+Git Tool has the ability to launch applications within the context of your repositories. This is useful when you want to quickly open a shell or your favourite editor and start working, however you can also add a wide range of other applications there. Here are a few examples.
 
-#### Admin PowerShell on Windows
+### Admin PowerShell on Windows
 
 ```yaml
 apps:
@@ -193,7 +185,7 @@ apps:
       - "@('-NoExit', '-Command', 'cd ''{{ .Target.Path }}''')"
 ```
 
-#### Windows Explorer
+### Windows Explorer
 
 ```yaml
 apps:
@@ -205,8 +197,7 @@ apps:
 
 ## Aliases
 
-For your most common repositories, it can often make sense to give distinct aliases. These aliases allow you to quickly and
-exactly specify a repository without typing its full name or relying on autocomplete.
+For your most common repositories, it can often make sense to give distinct aliases. These aliases allow you to quickly and exactly specify a repository without typing its full name or relying on autocomplete.
 
 ```yaml
 aliases:
@@ -215,4 +206,3 @@ aliases:
 
 You can use an alias anywhere you would specify a repository name, such as `gt o blog`.
 
-[release]: https://github.com/SierraSoftworks/git-tool/releases
