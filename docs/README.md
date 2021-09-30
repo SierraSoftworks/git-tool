@@ -2,7 +2,7 @@
 description: 'Welcome to Git-Tool''s documentation, let''s get you set up.'
 ---
 
-# Git-Tool
+# Welcome
 
 **Simplify checking out your Git repositories in a structured directory space**
 

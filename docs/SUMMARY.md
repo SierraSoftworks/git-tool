@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Git-Tool](README.md)
+* [Welcome](README.md)
 
 ## Guide
 
