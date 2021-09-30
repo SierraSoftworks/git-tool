@@ -28,3 +28,9 @@
 * [Registry](config/registry.md)
 * [Templates](config/templates.md)
 
+---
+
+* [Releases](https://github.com/SierraSoftworks/git-tool/releases)
+* [Report an Issue](https://github.com/SierraSoftworks/git-tool/issues/new/choose)
+* [Source Code](https://github.com/SierraSoftworks/git-tool)
+
