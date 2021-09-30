@@ -1,18 +1,22 @@
-# Git Tool
+---
+description: 'Welcome to Git-Tool''s documentation, let''s get you set up.'
+---
+
+# Git-Tool
 
 **Simplify checking out your Git repositories in a structured directory space**
 
-Git Tool is a powerful tool for managing your Git repositories, storing them in
-a consistent folder structure and simplifying access when you need it. The best
-place to get started is by reading our [documentation](https://git-tool.sierrasoftworks.com).
+Git Tool is a powerful tool for managing your Git repositories, storing them in a consistent folder structure and simplifying access when you need it. The best place to get started is by reading our [documentation](https://git-tool.sierrasoftworks.com).
+
+{% page-ref page="guide/getting-started.md" %}
 
 ## Features
 
-- **Quickly open repositories** whether they are already cloned locally or not, using your favourite Git services and a concise folder structure.
-- **Launch applications** within the context of your repositories quickly and consistently.
-- **Weekly scratchpads** to help organize random work and doodles with minimal effort.
-- **Aliases** to make opening your most common repositories as quick as possible.
-- **Fast autocompletion** on all platforms with support for "sequence search" (`ssgt` matches `SierraSoftworks/git-tool`) as found in Sublime and VSCode.
+* **Quickly open repositories** whether they are already cloned locally or not, using your favourite Git services and a concise folder structure.
+* **Launch applications** within the context of your repositories quickly and consistently.
+* **Weekly scratchpads** to help organize random work and doodles with minimal effort.
+* **Aliases** to make opening your most common repositories as quick as possible.
+* **Fast autocompletion** on all platforms with support for "sequence search" \(`ssgt` matches `SierraSoftworks/git-tool`\) as found in Sublime and VSCode.
 
 ## Example
 
@@ -37,3 +41,4 @@ gt i dev.azure.com/sierrasoftworks/opensource/git-tool
 # Open your shell in the current week's scratch directory
 gt s
 ```
+
