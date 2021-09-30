@@ -1,28 +1,30 @@
 # Table of contents
 
-* [Git Tool](README.md)
-* [README](docs/README.md)
-  * [Getting Started](docs/guide/README.md)
-    * [Updating Git-Tool](docs/guide/updates.md)
-    * [Installation Guide](docs/guide/installation.md)
-    * [Basic Usage](docs/guide/usage.md)
-    * [Linking to GitHub](docs/guide/github.md)
-  * [Introduction](docs/commands/README.md)
-    * [Development](docs/commands/dev.md)
-    * [Config Management](docs/commands/config.md)
-    * [Repositories](docs/commands/repos.md)
-    * [Setup](docs/commands/setup.md)
-    * [Scratchpads](docs/commands/scratch.md)
-  * [Introduction](docs/config/README.md)
-    * [Templates](docs/config/templates.md)
-    * [Services](docs/config/services.md)
-    * [Features](docs/config/features.md)
-    * [Registry](docs/config/registry.md)
-    * [Applications](docs/config/apps.md)
-* [.github](.github/README.md)
-  * [ISSUE\_TEMPLATE](.github/issue_template/README.md)
-    * [feature\_request](.github/issue_template/feature_request.md)
-    * [bug\_report](.github/issue_template/bug_report.md)
-    * [documentation](.github/issue_template/documentation.md)
-* [Contributor Covenant Code of Conduct](code_of_conduct.md)
+* [Git-Tool](README.md)
+
+## Guide
+
+* [Getting Started](guide/getting-started.md)
+* [Installation](guide/installation.md)
+* [Usage](guide/usage.md)
+* [Updates](guide/updates.md)
+* [Linking to GitHub](guide/github.md)
+
+## Commands
+
+* [Overview](commands/overview.md)
+* [Repositories](commands/repos.md)
+* [Scratchpads](commands/scratch.md)
+* [Development](commands/development.md)
+* [Config Management](commands/config.md)
+* [Setup](commands/setup.md)
+
+## Configuration <a id="config"></a>
+
+* [Overview](config/overview.md)
+* [Applications](config/apps.md)
+* [Services](config/services.md)
+* [Features](config/features.md)
+* [Registry](config/registry.md)
+* [Templates](config/templates.md)
 
