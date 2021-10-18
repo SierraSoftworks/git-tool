@@ -71,7 +71,7 @@ jobs:
         run: ${{ matrix.setup }}
         if: matrix.setup
 
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
 
       - name: cache ~/.cargo
         uses: Swatinem/rust-cache@v1
