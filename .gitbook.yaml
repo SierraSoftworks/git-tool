@@ -1,4 +1,0 @@
-root: ./docs/
-
-redirects:
-  humans.txt: ./assets/humans.txt

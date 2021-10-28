@@ -1,52 +1,48 @@
----
-description: >-
-  Learn how to quickly make changes to your Git-Tool config without leaving the
-  command line.
----
-
 # Config Management
 
-## config __
+## config <Badge text="v1.5+"/>
+The `gt config` command will print your current [`config.yml`](../config/README.md)
+file to `stdout`. It's a great way to quickly view your config, save it or share
+it.
 
-The `gt config` command will print your current [`config.yml`](../config/overview.md) file to `stdout`. It's a great way to quickly view your config, save it or share it.
-
-The `gt config` command also has a series of sub-commands which allow you to manage your config without needing to kick open a text editor \(along with autocomplete suggestions\).
+The `gt config` command also has a series of sub-commands which allow you to
+manage your config without needing to kick open a text editor (along with
+autocomplete suggestions).
 
 #### Example
-
-```bash
+```powershell
 # Show your current config
 gt config
 ```
 
-### config list
+### config list <Badge text="v1.5+"/>
+Git-Tool has a [registry](../config/registry.md) of useful apps and services
+which you can easily add to your configuration. The `gt config list` command
+will show you the items available in this registry and you can install
+any of them using [`gt config add`](#config-add).
 
-Git-Tool has a [registry](../config/registry.md) of useful apps and services which you can easily add to your configuration. The `gt config list` command will show you the items available in this registry and you can install any of them using [`gt config add`](config.md#config-add).
-
-{% hint style="info" %}
-Anyone is welcome to contribute their own templates to the Git-Tool registry, take a look at the [registry](../config/registry.md) documentation for information on how to do so.
-{% endhint %}
+::: tip
+Anyone is welcome to contribute their own templates to the Git-Tool registry,
+take a look at the [registry](../config/registry.md) documentation for information
+on how to do so.
+:::
 
 #### Example
-
-```bash
+```powershell
 # List the apps and services which can be added to your config automatically
 gt config list
 ```
 
-### config add
-
-If you find something in the Git-Tool [registry](../config/registry.md) which you want to add to your config, you can use `gt config add` to install it.
+### config add <Badge text="v1.5+"/>
+If you find something in the Git-Tool [registry](../config/registry.md) which you
+want to add to your config, you can use `gt config add` to install it.
 
 #### Options
-
-* `-f`, `--force` will overwrite any existing apps or services in your config which share
-
-  the same names as those in the template you are installing.
+ - `-f`, `--force` will overwrite any existing apps or services in your config which share
+   the same names as those in the template you are installing.
 
 #### Example
-
-```bash
+```powershell
 # Install the Visual Studio developer prompt app
 gt config add apps/visualstudio
 
@@ -54,23 +50,24 @@ gt config add apps/visualstudio
 gt config add services/github -f
 ```
 
-### config alias
+### config alias <Badge text="v2.0+"/>
+Git-Tool allows you to setup aliases for repositories you use often. These aliases
+can give you a short name by which to refer to a repo and prevent confusion about
+which one you intended to open if multiple repos match a pattern you provide.
 
-Git-Tool allows you to setup aliases for repositories you use often. These aliases can give you a short name by which to refer to a repo and prevent confusion about which one you intended to open if multiple repos match a pattern you provide.
+When using any Git-Tool command which expects a repository name, you can provide
+the alias instead. For example: `gt o blog`.
 
-When using any Git-Tool command which expects a repository name, you can provide the alias instead. For example: `gt o blog`.
-
-{% hint style="info" %}
-Aliases are a great way to distinguish between repos with similar or generic names. Try something like `gt config alias blog github.com/SierraSoftworks/blog`
-{% endhint %}
+::: tip
+Aliases are a great way to distinguish between repos with similar or generic names.
+Try something like `gt config alias blog github.com/SierraSoftworks/blog`
+:::
 
 #### Options
-
-* `-d`, `--delete` will delete the alias with the provided name from your config.
+ - `-d`, `--delete` will delete the alias with the provided name from your config.
 
 #### Example
-
-```bash
+```powershell
 # Add an alias for git-tool
 gt config alias gt github.com/SierraSoftworks/git-tool
 
@@ -81,17 +78,17 @@ gt config alias gt
 gt config alias -d gt
 ```
 
-### config feature
+### config feature <Badge text="v2.1.21+"/>
+Git-Tool uses [feature flags](../config/features.md) as a means of tweaking behaviour depending on your
+individual preferences. This command allows you to quickly view the feature flags
+you have set and modify their values, all with lovely autocomplete support.
 
-Git-Tool uses [feature flags](../config/features.md) as a means of tweaking behaviour depending on your individual preferences. This command allows you to quickly view the feature flags you have set and modify their values, all with lovely autocomplete support.
-
-{% hint style="info" %}
+::: tip
 For the full list of feature flags, take a look at the [configuration docs](../config/features.md).
-{% endhint %}
+:::
 
 #### Example
-
-```bash
+```powershell
 # Check the status of all of your feature flags
 gt config feature
 
@@ -102,21 +99,22 @@ gt config feature telemetry false
 gt config feature telemetry
 ```
 
-## auth
+## auth <Badge text="v2.1+"/>
+The `gt auth` command allows you to manage the authentication tokens used to connect to remote
+repository hosts like GitHub.
 
-The `gt auth` command allows you to manage the authentication tokens used to connect to remote repository hosts like GitHub.
-
-{% hint style="warning" %}
-These access tokens are stored in your local system keychain for a bit of extra security, however if you are using a shared computer or are concerned about the physical security of your device, it is best to avoid this feature.
-{% endhint %}
+::: warning
+These access tokens are stored in your local system keychain
+for a bit of extra security, however if you are using a shared computer or
+are concerned about the physical security of your device, it is best to avoid
+this feature.
+:::
 
 #### Options
-
-* `-d`, `--delete` will remove the stored access token for the service you specify.
+ - `-d`, `--delete` will remove the stored access token for the service you specify.
 
 #### Example
-
-```bash
+```powershell
 # Store an access token for github.com
 gt auth github.com
 
@@ -127,25 +125,22 @@ gt auth github.com --token $GITHUB_TOKEN
 gt auth -d github.com
 ```
 
-## apps
-
-The `gt apps` command provides you with a list of all of the applications you have added to your [configuration](../config/apps.md).
+## apps <Badge text="v1.0+"/>
+The `gt apps` command provides you with a list of all of the applications
+you have added to your [configuration](../config/apps.md).
 
 #### Example
-
-```bash
+```powershell
 # List the apps you have added to your configuration
 gt apps
 ```
 
-## services
-
-The `gt services` command provides you with a list of all of the services you have added to your [configuration](../config/services.md).
+## services <Badge text="v1.0+"/>
+The `gt services` command provides you with a list of all of the services
+you have added to your [configuration](../config/services.md).
 
 #### Example
-
-```bash
+```powershell
 # List the services you have added to your configuration
 gt services
 ```
-
