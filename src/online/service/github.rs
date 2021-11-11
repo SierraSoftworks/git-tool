@@ -130,11 +130,13 @@ struct UserProfile {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct NewRepoResponse {
     pub id: u64,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct GitHubErrorResponse {
     #[serde(skip)]
     pub http_status_code: StatusCode,
@@ -183,6 +185,7 @@ impl Into<errors::Error> for GitHubErrorResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct GitHubError {
     pub message: String,
 

@@ -140,6 +140,7 @@ impl Registry for GitHubRegistry {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 struct GitHubTree {
     pub tree: Vec<GitHubTreeNode>,
     pub truncated: bool,

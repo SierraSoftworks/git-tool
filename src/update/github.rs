@@ -222,6 +222,7 @@ impl GitHubSource {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct GitHubRelease {
     pub name: String,
     pub tag_name: String,
