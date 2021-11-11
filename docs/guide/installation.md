@@ -10,9 +10,11 @@ Head on over and download the executable for your platform.
  - **MacOS** users on Intel platforms should download `git-tool-darwin-amd64` while those on Apple Silicon should download `git-tool-darwin-arm64`.
 :::
 
-
 Once you have downloaded the latest Git-Tool executable, rename it to `git-tool` and place it in a directory which is on your `$PATH`.
+
+::: warning
 On Linux and MacOS machines, you may need to use `chmod +x git-tool` to mark the program as executable.
+:::
 
 ### Using Cargo
 If you'd prefer, or if we don't (yet) provide pre-built releases for your platform, you can build
@@ -116,6 +118,12 @@ Git-Tool v2.2.0
 If you instead get an error saying that `git-tool` could not be found, that means that it is either not on your path or
 not marked as executable. First try restarting your terminal to make sure you've got the latest `$PATH` loaded and if that
 doesn't help, head on back to the [Setting up your PATH](#setting-up-your-path) section and check that you haven't missed anything.
+:::
+
+::: warning
+For users on MacOS, you might see a warning appear saying that the application
+cannot be run because Apple cannot verify the safety of its code. This can be
+solved by opening up **System Preferences &rarr; Security and Privacy &rarr; General** and choosing to allow `git-tool` to be run.
 :::
 
 ## Setup your Config
