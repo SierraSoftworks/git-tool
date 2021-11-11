@@ -254,7 +254,9 @@ pub mod mocks {
                                 "assets": [
                                     { "name": "git-tool-windows-amd64.exe" },
                                     { "name": "git-tool-linux-amd64" },
-                                    { "name": "git-tool-darwin-amd64" }
+                                    { "name": "git-tool-linux-arm64" },
+                                    { "name": "git-tool-darwin-amd64" },
+                                    { "name": "git-tool-darwin-arm64" }
                                 ]
                             }
                         ]"#,
@@ -273,7 +275,19 @@ pub mod mocks {
             ),
             HttpClient::route(
                 "GET",
+                "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-linux-arm64",
+                200,
+                r#"testdata"#,
+            ),
+            HttpClient::route(
+                "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-darwin-amd64",
+                200,
+                r#"testdata"#,
+            ),
+            HttpClient::route(
+                "GET",
+                "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-darwin-arm64",
                 200,
                 r#"testdata"#,
             ),

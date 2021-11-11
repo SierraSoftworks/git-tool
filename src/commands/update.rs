@@ -165,7 +165,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("  v2.1.20\n"),
+            output.to_string().contains("  v2.2.7\n"),
             "the output should contain a list of versions"
         );
     }
