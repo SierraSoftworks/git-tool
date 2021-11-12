@@ -16,6 +16,7 @@ mod auth;
 mod clone;
 mod complete;
 mod config;
+mod doctor;
 mod fix;
 mod helpers;
 mod ignore;
