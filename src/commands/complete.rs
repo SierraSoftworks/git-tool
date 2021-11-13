@@ -15,8 +15,7 @@ impl Command for CompleteCommand {
             .arg(Arg::new("position")
                     .long("position")
                     .about("The position of the cursor when the completion is requested")
-                    .takes_value(true)
-                    .default_value("-1"))
+                    .takes_value(true))
             .arg(Arg::new("args")
                 .about("The parameters being passed to Git-Tool for auto-completion.")
                 .index(1))
@@ -42,7 +41,7 @@ where {
             .extract_command_and_filter(args, position)
             .unwrap_or_default();
 
-        let completer = Completer::new(&filter);
+        let completer = Completer::new(core, &filter);
         self.offer_completions(core, &commands, &cmd, &completer)
             .await;
 
@@ -220,6 +219,32 @@ pub mod helpers {
 
         test_completions_with_config(&config, args, filter, contains).await;
     }
+
+    pub async fn test_completions2(args: Vec<&str>, contains: Vec<&str>) {
+        let cfg = Config::for_dev_directory(&get_dev_dir());
+        let core = Core::builder().with_config(&cfg).build();
+
+        let output = crate::console::output::mock();
+
+        let cmd = CompleteCommand {};
+
+        let args = cmd.app().get_matches_from(args);
+        cmd.run(&core, &args)
+            .await
+            .expect("the command should run successfully");
+
+        let output = output.to_string();
+        let offers: Vec<&str> = output.split('\n').collect();
+
+        for item in contains {
+            assert!(
+                offers.contains(&item),
+                "completion output '{}' should contain '{}'",
+                output.to_string(),
+                item
+            );
+        }
+    }
 }
 
 #[cfg(test)]
@@ -358,6 +383,21 @@ mod tests {
             "gt scratch",
             "",
             vec!["shell", "2019w15", "2019w16", "2019w27"],
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_completions_with_position() {
+        test_completions2(
+            vec!["complete", "git-tool open "],
+            vec!["github.com/sierrasoftworks/test1"],
+        )
+        .await;
+
+        test_completions2(
+            vec!["complete", "--position", "14", "git-tool open "],
+            vec!["github.com/sierrasoftworks/test2"],
         )
         .await;
     }

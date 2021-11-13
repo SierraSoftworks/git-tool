@@ -10,8 +10,9 @@ pub struct Completer {
 }
 
 impl Completer {
-    pub fn new(filter: &str) -> Self {
-        Self::new_for(filter, Arc::new(Mutex::new(std::io::stdout())))
+    pub fn new(core: &crate::core::Core, filter: &str) -> Self {
+        let output = core.output();
+        Self::new_for(filter, Arc::new(Mutex::new(output)))
     }
 
     pub fn new_for(filter: &str, output: Arc<Mutex<dyn std::io::Write + Send>>) -> Self {
