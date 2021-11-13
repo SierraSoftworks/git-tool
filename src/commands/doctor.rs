@@ -30,7 +30,7 @@ impl CommandRunnable for DoctorCommand {
         let config_path = env::var("GITTOOL_CONFIG").map_err(|_| {
             errors::user(
                 "GITTOOL_CONFIG environment variable is not set",
-                "You must set the GITTOOL_CONFIG environment variable to the path of your config file",
+                "Set the GITTOOL_CONFIG environment variable to the path of your config file",
             )
         })?;
 
@@ -38,9 +38,9 @@ impl CommandRunnable for DoctorCommand {
 
         if !std::path::Path::new(&config_path).exists() {
             Err(errors::user(
-                    "GITTOOL_CONFIG environment variable is set to a path that does not exist",
-                    "You must set the GITTOOL_CONFIG environment variable to the path of your config file",
-                ))?;
+                "GITTOOL_CONFIG environment variable is set to a path that does not exist",
+                "Set the GITTOOL_CONFIG environment variable to the path of your config file",
+            ))?;
         }
 
         writeln!(
@@ -52,7 +52,7 @@ impl CommandRunnable for DoctorCommand {
             Some(config_file) if config_file != std::path::Path::new(&config_path) => {
                 Err(errors::user(
                     "GITTOOL_CONFIG environment variable is set to a path that does not match the config file",
-                    "You must set the GITTOOL_CONFIG environment variable to the path of your config file",
+                    "Set the GITTOOL_CONFIG environment variable to the path of your config file",
                 ))?;
             }
             _ => {}
@@ -98,6 +98,18 @@ mod tests {
         let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
+
+        std::env::set_var(
+            "GITTOOL_CONFIG",
+            temp.path().join("config.yml").to_str().unwrap(),
+        );
+
+        // Ensure that the config file is created
+        std::fs::write(
+            temp.path().join("config.yml"),
+            serde_yaml::to_string(&cfg).unwrap(),
+        )
+        .unwrap();
 
         let cmd = DoctorCommand {};
         match cmd.run(&core, &args).await {
