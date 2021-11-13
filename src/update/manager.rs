@@ -53,6 +53,27 @@ where
 
         {
             info!(
+                "Checking whether app binary ({}) is writable by current user.",
+                self.target_application.display()
+            );
+            let permissions = tokio::fs::metadata(self.target_application.clone()).await?;
+            if permissions.permissions().readonly() {
+                Err(errors::user(
+                    "The application binary is read-only. Please make sure that the application binary is writable by the current user.",
+                    {
+                        #[cfg(windows)] {
+                            "Try running this command in an administrative console (Win+X, A)."
+                        }
+
+                        #[cfg(unix)]{
+                            "Try running this command as root with `sudo git-tool update`."
+                        }
+                    }))?;
+            }
+        }
+
+        {
+            info!(
                 "Downloading release binary for {} to temporary location ({}).",
                 release.version,
                 app.display()
@@ -105,6 +126,9 @@ where
         let update_target = state.target_application.clone().ok_or(errors::system(
             "Could not locate the application which was meant to be updated due to an issue loading the update state (replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
+
+        info!("Removing the original application binary to avoid conflicts with open handles.");
+        self.delete_file(&update_target).await?;
 
         info!("Replacing original application binary with temporary release binary.");
         self.copy_file(&update_source, &update_target).await?;
@@ -211,6 +235,7 @@ impl<S: Source> UpdateManager<S> {
 
         while retries > 0 {
             retries -= 1;
+
             match tokio::fs::copy(from, to).await {
                 Err(e) if retries < 0 => return Err(errors::user_with_internal(
                     &format!("Could not copy the new application file '{}' to overwrite the old application file '{}' after {} retries.", from.display(), to.display(), max_retries),
@@ -245,7 +270,7 @@ where
 {
     fn default() -> Self {
         Self {
-            target_application: PathBuf::from(std::env::args().nth(0).unwrap_or_default()),
+            target_application: PathBuf::from(std::env::current_exe().unwrap_or_default()),
             source: S::default(),
             variant: ReleaseVariant::default(),
         }
@@ -273,6 +298,8 @@ mod tests {
 
         let app_path = temp.path().join("app").to_owned();
         let temp_app_path = temp.path().join("app-temp").to_owned();
+
+        std::fs::write(&app_path, "Pre-Update").unwrap();
 
         let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
         manager.target_application = app_path.clone();
