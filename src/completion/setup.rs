@@ -87,7 +87,7 @@ _gittool_zsh_autocomplete() {{
     reply=( "${{(ps:\n:)completions}}" )
 }}
     
-compctl -K _gittool_zsh_autocomplete git-tool
+compctl -U -K _gittool_zsh_autocomplete git-tool
             "#,
                 app = args().next().unwrap_or("git-tool".to_string())
             ),
