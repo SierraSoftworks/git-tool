@@ -773,9 +773,9 @@ dependencies = [
 
 [[package]]
 name = "keyring"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1d06eb6aa5f0732fae940abe4b697c2901ab5729b091db00a328791a1f0f229"
+checksum = "a49a8b156a663b0b6898a845f056dd2502d8f0b3bde9686b59cfb4fdbc1d4777"
 dependencies = [
  "byteorder",
  "secret-service",
