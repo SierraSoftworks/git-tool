@@ -184,3 +184,14 @@ gt fix --all github.com/SierraSoftworks/
 The quickest way to update a repo's `origin` is to `mv $REPO $NEW_REPO` and then run
 `gt fix $NEW_REPO`.
 :::
+
+## remove <Badge text="v2.2.13+"/>
+The `gt remove` command will remove a repository from your local machine. This is particularly
+useful since a repository you have opened with [`gt open`](#open) will often have its shell spawned
+in the directory you are attempting to delete.
+
+#### Example
+```powershell
+# Remove a repository
+gt remove github.com/SierraSoftworks/git-tool
+```
