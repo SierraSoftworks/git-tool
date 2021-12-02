@@ -2,7 +2,7 @@ use super::*;
 use std::sync::Arc;
 
 #[cfg(feature = "auth")]
-use keyring::Keyring;
+use keyring;
 
 #[cfg(test)]
 use mocktopus::macros::*;
@@ -20,18 +20,18 @@ impl From<Arc<Config>> for KeyChain {
 #[cfg_attr(test, mockable)]
 impl KeyChain {
     pub fn get_token(&self, service: &str) -> Result<String, Error> {
-        let token = Keyring::new("git-tool", service).get_password()?;
+        let token = keyring::Entry::new("git-tool", service).get_password()?;
 
         Ok(token)
     }
 
     pub fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
-        Keyring::new("git-tool", service).set_password(token)?;
+        keyring::Entry::new("git-tool", service).set_password(token)?;
         Ok(())
     }
 
     pub fn remove_token(&self, service: &str) -> Result<(), Error> {
-        Keyring::new("git-tool", service).delete_password()?;
+        keyring::Entry::new("git-tool", service).delete_password()?;
         Ok(())
     }
 }
