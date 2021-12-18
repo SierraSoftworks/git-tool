@@ -16,15 +16,15 @@ impl Command for ListCommand {
             .about("list your repositories")
             .after_help("Gets the list of repositories managed by Git-Tool. These repositories can be opened using the `git-tool open` command.")
             .arg(Arg::new("filter")
-                .about("A filter which limits the repositories that are returned.")
+                .help("A filter which limits the repositories that are returned.")
                 .index(1))
             .arg(Arg::new("quiet")
                 .long("quiet")
                 .short('q')
-                .about("Prints only the name of the repository."))
+                .help("Prints only the name of the repository."))
             .arg(Arg::new("full")
                 .long("full")
-                .about("Prints detailed information about each repository.")
+                .help("Prints detailed information about each repository.")
                 .conflicts_with("quiet"))
     }
 }

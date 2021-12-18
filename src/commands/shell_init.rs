@@ -23,8 +23,8 @@ impl Command for ShellInitCommand {
                     .arg(
                         Arg::new("full")
                             .long("full")
-                            .about("prints the full initialization script for this shell")
-                            .hidden(true),
+                            .help("prints the full initialization script for this shell")
+                            .hide(true),
                     ),
             );
         }

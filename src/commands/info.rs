@@ -17,7 +17,7 @@ impl Command for InfoCommand {
             .visible_alias("i")
             .long_about("Gets the details of a specific repository, either the currently open one or one provided by its name or alias.")
             .arg(Arg::new("repo")
-                    .about("The name of the repository to get information about.")
+                    .help("The name of the repository to get information about.")
                     .index(1))
     }
 }

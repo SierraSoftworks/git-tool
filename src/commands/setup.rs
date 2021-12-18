@@ -27,7 +27,7 @@ impl Command for SetupCommand {
             .arg(Arg::new("force")
                 .long("force")
                 .short('f')
-                .about("Run the setup wizard even if you already have a config file."))
+                .help("Run the setup wizard even if you already have a config file."))
     }
 }
 

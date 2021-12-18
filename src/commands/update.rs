@@ -15,14 +15,14 @@ impl Command for UpdateCommand {
             .long_about("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
             .arg(Arg::new("state")
                 .long("state")
-                .about("State information used to resume an update operation.")
-                .hidden(true)
+                .help("State information used to resume an update operation.")
+                .hide(true)
                 .takes_value(true))
             .arg(Arg::new("list")
                 .long("list")
-                .about("Prints the list of available releases."))
+                .help("Prints the list of available releases."))
             .arg(Arg::new("version")
-                .about("The version you wish to update to. Defaults to the latest available version.")
+                .help("The version you wish to update to. Defaults to the latest available version.")
                 .index(1))
     }
 }

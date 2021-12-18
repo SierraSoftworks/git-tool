@@ -20,19 +20,19 @@ impl Command for OpenCommand {
             
 New applications can be configured either by making changes to your configuration, or by using the `git-tool config add` command to install them from the GitHub registry. For example, you can use `gt config add apps/bash` to configure `bash` as an available app.")
             .arg(Arg::new("app")
-                    .about("The name of the application to launch.")
+                    .help("The name of the application to launch.")
                     .index(1))
             .arg(Arg::new("repo")
-                    .about("The name of the repository to open.")
+                    .help("The name of the repository to open.")
                     .index(2))
             .arg(Arg::new("create")
                     .long("create")
                     .short('c')
-                    .about("create the repository if it does not exist."))
+                    .help("create the repository if it does not exist."))
             .arg(Arg::new("no-create-remote")
                     .long("no-create-remote")
                     .short('R')
-                    .about("prevent the creation of a remote repository (on supported services)"))
+                    .help("prevent the creation of a remote repository (on supported services)"))
     }
 }
 

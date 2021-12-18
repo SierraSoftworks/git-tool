@@ -14,15 +14,15 @@ impl Command for AuthCommand {
             .long_about("Configures the authentication tokens used by Git-Tool to create and manage your remote repositories.")
             .arg(Arg::new("service")
                 .index(1)
-                .about("the service to configure an access token for")
+                .help("the service to configure an access token for")
                 .required(true))
             .arg(Arg::new("remove-token")
                 .long("delete")
                 .short('d')
-                .about("delete any access token associated with the service"))
+                .help("delete any access token associated with the service"))
                 .arg(Arg::new("token")
                     .long("token")
-                    .about("specifies the token to be set (don't use this unless you have to)")
+                    .help("specifies the token to be set (don't use this unless you have to)")
                     .takes_value(true))
     }
 }

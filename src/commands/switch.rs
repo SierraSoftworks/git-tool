@@ -23,14 +23,14 @@ impl Command for SwitchCommand {
             )
             .arg(
                 Arg::new("branch")
-                    .about("The name of the branch to switch to.")
+                    .help("The name of the branch to switch to.")
                     .index(1),
             )
             .arg(
                 Arg::new("no-create")
                     .short('N')
                     .long("no-create")
-                    .about("don't create the branch if it doesn't exist."),
+                    .help("don't create the branch if it doesn't exist."),
             )
     }
 }

@@ -17,16 +17,16 @@ impl Command for FixCommand {
             .visible_alias("i")
             .long_about("Updates the remote configuration for a repository to match its directory location.")
             .arg(Arg::new("repo")
-                    .about("The name of the repository to fix.")
+                    .help("The name of the repository to fix.")
                     .index(1))
             .arg(Arg::new("all")
                 .long("all")
                 .short('a')
-                .about("apply fixes to all matched repositories"))
+                .help("apply fixes to all matched repositories"))
             .arg(Arg::new("no-create-remote")
                 .long("no-create-remote")
                 .short('R')
-                .about("prevent the creation of a remote repository (on supported services)"))
+                .help("prevent the creation of a remote repository (on supported services)"))
     }
 }
 

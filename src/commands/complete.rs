@@ -14,10 +14,10 @@ impl Command for CompleteCommand {
             .long_about("Provides realtime command and argument auto-completion for Git-Tool when using `git-tool shell-init`.")
             .arg(Arg::new("position")
                     .long("position")
-                    .about("The position of the cursor when the completion is requested")
+                    .help("The position of the cursor when the completion is requested")
                     .takes_value(true))
             .arg(Arg::new("args")
-                .about("The parameters being passed to Git-Tool for auto-completion.")
+                .help("The parameters being passed to Git-Tool for auto-completion.")
                 .index(1))
     }
 }

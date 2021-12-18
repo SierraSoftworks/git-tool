@@ -17,7 +17,7 @@ impl Command for RemoveCommand {
             .about("removes a repository from your local machine")
             .long_about("This command will remove the specified repository from your local machine. It requires that the repository name be provided in fully-qualified form.")
             .arg(Arg::new("repo")
-                    .about("The name of the repository to open.")
+                    .help("The name of the repository to open.")
                     .index(1)
                 .required(true))
     }

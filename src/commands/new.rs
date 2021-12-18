@@ -18,20 +18,20 @@ impl Command for NewCommand {
             .long_about("Creates a new repository with the provided name.")
             .arg(
                 Arg::new("repo")
-                    .about("The name of the repository to create.")
+                    .help("The name of the repository to create.")
                     .index(1),
             )
             .arg(
                 Arg::new("open")
                     .long("open")
                     .short('o')
-                    .about("opens the repository in your default application after it is created."),
+                    .help("opens the repository in your default application after it is created."),
             )
             .arg(
                 Arg::new("no-create-remote")
                     .long("no-create-remote")
                     .short('R')
-                    .about("prevent the creation of a remote repository (on supported services)"),
+                    .help("prevent the creation of a remote repository (on supported services)"),
             )
     }
 }

@@ -17,7 +17,7 @@ impl Command for CloneCommand {
             .about("clones a repository")
             .long_about("This command clones a repository if it does not already exist in your dev directory. It works similarly to the `gt open` command, however it will not launch an application in the repository upon completion.")
             .arg(Arg::new("repo")
-                    .about("The name of the repository to open.")
+                    .help("The name of the repository to open.")
                     .required(true)
                     .index(1))
     }
