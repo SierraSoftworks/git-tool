@@ -24,6 +24,8 @@ impl Command for IgnoreCommand {
                     .value_name("GITIGNORE")
                     .takes_value(true))
             .arg(Arg::new("language")
+                    .name("language")
+                    .forbid_empty_values(true)
                     .help("The name of a language which should be added to your .gitignore file.")
                     .multiple_values(true)
                     .index(1))
@@ -35,15 +37,15 @@ impl CommandRunnable for IgnoreCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
-        match matches.occurrences_of("language") {
-            0 => {
+        match matches.values_of("language") {
+            None => {
                 let languages = gitignore::list(core).await?;
 
                 for lang in languages {
                     writeln!(output, "{}", lang)?;
                 }
             }
-            _ => {
+            Some(languages) => {
                 let mut original_content: String = String::default();
 
                 let ignore_path =
@@ -53,12 +55,9 @@ impl CommandRunnable for IgnoreCommand {
                     original_content = content;
                 }
 
-                let content = gitignore::add_or_update(
-                    core,
-                    original_content.as_str(),
-                    matches.values_of("language").unwrap_or_default().collect(),
-                )
-                .await?;
+                let content =
+                    gitignore::add_or_update(core, original_content.as_str(), languages.collect())
+                        .await?;
 
                 tokio::fs::write(&ignore_path, content).await.map_err(|err| errors::user_with_internal(
                     &format!("Could not write to your '{}' file due to an OS-level error.", ignore_path.display()),
@@ -83,17 +82,16 @@ impl CommandRunnable for IgnoreCommand {
 mod tests {
     use super::core::Config;
     use super::*;
-    use clap::ArgMatches;
 
     #[tokio::test]
-    async fn run() {
-        let args = ArgMatches::default();
+    async fn run_no_args() {
         let cfg = Config::from_str("directory: /dev").unwrap();
         let core = Core::builder().with_config(&cfg).build();
 
         let output = crate::console::output::mock();
 
         let cmd = IgnoreCommand {};
+        let args = cmd.app().get_matches_from(&["ignore"]);
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
