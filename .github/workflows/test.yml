@@ -12,6 +12,11 @@ jobs:
     name: ${{ matrix.os }}-${{ matrix.arch }}-test
     runs-on: ${{ matrix.run_on }}
     continue-on-error: ${{ matrix.experimental || false }}
+
+    permissions:
+      id-token: write
+      contents: read
+
     strategy:
       matrix:
         include:

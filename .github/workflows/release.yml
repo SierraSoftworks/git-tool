@@ -10,6 +10,10 @@ jobs:
     environment:
       name: Production
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: get secrets - sentry
         uses: hashicorp/vault-action@v2.4.0
@@ -63,6 +67,10 @@ jobs:
 
     environment:
       name: Production
+
+    permissions:
+      id-token: write
+      contents: read
 
     needs:
       - version
@@ -191,6 +199,10 @@ jobs:
 
     environment:
       name: Production
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: get secrets - sentry
