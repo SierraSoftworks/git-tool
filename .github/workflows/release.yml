@@ -7,11 +7,25 @@ jobs:
     name: Start Release
     runs-on: ubuntu-latest
 
+    environment:
+      name: Production
+
     steps:
+      - name: get secrets - sentry
+        uses: hashicorp/vault-action@v2.4.0
+        with:
+          url: https://vault.sierrasoftworks.com
+          method: jwt
+          path: github-actions
+          role: deploy
+          jwtGithubAudience: https://github.com/SierraSoftworks
+          secrets: |
+            secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
+
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
-          token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
           project: git-tool
 
@@ -46,6 +60,10 @@ jobs:
     name: ${{ matrix.os }}-${{ matrix.arch }}-release
     runs-on: ${{ matrix.run_on }}
     continue-on-error: true
+
+    environment:
+      name: Production
+
     needs:
       - version
     strategy:
@@ -115,10 +133,21 @@ jobs:
           override: true
           target: ${{ matrix.target }}
 
+      - name: get secrets - sentry
+        uses: hashicorp/vault-action@v2.4.0
+        with:
+          url: https://vault.sierrasoftworks.com
+          method: jwt
+          path: github-actions
+          role: deploy
+          jwtGithubAudience: https://github.com/SierraSoftworks
+          secrets: |
+            secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
+
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
-          token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
           project: git-tool
 
@@ -160,11 +189,25 @@ jobs:
       - version
       - build
 
+    environment:
+      name: Production
+
     steps:
+      - name: get secrets - sentry
+        uses: hashicorp/vault-action@v2.4.0
+        with:
+          url: https://vault.sierrasoftworks.com
+          method: jwt
+          path: github-actions
+          role: deploy
+          jwtGithubAudience: https://github.com/SierraSoftworks
+          secrets: |
+            secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
+
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
-          token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
           project: git-tool
 

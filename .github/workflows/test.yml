@@ -1,9 +1,9 @@
 name: Test Changes
-on: 
+on:
   push:
     paths-ignore:
-      - 'docs/**'
-      - 'README.md'
+      - "docs/**"
+      - "README.md"
 env:
   GRCOV_VERSION: 0.8.0
 
@@ -135,11 +135,22 @@ jobs:
         run: grcov . --binary-path target/${{ matrix.target }}/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
         if: matrix.coverage || false
 
+      - name: get secrets - codecov
+        uses: hashicorp/vault-action@v2.4.0
+        with:
+          url: https://vault.sierrasoftworks.com
+          method: jwt
+          path: github-actions
+          role: build
+          jwtGithubAudience: https://github.com/SierraSoftworks
+          secrets: |
+            secrets/data/repos/SierraSoftworks/git-tool/public/codecov token | CODECOV_TOKEN;
+
       - name: codecov upload
         uses: codecov/codecov-action@v2.1.0
         if: matrix.coverage || false
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           file: ./lcov.info
 
   test-done:
