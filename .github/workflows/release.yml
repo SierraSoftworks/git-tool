@@ -8,11 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: Production
+      name: GitHub
+      url: https://github.com/SierraSoftworks/git-tool/releases
 
     permissions:
       id-token: write
-      contents: write
+      contents: read
 
     steps:
       - name: get secrets - sentry
@@ -66,11 +67,12 @@ jobs:
     continue-on-error: true
 
     environment:
-      name: Production
+      name: GitHub
+      url: https://github.com/SierraSoftworks/git-tool/releases
 
     permissions:
       id-token: write
-      contents: read
+      contents: write
 
     needs:
       - version
@@ -193,7 +195,8 @@ jobs:
       - build
 
     environment:
-      name: Production
+      name: GitHub
+      url: https://github.com/SierraSoftworks/git-tool/releases
 
     permissions:
       id-token: write
