@@ -83,7 +83,7 @@ where {
         if matches.is_present("list") {
             for release in releases {
                 let style = if release.version == current_version {
-                    "*";
+                    "*"
                 } else if release.get_variant(&current_variant).is_none() {
                     "!"
                 } else {
