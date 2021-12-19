@@ -6,6 +6,7 @@ pub struct Release {
     pub id: String,
     pub changelog: String,
     pub version: Version,
+    pub prerelease: bool,
     pub variants: Vec<ReleaseVariant>,
 }
 
@@ -96,24 +97,28 @@ mod tests {
                 id: "1".to_string(),
                 changelog: "".to_string(),
                 version: "1.1.7".parse().unwrap(),
+                prerelease: false,
                 variants: vec![],
             },
             Release {
                 id: "0".to_string(),
                 changelog: "".to_string(),
                 version: "1.0.0".parse().unwrap(),
+                prerelease: false,
                 variants: vec![],
             },
             Release {
                 id: "3".to_string(),
                 changelog: "".to_string(),
                 version: "2.3.1".parse().unwrap(),
+                prerelease: false,
                 variants: vec![],
             },
             Release {
                 id: "2".to_string(),
                 changelog: "".to_string(),
                 version: "2.1.0".parse().unwrap(),
+                prerelease: false,
                 variants: vec![],
             },
         ];
@@ -155,6 +160,7 @@ mod tests {
             id: "test".to_string(),
             changelog: "...".to_string(),
             version: "1.0.0".parse().unwrap(),
+            prerelease: false,
             variants: vec![
                 ReleaseVariant {
                     id: "windows-x64".to_string(),
