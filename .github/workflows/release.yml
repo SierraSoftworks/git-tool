@@ -183,6 +183,7 @@ jobs:
         with:
           files: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }} | git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
           token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: "true"
 
   sentry:
     name: Finalize Release
