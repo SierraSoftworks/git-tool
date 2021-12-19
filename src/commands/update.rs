@@ -24,6 +24,9 @@ impl Command for UpdateCommand {
             .arg(Arg::new("version")
                 .help("The version you wish to update to. Defaults to the latest available version.")
                 .index(1))
+            .arg(Arg::new("prerelease")
+                .help("Install pre-release and/or early access versions of Git-Tool.")
+                .long("prerelease"))
     }
 }
 
@@ -79,23 +82,32 @@ where {
 
         if matches.is_present("list") {
             for release in releases {
-                let mut style = " ";
-                if release.version == current_version {
-                    style = "*";
+                let style = if release.version == current_version {
+                    "*"
                 } else if release.get_variant(&current_variant).is_none() {
-                    style = "!"
-                }
+                    "!"
+                } else {
+                    " "
+                };
 
-                writeln!(output, "{} {}", style, release.id)?;
+                let suffix = if release.prerelease {
+                    " (pre-release)"
+                } else {
+                    ""
+                };
+
+                writeln!(output, "{} {}{}", style, release.id, suffix)?;
             }
 
             return Ok(0);
         }
 
-        let mut target_release =
-            Release::get_latest(releases.iter().filter(|&r| {
-                r.get_variant(&current_variant).is_some() && r.version > current_version
-            }));
+        let include_prerelease = matches.is_present("prerelease");
+        let mut target_release = Release::get_latest(releases.iter().filter(|&r| {
+            r.get_variant(&current_variant).is_some()
+                && r.version > current_version
+                && (!r.prerelease || include_prerelease)
+        }));
 
         if let Some(target_version) = matches.value_of("version") {
             target_release = releases.iter().find(|r| r.id == target_version);

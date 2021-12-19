@@ -137,6 +137,7 @@ impl GitHubSource {
                     id: r.tag_name.clone(),
                     changelog: r.body.clone(),
                     version,
+                    prerelease: r.prerelease,
                     variants: self.get_variants_from_response(&r),
                 }),
                 Err(_) => {}
