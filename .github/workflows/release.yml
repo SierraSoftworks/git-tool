@@ -124,10 +124,6 @@ jobs:
             run_on: macos-latest
             os: darwin
             target: aarch64-apple-darwin
-            setup: |
-              echo "Updating to XCode 12.3 with Apple ARM (M1) support"
-              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
-              sudo xcode-select -s "/Applications/Xcode_12.3.app"
 
     steps:
       - name: setup dependencies
