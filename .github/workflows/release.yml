@@ -179,7 +179,7 @@ jobs:
         if: matrix.strip
 
       - name: Upload GitHub Release Artifacts
-        uses: SierraSoftworks/gh-releases@v1.0.0
+        uses: SierraSoftworks/gh-releases@v1.0.1
         with:
           files: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }} | git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
           token: ${{ secrets.GITHUB_TOKEN }}
