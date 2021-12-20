@@ -23,7 +23,7 @@ jobs:
           method: jwt
           path: github-actions
           role: deploy
-          jwtGithubAudience: https://github.com/SierraSoftworks
+          jwtGithubAudience: https://vault.sierrasoftworks.com
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
@@ -146,7 +146,7 @@ jobs:
           method: jwt
           path: github-actions
           role: deploy
-          jwtGithubAudience: https://github.com/SierraSoftworks
+          jwtGithubAudience: https://vault.sierrasoftworks.com
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
@@ -210,7 +210,7 @@ jobs:
           method: jwt
           path: github-actions
           role: deploy
-          jwtGithubAudience: https://github.com/SierraSoftworks
+          jwtGithubAudience: https://vault.sierrasoftworks.com
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 

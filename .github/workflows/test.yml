@@ -143,7 +143,7 @@ jobs:
           method: jwt
           path: github-actions
           role: build
-          jwtGithubAudience: https://github.com/SierraSoftworks
+          jwtGithubAudience: https://vault.sierrasoftworks.com
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/public/codecov token | CODECOV_TOKEN;
 
