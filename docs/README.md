@@ -63,4 +63,5 @@ gt s
 
 <ClientOnly>
     <Contributors repo="SierraSoftworks/git-tool" />
+    <Releases repo="SierraSoftworks/git-tool" />
 </ClientOnly>
