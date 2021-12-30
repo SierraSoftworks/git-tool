@@ -18,6 +18,11 @@ impl OnlineService for GitHubService {
         service.get_domain() == "github.com"
     }
 
+    async fn test(&self, core: &Core) -> Result<(), Error> {
+        self.get_user_login(core).await?;
+        Ok(())
+    }
+
     async fn ensure_created(&self, core: &Core, repo: &Repo) -> Result<(), Error> {
         let current_user = self.get_user_login(core).await?;
 
