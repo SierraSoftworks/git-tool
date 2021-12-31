@@ -55,6 +55,7 @@ pub fn commands() -> Vec<Arc<dyn CommandRunnable>> {
         Arc::new(clone::CloneCommand {}),
         Arc::new(complete::CompleteCommand {}),
         Arc::new(config::ConfigCommand {}),
+        Arc::new(doctor::DoctorCommand {}),
         Arc::new(fix::FixCommand {}),
         Arc::new(info::InfoCommand {}),
         Arc::new(ignore::IgnoreCommand {}),

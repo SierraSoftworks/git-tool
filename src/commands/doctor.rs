@@ -76,6 +76,26 @@ impl CommandRunnable for DoctorCommand {
             ))?;
         }
 
+        for svc in core.config().get_services() {
+            if let Some(online_service) = crate::online::services().iter().find(|s| s.handles(svc))
+            {
+                match online_service.test(core).await {
+                    Ok(_) => {
+                        writeln!(output, "[OK] Access to '{}' is working", svc.get_domain())?;
+                    }
+                    Err(err) => {
+                        writeln!(
+                            output,
+                            "[ERROR] Access to '{}' is not working, run `git-tool auth {}` to fix it: {}",
+                            svc.get_domain(),
+                            svc.get_domain(),
+                            err
+                        )?;
+                    }
+                }
+            }
+        }
+
         Ok(0)
     }
 
