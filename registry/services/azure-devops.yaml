@@ -6,7 +6,7 @@ configs:
   - platform: any
     service:
       domain: dev.azure.com
-      website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
-      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
-      gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}"
+      website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}"
+      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}"
+      gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName | urlquery }}"
       pattern: "*/*/*"
