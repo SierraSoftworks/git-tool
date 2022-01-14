@@ -72,3 +72,22 @@ construct:
     - **HttpURL**: https://github.com/SierraSoftworks/git-tool.git <Badge text="optional" type="warning" vertical="middle" />
 
 </FileTree>
+
+## Functions
+
+### `urlquery`
+The `urlquery` function allows you to encode a value in a format that is safe to
+include as part of a URL query or path component. It is particularly useful for
+services which support non-URI-safe characters in their repository names.
+
+A perfect example of this is Azure DevOps, which allows you to create repositories
+with spaces in their names (why GitHub and other services don't let you do this is
+a mystery to me 💣).
+
+To use the `urlquery` function, simply invoke it with the value you wish to encode
+when writing your template. For example, here's how you might us it to generate a
+valid URL for an Azure DevOps repository.
+
+```
+https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name | urlquery }}
+```
