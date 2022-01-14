@@ -158,4 +158,34 @@ mod tests {
             "https://github.com/sierrasoftworks/git-tool"
         );
     }
+
+    #[test]
+    fn service_uri_encoding() {
+        let svc: Service = Service::builder()
+            .with_domain("dev.azure.com")
+            .with_pattern("*/*/*")
+            .with_website(
+                "https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name | urlquery }}",
+            )
+            .with_git_url("git@ssh.dev.azure.com:v3/{{ .Repo.FullName | urlquery }}.git")
+            .with_http_url(
+                "https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name | urlquery }}",
+            )
+            .into();
+
+        let repo = Repo::new(
+            "dev.azure.com/sierrasoftworks/example/git tool",
+            PathBuf::from("/test"),
+        );
+
+        assert_eq!(
+            svc.get_http_url(&repo).unwrap(),
+            "https://dev.azure.com/sierrasoftworks/example/_git/git%20tool"
+        );
+
+        assert_eq!(
+            svc.get_git_url(&repo).unwrap(),
+            "git@ssh.dev.azure.com:v3/sierrasoftworks/example/git%20tool.git"
+        );
+    }
 }
