@@ -111,6 +111,7 @@ mod tests {
 
     use super::*;
     use crate::core::*;
+    use crate::tasks::{self, Task};
     use complete::helpers::test_completions_with_core;
     use mocktopus::mocking::*;
     use tempfile::tempdir;
