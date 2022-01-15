@@ -24,6 +24,7 @@ mod info;
 mod list;
 mod new;
 mod open;
+mod prune;
 mod remove;
 mod scratch;
 mod services;
@@ -62,6 +63,7 @@ pub fn commands() -> Vec<Arc<dyn CommandRunnable>> {
         Arc::new(list::ListCommand {}),
         Arc::new(new::NewCommand {}),
         Arc::new(open::OpenCommand {}),
+        Arc::new(prune::PruneCommand {}),
         Arc::new(remove::RemoveCommand {}),
         Arc::new(scratch::ScratchCommand {}),
         Arc::new(services::ServicesCommand {}),

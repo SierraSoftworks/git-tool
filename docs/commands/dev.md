@@ -66,3 +66,20 @@ Git-Tool will automatically fetch the latest ignore files from [gitignore.io](ht
 for the languages you have added whenever you run `gt ignore $LANG` and retain changes you made outside
 the metadata blocks.
 :::
+
+
+## prune <Badge text="v2.3.0+"/>
+If you're the kind of person who uses branches and Pull Requests to make changes
+to your repositories, you'll often end up with a small horde of branches in your
+local repository which are remnants of previously merged PRs. Cleaning these out
+can be a bit of a chore, so Git-Tool provides a `prune` command which will identify
+any merged branches (using `git branch --merged`) and remove them for you automatically.
+
+#### Options
+ - `-y`, `--yes` will skip the confirmation prompt and remove any branches that are found.
+
+#### Example
+``` powershell
+# Remove any merged branches from your local repository
+gt prune
+```
