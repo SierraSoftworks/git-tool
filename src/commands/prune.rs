@@ -72,11 +72,6 @@ impl CommandRunnable for PruneCommand {
                 writeln!(core.output(), "  {}", branch)?;
             }
             writeln!(core.output(), "")?;
-            writeln!(
-                core.output(),
-                "Are you sure you want to remove these branches?"
-            )?;
-            writeln!(core.output(), "Type 'yes' to continue:")?;
 
             let input = crate::console::prompt::prompt(
                 "Are you sure you want to remove these branches? [y/N]: ",
