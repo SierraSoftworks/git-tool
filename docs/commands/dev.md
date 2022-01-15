@@ -76,7 +76,7 @@ can be a bit of a chore, so Git-Tool provides a `prune` command which will ident
 any merged branches (using `git branch --merged`) and remove them for you automatically.
 
 #### Options
- - `--yes/-y` will skip the confirmation prompt and remove any branches that are found.
+ - `-y`, `--yes` will skip the confirmation prompt and remove any branches that are found.
 
 #### Example
 ``` powershell
