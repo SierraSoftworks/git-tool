@@ -66,6 +66,23 @@ pub async fn git_default_branch(repo: &path::Path) -> Result<String, errors::Err
     .collect())
 }
 
+pub async fn git_merged_branches(repo: &path::Path) -> Result<Vec<String>, errors::Error> {
+    info!("Running `git branch --merged` to get the list of merged branches");
+    let output = git_cmd(
+        Command::new("git")
+            .current_dir(repo)
+            .arg("branch")
+            .arg("--merged"),
+    )
+    .await?;
+
+    let refs = output
+        .split_terminator('\n')
+        .filter(|&s| !s.starts_with("* "))
+        .map(|s| s.trim().to_string());
+    Ok(refs.collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -232,5 +249,74 @@ mod tests {
             default_branch, "main",
             "'main' should be present in the list"
         );
+    }
+
+    #[tokio::test]
+    async fn test_get_merged_branches() {
+        let temp = tempdir().unwrap();
+        let repo = Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
+        let core = Core::builder()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
+
+        sequence![
+            GitInit {},
+            GitRemote { name: "origin" },
+            GitCheckout { branch: "main" },
+            WriteFile {
+                path: PathBuf::from("README.md"),
+                content: "This is a test file".into(),
+            },
+            GitAdd {
+                paths: vec!["README.md"]
+            },
+            GitCommit {
+                message: "Test",
+                paths: vec!["README.md"],
+            }
+        ]
+        .apply_repo(&core, &repo)
+        .await
+        .expect("the repo should have been prepared properly");
+
+        let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
+            .await
+            .expect("to get the current HEAD SHA");
+
+        assert_ne!(current_sha, "", "the current SHA shouldn't be empty");
+
+        git_update_ref(&repo.get_path(), "refs/heads/test", &current_sha)
+            .await
+            .unwrap();
+        git_update_ref(&repo.get_path(), "refs/remotes/origin/main", &current_sha)
+            .await
+            .unwrap();
+        git_update_ref(&repo.get_path(), "refs/heads/test2", &current_sha)
+            .await
+            .unwrap();
+        git_update_ref(&repo.get_path(), "refs/remotes/origin/test2", &current_sha)
+            .await
+            .unwrap();
+
+        let branches = git_merged_branches(&repo.get_path())
+            .await
+            .expect("should be able to get the branches list");
+
+        println!("{:?}", branches);
+
+        assert!(
+            !branches.iter().any(|x| x == "main"),
+            "'main' should not be present in the list"
+        );
+        assert!(
+            branches.iter().any(|x| x == "test"),
+            "'test' should be present in the list"
+        );
+        assert!(
+            branches.iter().any(|x| x == "test2"),
+            "'test2' should be present in the list"
+        );
+
+        assert!(false);
     }
 }
