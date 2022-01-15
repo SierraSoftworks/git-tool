@@ -13,7 +13,9 @@ mod switch;
 mod refs;
 
 pub use add::git_add;
-pub use branch::{git_branches, git_current_branch};
+pub use branch::{
+    git_branch_delete, git_branches, git_current_branch, git_default_branch, git_merged_branches,
+};
 pub use checkout::git_checkout;
 pub use clone::git_clone;
 pub use cmd::git_cmd;

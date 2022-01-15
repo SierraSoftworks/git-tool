@@ -35,7 +35,9 @@ pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Erro
 
     let mut unique_refs = HashSet::new();
     for r in refs {
-        if r.starts_with("origin/") {
+        if r.ends_with("/HEAD") {
+            continue;
+        } else if r.starts_with("origin/") {
             match r.splitn(2, '/').nth(1) {
                 Some(rs) => unique_refs.insert(rs),
                 None => unique_refs.insert(r),
@@ -46,6 +48,20 @@ pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Erro
     }
 
     Ok(unique_refs.iter().map(|s| s.to_string()).collect())
+}
+
+pub async fn git_branch_delete(repo: &path::Path, name: &str) -> Result<(), errors::Error> {
+    info!("Running `git branch -D $NAME` to delete branch");
+    git_cmd(
+        Command::new("git")
+            .current_dir(repo)
+            .arg("branch")
+            .arg("-D")
+            .arg(name),
+    )
+    .await?;
+
+    Ok(())
 }
 
 pub async fn git_default_branch(repo: &path::Path) -> Result<String, errors::Error> {
@@ -316,7 +332,73 @@ mod tests {
             branches.iter().any(|x| x == "test2"),
             "'test2' should be present in the list"
         );
+    }
 
-        assert!(false);
+    #[tokio::test]
+    async fn test_delete_branch() {
+        let temp = tempdir().unwrap();
+        let repo = Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
+        let core = Core::builder()
+            .with_config(&Config::for_dev_directory(temp.path()))
+            .build();
+
+        sequence![
+            GitInit {},
+            GitRemote { name: "origin" },
+            GitCheckout { branch: "main" },
+            WriteFile {
+                path: PathBuf::from("README.md"),
+                content: "This is a test file".into(),
+            },
+            GitAdd {
+                paths: vec!["README.md"]
+            },
+            GitCommit {
+                message: "Test",
+                paths: vec!["README.md"],
+            }
+        ]
+        .apply_repo(&core, &repo)
+        .await
+        .expect("the repo should have been prepared properly");
+
+        let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
+            .await
+            .expect("to get the current HEAD SHA");
+
+        assert_ne!(current_sha, "", "the current SHA shouldn't be empty");
+
+        git_update_ref(&repo.get_path(), "refs/heads/test", &current_sha)
+            .await
+            .unwrap();
+        git_update_ref(&repo.get_path(), "refs/remotes/origin/main", &current_sha)
+            .await
+            .unwrap();
+        git_update_ref(&repo.get_path(), "refs/remotes/origin/test2", &current_sha)
+            .await
+            .unwrap();
+
+        git_branch_delete(&repo.get_path(), "test")
+            .await
+            .expect("should be able to delete the branch");
+
+        let branch = git_branches(&repo.get_path())
+            .await
+            .expect("should be able to get the branches list");
+
+        println!("{:?}", branch);
+
+        assert!(
+            branch.iter().any(|x| x == "main"),
+            "'main' should be present in the list"
+        );
+        assert!(
+            !branch.iter().any(|x| x == "test"),
+            "'test' should not be present in the list"
+        );
+        assert!(
+            branch.iter().any(|x| x == "test2"),
+            "'test2' should be present in the list"
+        );
     }
 }
