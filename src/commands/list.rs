@@ -51,10 +51,10 @@ where {
 
         let mut first = true;
         for repo in search::best_matches_by(filter, repos.iter(), |r| {
-            format!("{}/{}", r.get_domain(), r.get_full_name())
+            format!("{}/{}", &r.service, r.get_full_name())
         }) {
             if quiet {
-                writeln!(output, "{}/{}", repo.get_domain(), repo.get_full_name())?;
+                writeln!(output, "{}/{}", &repo.service, repo.get_full_name())?;
             } else if full {
                 if !first {
                     writeln!(output, "---")?;
@@ -68,35 +68,33 @@ Namespace:      {namespace}
 Service:        {domain}
 Path:           {path}",
                     name = repo.get_name(),
-                    namespace = repo.get_namespace(),
-                    domain = repo.get_domain(),
-                    path = repo.get_path().display()
+                    namespace = &repo.namespace,
+                    domain = &repo.service,
+                    path = repo.path.display()
                 )?;
 
-                match core.config().get_service(&repo.get_domain()) {
+                match core.config().get_service(&repo.service) {
                     Some(svc) => writeln!(
                         output,
                         "
 URLs:
   - Website:    {website}
-  - Git SSH:    {git_ssh}
-  - Git HTTP:   {git_http}",
+  - Git:    {git}",
                         website = svc.get_website(&repo)?,
-                        git_ssh = svc.get_git_url(&repo)?,
-                        git_http = svc.get_http_url(&repo)?
+                        git = svc.get_git_url(&repo)?,
                     )?,
                     None => {}
                 };
             } else {
-                match core.config().get_service(&repo.get_domain()) {
+                match core.config().get_service(&repo.service) {
                     Some(svc) => writeln!(
                         output,
                         "{}/{} ({})",
-                        repo.get_domain(),
+                        &repo.service,
                         repo.get_full_name(),
                         svc.get_website(&repo)?
                     )?,
-                    None => writeln!(output, "{}/{}", repo.get_domain(), repo.get_full_name())?,
+                    None => writeln!(output, "{}/{}", &repo.service, repo.get_full_name())?,
                 };
             }
 

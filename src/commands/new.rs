@@ -83,15 +83,15 @@ impl CommandRunnable for NewCommand {
                 let default_svc = core
                     .config()
                     .get_default_service()
-                    .map(|s| s.get_domain())
+                    .map(|s| s.name.clone())
                     .unwrap_or_default();
 
                 for repo in repos {
-                    if repo.get_domain() == default_svc {
-                        namespaces.insert(repo.get_domain() + "/");
+                    if repo.service == default_svc {
+                        namespaces.insert(repo.service.clone() + "/");
                     }
 
-                    namespaces.insert(format!("{}/{}/", repo.get_domain(), repo.get_namespace()));
+                    namespaces.insert(format!("{}/{}/", &repo.service, &repo.namespace));
                 }
 
                 completer.offer_many(namespaces.iter().map(|s| s.as_str()));

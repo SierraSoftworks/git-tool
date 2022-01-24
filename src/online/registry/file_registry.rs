@@ -224,7 +224,7 @@ mod registry_compliance {
             }
 
             if let Some(svc) = config.service {
-                if svc.domain.is_empty() {
+                if svc.name.is_empty() {
                     println!(
                         "- {}#{} has a service entry which is missing its domain",
                         name, &config.platform
@@ -251,17 +251,9 @@ mod registry_compliance {
                     valid = false;
                 }
 
-                if svc.http_url.is_empty() {
-                    println!(
-                        "- {}#{} has a service entry which is missing its Git+HTTP template",
-                        name, &config.platform
-                    );
-                    valid = false;
-                }
-
                 if svc.git_url.is_empty() {
                     println!(
-                        "- {}#{} has a service entry which is missing its Git+SSH URL template",
+                        "- {}#{} has a service entry which is missing its Git URL template",
                         name, &config.platform
                     );
                     valid = false;
@@ -282,17 +274,7 @@ mod registry_compliance {
 
                     if let Err(err) = test_service.get_git_url(&test_repo) {
                         println!(
-                            "- {}#{} could not render the Git+SSH URL for a repository: {}",
-                            name,
-                            &config.platform,
-                            err.message()
-                        );
-                        valid = false;
-                    }
-
-                    if let Err(err) = test_service.get_http_url(&test_repo) {
-                        println!(
-                            "- {}#{} could not render the Git+HTTP URL for a repository: {}",
+                            "- {}#{} could not render the Git URL for a repository: {}",
                             name,
                             &config.platform,
                             err.message()

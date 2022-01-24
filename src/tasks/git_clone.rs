@@ -1,5 +1,3 @@
-use crate::core::features;
-
 use super::*;
 use crate::{core::Target, errors, git};
 
@@ -12,17 +10,13 @@ impl Task for GitClone {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.get_domain()).ok_or(
+        let service = core.config().get_service(&repo.service).ok_or(
             errors::user(
-                &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
+                &format!("Could not find a service entry in your config file for {}", &repo.service), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", &repo.service))
         )?;
 
-        let url = if core.config().get_features().has(features::HTTP_TRANSPORT) {
-            service.get_http_url(repo)?
-        } else {
-            service.get_git_url(repo)?
-        };
+        let url = service.get_git_url(repo)?;
 
         git::git_clone(&repo.get_path(), &url).await
     }

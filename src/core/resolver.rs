@@ -120,7 +120,7 @@ impl Resolver {
 
         let all_repos = self.get_repos()?;
         let repos: Vec<&Repo> = search::best_matches_by(name, all_repos.iter(), |r| {
-            format!("{}/{}", r.get_domain(), r.get_full_name())
+            format!("{}/{}", &r.service, r.get_full_name())
         });
 
         match repos.len() {
@@ -174,15 +174,15 @@ impl Resolver {
     }
 
     pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-        if !svc.get_pattern().split("/").all(|p| p == "*") {
+        if !&svc.pattern.split("/").all(|p| p == "*") {
             return Err(errors::user(
-                &format!("The glob pattern used for the '{}' service was invalid.", svc.get_domain()),
+                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
                 "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
         }
 
-        let path = self.config.get_dev_directory().join(svc.get_domain());
+        let path = self.config.get_dev_directory().join(&svc.name);
 
-        let repos = get_child_directories(&path, &svc.get_pattern())
+        let repos = get_child_directories(&path, &&svc.pattern)
             .iter()
             .map(|p| self.get_repo(p))
             .filter(|r| r.is_ok())
@@ -234,7 +234,7 @@ fn repo_from_relative_path<'a>(
     }
 
     let svc = service_from_relative_path(config, relative_path)?;
-    let name_length = svc.get_pattern().split_terminator("/").count() + 1;
+    let name_length = &svc.pattern.split_terminator("/").count() + 1;
     let mut name_parts: Vec<String> = relative_path
         .components()
         .take(name_length)
@@ -243,24 +243,24 @@ fn repo_from_relative_path<'a>(
 
     let mut true_path = relative_path.to_path_buf();
 
-    if fallback_to_default && !relative_path.starts_with(svc.get_domain()) {
-        name_parts.insert(0, svc.get_domain().clone());
-        true_path = std::path::PathBuf::from(&svc.get_domain()).join(relative_path);
+    if fallback_to_default && !relative_path.starts_with(&svc.name) {
+        name_parts.insert(0, svc.name.clone());
+        true_path = std::path::PathBuf::from(&svc.name).join(relative_path);
     }
 
     if name_parts.len() != name_length {
         Err(errors::user(
             &format!(
                 "The service '{}' requires a repository name in the form '{}/{}', but you provided '{}'.",
-                svc.get_domain(),
-                svc.get_domain(),
-                svc.get_pattern(),
+                &svc.name,
+                &svc.name,
+                &svc.pattern,
                 relative_path.display()
             ),
             &format!(
                 "Make sure that you are using a repository name which looks like '{}/{}'.",
-                svc.get_domain(),
-                svc.get_pattern()
+                &svc.name,
+                &svc.pattern
             ),
         ))
     } else {
@@ -485,7 +485,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver.get_best_repo("sierrasoftworks/test3").unwrap();
-        assert_eq!(example.get_domain(), "github.com");
+        assert_eq!(&example.service, "github.com");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(
             example.get_path(),
@@ -501,7 +501,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver.get_best_repo("sierrasoftworks/test1").unwrap();
-        assert_eq!(example.get_domain(), "github.com");
+        assert_eq!(&example.service, "github.com");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(
             example.get_path(),

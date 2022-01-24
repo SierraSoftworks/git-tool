@@ -57,7 +57,7 @@ impl CommandRunnable for RemoveCommand {
         let default_svc = core
             .config()
             .get_default_service()
-            .map(|s| s.get_domain())
+            .map(|s| s.name.clone())
             .unwrap_or_default();
 
         match core.resolver().get_repos() {
@@ -65,13 +65,13 @@ impl CommandRunnable for RemoveCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .filter(|r| r.get_domain() == default_svc)
+                        .filter(|r| r.service == default_svc)
                         .map(|r| r.get_full_name()),
                 );
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
+                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}

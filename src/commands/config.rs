@@ -33,6 +33,10 @@ impl Command for ConfigCommand {
                     .index(1)
                     .help("the id of the configuration template you want to add")
                     .required(true))
+                .arg(Arg::new("as")
+                    .long("name")
+                    .short('n')
+                    .help("the name you would like to associated with this entry"))
                 .arg(Arg::new("force")
                     .long("force")
                     .short('f')
@@ -95,6 +99,12 @@ impl CommandRunnable for ConfigCommand {
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
+                        let ec = if let Some(name) = args.value_of("as") {
+                            ec.with_name(name)
+                        } else {
+                            ec
+                        };
+
                         cfg = cfg.apply_template(ec, args.is_present("force"))?;
                     }
                 }
@@ -235,9 +245,9 @@ impl CommandRunnable for ConfigCommand {
                         match core.resolver().get_repos() {
                             Ok(repos) => {
                                 completer.offer_many(
-                                    repos.iter().map(|r| {
-                                        format!("{}/{}", r.get_domain(), r.get_full_name())
-                                    }),
+                                    repos
+                                        .iter()
+                                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
                                 );
                             }
                             _ => {}
@@ -602,7 +612,8 @@ features:
 directory: "{}"
 
 features:
-    http_transport: true
+    create_remote: true
+    telemetry: false
 "#,
             get_dev_dir().to_str().unwrap().replace("\\", "\\\\")
         ))
@@ -612,13 +623,13 @@ features:
             &cfg,
             "gt config feature",
             "",
-            vec!["http_transport", "create_remote", "create_remote_private"],
+            vec!["create_remote", "create_remote_private", "telemetry"],
         )
         .await;
 
         test_completions_with_config(
             &cfg,
-            "gt config feature http_transport",
+            "gt config feature create_remote",
             "",
             vec!["true", "false"],
         )

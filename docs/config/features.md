@@ -2,8 +2,12 @@
 In some situations you may want finer grained control over the way Git Tool behaves. This is accomplished through
 the Git Tool configuration file and some of its advanced options.
 
-## `http_transport` <Badge text="v1.2.19+"/>
+## `http_transport` <Badge text="v1.2.19+"/> <Badge text="v3.x" type="warning" />
   - **Default** `false`
+
+::: warning
+This feature flag is not supported in Git-Tool `v3.x`, with this behaviour being controlled by the [`gitUrl`](./services.md#giturl) service field.
+:::
 
 By default Git-Tool uses the SSH transport for `git` with URLs like `git@github.com:sierrasoftworks/git-tool.git`.
 In some situations, particularly those where you wish to run without authentication, you may prefer to use git's HTTPS transport

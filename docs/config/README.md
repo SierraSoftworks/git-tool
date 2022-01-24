@@ -83,15 +83,16 @@ To view your current configuration, run `gt config`.
 $schema: https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json
 directory: /home/bpannell/dev
 services:
-  - domain: github.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+  - name: gh
+    website: "https://github.com/{{ .Repo.FullName }}"
+    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
     pattern: "*/*"
-  - domain: dev.azure.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
-    gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName }}.git"
+    api:
+      kind: GitHub/v3
+      endpoint: https://api.github.com
+  - domain: ado
+    website: "https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
+    gitUrl: "git@ssh.dev.azure.com:v3/{{ .Repo.FullName }}.git"
     pattern: "*/*/*"
 apps:
   - name: shell
@@ -104,7 +105,6 @@ aliases:
   gt: github.com/SierraSoftworks/git-tool
 
 features:
-  http_transport: false
   open_new_repo_in_default_app: true
 
   # Disable this if you don't want to report crashes to us

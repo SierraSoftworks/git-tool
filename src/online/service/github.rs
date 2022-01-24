@@ -15,21 +15,34 @@ impl Default for GitHubService {
 #[async_trait]
 impl OnlineService for GitHubService {
     fn handles(&self, service: &Service) -> bool {
-        service.get_domain() == "github.com"
+        service
+            .api
+            .as_ref()
+            .map(|api| api.kind == "GitHub/v3")
+            .unwrap_or(false)
     }
 
-    async fn test(&self, core: &Core) -> Result<(), Error> {
-        self.get_user_login(core).await?;
+    async fn test(&self, core: &Core, service: &Service) -> Result<(), Error> {
+        self.get_user_login(core, service).await?;
         Ok(())
     }
 
-    async fn ensure_created(&self, core: &Core, repo: &Repo) -> Result<(), Error> {
-        let current_user = self.get_user_login(core).await?;
+    async fn ensure_created(
+        &self,
+        core: &Core,
+        service: &Service,
+        repo: &Repo,
+    ) -> Result<(), Error> {
+        let current_user = self.get_user_login(core, service).await?;
 
-        let uri = if repo.get_namespace() == current_user {
-            format!("https://api.github.com/user/repos")
+        let uri = if repo.namespace == current_user {
+            format!("{}/user/repos", service.api.as_ref().unwrap().url.as_str(),)
         } else {
-            format!("https://api.github.com/orgs/{}/repos", repo.get_namespace())
+            format!(
+                "{}/orgs/{}/repos",
+                service.api.as_ref().unwrap().url.as_str(),
+                &repo.namespace
+            )
         };
 
         let new_repo = NewRepo {
@@ -44,6 +57,7 @@ impl OnlineService for GitHubService {
         let new_repo_resp: Result<NewRepoResponse, GitHubErrorResponse> = self
             .make_request(
                 core,
+                service,
                 Method::POST,
                 &uri,
                 req_body,
@@ -60,12 +74,13 @@ impl OnlineService for GitHubService {
 }
 
 impl GitHubService {
-    async fn get_user_login(&self, core: &Core) -> Result<String, Error> {
+    async fn get_user_login(&self, core: &Core, service: &Service) -> Result<String, Error> {
         let user: Result<UserProfile, GitHubErrorResponse> = self
             .make_request(
                 core,
+                service,
                 Method::GET,
-                "https://api.github.com/user",
+                &format!("{}/user", service.api.as_ref().unwrap().url.as_str(),),
                 "",
                 vec![StatusCode::OK],
             )
@@ -80,6 +95,7 @@ impl GitHubService {
     async fn make_request<B: Into<reqwest::Body>, T: DeserializeOwned>(
         &self,
         core: &Core,
+        service: &Service,
         method: Method,
         uri: &str,
         body: B,
@@ -93,7 +109,7 @@ impl GitHubService {
             )
         })?;
 
-        let token = core.keychain().get_token("github.com")?;
+        let token = core.keychain().get_token(&service.name)?;
 
         let mut req = Request::new(method, url);
 
@@ -212,7 +228,7 @@ mod tests {
     #[tokio::test]
     async fn test_happy_path_user_repo() {
         super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
@@ -220,10 +236,23 @@ mod tests {
 
         let core = Core::builder().build();
 
-        let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
+        let repo = Repo::new("gh/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
         service
-            .ensure_created(&core, &repo)
+            .ensure_created(
+                &core,
+                &Service {
+                    name: "gh".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
+                    pattern: "*/*".into(),
+                    api: Some(ServiceAPI {
+                        kind: "github".into(),
+                        url: "https://api.github.com".into(),
+                    }),
+                },
+                &repo,
+            )
             .await
             .expect("No error should have been generated");
     }
@@ -231,7 +260,7 @@ mod tests {
     #[tokio::test]
     async fn test_happy_path_user_repo_exists() {
         super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
@@ -239,10 +268,23 @@ mod tests {
 
         let core = Core::builder().build();
 
-        let repo = Repo::new("github.com/test/user-repo", std::path::PathBuf::from("/"));
+        let repo = Repo::new("gh/test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
         service
-            .ensure_created(&core, &repo)
+            .ensure_created(
+                &core,
+                &Service {
+                    name: "gh".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
+                    pattern: "*/*".into(),
+                    api: Some(ServiceAPI {
+                        kind: "github".into(),
+                        url: "https://api.github.com".into(),
+                    }),
+                },
+                &repo,
+            )
             .await
             .expect("No error should have been generated");
     }

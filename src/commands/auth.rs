@@ -59,7 +59,7 @@ impl CommandRunnable for AuthCommand {
     }
 
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        completer.offer_many(core.config().get_services().map(|s| s.get_domain()));
+        completer.offer_many(core.config().get_services().map(|s| &s.name));
     }
 }
 

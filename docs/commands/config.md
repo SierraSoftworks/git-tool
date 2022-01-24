@@ -40,6 +40,7 @@ want to add to your config, you can use `gt config add` to install it.
 #### Options
  - `-f`, `--force` will overwrite any existing apps or services in your config which share
    the same names as those in the template you are installing.
+ - `-n`, `--name` will set the name of the app or service to the value you specify. <Badge text="v3.0+"/>
 
 #### Example
 ```powershell
@@ -47,7 +48,11 @@ want to add to your config, you can use `gt config add` to install it.
 gt config add apps/visualstudio
 
 # Install the GitHub repository service, overwriting it if it exists
-gt config add services/github -f
+gt config add services/github-ssh -f
+
+# Install versions of the GitHub service for your own and public repositories
+gt config add services/github-ssh --name gh
+gt config add services/github-public --name ghp
 ```
 
 ### config alias <Badge text="v2.0+"/>

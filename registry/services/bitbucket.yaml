@@ -1,12 +1,11 @@
-# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
 name: BitBucket
 description: Adds support for managing BitBucket repositories through Git-Tool.
 version: 1.0.0
 configs:
   - platform: any
     service:
-      domain: bitbucket.org
-      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      name: bitbucket.org
+      website: "https://bitbucket.org/{{ .Repo.FullName }}"
+      gitUrl: "git@bitbucket.org:{{ .Repo.FullName }}.git"
       pattern: "*/*"

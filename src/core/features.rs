@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub const HTTP_TRANSPORT: &str = "http_transport";
-
 pub const CREATE_REMOTE: &str = "create_remote";
 pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
 
@@ -12,7 +10,6 @@ pub const TELEMETRY: &str = "telemetry";
 
 lazy_static! {
     pub static ref ALL: Vec<&'static str> = vec![
-        HTTP_TRANSPORT,
         CREATE_REMOTE,
         CREATE_REMOTE_PRIVATE,
         OPEN_NEW_REPO,
@@ -84,11 +81,10 @@ impl FeaturesBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{Features, CREATE_REMOTE, HTTP_TRANSPORT};
+    use super::{Features, CREATE_REMOTE};
 
     #[test]
     fn default() {
         assert_eq!(Features::default().has(CREATE_REMOTE), true);
-        assert_eq!(Features::default().has(HTTP_TRANSPORT), false);
     }
 }
