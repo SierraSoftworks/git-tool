@@ -12,6 +12,6 @@ jobs:
     name: Prepare
     runs-on: ubuntu-20.04
     steps:
-      - uses: release-drafter/release-drafter@v5.18.0
+      - uses: release-drafter/release-drafter@v5.18.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
