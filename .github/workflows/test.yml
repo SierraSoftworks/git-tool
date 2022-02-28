@@ -2,7 +2,6 @@ name: Test Changes
 on:
   push:
     paths-ignore:
-      - "docs/**"
       - "README.md"
 env:
   GRCOV_VERSION: 0.8.0
