@@ -6,8 +6,8 @@ impl Command for AppsCommand {
     fn name(&self) -> String {
         String::from("apps")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .about("list applications which can be run through Git-Tool")
             .long_about("Gets the list of applications that you have added to your configuration file. These applications can be run through the `open` and `scratch` commands.")

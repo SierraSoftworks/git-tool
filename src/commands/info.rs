@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::core::Target;
 use super::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct InfoCommand {}
 
@@ -10,8 +10,8 @@ impl Command for InfoCommand {
         String::from("info")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("gets the details of a specific repository")
             .visible_alias("i")

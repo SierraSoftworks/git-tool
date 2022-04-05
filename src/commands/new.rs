@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::*;
 use crate::{core::features, tasks::*};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct NewCommand {}
 
@@ -10,8 +10,8 @@ impl Command for NewCommand {
         "new".into()
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .about("creates a new repository")
             .visible_aliases(&vec!["n", "create"])

@@ -8,17 +8,17 @@ impl Command for ShellInitCommand {
     fn name(&self) -> String {
         String::from("shell-init")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
+    fn app<'a>(&self) -> clap::Command<'a> {
         let shells = get_shells();
 
-        let mut cmd = App::new(&self.name())
+        let mut cmd = clap::Command::new(&self.name())
             .version("1.0")
             .about("configures your shell for use with Git-Tool")
             .long_about("Used to configure your shell environment to ensure that it works correctly with Git-Tool, including auto-complete support.");
 
         for shell in shells {
             cmd = cmd.subcommand(
-                App::new(shell.get_name())
+                clap::Command::new(shell.get_name())
                     .about("prints the initialization script for this shell")
                     .arg(
                         Arg::new("full")

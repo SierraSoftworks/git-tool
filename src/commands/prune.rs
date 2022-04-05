@@ -2,7 +2,7 @@ use super::super::errors;
 use super::*;
 use crate::core::Target;
 use crate::git;
-use clap::{App, Arg};
+use clap::Arg;
 use itertools::Itertools;
 
 pub struct PruneCommand {}
@@ -12,8 +12,8 @@ impl Command for PruneCommand {
         String::from("prune")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("removes local branches that have been merged.")
             .long_about(

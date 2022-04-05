@@ -9,8 +9,8 @@ impl Command for ListCommand {
     fn name(&self) -> String {
         String::from("list")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .visible_aliases(&vec!["ls", "ll"])
             .about("list your repositories")

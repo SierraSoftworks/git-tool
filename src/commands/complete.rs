@@ -7,8 +7,8 @@ impl Command for CompleteCommand {
     fn name(&self) -> String {
         String::from("complete")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .about("provides command auto-completion")
             .long_about("Provides realtime command and argument auto-completion for Git-Tool when using `git-tool shell-init`.")
@@ -136,7 +136,8 @@ impl CompleteCommand {
                 "Please make sure that you are using auto-complete with a valid set of command line arguments.",
                 e))?;
 
-        let complete_app = App::new("Git-Tool").subcommands(commands.iter().map(|x| x.app()));
+        let complete_app =
+            clap::Command::new("Git-Tool").subcommands(commands.iter().map(|x| x.app()));
 
         complete_app.try_get_matches_from(true_args).map_err(|err| {
             errors::user_with_internal(

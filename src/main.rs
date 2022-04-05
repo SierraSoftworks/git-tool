@@ -13,7 +13,7 @@ extern crate tokio;
 
 use crate::commands::CommandRunnable;
 use crate::core::features;
-use clap::{crate_authors, App, Arg, ArgMatches};
+use clap::{crate_authors, Arg, ArgMatches};
 use std::sync::Arc;
 use telemetry::Session;
 
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let commands = commands::default_commands();
     let version = version!("v");
 
-    let app = App::new("Git-Tool")
+    let app = clap::Command::new("Git-Tool")
         .version(version.as_str())
         .author(crate_authors!("\n"))
         .about("Simplify your Git repository management and stop thinking about where things belong.")
@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn run<'a>(
-    mut app: App<'a>,
+    mut app: clap::Command<'a>,
     commands: Vec<Arc<dyn CommandRunnable>>,
     matches: ArgMatches,
 ) -> Result<i32, errors::Error> {

@@ -3,7 +3,7 @@ use super::errors;
 use super::online;
 use super::tasks;
 use async_trait::async_trait;
-use clap::{App, ArgMatches};
+use clap::ArgMatches;
 use std::sync::Arc;
 use std::{io::Write, vec::Vec};
 
@@ -35,7 +35,7 @@ mod update;
 
 pub trait Command: Send + Sync {
     fn name(&self) -> String;
-    fn app<'a>(&self) -> App<'a>;
+    fn app<'a>(&self) -> clap::Command<'a>;
 }
 
 #[async_trait]

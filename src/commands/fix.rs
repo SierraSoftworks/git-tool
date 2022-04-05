@@ -1,7 +1,7 @@
 use super::super::errors;
 use super::*;
 use crate::{search, tasks::*};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct FixCommand {}
 
@@ -10,8 +10,8 @@ impl Command for FixCommand {
         String::from("fix")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("fixes the remote configuration for a repository")
             .visible_alias("i")

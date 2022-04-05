@@ -2,7 +2,7 @@ use super::Command;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct CloneCommand {}
 
@@ -11,8 +11,8 @@ impl Command for CloneCommand {
         String::from("clone")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("clones a repository")
             .long_about("This command clones a repository if it does not already exist in your dev directory. It works similarly to the `gt open` command, however it will not launch an application in the repository upon completion.")

@@ -3,7 +3,7 @@ use super::*;
 use crate::core::Target;
 use crate::git;
 use crate::tasks::*;
-use clap::{App, Arg};
+use clap::Arg;
 use itertools::Itertools;
 
 pub struct SwitchCommand {}
@@ -13,8 +13,8 @@ impl Command for SwitchCommand {
         String::from("switch")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("switches to the specified branch.")
             .visible_aliases(&vec!["sw", "branch", "b", "br"])

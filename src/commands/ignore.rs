@@ -2,7 +2,7 @@ use super::async_trait;
 use super::online::gitignore;
 use super::Command;
 use super::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct IgnoreCommand {}
 
@@ -11,8 +11,8 @@ impl Command for IgnoreCommand {
         String::from("ignore")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .visible_alias("gitignore")
             .about("generates a .gitignore file for the provided languages")
@@ -24,7 +24,6 @@ impl Command for IgnoreCommand {
                     .value_name("GITIGNORE")
                     .takes_value(true))
             .arg(Arg::new("language")
-                    .name("language")
                     .forbid_empty_values(true)
                     .help("The name of a language which should be added to your .gitignore file.")
                     .multiple_values(true)

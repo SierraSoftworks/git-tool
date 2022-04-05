@@ -3,7 +3,7 @@ use crate::core::features;
 use super::async_trait;
 use super::Command;
 use super::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 use online::registry::Registry;
 
 pub struct ConfigCommand {}
@@ -13,19 +13,19 @@ impl Command for ConfigCommand {
         String::from("config")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("manage your Git-Tool configuration file")
             .long_about("This tool allows you to easily make changes to your Git-Tool config file.")
 
-            .subcommand(App::new("list")
+            .subcommand(clap::Command::new("list")
                 .version("1.0")
                 .visible_alias("ls")
                 .about("list available config templates")
                 .long_about("Gets the list of config templates which are available through the Git-Tool registry."))
 
-            .subcommand(App::new("add")
+            .subcommand(clap::Command::new("add")
                 .version("1.0")
                 .about("adds a configuration template to your current config file")
                 .long_about("Adds a configuration template from the Git-Tool online registry to your config file.")
@@ -38,7 +38,7 @@ impl Command for ConfigCommand {
                     .short('f')
                     .help("overwrites any existing entries with those from the template.")))
 
-            .subcommand(App::new("alias")
+            .subcommand(clap::Command::new("alias")
                 .version("1.0")
                 .about("manage aliases for your repositories")
                 .long_about("Set or remove aliases for your repositories within your config file.")
@@ -53,7 +53,7 @@ impl Command for ConfigCommand {
                     .help("the fully qualified repository name")
                     .index(2)))
 
-            .subcommand(App::new("feature")
+            .subcommand(clap::Command::new("feature")
                 .version("1.0")
                 .about("manage feature flags for Git-Tool")
                 .long_about("Set feature flags for Git-Tool within your config file.")

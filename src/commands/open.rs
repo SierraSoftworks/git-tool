@@ -2,7 +2,7 @@ use super::Command;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct OpenCommand {}
 
@@ -11,8 +11,8 @@ impl Command for OpenCommand {
         String::from("open")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .visible_aliases(&vec!["o", "run"])
             .about("opens a repository using an application defined in your config")

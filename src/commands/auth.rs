@@ -7,8 +7,8 @@ impl Command for AuthCommand {
     fn name(&self) -> String {
         String::from("auth")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .about("configure authentication tokens")
             .long_about("Configures the authentication tokens used by Git-Tool to create and manage your remote repositories.")
@@ -43,10 +43,13 @@ impl CommandRunnable for AuthCommand {
         } else {
             let token = match matches.value_of("token") {
                 Some(token) => token.to_string(),
-                None => rpassword::read_password_from_tty(Some("Access Token: ")).map_err(|e| errors::user_with_internal(
+                None => {
+                    writeln!(core.output(), "Access Token: ")?;
+                    rpassword::read_password().map_err(|e| errors::user_with_internal(
                     "Could not read the access token that you entered.",
                     "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
                     e))?
+                }
             };
 
             core.keychain().set_token(service, &token)?;

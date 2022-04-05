@@ -19,8 +19,8 @@ impl Command for SetupCommand {
     fn name(&self) -> String {
         String::from("setup")
     }
-    fn app<'a>(&self) -> clap::App<'a> {
-        App::new(&self.name())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(&self.name())
             .version("1.0")
             .about("runs the setup wizard for first time users")
             .long_about("This setup wizard will guide you through the process of getting your first Git-Tool config set up.")

@@ -1,7 +1,7 @@
 use super::async_trait;
 use super::*;
 use super::{core::Target, tasks, tasks::Task, Command};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 pub struct ScratchCommand {}
 
@@ -10,8 +10,8 @@ impl Command for ScratchCommand {
         String::from("scratch")
     }
 
-    fn app<'a>(&self) -> App<'a> {
-        App::new(self.name().as_str())
+    fn app<'a>(&self) -> clap::Command<'a> {
+        clap::Command::new(self.name().as_str())
             .version("1.0")
             .visible_alias("s")
             .about("opens a scratchpad using an application defined in your config")
