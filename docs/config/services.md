@@ -10,17 +10,6 @@ Here is an example service configuration for GitHub which showcases how to
 
 :::: code-group
 
-::: code-group-item Git-Tool v2.x
-```yaml
-services:
-  - domain: github.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-    pattern: "*/*"
-```
-:::
-
 ::: code-group-item Git-Tool v3.x
 ```yaml
 services:
@@ -33,6 +22,18 @@ services:
       endpoint: https://api.github.com
 ```
 :::
+
+::: code-group-item Git-Tool v2.x
+```yaml
+services:
+  - domain: github.com
+    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
+    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
+    pattern: "*/*"
+```
+:::
+
 ::::
 
 ## Configuration
@@ -53,17 +54,18 @@ This was done to make a clear distinction between domains and the names you use 
 
 :::: code-group
 
+::: code-group-item Git-Tool v3.x
+```yaml
+name: github.com
+```
+:::
+
 ::: code-group-item Git-Tool v2.x
 ```yaml
 domain: github.com
 ```
 :::
 
-::: code-group-item Git-Tool v3.x
-```yaml
-name: github.com
-```
-:::
 ::::
 
 #### `website` <Badge text="required" type="danger"/>
@@ -92,7 +94,7 @@ gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
 ```
 
 
-#### `httpUrl` <Badge text="required" type="danger"/>
+#### `httpUrl` <Badge text="required" type="danger"/> <Badge text="removed in v3.x" type="danger">
 The `httpUrl` property is used to generate the HTTPS URL used by git to access this repository.
 It will be used if you set the [`http_transport`](features.md#http_transport) feature flag to `true` on Git-Tool v2.x.
 

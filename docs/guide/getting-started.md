@@ -60,12 +60,13 @@ Setup your `$GITTOOL_CONFIG` file with the repository hosting services and apps 
 ---
 directory: "C:\\dev" # CHANGE ME
 services:
-  - domain: github.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
-    default: true
+  - domain: gh
+    website: "https://github.com/{{ .Repo.FullName }}"
+    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
     pattern: "*/*"
+    api:
+      kind: GitHub/v3
+      url: https://api.github.com
 apps:
   - name: shell
     command: pwsh # CHANGE ME
@@ -82,7 +83,7 @@ Git-Tool 💕 GitHub and can automatically create repositories there whenever yo
 To set this up, generate a [new Personal Access Token](https://github.com/settings/tokens/new?scopes=repo) with the `repo` scope and run the following command to store it in your local keychain.
 
 ```text
-gt auth github.com
+gt auth gh
 ```
 
 ## Bonus Step: [Updating Git-Tool](updates.md)

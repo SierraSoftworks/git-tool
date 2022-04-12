@@ -79,8 +79,8 @@ To view your current configuration, run `gt config`.
 
 ```yaml
 ---
-# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json
-$schema: https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/config.schema.json
+$schema: https://schemas.sierrasoftworks.com/git-tool/v2/config.schema.json
 directory: /home/bpannell/dev
 services:
   - name: gh
@@ -102,7 +102,7 @@ apps:
     args:
       - .
 aliases:
-  gt: github.com/SierraSoftworks/git-tool
+  gt: gh:SierraSoftworks/git-tool
 
 features:
   open_new_repo_in_default_app: true

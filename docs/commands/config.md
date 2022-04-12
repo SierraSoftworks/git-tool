@@ -65,7 +65,7 @@ the alias instead. For example: `gt o blog`.
 
 ::: tip
 Aliases are a great way to distinguish between repos with similar or generic names.
-Try something like `gt config alias blog github.com/SierraSoftworks/blog`
+Try something like `gt config alias blog gh:SierraSoftworks/blog`
 :::
 
 #### Options
@@ -74,7 +74,7 @@ Try something like `gt config alias blog github.com/SierraSoftworks/blog`
 #### Example
 ```powershell
 # Add an alias for git-tool
-gt config alias gt github.com/SierraSoftworks/git-tool
+gt config alias gt gh:SierraSoftworks/git-tool
 
 # View the repository name associated with the gt alias
 gt config alias gt
@@ -106,7 +106,9 @@ gt config feature telemetry
 
 ## auth <Badge text="v2.1+"/>
 The `gt auth` command allows you to manage the authentication tokens used to connect to remote
-repository hosts like GitHub.
+repository hosts like GitHub. It accepts a single argument which corresponds to the name of a
+service (defined in your [configuration](../config/services.md)) which you wish to authenticate
+to.
 
 ::: warning
 These access tokens are stored in your local system keychain
@@ -121,13 +123,13 @@ this feature.
 #### Example
 ```powershell
 # Store an access token for github.com
-gt auth github.com
+gt auth gh
 
 # Store an access token for github.com without using stdin
-gt auth github.com --token $GITHUB_TOKEN
+gt auth gh --token $GITHUB_TOKEN
 
 # Remove an access token for github.com
-gt auth -d github.com
+gt auth -d gh
 ```
 
 ## apps <Badge text="v1.0+"/>

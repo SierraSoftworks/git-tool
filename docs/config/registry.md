@@ -82,11 +82,13 @@ configs:
   # Your config should include either a service (like this)...
   - platform: any
     service:
-      domain: github.com
-      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      name: gh
+      website: "https://github.com/{{ .Repo.FullName }}"
+      gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
       pattern: "*/*"
+      api:
+        kind: GitHub/v3
+        url: https://api.github.com
 
   # Or an app (like this) but usually not both.
   - platform: windows
@@ -214,10 +216,9 @@ field in the same entry. Add a new item to the `configs` array if you need to do
 ```yaml
 configs:
   - service:
-      domain: github.com
-      website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-      gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+      name: gh
+      website: "https://github.com/{{ .Repo.FullName }}"
+      gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
       pattern: "*/*"
 ```
 
@@ -243,7 +244,7 @@ Git-Tool set up, this is as easy as:
 
 ```powershell
 # Replace this with your Git-Tool fork, if you have one
-gt o github.com/SierraSoftworks/git-tool
+gt o gh:SierraSoftworks/git-tool
 cargo test
 ```
 
