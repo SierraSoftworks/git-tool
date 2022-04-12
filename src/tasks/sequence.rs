@@ -95,7 +95,7 @@ mod tests {
 
     fn get_repo() -> core::Repo {
         core::Repo::new(
-            "github.com/sierrasoftworks/git-tool",
+            "gh:sierrasoftworks/git-tool",
             std::path::PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
         )
     }

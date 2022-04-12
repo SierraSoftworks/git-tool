@@ -190,13 +190,13 @@ mod tests {
             best_matches(
                 "ghspt1",
                 vec![
-                    "github.com/sierrasoftworks/test1",
-                    "github.com/sierrasoftworks/test2",
-                    "github.com/spartan563/test1",
-                    "github.com/spartan563/test2"
+                    "gh:sierrasoftworks/test1",
+                    "gh:sierrasoftworks/test2",
+                    "gh:spartan563/test1",
+                    "gh:spartan563/test2"
                 ]
             ),
-            vec!["github.com/spartan563/test1"]
+            vec!["gh:spartan563/test1"]
         );
 
         assert_eq!(

@@ -61,12 +61,13 @@ to use, point it at your development directory and Git-Tool will do the rest.
 ---
 directory: "C:\\dev" # CHANGE ME
 services:
-  - domain: github.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
-    default: true
+  - domain: gh
+    website: "https://github.com/{{ .Repo.FullName }}"
+    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
     pattern: "*/*"
+    api:
+      kind: GitHub/v3
+      endpoint: https://api.github.com
 apps:
   - name: shell
     command: pwsh # CHANGE ME
@@ -83,7 +84,7 @@ To set this up, generate a [new Personal Access Token](https://github.com/settin
 with the `repo` scope and run the following command to store it in your local keychain.
 
 ```powershell
-gt auth github.com
+gt auth gh
 ```
 
 #### Bonus Step: [Updating Git-Tool](updates.md)

@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    core::{features, Target},
-    errors, git,
-};
+use crate::{core::Target, errors, git};
 
 pub struct GitRemote<'a> {
     pub name: &'a str,
@@ -17,17 +14,13 @@ impl Default for GitRemote<'static> {
 #[async_trait::async_trait]
 impl<'a> Task for GitRemote<'a> {
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
-        let service = core.config().get_service(&repo.get_domain()).ok_or(
+        let service = core.config().get_service(&repo.service).ok_or(
             errors::user(
-                &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
+                &format!("Could not find a service entry in your config file for {}", &repo.service), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", &repo.service))
         )?;
 
-        let url = if core.config().get_features().has(features::HTTP_TRANSPORT) {
-            service.get_http_url(repo)?
-        } else {
-            service.get_git_url(repo)?
-        };
+        let url = service.get_git_url(repo)?;
 
         if git::git_remote_list(&repo.get_path())
             .await?
@@ -60,7 +53,7 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote",
+            "gh:sierrasoftworks/test-git-remote",
             temp.path().join("repo").into(),
         );
 

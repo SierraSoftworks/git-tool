@@ -352,10 +352,7 @@ mod tests {
         test_completions(
             "gt new",
             "Sierra",
-            vec![
-                "github.com/sierrasoftworks/",
-                "dev.azure.com/sierrasoftworks/opensource/",
-            ],
+            vec!["gh:sierrasoftworks/", "ado:sierrasoftworks/opensource/"],
         )
         .await;
 
@@ -364,8 +361,8 @@ mod tests {
             "",
             vec![
                 "shell",
-                "github.com/sierrasoftworks/test1",
-                "dev.azure.com/sierrasoftworks/opensource/test2",
+                "gh:sierrasoftworks/test1",
+                "ado:sierrasoftworks/opensource/test2",
             ],
         )
         .await;
@@ -374,8 +371,8 @@ mod tests {
             "gt info",
             "",
             vec![
-                "github.com/sierrasoftworks/test1",
-                "dev.azure.com/sierrasoftworks/opensource/test2",
+                "gh:sierrasoftworks/test1",
+                "ado:sierrasoftworks/opensource/test2",
             ],
         )
         .await;
@@ -392,13 +389,13 @@ mod tests {
     async fn test_completions_with_position() {
         test_completions2(
             vec!["complete", "git-tool open "],
-            vec!["github.com/sierrasoftworks/test1"],
+            vec!["gh:sierrasoftworks/test1"],
         )
         .await;
 
         test_completions2(
             vec!["complete", "--position", "14", "git-tool open "],
-            vec!["github.com/sierrasoftworks/test2"],
+            vec!["gh:sierrasoftworks/test2"],
         )
         .await;
     }

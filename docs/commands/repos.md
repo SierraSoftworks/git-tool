@@ -51,13 +51,13 @@ can use `gtconfig add apps/bash` to configure `bash` as an available app.
 #### Example
 ```powershell
 # Open a repository in your default application
-gt o github.com/SierraSoftworks/git-tool
+gt o gh:SierraSoftworks/git-tool
 
 # Open a Visual Studio shell in the current repository
 gt o vs
 
 # Open a repository in VS Code
-gt o github.com/SierraSoftworks/git-tool code
+gt o gh:SierraSoftworks/git-tool code
 ```
  
 ::: tip
@@ -88,13 +88,13 @@ helping you quickly figure out where your repo should be created.
 #### Example
 ```powershell
 # Create a new repository
-gt n github.com/notheotherben/demo
+gt n gh:notheotherben/demo
 
 # Create (and open) a new repository
-gt n --open github.com/notheotherben/demo
+gt n --open gh:notheotherben/demo
 
 # Create a new repository but don't create it remotely
-gt n --no-create-remote github.com/notheotherben/demo
+gt n --no-create-remote gh:notheotherben/demo
 ```
 
 ## list <Badge text="v1.0+"/>
@@ -125,7 +125,7 @@ gt ls
 gt ls -q notheotherben
 
 # Gather detailed information about sierralib repositories
-gt ls --full github.com/SierraSoftworks/sierralib
+gt ls --full gh:SierraSoftworks/sierralib
 ```
 
 ## info <Badge text="v1.0+"/>
@@ -159,7 +159,7 @@ new dev-box, this is the command for you.
 #### Example
 ```powershell
 # Clone a repository into the appropriate folder
-gt clone github.com/SierraSoftworks/git-tool
+gt clone gh:SierraSoftworks/git-tool
 ```
 
 ## fix <Badge text="v2.1.4+"/>
@@ -174,10 +174,10 @@ shown in [`gt info`](#info) (which is based on its filesystem path).
 #### Example
 ```powershell
 # Fix the git remote configuration for a single repository
-gt fix github.com/SierraSoftworks/git-tool
+gt fix gh:SierraSoftworks/git-tool
 
 # Fix the git remote configuration for a group of repositories
-gt fix --all github.com/SierraSoftworks/
+gt fix --all gh:SierraSoftworks/
 ```
 
 ::: tip
@@ -193,5 +193,5 @@ in the directory you are attempting to delete.
 #### Example
 ```powershell
 # Remove a repository
-gt remove github.com/SierraSoftworks/git-tool
+gt remove gh:SierraSoftworks/git-tool
 ```

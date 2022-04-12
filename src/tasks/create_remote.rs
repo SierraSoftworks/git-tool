@@ -26,17 +26,17 @@ impl Task for CreateRemote {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.get_domain()).ok_or(
+        let service = core.config().get_service(&repo.service).ok_or(
             crate::errors::user(
-                &format!("Could not find a service entry in your config file for {}", repo.get_domain()), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.get_domain()))
+                &format!("Could not find a service entry in your config file for {}", &repo.service), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", &repo.service))
         )?;
 
         if let Some(online_service) = crate::online::services()
             .iter()
             .find(|s| s.handles(service))
         {
-            online_service.ensure_created(core, repo).await?;
+            online_service.ensure_created(core, service, repo).await?;
         }
 
         Ok(())
@@ -68,12 +68,12 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote",
+            "gh:sierrasoftworks/test-git-remote",
             temp.path().join("repo").into(),
         );
 
         KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 

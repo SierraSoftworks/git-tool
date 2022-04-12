@@ -4,15 +4,15 @@ use std::path;
 
 #[derive(Debug, Clone)]
 pub struct Repo {
-    domain: String,
-    namespace: String,
-    name: String,
-    path: path::PathBuf,
+    pub service: String,
+    pub namespace: String,
+    pub name: String,
+    pub path: path::PathBuf,
 }
 
 impl Target for Repo {
     fn get_name(&self) -> String {
-        self.get_full_name()
+        self.name.clone()
     }
 
     fn get_path(&self) -> path::PathBuf {
@@ -30,34 +30,26 @@ impl Target for Repo {
 
 impl Repo {
     pub fn new(full_name: &str, path: path::PathBuf) -> Self {
-        let parts: Vec<&str> = full_name.split("/").collect();
+        if let Some((svc, relative_name)) = full_name.split_once(':') {
+            let parts: Vec<&str> = relative_name.split('/').collect();
 
-        if parts.len() < 3 {
-            panic!("A repository's full name must be composed of a $domain/$namespace/$name");
+            if parts.len() < 2 {
+                panic!("A repository's full name must be composed of a $service:$namespace+/$name");
+            }
+
+            Self {
+                service: svc.to_string(),
+                namespace: parts[0..parts.len() - 1].join("/"),
+                name: parts[parts.len() - 1].to_string(),
+                path,
+            }
+        } else {
+            panic!("A repository's full name must be composed of a $service:$namespace+/$name");
         }
-
-        Self {
-            domain: parts[0].to_string(),
-            namespace: parts[1..parts.len() - 1].join("/"),
-            name: parts[parts.len() - 1].to_string(),
-            path,
-        }
-    }
-
-    pub fn get_domain(&self) -> String {
-        self.domain.clone()
     }
 
     pub fn get_full_name(&self) -> String {
         String::default() + self.namespace.as_str() + "/" + self.name.as_str()
-    }
-
-    pub fn get_namespace(&self) -> String {
-        self.namespace.clone()
-    }
-
-    pub fn get_name(&self) -> String {
-        self.name.clone()
     }
 
     pub fn valid(&self) -> bool {

@@ -8,14 +8,33 @@ add it by following the [contribution guide](registry.md#contributing).
 
 Here is an example service configuration for GitHub which showcases how to 
 
+:::: code-group
+
+::: code-group-item Git-Tool v3.x
+```yaml
+services:
+  - name: gh
+    website: "https://github.com/{{ .Repo.FullName }}"
+    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
+    pattern: "*/*"
+    api:
+      kind: GitHub/v3
+      endpoint: https://api.github.com
+```
+:::
+
+::: code-group-item Git-Tool v2.x
 ```yaml
 services:
   - domain: github.com
     website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
     gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
+    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
     pattern: "*/*"
 ```
+:::
+
+::::
 
 ## Configuration
 ::: tip
@@ -24,13 +43,30 @@ access information about the repository that is being targeted by a given comman
 :::
 
 
-#### `domain` <Badge text="required" type="danger"/>
-The `domain` is the unique identifier for this service and will always be the top-level directory
+#### `name`/`domain` <Badge text="required" type="danger"/>
+The `name`/`domain` is the unique identifier for this service and will always be the top-level directory
 name below which this service's repositories will be stored.
 
+::: tip
+Git-Tool v2.x requires you to specify `domain` here, however Git-Tool v3.x uses `name` for the same purpose.
+This was done to make a clear distinction between domains and the names you use to refer to your service configurations.
+:::
+
+:::: code-group
+
+::: code-group-item Git-Tool v3.x
+```yaml
+name: github.com
+```
+:::
+
+::: code-group-item Git-Tool v2.x
 ```yaml
 domain: github.com
 ```
+:::
+
+::::
 
 #### `website` <Badge text="required" type="danger"/>
 The `website` property configures the template which is used to generate URLs for a repository's
@@ -47,24 +83,33 @@ it easier to copy-paste service definitions for similar services running on diff
 (like GitHub Enterprise and Gitea).
 :::
 
-#### `gitUrl` <Badge text="required" type="danger"/>
-The `gitUrl` property is used to generate the GIT+SSH URL used by git to access this repository.
+#### `gitUrl` <Badge text="required" type="danger" />
+The `gitUrl` property is used to generate the Git URL used by git to access this repository.
 It will be configured as the `origin` remote on newly created repositories and used to `git clone`
 existing repositories. If you need to fix an error with this, you can use the [`gt fix`](../commands/repos.md#fix)
 command to help you out.
 
 ```yaml
-gitUrl: "git@github.com:{{ .Repo.Namespace }}/{{ .Repo.Name }}.git"
+gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
 ```
 
 
-#### `httpUrl` <Badge text="required" type="danger"/>
+#### `httpUrl` <Badge text="required" type="danger"/> <Badge text="removed in v3.x" type="danger" />
 The `httpUrl` property is used to generate the HTTPS URL used by git to access this repository.
-It will be used if you set the [`http_transport`](features.md#http_transport) feature flag to `true`.
+It will be used if you set the [`http_transport`](features.md#http_transport) feature flag to `true` on Git-Tool v2.x.
 
 ```yaml
-httpUrl: "https://github.com/{{ .Repo.Namespace }}/{{ .Repo.Name }}.git"
+httpUrl: "https://github.com/{{ .Repo.FullName }}.git"
 ```
+
+::: warning
+This field is no longer supported in Git-Tool v3.x and we've moved to using the `gitUrl` field instead.
+If you wish to use HTTPS as your default transport for `git`, make sure that the `gitUrl` follows the
+appropriate HTTPS transport format.
+
+A quick way to do this is to use the [`gt config add`](../commands/config.md#config-add) command to add
+the relevant HTTPS configuration to your config file, such as `gt config add github-https --name gh --force`.
+:::
 
 #### `pattern` <Badge text="required" type="danger"/>
 This is a pseudo-glob pattern used by Git-Tool to describe the depth of the directory structure
@@ -75,3 +120,20 @@ three (`*/*/*`) or more levels of nesting.
 ```yaml
 pattern: "*/*"
 ```
+
+#### `api` <Badge text="v3.x"/>
+The `api` property is used to tell Git-Tool how to talk to your Git hosting service when creating
+new repositories. This is only required if you want to take advantage of Git-Tool's ability to
+create a remote repository whenever you run [`gt new`](../commands/repos.md#new).
+
+```yaml
+api:
+  kind: GitHub/v3
+  endpoint: https://api.github.com
+```
+
+##### Supported API Kinds
+
+- `GitHub/v3` is used to communicate with a GitHub server supporting the v3 API. Public GitHub uses
+  `https://api.github.com` as its endpoint while a private GitHub Enterprise instance uses
+  `https://github.example.com/api/v3`.

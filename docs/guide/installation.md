@@ -157,12 +157,13 @@ Drop in the following starter configuration and change the `directory` to point 
 ---
 directory: "C:\\dev" # CHANGE ME
 services:
-  - domain: github.com
-    website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}"
-    httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
-    gitUrl: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git"
-    default: true
+  - domain: gh
+    website: "https://github.com/{{ .Repo.FullName }}"
+    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
     pattern: "*/*"
+    api:
+      kind: GitHub/v3
+      endpoint: https://api.github.com
 apps:
   - name: shell
     command: powershell

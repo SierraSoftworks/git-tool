@@ -35,6 +35,14 @@ impl EntryConfig {
     pub fn is_compatible(&self) -> bool {
         self.platform == "any" || self.platform == translate_os_name(OS)
     }
+
+    pub fn with_name(self, name: &str) -> EntryConfig {
+        EntryConfig {
+            platform: self.platform.clone(),
+            app: self.app.map(|a| a.with_name(name)),
+            service: self.service.map(|s| s.with_name(name)),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -45,6 +53,17 @@ pub struct EntryApp {
     pub args: Vec<String>,
     #[serde(default)]
     pub environment: Vec<String>,
+}
+
+impl EntryApp {
+    pub fn with_name(self, name: &str) -> Self {
+        EntryApp {
+            name: name.to_string(),
+            command: self.command.clone(),
+            args: self.args,
+            environment: self.environment,
+        }
+    }
 }
 
 impl Into<App> for EntryApp {
@@ -60,24 +79,36 @@ impl Into<App> for EntryApp {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct EntryService {
-    pub domain: String,
+    pub name: String,
     pub website: String,
-    #[serde(rename = "httpUrl")]
-    pub http_url: String,
     #[serde(rename = "gitUrl")]
     pub git_url: String,
     pub pattern: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api: Option<ServiceAPI>,
+}
+
+impl EntryService {
+    pub fn with_name(self, name: &str) -> Self {
+        EntryService {
+            name: name.to_string(),
+            website: self.website.clone(),
+            git_url: self.git_url.clone(),
+            pattern: self.pattern.clone(),
+            api: self.api,
+        }
+    }
 }
 
 impl Into<Service> for EntryService {
     fn into(self) -> Service {
-        Service::builder()
-            .with_domain(&self.domain)
-            .with_website(&self.website)
-            .with_git_url(&self.git_url)
-            .with_http_url(&self.http_url)
-            .with_pattern(&self.pattern)
-            .into()
+        Service {
+            name: self.name,
+            website: self.website,
+            git_url: self.git_url,
+            pattern: self.pattern,
+            api: self.api,
+        }
     }
 }
 

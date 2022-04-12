@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
+name: GitHub
+description: Adds support for managing GitHub repositories through Git-Tool, using the SSH protocol.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      name: gh
+      website: "https://github.com/{{ .Repo.FullName }}"
+      gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
+      pattern: "*/*"
+      api:
+        kind: GitHub/v3
+        url: https://api.github.com

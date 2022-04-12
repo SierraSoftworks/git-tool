@@ -32,17 +32,16 @@ impl CommandRunnable for InfoCommand {
         };
 
         writeln!(output, "Name:      {}", repo.get_name())?;
-        writeln!(output, "Namespace: {}", repo.get_namespace())?;
-        writeln!(output, "Service:   {}", repo.get_domain())?;
-        writeln!(output, "Path:      {}", repo.get_path().display())?;
+        writeln!(output, "Namespace: {}", &repo.namespace)?;
+        writeln!(output, "Service:   {}", &repo.service)?;
+        writeln!(output, "Path:      {}", repo.path.display())?;
 
-        match core.config().get_service(repo.get_domain().as_str()) {
+        match core.config().get_service(&repo.service) {
             Some(svc) => {
                 writeln!(output, "")?;
                 writeln!(output, "URLs:")?;
                 writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
-                writeln!(output, " - Git SSH:  {}", svc.get_git_url(&repo)?)?;
-                writeln!(output, " - Git HTTP: {}", svc.get_http_url(&repo)?)?;
+                writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?)?;
             }
             None => {}
         }
@@ -56,7 +55,7 @@ impl CommandRunnable for InfoCommand {
         let default_svc = core
             .config()
             .get_default_service()
-            .map(|s| s.get_domain())
+            .map(|s| s.name.clone())
             .unwrap_or_default();
 
         match core.resolver().get_repos() {
@@ -64,13 +63,13 @@ impl CommandRunnable for InfoCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .filter(|r| r.get_domain() == default_svc)
+                        .filter(|r| r.service == default_svc)
                         .map(|r| r.get_full_name()),
                 );
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -99,7 +98,7 @@ mod tests {
             );
 
             MockResult::Return(Ok(Repo::new(
-                "github.com/sierrasoftworks/git-tool",
+                "gh:sierrasoftworks/git-tool",
                 std::path::PathBuf::from("/test"),
             )))
         });

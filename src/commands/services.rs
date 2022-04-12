@@ -24,7 +24,7 @@ impl CommandRunnable for ServicesCommand {
         let mut output = core.output();
 
         for svc in core.config().get_services() {
-            writeln!(output, "{}", svc.get_domain())?;
+            writeln!(output, "{}", &svc.name)?;
         }
 
         Ok(0)
@@ -54,7 +54,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("github.com\n"),
+            output.to_string().contains("gh\n"),
             "the output should contain each service"
         );
     }

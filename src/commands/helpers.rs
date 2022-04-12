@@ -52,10 +52,10 @@ mod tests {
     fn test_normal_ordering() {
         let core = Core::builder().build();
 
-        match get_launch_app(&core, Some("shell"), Some("github.com/test/test")) {
+        match get_launch_app(&core, Some("shell"), Some("gh:test/test")) {
             LaunchTarget::AppAndTarget(app, repo) => {
                 assert_eq!(app.get_name(), "shell");
-                assert_eq!(repo, "github.com/test/test");
+                assert_eq!(repo, "gh:test/test");
             }
             _ => panic!("Both the app and target should have been matched."),
         }
@@ -65,10 +65,10 @@ mod tests {
     fn test_odd_ordering() {
         let core = Core::builder().build();
 
-        match get_launch_app(&core, Some("github.com/test/test"), Some("shell")) {
+        match get_launch_app(&core, Some("gh:test/test"), Some("shell")) {
             LaunchTarget::AppAndTarget(app, repo) => {
                 assert_eq!(app.get_name(), "shell");
-                assert_eq!(repo, "github.com/test/test");
+                assert_eq!(repo, "gh:test/test");
             }
             _ => panic!("Both the app and target should have been matched."),
         }
@@ -90,9 +90,9 @@ mod tests {
     fn test_target_only() {
         let core = Core::builder().build();
 
-        match get_launch_app(&core, Some("github.com/test/test"), None) {
+        match get_launch_app(&core, Some("gh:test/test"), None) {
             LaunchTarget::Target(repo) => {
-                assert_eq!(repo, "github.com/test/test");
+                assert_eq!(repo, "gh:test/test");
             }
             _ => panic!("Only the target should have been matched."),
         }
@@ -102,7 +102,7 @@ mod tests {
     fn test_unknown_app() {
         let core = Core::builder().build();
 
-        match get_launch_app(&core, Some("unknown"), Some("github.com/test/test")) {
+        match get_launch_app(&core, Some("unknown"), Some("gh:test/test")) {
             LaunchTarget::Err(e) => assert!(!e.is_system()),
             _ => panic!("Expected to receive an error."),
         }

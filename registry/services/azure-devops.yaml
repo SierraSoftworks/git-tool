@@ -1,12 +1,11 @@
-# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
 name: Azure DevOps
 description: Adds support for managing Azure DevOps repositories through Git-Tool.
 version: 1.0.0
 configs:
   - platform: any
     service:
-      domain: dev.azure.com
-      website: "https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}"
-      httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}"
-      gitUrl: "git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName | urlquery }}"
+      name: dev.azure.com
+      website: "https://dev.azure.com/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}"
+      gitUrl: "git@ssh.dev.azure.com:v3/{{ .Repo.FullName | urlquery }}"
       pattern: "*/*/*"

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
+name: GitHub
+description: Adds support for managing GitHub repositories through Git-Tool, using HTTPS as your default transport.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      name: public.github.com
+      website: "https://github.com/{{ .Repo.FullName }}"
+      gitUrl: "https://github.com/{{ .Repo.FullName }}.git"
+      pattern: "*/*"

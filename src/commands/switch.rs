@@ -115,20 +115,20 @@ mod tests {
     ///  - `main`
     async fn setup_test_repo_with_remote(core: &Core, temp: &tempfile::TempDir) -> Repo {
         let repo: Repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-switch-command",
+            "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo").into(),
         );
 
         let repo_path = repo.get_path();
         Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
-                "github.com/sierrasoftworks/test-git-switch-command",
+                "gh:sierrasoftworks/test-git-switch-command",
                 repo_path.clone(),
             )))
         });
 
         let origin_repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-switch-command2",
+            "gh:sierrasoftworks/test-git-switch-command2",
             temp.path().join("repo2").into(),
         );
 
@@ -355,7 +355,7 @@ mod tests {
 
         let temp = tempdir().unwrap();
         let repo: Repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-switch-command",
+            "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo").into(),
         );
 
@@ -365,7 +365,7 @@ mod tests {
 
         Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
-                "github.com/sierrasoftworks/test-git-switch-command",
+                "gh:sierrasoftworks/test-git-switch-command",
                 temp.path().join("repo").into(),
             )))
         });

@@ -24,7 +24,7 @@ Once you've generated the new Personal Access Token, run the [`gt auth`](../comm
 command and paste the token there.
 
 ```powershell
-gt auth github.com
+gt auth gh
 ```
 
 ::: warning

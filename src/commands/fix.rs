@@ -50,14 +50,9 @@ impl CommandRunnable for FixCommand {
 
                 let repos = core.resolver().get_repos()?;
                 for repo in search::best_matches_by(filter, repos.iter(), |r| {
-                    format!("{}/{}", r.get_domain(), r.get_full_name())
+                    format!("{}:{}", &r.service, r.get_full_name())
                 }) {
-                    writeln!(
-                        output,
-                        "Fixing {}/{}",
-                        repo.get_domain(),
-                        repo.get_full_name()
-                    )?;
+                    writeln!(output, "Fixing {}/{}", &repo.service, repo.get_full_name())?;
                     tasks.apply_repo(core, repo).await?;
                 }
             }
@@ -82,7 +77,7 @@ impl CommandRunnable for FixCommand {
         let default_svc = core
             .config()
             .get_default_service()
-            .map(|s| s.get_domain())
+            .map(|s| s.name.clone())
             .unwrap_or_default();
 
         match core.resolver().get_repos() {
@@ -90,13 +85,13 @@ impl CommandRunnable for FixCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .filter(|r| r.get_domain() == default_svc)
+                        .filter(|r| r.service == default_svc)
                         .map(|r| r.get_full_name()),
                 );
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", r.get_domain(), r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -125,15 +120,12 @@ mod tests {
                 "it should be called with the name of the repo to be cloned"
             );
 
-            MockResult::Return(Ok(Repo::new(
-                "github.com/exampleB/test",
-                temp.path().into(),
-            )))
+            MockResult::Return(Ok(Repo::new("gh:exampleB/test", temp.path().into())))
         });
 
         #[cfg(feature = "auth")]
         KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
@@ -147,7 +139,7 @@ mod tests {
         sequence![GitInit {}, GitRemote { name: "origin" }]
             .apply_repo(
                 &core,
-                &Repo::new("github.com/exampleA/test", cfg.get_dev_directory().into()),
+                &Repo::new("gh:exampleA/test", cfg.get_dev_directory().into()),
             )
             .await
             .unwrap();

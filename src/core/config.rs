@@ -108,15 +108,13 @@ impl Config {
 
         match template.service {
             Some(svc) => {
-                if let Some(existing_position) = into
-                    .services
-                    .iter()
-                    .position(|s| s.get_domain() == svc.domain)
+                if let Some(existing_position) =
+                    into.services.iter().position(|s| s.name == svc.name)
                 {
                     if !replace_existing {
                         return Err(errors::user(
-                            &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.domain),
-                            &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.domain)));
+                            &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
+                            &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.name)));
                     } else {
                         into.services[existing_position] = Arc::new(svc.into());
                     }
@@ -136,10 +134,7 @@ impl Config {
             config_file: None,
             dev_directory: dir.to_path_buf(),
             scratch_directory: None,
-            features: features::Features::builder()
-                .with_defaults()
-                .with(features::HTTP_TRANSPORT, true)
-                .build(),
+            features: features::Features::builder().with_defaults().build(),
             ..Default::default()
         }
     }
@@ -246,7 +241,7 @@ impl Config {
 
     pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
         for svc in self.services.iter() {
-            if svc.get_domain() == domain {
+            if &svc.name == domain {
                 return Some(svc.as_ref());
             }
         }
@@ -286,43 +281,68 @@ impl Default for Config {
             _ => "bash",
         };
 
+        let has_ssh_keys = directories_next::UserDirs::new()
+            .map(|d| d.home_dir().join(".ssh"))
+            .map(|d| {
+                d.join("id_rsa").exists()
+                    || d.join("id_dsa").exists()
+                    || d.join("id_ecdsa").exists()
+                    || d.join("id_ed25519").exists()
+            })
+            .unwrap_or_default();
+
         Self {
-            schema: Some("https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json".into()),
+            schema: Some(
+                "https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json".into(),
+            ),
             config_file: None,
             dev_directory: dev_dir,
             scratch_directory: None,
-            apps: vec![
-                Arc::new(app::App::builder().with_name("shell").with_command(default_shell).into()),
-            ],
+            apps: vec![Arc::new(
+                app::App::builder()
+                    .with_name("shell")
+                    .with_command(default_shell)
+                    .into(),
+            )],
             services: vec![
-                Arc::new(service::Service::builder()
-                    .with_domain("github.com")
-                    .with_pattern("*/*")
-                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
-                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
-                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
-                    .into()),
-                Arc::new(service::Service::builder()
-                    .with_domain("gitlab.com")
-                    .with_pattern("*/*")
-                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
-                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
-                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
-                    .into()),
-                Arc::new(service::Service::builder()
-                    .with_domain("bitbucket.org")
-                    .with_pattern("*/*")
-                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.FullName }}")
-                    .with_git_url("git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git")
-                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git")
-                    .into()),
-                Arc::new(service::Service::builder()
-                    .with_domain("dev.azure.com")
-                    .with_pattern("*/*/*")
-                    .with_website("https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}")
-                    .with_git_url("git@ssh.{{ .Service.Domain }}:v3/{{ .Repo.FullName | urlquery }}")
-                    .with_http_url("https://{{ .Service.Domain }}/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}")
-                    .into()),
+                Arc::new(service::Service {
+                    name: "gh".into(),
+                    pattern: "*/*".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: if has_ssh_keys { "git@github.com:{{ .Repo.FullName }}.git" } else { "https://github.com/{{ .Repo.FullName }}.git" }.into(),
+                    api: Some(service::ServiceAPI {
+                        kind: "GitHub/v3".into(),
+                        url: "https://api.github.com".into(),
+                    }),
+                }),
+                Arc::new(service::Service {
+                    name: "ghp".into(),
+                    pattern: "*/*".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "https://github.com/{{ .Repo.FullName }}.git".into(),
+                    api: None,
+                }),
+                Arc::new(service::Service {
+                    name: "gitlab".into(),
+                    pattern: "*/*".into(),
+                    website: "https://gitlab.com/{{ .Repo.FullName }}".into(),
+                    git_url: if has_ssh_keys { "git@gitlab.com:{{ .Repo.FullName }}.git" } else { "https://gitlab.com/{{ .Repo.FullName }}.git" }.into(),
+                    api: None,
+                }),
+                Arc::new(service::Service {
+                    name: "bitbucket".into(),
+                    pattern: "*/*".into(),
+                    website: "https://bitbucket.org/{{ .Repo.FullName }}".into(),
+                    git_url: if has_ssh_keys { "git@gbitbucket.org:{{ .Repo.FullName }}.git" } else { "https://bitbucket.org/{{ .Repo.FullName }}.git" }.into(),
+                    api: None,
+                }),
+                Arc::new(service::Service {
+                    name: "ado".into(),
+                    pattern: "*/*/*".into(),
+                    website: "https://dev.azure.com/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}".into(),
+                    git_url: if has_ssh_keys { "git@ssh.dev.azure.com:v3/{{ .Repo.FullName | urlquery }}" } else { "https://dev.azure.com/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}" }.into(),
+                    api: None,
+                }),
             ],
             aliases: HashMap::new(),
             features: Default::default(),
@@ -367,7 +387,7 @@ mod tests {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
                 assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/scratch"));
 
-                match cfg.get_service("github.com") {
+                match cfg.get_service("gh") {
                     Some(_) => {}
                     None => panic!("The default services should be present."),
                 }
@@ -395,7 +415,7 @@ apps:
             Ok(cfg) => {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
 
-                match cfg.get_service("github.com") {
+                match cfg.get_service("gh") {
                     Some(_) => {}
                     None => panic!("The default services should be present."),
                 }
@@ -426,11 +446,11 @@ apps:
                 environment: vec![],
             }),
             service: Some(EntryService {
-                domain: "example.com".to_string(),
+                name: "example.com".to_string(),
                 pattern: "*/*".to_string(),
                 website: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}".to_string(),
                 git_url: "git@{{ .Service.Domain }}:{{ .Repo.FullName }}.git".to_string(),
-                http_url: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git".to_string(),
+                api: None,
             }),
         };
 
@@ -462,7 +482,7 @@ apps:
         );
         assert_eq!(
             cfg.get_alias("gt"),
-            Some("github.com/SierraSoftworks/git-tool".to_string()),
+            Some("gh:SierraSoftworks/git-tool".to_string()),
             "the aliases should have been loaded"
         );
         assert_eq!(

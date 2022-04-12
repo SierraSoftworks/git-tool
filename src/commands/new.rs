@@ -83,15 +83,15 @@ impl CommandRunnable for NewCommand {
                 let default_svc = core
                     .config()
                     .get_default_service()
-                    .map(|s| s.get_domain())
+                    .map(|s| s.name.clone())
                     .unwrap_or_default();
 
                 for repo in repos {
-                    if repo.get_domain() == default_svc {
-                        namespaces.insert(repo.get_domain() + "/");
+                    if repo.service == default_svc {
+                        namespaces.insert(format!("{}/", &repo.namespace));
                     }
 
-                    namespaces.insert(format!("{}/{}/", repo.get_domain(), repo.get_namespace()));
+                    namespaces.insert(format!("{}:{}/", &repo.service, &repo.namespace));
                 }
 
                 completer.offer_many(namespaces.iter().map(|s| s.as_str()));
@@ -119,7 +119,7 @@ mod tests {
         let cfg = Config::for_dev_directory(temp.path());
 
         KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
@@ -129,7 +129,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("github.com/test/new-repo-partial")
+            .get_best_repo("gh:test/new-repo-partial")
             .unwrap();
         assert_eq!(repo.valid(), false);
 
@@ -144,13 +144,13 @@ mod tests {
 
         let args = cmd
             .app()
-            .get_matches_from(vec!["new", "github.com/test/new-repo-full"]);
+            .get_matches_from(vec!["new", "gh:test/new-repo-full"]);
 
         let temp = tempfile::tempdir().unwrap();
         let cfg = Config::for_dev_directory(temp.path());
 
         KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 
@@ -160,7 +160,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("github.com/test/new-repo-full")
+            .get_best_repo("gh:test/new-repo-full")
             .unwrap();
         assert_eq!(repo.valid(), false);
 

@@ -26,5 +26,5 @@ pub use prompt::Prompter;
 pub use repo::Repo;
 pub use resolver::Resolver;
 pub use scratchpad::Scratchpad;
-pub use service::Service;
+pub use service::{Service, ServiceAPI};
 pub use target::Target;

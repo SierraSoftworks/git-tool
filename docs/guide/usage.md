@@ -8,7 +8,7 @@ So, you've just got Git-Tool installed and want to kick the tyres. The best plac
 to start is the same place you usually do, cloning a repo and opening it up.
 
 ```powershell
-gt o github.com/SierraSoftworks/git-tool
+gt o gh:SierraSoftworks/git-tool
 ```
 
 This will automatically clone the repo if it doesn't already exist on your
@@ -18,7 +18,7 @@ file.
 You can also launch a specific application if you'd prefer.
 
 ```powershell
-gt o code github.com/SierraSoftworks/git-tool
+gt o code gh:SierraSoftworks/git-tool
 ```
 
 ::: tip
@@ -32,7 +32,7 @@ Git-Tool takes care of all of that for you too. Let's try creating a quick test
 repo to play around in.
 
 ```powershell
-gt n --no-create-remote github.com/YOURUSER/git-tool-example1
+gt n --no-create-remote gh:YOURUSER/git-tool-example1
 ```
 
 If you'd like to open up the repo you just created (usually we do) you can either
@@ -45,7 +45,7 @@ feature flag.
 gt config feature open_new_repo_in_default_app true
 
 # Or pass the -o option explicitly
-gt n -o --no-create-remote github.com/YOURUSER/git-tool-example2
+gt n -o --no-create-remote gh:YOURUSER/git-tool-example2
 ```
 
 ::: tip

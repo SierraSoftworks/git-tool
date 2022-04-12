@@ -92,6 +92,7 @@ export default defineUserConfig<DefaultThemeOptions>({
             '/guide/usage.md',
             '/guide/github.md',
             '/guide/updates.md',
+            '/guide/migrating-v3.md',
             '/guide/faq.md'
           ]
         }

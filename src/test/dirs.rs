@@ -16,5 +16,5 @@ pub fn get_dev_dir() -> std::path::PathBuf {
 #[test]
 fn test_dev_dir() {
     assert!(get_dev_dir().exists());
-    assert!(get_dev_dir().join("github.com").exists());
+    assert!(get_dev_dir().join("gh").exists());
 }
