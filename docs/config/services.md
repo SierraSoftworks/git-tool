@@ -94,7 +94,7 @@ gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
 ```
 
 
-#### `httpUrl` <Badge text="required" type="danger"/> <Badge text="removed in v3.x" type="danger">
+#### `httpUrl` <Badge text="required" type="danger"/> <Badge text="removed in v3.x" type="danger" />
 The `httpUrl` property is used to generate the HTTPS URL used by git to access this repository.
 It will be used if you set the [`http_transport`](features.md#http_transport) feature flag to `true` on Git-Tool v2.x.
 
