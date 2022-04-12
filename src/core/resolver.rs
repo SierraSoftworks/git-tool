@@ -315,7 +315,7 @@ mod tests {
     use super::{Config, Resolver};
     use crate::test::get_dev_dir;
     use chrono::prelude::*;
-    use std::{path, sync::Arc};
+    use std::sync::Arc;
 
     #[test]
     fn get_scratchpads() {

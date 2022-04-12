@@ -322,7 +322,7 @@ mod tests {
             "the output should contain some apps"
         );
         assert!(
-            output.to_string().contains("services/github\n"),
+            output.to_string().contains("services/github-ssh\n"),
             "the output should contain some services"
         );
     }

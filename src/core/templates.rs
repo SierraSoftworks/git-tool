@@ -141,8 +141,8 @@ mod tests {
     fn render_basic_repo() {
         let cfg = Config::default();
         let repo = Repo::new(
-            "gh:sierrasoftworks/git-tool",
-            PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
+            "ghp:sierrasoftworks/git-tool",
+            PathBuf::from("/test/ghp/sierrasoftworks/git-tool"),
         );
 
         let context = repo_context(&cfg, &repo);
@@ -159,10 +159,13 @@ mod tests {
             render("{{ .Repo.Namespace }}", context.clone()).unwrap(),
             "sierrasoftworks"
         );
-        assert_eq!(render("{{ .Repo.Domain }}", context.clone()).unwrap(), "gh");
+        assert_eq!(
+            render("{{ .Repo.Domain }}", context.clone()).unwrap(),
+            "ghp"
+        );
         assert_eq!(
             render("{{ .Repo.Path }}", context.clone()).unwrap(),
-            "/test/github.com/sierrasoftworks/git-tool"
+            "/test/ghp/sierrasoftworks/git-tool"
         );
         assert_eq!(
             render("{{ .Repo.Website }}", context.clone()).unwrap(),
@@ -170,11 +173,11 @@ mod tests {
         );
         assert_eq!(
             render("{{ .Repo.GitURL }}", context.clone()).unwrap(),
-            "git@github.com:sierrasoftworks/git-tool.git"
+            "https://github.com/sierrasoftworks/git-tool.git"
         );
         assert_eq!(
             render("{{ .Repo.HttpURL }}", context.clone()).unwrap(),
-            "git@github.com:sierrasoftworks/git-tool.git"
+            "https://github.com/sierrasoftworks/git-tool.git"
         );
 
         assert_eq!(
@@ -183,16 +186,16 @@ mod tests {
         );
         assert_eq!(
             render("{{ .Target.Path }}", context.clone()).unwrap(),
-            "/test/github.com/sierrasoftworks/git-tool"
+            "/test/ghp/sierrasoftworks/git-tool"
         );
 
         assert_eq!(
             render("{{ .Service.Domain }}", context.clone()).unwrap(),
-            "gh"
+            "ghp"
         );
         assert_eq!(
             render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(),
-            "gh"
+            "ghp"
         );
     }
 
