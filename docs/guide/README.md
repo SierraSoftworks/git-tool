@@ -67,7 +67,7 @@ services:
     pattern: "*/*"
     api:
       kind: GitHub/v3
-      endpoint: https://api.github.com
+      url: https://api.github.com
 apps:
   - name: shell
     command: pwsh # CHANGE ME

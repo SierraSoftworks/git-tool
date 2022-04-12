@@ -85,7 +85,7 @@ services:
     pattern: "*/*"
     api:
       kind: GitHub/v3
-      endpoint: https://api.github.com
+      url: https://api.github.com
 
     # The original layout for a service entry in your configuration file
   - domain: github.com

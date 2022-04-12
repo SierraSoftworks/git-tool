@@ -89,7 +89,7 @@ services:
     pattern: "*/*"
     api:
       kind: GitHub/v3
-      endpoint: https://api.github.com
+      url: https://api.github.com
   - domain: ado
     website: "https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
     gitUrl: "git@ssh.dev.azure.com:v3/{{ .Repo.FullName }}.git"

@@ -19,7 +19,7 @@ services:
     pattern: "*/*"
     api:
       kind: GitHub/v3
-      endpoint: https://api.github.com
+      url: https://api.github.com
 ```
 :::
 
@@ -129,7 +129,7 @@ create a remote repository whenever you run [`gt new`](../commands/repos.md#new)
 ```yaml
 api:
   kind: GitHub/v3
-  endpoint: https://api.github.com
+  url: https://api.github.com
 ```
 
 ##### Supported API Kinds
