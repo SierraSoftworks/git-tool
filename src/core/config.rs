@@ -293,7 +293,7 @@ impl Default for Config {
 
         Self {
             schema: Some(
-                "https://schemas.sierrasoftworks.com/git-tool/v1/config.schema.json".into(),
+                "https://schemas.sierrasoftworks.com/git-tool/v2/config.schema.json".into(),
             ),
             config_file: None,
             dev_directory: dev_dir,
