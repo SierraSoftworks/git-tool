@@ -182,7 +182,7 @@ mod registry_compliance {
         }
 
         let test_repo = Repo::new(
-            "example.com/test/repo",
+            "example.com:test/repo",
             PathBuf::from("/dev/example.com/test/repo"),
         );
 

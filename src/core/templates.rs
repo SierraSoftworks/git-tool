@@ -141,7 +141,7 @@ mod tests {
     fn render_basic_repo() {
         let cfg = Config::default();
         let repo = Repo::new(
-            "github.com/sierrasoftworks/git-tool",
+            "gh:sierrasoftworks/git-tool",
             PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
         );
 
@@ -159,10 +159,7 @@ mod tests {
             render("{{ .Repo.Namespace }}", context.clone()).unwrap(),
             "sierrasoftworks"
         );
-        assert_eq!(
-            render("{{ .Repo.Domain }}", context.clone()).unwrap(),
-            "github.com"
-        );
+        assert_eq!(render("{{ .Repo.Domain }}", context.clone()).unwrap(), "gh");
         assert_eq!(
             render("{{ .Repo.Path }}", context.clone()).unwrap(),
             "/test/github.com/sierrasoftworks/git-tool"
@@ -191,11 +188,11 @@ mod tests {
 
         assert_eq!(
             render("{{ .Service.Domain }}", context.clone()).unwrap(),
-            "github.com"
+            "gh"
         );
         assert_eq!(
             render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(),
-            "github.com"
+            "gh"
         );
     }
 
@@ -216,18 +213,18 @@ mod tests {
     #[test]
     fn render_advanced_repo() {
         let repo = Repo::new(
-            "github.com/sierrasoftworks/git-tool",
+            "gh:sierrasoftworks/git-tool",
             PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
         );
 
-        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&repo).into()).unwrap(), "github.com/sierrasoftworks/git-tool");
+        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}:{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&repo).into()).unwrap(), "gh:sierrasoftworks/git-tool");
     }
 
     #[test]
     fn render_advanced_scratchpad() {
         let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
-        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}/{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&scratch).into()).unwrap(), "2020w07");
+        assert_eq!(render("{{ with .Repo }}{{ .Service.Domain }}:{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}", (&scratch).into()).unwrap(), "2020w07");
     }
 
     #[test]

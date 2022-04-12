@@ -64,7 +64,7 @@ mod tests {
     #[tokio::test]
     async fn test_repo_exists() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new("github.com/sierrasoftworks/test1", temp.path().into());
+        let repo = core::Repo::new("gh:sierrasoftworks/test1", temp.path().into());
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))

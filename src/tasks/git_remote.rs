@@ -53,7 +53,7 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote",
+            "gh:sierrasoftworks/test-git-remote",
             temp.path().join("repo").into(),
         );
 

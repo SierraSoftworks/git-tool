@@ -236,7 +236,7 @@ mod tests {
 
         let core = Core::builder().build();
 
-        let repo = Repo::new("gh/test/user-repo", std::path::PathBuf::from("/"));
+        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
         service
             .ensure_created(
@@ -268,7 +268,7 @@ mod tests {
 
         let core = Core::builder().build();
 
-        let repo = Repo::new("gh/test/user-repo", std::path::PathBuf::from("/"));
+        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
         service
             .ensure_created(

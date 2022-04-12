@@ -68,12 +68,12 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-remote",
+            "gh:sierrasoftworks/test-git-remote",
             temp.path().join("repo").into(),
         );
 
         KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "github.com", "the correct token should be requested");
+            assert_eq!(token, "gh", "the correct token should be requested");
             MockResult::Return(Ok("test_token".into()))
         });
 

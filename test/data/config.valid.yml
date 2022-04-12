@@ -1,7 +1,7 @@
 ---
 directory: C:\\dev
 services:
-  - name: github.com
+  - name: gh
     website: "https://github.com/{{ .Repo.FullName }}"
     gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
     default: true
@@ -9,15 +9,15 @@ services:
     api:
       kind: GitHub/v3
       url: https://api.github.com
-  - name: gitlab.com
+  - name: gitlab
     website: "https://gitlab.com/{{ .Repo.FullName }}"
     gitUrl: "git@gitlab.com:{{ .Repo.FullName }}.git"
     pattern: "*/*"
-  - name: bitbucket.org
+  - name: bitbucket
     website: "https://bitbucket.org/{{ .Repo.FullName }}"
     gitUrl: "git@bitbucket.org:{{ .Repo.FullName }}.git"
     pattern: "*/*"
-  - name: dev.azure.com
+  - name: ado
     website: "https://dev.azure.com/{{ .Repo.Namespace }}/_git/{{ .Repo.Name }}"
     gitUrl: "git@ssh.dev.azure.com:v3/{{ .Repo.FullName }}.git"
     pattern: "*/*/*"
@@ -38,4 +38,4 @@ apps:
       - REPO={{ .Repo.FullName }}
       - GITHOST={{ .Service.Domain }}
 aliases:
-  gt: github.com/SierraSoftworks/git-tool
+  gt: gh:SierraSoftworks/git-tool

@@ -247,7 +247,7 @@ impl CommandRunnable for ConfigCommand {
                                 completer.offer_many(
                                     repos
                                         .iter()
-                                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
+                                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                                 );
                             }
                             _ => {}
@@ -557,7 +557,7 @@ aliases:
             &cfg,
             "gt config alias test1",
             "",
-            vec!["-d", "github.com/sierrasoftworks/test1"],
+            vec!["-d", "gh:sierrasoftworks/test1"],
         )
         .await;
     }

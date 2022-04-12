@@ -114,7 +114,7 @@ impl CommandRunnable for OpenCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -162,7 +162,7 @@ features:
             );
 
             MockResult::Return(Ok(Repo::new(
-                "github.com/git-fixtures/basic",
+                "gh:git-fixtures/basic",
                 temp_path.join("repo").into(),
             )))
         });

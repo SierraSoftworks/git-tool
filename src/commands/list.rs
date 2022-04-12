@@ -51,10 +51,10 @@ where {
 
         let mut first = true;
         for repo in search::best_matches_by(filter, repos.iter(), |r| {
-            format!("{}/{}", &r.service, r.get_full_name())
+            format!("{}:{}", &r.service, r.get_full_name())
         }) {
             if quiet {
-                writeln!(output, "{}/{}", &repo.service, repo.get_full_name())?;
+                writeln!(output, "{}:{}", &repo.service, repo.get_full_name())?;
             } else if full {
                 if !first {
                     writeln!(output, "---")?;
@@ -89,12 +89,12 @@ URLs:
                 match core.config().get_service(&repo.service) {
                     Some(svc) => writeln!(
                         output,
-                        "{}/{} ({})",
+                        "{}:{} ({})",
                         &repo.service,
                         repo.get_full_name(),
                         svc.get_website(&repo)?
                     )?,
-                    None => writeln!(output, "{}/{}", &repo.service, repo.get_full_name())?,
+                    None => writeln!(output, "{}:{}", &repo.service, repo.get_full_name())?,
                 };
             }
 
@@ -135,10 +135,12 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains(
-                "github.com/sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"
-            ),
-            "the output should contain the repos"
+            output
+                .to_string()
+                .contains("gh:sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"),
+            "the output should contain the repo: {}\ngot: {}",
+            "gh:sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)",
+            &output.to_string()
         );
     }
 
@@ -146,9 +148,9 @@ mod tests {
     async fn run_search_full() {
         Resolver::get_repos.mock_safe(|_| {
             MockResult::Return(Ok(vec![
-                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
             ]))
         });
 
@@ -168,9 +170,9 @@ mod tests {
     async fn run_search_quiet() {
         Resolver::get_repos.mock_safe(|_| {
             MockResult::Return(Ok(vec![
-                Repo::new("example.com/ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                Repo::new("example.com/ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                Repo::new("example.com/ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
             ]))
         });
 
@@ -186,11 +188,11 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("example.com/ns1/a\n"),
+            output.to_string().contains("example.com:ns1/a\n"),
             "the output should contain the first match"
         );
         assert!(
-            output.to_string().contains("example.com/ns1/b\n"),
+            output.to_string().contains("example.com:ns1/b\n"),
             "the output should contain the second match"
         );
     }

@@ -54,7 +54,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("github.com\n"),
+            output.to_string().contains("gh\n"),
             "the output should contain each service"
         );
     }

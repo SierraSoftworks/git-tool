@@ -69,7 +69,7 @@ impl CommandRunnable for InfoCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -98,7 +98,7 @@ mod tests {
             );
 
             MockResult::Return(Ok(Repo::new(
-                "github.com/sierrasoftworks/git-tool",
+                "gh:sierrasoftworks/git-tool",
                 std::path::PathBuf::from("/test"),
             )))
         });

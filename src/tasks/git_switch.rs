@@ -44,7 +44,7 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-switch",
+            "gh:sierrasoftworks/test-git-switch",
             temp.path().join("repo").into(),
         );
 
@@ -79,7 +79,7 @@ mod tests {
     async fn test_repo_no_create() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-switch",
+            "gh:sierrasoftworks/test-git-switch",
             temp.path().join("repo").into(),
         );
 

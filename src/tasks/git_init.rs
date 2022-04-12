@@ -29,7 +29,7 @@ mod tests {
     async fn test_repo() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
-            "github.com/sierrasoftworks/test-git-init",
+            "gh:sierrasoftworks/test-git-init",
             temp.path().join("repo").into(),
         );
 

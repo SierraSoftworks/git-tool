@@ -51,10 +51,7 @@ mod tests {
         assert_eq!(&svc.name, "gh");
         assert_eq!(&svc.pattern, "*/*");
 
-        let repo = Repo::new(
-            "github.com/sierrasoftworks/git-tool",
-            PathBuf::from("/test"),
-        );
+        let repo = Repo::new("gh:sierrasoftworks/git-tool", PathBuf::from("/test"));
 
         assert_eq!(
             &svc.get_git_url(&repo).unwrap(),
@@ -82,7 +79,7 @@ mod tests {
         };
 
         let repo = Repo::new(
-            "dev.azure.com/sierrasoftworks/example/git tool",
+            "ado:sierrasoftworks/example/git tool",
             PathBuf::from("/test"),
         );
 

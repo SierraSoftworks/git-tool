@@ -306,7 +306,7 @@ impl Default for Config {
             )],
             services: vec![
                 Arc::new(service::Service {
-                    name: "github.com".into(),
+                    name: "gh".into(),
                     pattern: "*/*".into(),
                     website: "https://github.com/{{ .Repo.FullName }}".into(),
                     git_url: if has_ssh_keys { "git@github.com:{{ .Repo.FullName }}.git" } else { "https://github.com/{{ .Repo.FullName }}.git" }.into(),
@@ -316,21 +316,28 @@ impl Default for Config {
                     }),
                 }),
                 Arc::new(service::Service {
-                    name: "gitlab.com".into(),
+                    name: "ghp".into(),
+                    pattern: "*/*".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "https://github.com/{{ .Repo.FullName }}.git".into(),
+                    api: None,
+                }),
+                Arc::new(service::Service {
+                    name: "gitlab".into(),
                     pattern: "*/*".into(),
                     website: "https://gitlab.com/{{ .Repo.FullName }}".into(),
                     git_url: if has_ssh_keys { "git@gitlab.com:{{ .Repo.FullName }}.git" } else { "https://gitlab.com/{{ .Repo.FullName }}.git" }.into(),
                     api: None,
                 }),
                 Arc::new(service::Service {
-                    name: "bitbucket.org".into(),
+                    name: "bitbucket".into(),
                     pattern: "*/*".into(),
                     website: "https://bitbucket.org/{{ .Repo.FullName }}".into(),
                     git_url: if has_ssh_keys { "git@gbitbucket.org:{{ .Repo.FullName }}.git" } else { "https://bitbucket.org/{{ .Repo.FullName }}.git" }.into(),
                     api: None,
                 }),
                 Arc::new(service::Service {
-                    name: "dev.azure.com".into(),
+                    name: "ado".into(),
                     pattern: "*/*/*".into(),
                     website: "https://dev.azure.com/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}".into(),
                     git_url: if has_ssh_keys { "git@ssh.dev.azure.com:v3/{{ .Repo.FullName | urlquery }}" } else { "https://dev.azure.com/{{ .Repo.Namespace | urlquery }}/_git/{{ .Repo.Name | urlquery }}" }.into(),
@@ -380,7 +387,7 @@ mod tests {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
                 assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/scratch"));
 
-                match cfg.get_service("github.com") {
+                match cfg.get_service("gh") {
                     Some(_) => {}
                     None => panic!("The default services should be present."),
                 }
@@ -408,7 +415,7 @@ apps:
             Ok(cfg) => {
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
 
-                match cfg.get_service("github.com") {
+                match cfg.get_service("gh") {
                     Some(_) => {}
                     None => panic!("The default services should be present."),
                 }
@@ -475,7 +482,7 @@ apps:
         );
         assert_eq!(
             cfg.get_alias("gt"),
-            Some("github.com/SierraSoftworks/git-tool".to_string()),
+            Some("gh:SierraSoftworks/git-tool".to_string()),
             "the aliases should have been loaded"
         );
         assert_eq!(

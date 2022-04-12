@@ -39,10 +39,7 @@ mod tests {
     #[tokio::test]
     async fn test_repo_basic() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new(
-            "github.com/git-fixtures/basic",
-            temp.path().join("repo").into(),
-        );
+        let repo = core::Repo::new("gh:git-fixtures/basic", temp.path().join("repo").into());
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))

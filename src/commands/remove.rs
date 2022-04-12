@@ -71,7 +71,7 @@ impl CommandRunnable for RemoveCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -106,7 +106,7 @@ mod tests {
             );
 
             MockResult::Return(Ok(Repo::new(
-                "github.com/git-fixtures/basic",
+                "gh:git-fixtures/basic",
                 temp_path.join("repo").into(),
             )))
         });

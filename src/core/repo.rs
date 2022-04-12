@@ -30,17 +30,21 @@ impl Target for Repo {
 
 impl Repo {
     pub fn new(full_name: &str, path: path::PathBuf) -> Self {
-        let parts: Vec<&str> = full_name.split("/").collect();
+        if let Some((svc, relative_name)) = full_name.split_once(':') {
+            let parts: Vec<&str> = relative_name.split('/').collect();
 
-        if parts.len() < 3 {
-            panic!("A repository's full name must be composed of a $service/$namespace+/$name");
-        }
+            if parts.len() < 2 {
+                panic!("A repository's full name must be composed of a $service:$namespace+/$name");
+            }
 
-        Self {
-            service: parts[0].to_string(),
-            namespace: parts[1..parts.len() - 1].join("/"),
-            name: parts[parts.len() - 1].to_string(),
-            path,
+            Self {
+                service: svc.to_string(),
+                namespace: parts[0..parts.len() - 1].join("/"),
+                name: parts[parts.len() - 1].to_string(),
+                path,
+            }
+        } else {
+            panic!("A repository's full name must be composed of a $service:$namespace+/$name");
         }
     }
 

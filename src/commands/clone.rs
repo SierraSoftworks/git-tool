@@ -28,7 +28,7 @@ impl CommandRunnable for CloneCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.value_of("repo").ok_or(errors::user(
             "You didn't specify the repository you wanted to clone.",
-            "Remember to specify a repository name like this: 'git-tool clone github.com/sierrasoftworks/git-tool'."))?;
+            "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
 
         let repo = core.resolver().get_best_repo(repo_name)?;
 
@@ -62,7 +62,7 @@ impl CommandRunnable for CloneCommand {
                 completer.offer_many(
                     repos
                         .iter()
-                        .map(|r| format!("{}/{}", &r.service, r.get_full_name())),
+                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                 );
             }
             _ => {}
@@ -107,7 +107,7 @@ features:
             );
 
             MockResult::Return(Ok(Repo::new(
-                "github.com/git-fixtures/basic",
+                "gh:git-fixtures/basic",
                 temp.path().join("repo").into(),
             )))
         });
