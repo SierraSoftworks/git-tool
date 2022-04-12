@@ -22,17 +22,17 @@ place to get started is by reading our [documentation](https://git-tool.sierraso
 gt o sierrasoftworks/git-tool
 
 # Open the github.com/sierrasoftworks/git-tool repo in VS Code (if listed in your config)
-gt o code github.com/sierrasoftworks/git-tool
+gt o code gh:sierrasoftworks/git-tool
 
 # Create a new repository and instruct GitHub to create the repo as well, if you
 # have permission to do so.
-gt new github.com/sierrasoftworks/demo-repo
+gt new gh:sierrasoftworks/demo-repo
 
 # Show info about the repository in your current directory
 gt i
 
 # Show information about a specific repository
-gt i dev.azure.com/sierrasoftworks/opensource/git-tool
+gt i ado:sierrasoftworks/opensource/git-tool
 
 # Open your shell in the current week's scratch directory
 gt s
