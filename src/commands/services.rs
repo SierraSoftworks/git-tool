@@ -16,6 +16,7 @@ impl Command for ServicesCommand {
 
 #[async_trait]
 impl CommandRunnable for ServicesCommand {
+    #[tracing::instrument(name = "gt services", err, skip(self, core, _matches))]
     async fn run(
         &self,
         core: &Core,
@@ -30,6 +31,10 @@ impl CommandRunnable for ServicesCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt services",
+        skip(self, _core, _completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 

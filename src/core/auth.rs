@@ -19,17 +19,20 @@ impl From<Arc<Config>> for KeyChain {
 #[cfg(feature = "auth")]
 #[cfg_attr(test, mockable)]
 impl KeyChain {
+    #[tracing::instrument(err, skip(self))]
     pub fn get_token(&self, service: &str) -> Result<String, Error> {
         let token = keyring::Entry::new("git-tool", service).get_password()?;
 
         Ok(token)
     }
 
+    #[tracing::instrument(err, skip(self, token))]
     pub fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
         keyring::Entry::new("git-tool", service).set_password(token)?;
         Ok(())
     }
 
+    #[tracing::instrument(err, skip(self))]
     pub fn remove_token(&self, service: &str) -> Result<(), Error> {
         keyring::Entry::new("git-tool", service).delete_password()?;
         Ok(())

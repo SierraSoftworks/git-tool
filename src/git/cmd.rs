@@ -2,6 +2,7 @@ use crate::errors;
 use std::process::Stdio;
 use tokio::process::Command;
 
+#[tracing::instrument(err, skip(cmd))]
 pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
     let child = cmd.stdout(Stdio::piped()).spawn().map_err(|err| errors::user_with_internal(
         "Could not run git, which is a dependency of Git-Tool.",

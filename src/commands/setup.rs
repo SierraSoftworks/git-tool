@@ -33,6 +33,7 @@ impl Command for SetupCommand {
 
 #[async_trait]
 impl CommandRunnable for SetupCommand {
+    #[tracing::instrument(name = "gt setup", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -101,6 +102,10 @@ impl CommandRunnable for SetupCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt setup",
+        skip(self, _core, _completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 

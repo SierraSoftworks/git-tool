@@ -5,7 +5,7 @@ use std::io;
 use std::path::PathBuf;
 
 #[async_trait::async_trait]
-pub trait Source: Default + Send + Sync {
+pub trait Source: Default + std::fmt::Debug + Send + Sync {
     async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error>;
     async fn get_binary<W: io::Write + Send>(
         &self,
@@ -64,6 +64,12 @@ impl UpdateState {
             temporary_application: self.temporary_application.clone(),
             phase,
         }
+    }
+}
+
+impl std::fmt::Display for UpdateState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.phase)
     }
 }
 

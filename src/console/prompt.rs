@@ -2,6 +2,7 @@
 use mocktopus::{macros::*, mocking::*};
 
 #[cfg_attr(test, mockable)]
+#[tracing::instrument]
 pub fn prompt(msg: &str, default: &str) -> String {
     match write!(super::output::output(), "{}", msg) {
         Ok(_) => (),

@@ -25,6 +25,7 @@ impl Command for RemoveCommand {
 
 #[async_trait]
 impl CommandRunnable for RemoveCommand {
+    #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.value_of("repo").ok_or_else(|| {
             errors::user(
@@ -48,6 +49,10 @@ impl CommandRunnable for RemoveCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt remove",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--create");
         completer.offer("--no-create-remote");

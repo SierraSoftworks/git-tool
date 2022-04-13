@@ -18,6 +18,7 @@ impl Command for DoctorCommand {
 
 #[async_trait]
 impl CommandRunnable for DoctorCommand {
+    #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
     async fn run(
         &self,
         core: &Core,
@@ -99,6 +100,10 @@ impl CommandRunnable for DoctorCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt doctor",
+        skip(self, _core, _completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &clap::ArgMatches) {}
 }
 

@@ -6,6 +6,7 @@ pub struct NewFolder {}
 
 #[async_trait::async_trait]
 impl Task for NewFolder {
+    #[tracing::instrument(name = "task:new_folder(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path();
 
@@ -23,6 +24,7 @@ impl Task for NewFolder {
         Ok(())
     }
 
+    #[tracing::instrument(name = "task:new_folder(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

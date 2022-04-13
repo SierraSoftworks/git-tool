@@ -25,6 +25,7 @@ impl Command for CloneCommand {
 
 #[async_trait]
 impl CommandRunnable for CloneCommand {
+    #[tracing::instrument(name = "gt clone", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.value_of("repo").ok_or(errors::user(
             "You didn't specify the repository you wanted to clone.",
@@ -42,6 +43,10 @@ impl CommandRunnable for CloneCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt clone",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 

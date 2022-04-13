@@ -27,6 +27,7 @@ impl OnlineService for GitHubService {
         Ok(())
     }
 
+    #[tracing::instrument(err, skip(self, core))]
     async fn ensure_created(
         &self,
         core: &Core,

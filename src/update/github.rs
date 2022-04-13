@@ -22,6 +22,7 @@ impl Default for GitHubSource {
 
 #[async_trait::async_trait]
 impl Source for GitHubSource {
+    #[tracing::instrument(err, ret, skip(self, core))]
     async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::core::Error> {
         let uri = format!("https://api.github.com/repos/{}/releases", self.repo);
         info!("Making GET request to {} to check for new releases.", uri);
@@ -55,6 +56,7 @@ impl Source for GitHubSource {
         }
     }
 
+    #[tracing::instrument(err, skip(self, core, into))]
     async fn get_binary<W: std::io::Write + Send>(
         &self,
         core: &Core,
@@ -68,6 +70,12 @@ impl Source for GitHubSource {
         );
 
         self.download_to_file(core, &uri, into).await
+    }
+}
+
+impl std::fmt::Debug for GitHubSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GitHub - {}", &self.repo)
     }
 }
 

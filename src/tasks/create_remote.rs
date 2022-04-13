@@ -13,6 +13,7 @@ impl Default for CreateRemote {
 #[async_trait::async_trait]
 impl Task for CreateRemote {
     #[cfg(feature = "auth")]
+    #[tracing::instrument(name = "task:create_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         if !self.enabled {
             return Ok(());
@@ -43,10 +44,12 @@ impl Task for CreateRemote {
     }
 
     #[cfg(not(feature = "auth"))]
+    #[tracing::instrument(name = "task:create_remote(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
         Ok(())
     }
 
+    #[tracing::instrument(name = "task:create_remote(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

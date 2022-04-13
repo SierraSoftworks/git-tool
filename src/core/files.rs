@@ -17,6 +17,7 @@ impl From<Arc<Config>> for FileSource {
 }
 
 impl FileSource {
+    #[tracing::instrument(err, skip(self, path))]
     async fn read(&self, path: &std::path::Path) -> Result<String, Error> {
         let mut file = tokio::fs::File::open(path).await?;
 
@@ -26,6 +27,7 @@ impl FileSource {
         Ok(String::from_utf8(buffer)?)
     }
 
+    #[tracing::instrument(err, skip(self, path, content))]
     async fn write(&self, path: &std::path::Path, content: String) -> Result<(), Error> {
         let mut file = tokio::fs::File::create(path).await?;
 

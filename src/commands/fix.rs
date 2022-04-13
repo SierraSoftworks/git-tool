@@ -32,6 +32,7 @@ impl Command for FixCommand {
 
 #[async_trait]
 impl CommandRunnable for FixCommand {
+    #[tracing::instrument(name = "gt fix", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let tasks = sequence![
             GitRemote { name: "origin" },
@@ -69,6 +70,7 @@ impl CommandRunnable for FixCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(name = "gt complete -- gt fix", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--all");
         completer.offer("--no-create-remote");

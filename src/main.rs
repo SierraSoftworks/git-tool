@@ -5,7 +5,7 @@ extern crate gtmpl;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
-extern crate log;
+extern crate tracing;
 extern crate sentry;
 #[macro_use]
 extern crate serde_json;
@@ -77,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
+#[tracing::instrument(err, ret, skip(app, commands, matches))]
 async fn run<'a>(
     mut app: clap::Command<'a>,
     commands: Vec<Arc<dyn CommandRunnable>>,

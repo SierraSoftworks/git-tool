@@ -10,13 +10,21 @@ use mocktopus::macros::*;
 #[cfg_attr(test, mockable)]
 pub struct HttpClient {}
 
+impl std::fmt::Debug for HttpClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "HttpClient")
+    }
+}
+
 #[cfg_attr(test, mockable)]
 impl HttpClient {
+    #[tracing::instrument(err, skip(uri))]
     pub async fn get(&self, uri: reqwest::Url) -> Result<Response, Error> {
         let req = Request::new(reqwest::Method::GET, uri);
         Ok(self.request(req).await?)
     }
 
+    #[tracing::instrument(err, skip(req))]
     pub async fn request(&self, req: Request) -> Result<Response, Error> {
         let client = Client::new();
         Ok(client.execute(req).await?)

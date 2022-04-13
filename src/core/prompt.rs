@@ -20,6 +20,7 @@ impl Prompter {
         }
     }
 
+    #[tracing::instrument(err, skip(self, validate))]
     pub fn prompt<V>(&mut self, message: &str, validate: V) -> Result<Option<String>, Error>
     where
         V: Fn(&str) -> bool,

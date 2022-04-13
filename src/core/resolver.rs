@@ -20,6 +20,7 @@ impl From<Arc<Config>> for Resolver {
 
 #[cfg_attr(test, mockable)]
 impl Resolver {
+    #[tracing::instrument(err, skip(self))]
     pub fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
         let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
             &format!("Could not retrieve the list of directories within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
@@ -49,6 +50,7 @@ impl Resolver {
         Ok(scratchpads)
     }
 
+    #[tracing::instrument(err, skip(self, name))]
     pub fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name.clone(),
@@ -56,12 +58,14 @@ impl Resolver {
         ))
     }
 
+    #[tracing::instrument(err, skip(self))]
     pub fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
         let time = Local::now();
 
         self.get_scratchpad(&time.format("%Yw%V").to_string())
     }
 
+    #[tracing::instrument(err, skip(self))]
     pub fn get_current_repo(&self) -> Result<Repo, Error> {
         let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
             "Could not determine your current working directory due to an OS-level error.",
@@ -78,6 +82,7 @@ impl Resolver {
         }
     }
 
+    #[tracing::instrument(err, skip(self, path))]
     pub fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
         let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
             &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
@@ -115,10 +120,12 @@ impl Resolver {
         }
     }
 
+    #[tracing::instrument(err, skip(self, repo))]
     pub fn get_repo(&self, repo: &str) -> Result<Repo, Error> {
         repo_from_str(&self.config, repo, true)
     }
 
+    #[tracing::instrument(err, skip(self, name))]
     pub fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
         let true_name = self.config.get_alias(name).unwrap_or(name.to_string());
 
@@ -149,6 +156,7 @@ impl Resolver {
         }
     }
 
+    #[tracing::instrument(err, skip(self))]
     pub fn get_repos(&self) -> Result<Vec<Repo>, Error> {
         let mut repos = vec![];
 
@@ -182,6 +190,7 @@ impl Resolver {
         Ok(repos)
     }
 
+    #[tracing::instrument(err, skip(self))]
     pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split("/").all(|p| p == "*") {
             return Err(errors::user(
@@ -281,6 +290,7 @@ fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::p
 }
 
 #[cfg_attr(test, mockable)]
+#[tracing::instrument(skip(from))]
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
         return vec![from.clone()];

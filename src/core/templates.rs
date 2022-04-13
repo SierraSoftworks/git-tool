@@ -13,6 +13,7 @@ macro_rules! map(
      };
 );
 
+#[tracing::instrument(err, skip(context))]
 pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
     template(tmpl, context).map_err(|e| errors::user_with_internal(
         format!("We couldn't render your template '{}'.", tmpl).as_str(),
@@ -20,6 +21,7 @@ pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
         errors::detailed_message(&e.to_string())))
 }
 
+#[tracing::instrument(err, skip(context, items))]
 pub fn render_list<S: AsRef<str>>(
     items: Vec<S>,
     context: Value,

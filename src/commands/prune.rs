@@ -36,6 +36,7 @@ impl Command for PruneCommand {
 
 #[async_trait]
 impl CommandRunnable for PruneCommand {
+    #[tracing::instrument(name = "gt prune", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
@@ -91,6 +92,10 @@ impl CommandRunnable for PruneCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt prune",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             completer.offer("--yes");
