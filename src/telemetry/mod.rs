@@ -78,6 +78,9 @@ impl Session {
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::filter::LevelFilter::DEBUG)
+            .with(tracing_subscriber::filter::filter_fn(|_metadata| {
+                is_enabled()
+            }))
             .with(tracing_opentelemetry::layer().with_tracer(tracer))
             .init();
 
