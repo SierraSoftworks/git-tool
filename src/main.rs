@@ -14,7 +14,10 @@ extern crate tokio;
 use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg, ArgMatches};
-use opentelemetry::trace::{StatusCode, TraceContextExt};
+use opentelemetry::{
+    propagation::TextMapPropagator,
+    trace::{StatusCode, TraceContextExt},
+};
 use std::sync::Arc;
 use telemetry::Session;
 use tracing::{field, Instrument};
@@ -66,6 +69,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .long("trace")
             .global(true)
             .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
+        .arg(Arg::new("trace-context")
+            .long("trace-context")
+            .help("Configures the trace context used by this Git-Tool execution.")
+            .takes_value(true))
         .subcommands(commands.iter().map(|x| x.app()));
 
     let matches = app.clone().get_matches();
@@ -73,16 +80,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
         .trim()
         .to_string();
-    match run(app, commands, matches)
-        .instrument(tracing::info_span!(
-            "run:main",
-            otel.name = &command_name.as_str(),
-            otel.status = ?StatusCode::Unset,
-            status_code = field::Empty,
-            error = field::Empty,
-        ))
-        .await
-    {
+
+    let mut span = tracing::info_span!(
+        "run:main",
+        otel.name = &command_name.as_str(),
+        otel.status = ?StatusCode::Unset,
+        status_code = field::Empty,
+        error = field::Empty,
+    );
+
+    match matches.value_of("trace-context") {
+        Some(context) => load_trace_context(&mut span, context),
+        None => {}
+    };
+
+    match run(app, commands, matches).instrument(span).await {
         Result::Ok(status) => {
             session.complete();
             tracing::Span::current()
@@ -190,4 +202,12 @@ async fn run<'a>(
     warn!("Did not find a matching command, printing the help message.");
     app.print_help().unwrap_or_default();
     Ok(-1)
+}
+
+fn load_trace_context(span: &mut tracing::Span, context: &str) {
+    let carrier: std::collections::HashMap<String, String> =
+        serde_json::from_str(context).unwrap_or_default();
+    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let parent_context = propagator.extract(&carrier);
+    span.set_parent(parent_context);
 }

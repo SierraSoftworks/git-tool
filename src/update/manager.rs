@@ -1,11 +1,13 @@
 use super::*;
 use crate::{core::Core, errors};
 use itertools::Itertools;
+use opentelemetry::propagation::TextMapPropagator;
 use std::time::Duration;
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -170,6 +172,9 @@ where
             )
         })?.permissions();
 
+        debug!(
+            "Updating file permissions to 0775 to ensure we can write to the application binary."
+        );
         // u=rwx,g=rwx,o=rx
         perms.set_mode(0o775);
         std::fs::set_permissions(file, perms).map_err(|err| {
@@ -196,10 +201,21 @@ where
 impl<S: Source> UpdateManager<S> {
     #[tracing::instrument(err, skip(self, app_path))]
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
+        let trace_context = {
+            let mut context = std::collections::HashMap::new();
+            let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+            propagator.inject_context(&tracing::Span::current().context(), &mut context);
+
+            serde_json::to_string(&context)
+        }?;
+
         let state_json = serde_json::to_string(state)?;
+
         let mut cmd = Command::new(app_path);
         cmd.arg("--update-resume-internal")
             .arg(&state_json)
+            .arg("--trace-context")
+            .arg(&trace_context)
             .arg("update")
             .arg("--state")
             .arg(&state_json);
