@@ -153,7 +153,7 @@ impl Config {
             })
     }
 
-    #[tracing::instrument(err, skip(path))]
+    #[tracing::instrument(name = "config:from_file" err, skip(path))]
     pub fn from_file(path: &path::Path) -> Result<Self, errors::Error> {
         let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
             &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),

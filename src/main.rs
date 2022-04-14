@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-#[tracing::instrument(err, ret, skip(app, commands, matches))]
+#[tracing::instrument(err, ret, skip(app, commands, matches), fields(command=matches.subcommand_name().unwrap_or("<none>")))]
 async fn run<'a>(
     mut app: clap::Command<'a>,
     commands: Vec<Arc<dyn CommandRunnable>>,

@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
+use opentelemetry::trace::{SpanKind, StatusCode};
 use reqwest::{Client, Request, Response};
+use tracing::field;
 
 use super::{Config, Error};
 
@@ -24,10 +26,47 @@ impl HttpClient {
         Ok(self.request(req).await?)
     }
 
-    #[tracing::instrument(err, skip(req))]
+    #[tracing::instrument(
+        err,
+        skip(req),
+        fields(
+            otel.kind = ?SpanKind::Client,
+            otel.status = ?StatusCode::Unset,
+            otel.status_message = field::Empty,
+            http.method = %req.method(),
+            http.url = %req.url(),
+            http.target = req.url().path(),
+            http.host = req.url().host_str().unwrap_or("<none>"),
+            http.scheme = req.url().scheme(),
+            http.status_code = field::Empty,
+            http.response_content_length = field::Empty,
+        )
+    )]
     pub async fn request(&self, req: Request) -> Result<Response, Error> {
         let client = Client::new();
-        Ok(client.execute(req).await?)
+
+        let response = client.execute(req).await?;
+
+        let span_status = if response.status().is_success() {
+            StatusCode::Ok
+        } else {
+            StatusCode::Error
+        }
+        .as_str();
+
+        tracing::span::Span::current()
+            .record("http.status_code", &response.status().as_u16())
+            .record(
+                "http.response_content_length",
+                &response.content_length().unwrap_or(0),
+            )
+            .record("otel.status", &span_status)
+            .record(
+                "otel.status_message",
+                &response.status().canonical_reason().unwrap_or("<none>"),
+            );
+
+        Ok(response)
     }
 
     #[cfg(test)]
