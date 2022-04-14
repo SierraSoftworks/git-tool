@@ -14,8 +14,11 @@ extern crate tokio;
 use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg, ArgMatches};
+use opentelemetry::trace::{StatusCode, TraceContextExt};
 use std::sync::Arc;
 use telemetry::Session;
+use tracing::{field, Instrument};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[macro_use]
 mod macros;
@@ -59,17 +62,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
             .takes_value(true)
             .hide(true))
+        .arg(Arg::new("trace")
+            .long("trace")
+            .global(true)
+            .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
         .subcommands(commands.iter().map(|x| x.app()));
 
     let matches = app.clone().get_matches();
 
-    match run(app, commands, matches).await {
+    let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
+        .trim()
+        .to_string();
+    match run(app, commands, matches)
+        .instrument(tracing::info_span!(
+            "run:main",
+            otel.name = &command_name.as_str(),
+            otel.status = ?StatusCode::Unset,
+            status_code = field::Empty,
+            error = field::Empty,
+        ))
+        .await
+    {
         Result::Ok(status) => {
             session.complete();
+            tracing::Span::current()
+                .record("status_code", &status)
+                .record("otel.status", &field::debug(StatusCode::Ok));
             std::process::exit(status);
         }
         Result::Err(err) => {
             println!("{}", err.message());
+            if telemetry::is_enabled() {
+                println!(
+                    "Trace ID: {:032x}",
+                    tracing::Span::current()
+                        .context()
+                        .span()
+                        .span_context()
+                        .trace_id()
+                );
+            }
+
+            tracing::Span::current()
+                .record("status_code", &(1 as u32))
+                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("error", &field::display(&err));
 
             session.crash(err);
             std::process::exit(1);
@@ -86,15 +123,30 @@ async fn run<'a>(
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
-        debug!("Loading configuration file.");
+        debug!("Loading configuration file...");
         core_builder = core_builder.with_config_file(cfg_file)?;
     }
 
     let core = Arc::new(core_builder.build());
 
     // If telemetry is enabled in the config file, then turn it on here.
-    if core.config().get_features().has(features::TELEMETRY) {
+    if !core.config().get_features().has(features::TELEMETRY) {
+        telemetry::set_enabled(false);
+    }
+
+    // If the user explicitly enables tracing, then turn it on and print your trace ID
+    if matches.is_present("trace") {
+        debug!("Tracing enabled by command line flag.");
         telemetry::set_enabled(true);
+        writeln!(
+            core.output(),
+            "Tracing enabled, your trace ID is: {:032x}",
+            tracing::Span::current()
+                .context()
+                .span()
+                .span_context()
+                .trace_id()
+        )?;
     }
 
     // Legacy update interoperability for compatibility with the Golang implementation
@@ -115,6 +167,7 @@ async fn run<'a>(
         }
     }
 
+    debug!("Looking for an appropriate matching command implementation.");
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
             sentry::add_breadcrumb(sentry::Breadcrumb {
@@ -134,6 +187,7 @@ async fn run<'a>(
         }
     }
 
+    warn!("Did not find a matching command, printing the help message.");
     app.print_help().unwrap_or_default();
     Ok(-1)
 }

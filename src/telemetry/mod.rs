@@ -5,8 +5,10 @@ use tracing_subscriber::prelude::*;
 
 use crate::core::Error;
 
+// NOTE: We need to enable this initially so that we can construct an enabled root span
+//       however we disable it immediately after loading the configuration file if required.
 lazy_static! {
-    static ref ENABLED: RwLock<bool> = RwLock::new(false);
+    static ref ENABLED: RwLock<bool> = RwLock::new(true);
 }
 
 pub fn is_enabled() -> bool {
@@ -78,9 +80,9 @@ impl Session {
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::filter::LevelFilter::DEBUG)
-            .with(tracing_subscriber::filter::filter_fn(|_metadata| {
-                is_enabled()
-            }))
+            .with(tracing_subscriber::filter::dynamic_filter_fn(
+                |_metadata, _ctx| is_enabled(),
+            ))
             .with(tracing_opentelemetry::layer().with_tracer(tracer))
             .init();
 
