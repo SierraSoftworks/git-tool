@@ -22,23 +22,22 @@
         :key="release.id"
       >
         <h4 class="release__name">
-          {{ release.name }}
-          <Badge v-if="release.prerelease" text="Early Access" type="warning" />
-        </h4>
-
-        <pre>{{ release.body }}</pre>
-
-        <p>
           <a
             class="release-button"
             :href="
               getReleaseAsset(release, selectedPlatform).browser_download_url
             "
             target="_blank"
+            >Download</a
           >
-            Download
-          </a>
-        </p>
+
+          {{ release.name }}
+          <Badge v-if="release.prerelease" text="Early Access" type="warning" />
+        </h4>
+
+        <pre class="release__notes">{{ release.body }}</pre>
+
+        <p></p>
       </div>
     </div>
   </div>
@@ -138,6 +137,12 @@ export default defineComponent({
   margin: 20px;
 }
 
+.release__notes {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 85%;
+}
+
 .release-platforms {
   display: flex;
   flex-direction: row;
@@ -170,7 +175,8 @@ export default defineComponent({
   border-radius: 5px;
   color: var(--c-brand);
   border: 1px solid var(--c-brand);
-  padding: 10px;
+  font-size: 80%;
+  padding: 7px;
   margin: 5px;
   cursor: pointer;
 }
