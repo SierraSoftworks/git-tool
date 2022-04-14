@@ -24,7 +24,7 @@ If you are able to reproduce the issue, please try running Git-Tool with the `--
 include the reported trace ID in your bug report (v3.x+ only).
 
 #### Configuration File
-*Please place the contents of your configuration file here*
+*Please place the contents of your configuration file here, you can get it by running `gt config`*
 
 ```yaml
 directory: ""
