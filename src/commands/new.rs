@@ -38,6 +38,7 @@ impl Command for NewCommand {
 
 #[async_trait]
 impl CommandRunnable for NewCommand {
+    #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = match matches.value_of("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
@@ -74,6 +75,7 @@ impl CommandRunnable for NewCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(name = "gt complete -- gt new", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");

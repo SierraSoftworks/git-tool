@@ -33,6 +33,7 @@ impl Command for IgnoreCommand {
 
 #[async_trait]
 impl CommandRunnable for IgnoreCommand {
+    #[tracing::instrument(name = "gt ignore", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
@@ -69,6 +70,10 @@ impl CommandRunnable for IgnoreCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt ignore",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         match online::gitignore::list(core).await {
             Ok(langs) => completer.offer_many(langs),

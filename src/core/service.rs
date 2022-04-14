@@ -28,6 +28,12 @@ impl Service {
     }
 }
 
+impl std::fmt::Display for Service {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.name)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::ServiceAPI;

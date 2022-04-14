@@ -31,6 +31,7 @@ impl Command for ListCommand {
 
 #[async_trait]
 impl CommandRunnable for ListCommand {
+    #[tracing::instrument(name = "gt list", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -104,6 +105,10 @@ URLs:
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt list",
+        skip(self, _core, completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(vec!["--quiet", "-q", "--full", "-f"]);
     }

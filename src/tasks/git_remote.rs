@@ -13,6 +13,7 @@ impl Default for GitRemote<'static> {
 
 #[async_trait::async_trait]
 impl<'a> Task for GitRemote<'a> {
+    #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let service = core.config().get_service(&repo.service).ok_or(
             errors::user(
@@ -33,6 +34,7 @@ impl<'a> Task for GitRemote<'a> {
         }
     }
 
+    #[tracing::instrument(name = "task:git_remote(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

@@ -28,8 +28,15 @@ impl From<Arc<Config>> for Launcher {
     }
 }
 
+impl std::fmt::Debug for Launcher {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Launcher")
+    }
+}
+
 #[cfg_attr(test, mockable)]
 impl Launcher {
+    #[tracing::instrument(name = "launch", err, ret, skip(t))]
     pub async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
         let context = t.template_context(&self.config);
 

@@ -45,6 +45,15 @@ impl PartialEq<Release> for Release {
     }
 }
 
+impl std::fmt::Display for Release {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.prerelease {
+            false => write!(f, "{}", &self.id),
+            true => write!(f, "{}-beta", &self.id),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ReleaseVariant {
     pub id: String,
@@ -65,6 +74,12 @@ impl Default for ReleaseVariant {
 impl PartialEq<ReleaseVariant> for ReleaseVariant {
     fn eq(&self, other: &ReleaseVariant) -> bool {
         self.arch == other.arch && self.platform == other.platform
+    }
+}
+
+impl std::fmt::Display for ReleaseVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}", &self.platform, &self.arch)
     }
 }
 

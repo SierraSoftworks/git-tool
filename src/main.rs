@@ -5,7 +5,7 @@ extern crate gtmpl;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
-extern crate log;
+extern crate tracing;
 extern crate sentry;
 #[macro_use]
 extern crate serde_json;
@@ -14,8 +14,14 @@ extern crate tokio;
 use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg, ArgMatches};
+use opentelemetry::{
+    propagation::TextMapPropagator,
+    trace::{StatusCode, TraceContextExt},
+};
 use std::sync::Arc;
 use telemetry::Session;
+use tracing::{field, Instrument};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[macro_use]
 mod macros;
@@ -59,17 +65,60 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
             .takes_value(true)
             .hide(true))
+        .arg(Arg::new("trace")
+            .long("trace")
+            .global(true)
+            .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
+        .arg(Arg::new("trace-context")
+            .long("trace-context")
+            .help("Configures the trace context used by this Git-Tool execution.")
+            .takes_value(true))
         .subcommands(commands.iter().map(|x| x.app()));
 
     let matches = app.clone().get_matches();
 
-    match run(app, commands, matches).await {
+    let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
+        .trim()
+        .to_string();
+
+    let mut span = tracing::info_span!(
+        "run:main",
+        otel.name = &command_name.as_str(),
+        otel.status = ?StatusCode::Unset,
+        status_code = field::Empty,
+        error = field::Empty,
+    );
+
+    match matches.value_of("trace-context") {
+        Some(context) => load_trace_context(&mut span, context),
+        None => {}
+    };
+
+    match run(app, commands, matches).instrument(span).await {
         Result::Ok(status) => {
             session.complete();
+            tracing::Span::current()
+                .record("status_code", &status)
+                .record("otel.status", &field::debug(StatusCode::Ok));
             std::process::exit(status);
         }
         Result::Err(err) => {
             println!("{}", err.message());
+            if telemetry::is_enabled() {
+                println!(
+                    "Trace ID: {:032x}",
+                    tracing::Span::current()
+                        .context()
+                        .span()
+                        .span_context()
+                        .trace_id()
+                );
+            }
+
+            tracing::Span::current()
+                .record("status_code", &(1 as u32))
+                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("error", &field::display(&err));
 
             session.crash(err);
             std::process::exit(1);
@@ -77,6 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
+#[tracing::instrument(err, ret, skip(app, commands, matches), fields(command=matches.subcommand_name().unwrap_or("<none>")))]
 async fn run<'a>(
     mut app: clap::Command<'a>,
     commands: Vec<Arc<dyn CommandRunnable>>,
@@ -85,15 +135,30 @@ async fn run<'a>(
     let mut core_builder = core::Core::builder();
 
     if let Some(cfg_file) = matches.value_of("config") {
-        debug!("Loading configuration file.");
+        debug!("Loading configuration file...");
         core_builder = core_builder.with_config_file(cfg_file)?;
     }
 
     let core = Arc::new(core_builder.build());
 
-    // If telemetry is disabled in the config file, then turn it off here.
+    // If telemetry is enabled in the config file, then turn it on here.
     if !core.config().get_features().has(features::TELEMETRY) {
         telemetry::set_enabled(false);
+    }
+
+    // If the user explicitly enables tracing, then turn it on and print your trace ID
+    if matches.is_present("trace") {
+        debug!("Tracing enabled by command line flag.");
+        telemetry::set_enabled(true);
+        writeln!(
+            core.output(),
+            "Tracing enabled, your trace ID is: {:032x}",
+            tracing::Span::current()
+                .context()
+                .span()
+                .span_context()
+                .trace_id()
+        )?;
     }
 
     // Legacy update interoperability for compatibility with the Golang implementation
@@ -114,6 +179,7 @@ async fn run<'a>(
         }
     }
 
+    debug!("Looking for an appropriate matching command implementation.");
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
             sentry::add_breadcrumb(sentry::Breadcrumb {
@@ -133,6 +199,15 @@ async fn run<'a>(
         }
     }
 
+    warn!("Did not find a matching command, printing the help message.");
     app.print_help().unwrap_or_default();
     Ok(-1)
+}
+
+fn load_trace_context(span: &mut tracing::Span, context: &str) {
+    let carrier: std::collections::HashMap<String, String> =
+        serde_json::from_str(context).unwrap_or_default();
+    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let parent_context = propagator.extract(&carrier);
+    span.set_parent(parent_context);
 }

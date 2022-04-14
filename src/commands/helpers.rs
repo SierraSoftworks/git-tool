@@ -9,6 +9,7 @@ pub enum LaunchTarget<'a> {
     None,
 }
 
+#[tracing::instrument(skip(core))]
 pub fn get_launch_app<'a>(
     core: &'a Core,
     first: Option<&'a str>,

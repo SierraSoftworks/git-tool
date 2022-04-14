@@ -32,6 +32,7 @@ impl Command for UpdateCommand {
 
 #[async_trait]
 impl CommandRunnable for UpdateCommand {
+    #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -138,6 +139,10 @@ where {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt update",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 

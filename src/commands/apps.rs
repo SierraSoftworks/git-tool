@@ -16,6 +16,7 @@ impl Command for AppsCommand {
 
 #[async_trait]
 impl CommandRunnable for AppsCommand {
+    #[tracing::instrument(name = "gt apps", err, skip(self, core, _matches))]
     async fn run(
         &self,
         core: &Core,
@@ -28,6 +29,10 @@ impl CommandRunnable for AppsCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt apps",
+        skip(self, _core, _completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 

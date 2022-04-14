@@ -34,3 +34,9 @@ impl Scratchpad {
         }
     }
 }
+
+impl std::fmt::Display for Scratchpad {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "scratch:{}", &self.full_name)
+    }
+}

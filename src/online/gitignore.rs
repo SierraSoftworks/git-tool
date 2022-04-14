@@ -1,6 +1,7 @@
 use super::{errors, Error};
 use crate::core::Core;
 
+#[tracing::instrument(err, skip(core, content))]
 pub async fn add_or_update(
     core: &Core,
     content: &str,
@@ -31,6 +32,7 @@ pub async fn add_or_update(
     Ok(managed.into())
 }
 
+#[tracing::instrument(err, skip(core))]
 pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
     let uri = "https://www.toptal.com/developers/gitignore/api/list"
         .parse()
@@ -54,6 +56,7 @@ pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
         .collect())
 }
 
+#[tracing::instrument(err, skip(core))]
 pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     if langs.is_empty() {
         return Ok("".to_string());

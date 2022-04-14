@@ -38,6 +38,7 @@ New applications can be configured either by making changes to your configuratio
 
 #[async_trait]
 impl CommandRunnable for OpenCommand {
+    #[tracing::instrument(name = "gt open", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         if core.config().get_config_file().is_none() {
             warn!("No configuration file has been loaded, continuing with defaults.");
@@ -91,6 +92,10 @@ impl CommandRunnable for OpenCommand {
         Ok(status)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt complete",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--create");
         completer.offer("--no-create-remote");

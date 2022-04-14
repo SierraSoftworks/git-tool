@@ -15,6 +15,7 @@ impl FileRegistry {
 
 #[async_trait::async_trait]
 impl Registry for FileRegistry {
+    #[tracing::instrument(err, ret, skip(self, _core))]
     async fn get_entries(&self, _core: &Core) -> Result<Vec<String>, Error> {
         let mut entries = Vec::new();
 
@@ -80,6 +81,7 @@ impl Registry for FileRegistry {
         Ok(entries)
     }
 
+    #[tracing::instrument(err, ret, skip(self, _core))]
     async fn get_entry(&self, _core: &Core, id: &str) -> Result<Entry, Error> {
         let path = self.path.join(to_native_path(format!("{}.yaml", id)));
         let contents = read_to_string(&path).map_err(|err| {

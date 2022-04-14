@@ -1,9 +1,12 @@
-use std::sync::{Arc, RwLock};
-
+use opentelemetry_otlp::WithExportConfig;
 use sentry::ClientInitGuard;
+use std::sync::{Arc, RwLock};
+use tracing_subscriber::prelude::*;
 
 use crate::core::Error;
 
+// NOTE: We need to enable this initially so that we can construct an enabled root span
+//       however we disable it immediately after loading the configuration file if required.
 lazy_static! {
     static ref ENABLED: RwLock<bool> = RwLock::new(true);
 }
@@ -21,16 +24,13 @@ pub struct Session {
 
 impl Session {
     pub fn new() -> Self {
-        let logger = sentry::integrations::log::SentryLogger::new();
-        log::set_boxed_logger(Box::new(logger)).unwrap();
-        log::set_max_level(log::LevelFilter::Debug);
-
         let raven = sentry::init((
             "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
             sentry::ClientOptions {
                 release: Some(version!("git-tool@v").into()),
                 default_integrations: true,
                 attach_stacktrace: true,
+                send_default_pii: false,
                 before_send: Some(Arc::new(|mut event| {
                     if !is_enabled() {
                         None
@@ -45,12 +45,55 @@ impl Session {
             },
         ));
 
+        let mut tracing_metadata = tonic::metadata::MetadataMap::new();
+        tracing_metadata.insert(
+            "x-honeycomb-team",
+            "fd8BghJ1Qd7xBU9s4ULEBC".parse().unwrap(),
+        );
+
+        let mut tls_config = rustls::ClientConfig::new();
+        tls_config
+            .root_store
+            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+
+        tls_config.set_protocols(&vec!["h2".to_string().into()]);
+
+        let tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(
+                opentelemetry_otlp::new_exporter()
+                    .tonic()
+                    .with_endpoint("https://api.honeycomb.io:443")
+                    .with_metadata(tracing_metadata)
+                    .with_tls_config(
+                        tonic::transport::ClientTlsConfig::new().rustls_client_config(tls_config),
+                    ),
+            )
+            .with_trace_config(opentelemetry::sdk::trace::config().with_resource(
+                opentelemetry::sdk::Resource::new(vec![opentelemetry::KeyValue::new(
+                    "service.name",
+                    "git-tool",
+                )]),
+            ))
+            .install_batch(opentelemetry::runtime::Tokio)
+            .unwrap();
+
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::filter::LevelFilter::DEBUG)
+            .with(tracing_subscriber::filter::dynamic_filter_fn(
+                |_metadata, _ctx| is_enabled(),
+            ))
+            .with(tracing_opentelemetry::layer().with_tracer(tracer))
+            .init();
+
         sentry::start_session();
 
         Self { raven }
     }
 
     pub fn complete(&self) {
+        opentelemetry::global::shutdown_tracer_provider();
+
         if !is_enabled() {
             return;
         }
@@ -60,6 +103,8 @@ impl Session {
     }
 
     pub fn crash(&self, err: Error) {
+        opentelemetry::global::shutdown_tracer_provider();
+
         if !is_enabled() {
             return;
         }

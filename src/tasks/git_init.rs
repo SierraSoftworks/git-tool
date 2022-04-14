@@ -5,10 +5,12 @@ pub struct GitInit {}
 
 #[async_trait::async_trait]
 impl Task for GitInit {
+    #[tracing::instrument(name = "task:git_init(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_init(&repo.get_path()).await
     }
 
+    #[tracing::instrument(name = "task:git_init(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

@@ -22,6 +22,12 @@ pub struct Entry {
     pub configs: Vec<EntryConfig>,
 }
 
+impl std::fmt::Display for Entry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.name)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct EntryConfig {
     pub platform: String,

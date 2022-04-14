@@ -24,6 +24,7 @@ impl Command for CompleteCommand {
 
 #[async_trait]
 impl CommandRunnable for CompleteCommand {
+    #[tracing::instrument(name = "gt complete", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -48,6 +49,10 @@ where {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt complete",
+        skip(self, _core, completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--position");
     }

@@ -30,6 +30,7 @@ impl Command for ScratchCommand {
 
 #[async_trait]
 impl CommandRunnable for ScratchCommand {
+    #[tracing::instrument(name = "gt scratch", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(
             core,
@@ -66,6 +67,10 @@ impl CommandRunnable for ScratchCommand {
         return Ok(status);
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt scratch",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 

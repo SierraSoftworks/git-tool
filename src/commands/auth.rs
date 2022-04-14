@@ -29,6 +29,7 @@ impl Command for AuthCommand {
 
 #[async_trait]
 impl CommandRunnable for AuthCommand {
+    #[tracing::instrument(name = "gt auth", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -59,6 +60,7 @@ impl CommandRunnable for AuthCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(name = "gt complete -- gt auth", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_services().map(|s| &s.name));
     }

@@ -1,11 +1,13 @@
 use super::*;
 use crate::{core::Core, errors};
 use itertools::Itertools;
+use opentelemetry::propagation::TextMapPropagator;
 use std::time::Duration;
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -36,6 +38,7 @@ where
         self.source.get_releases(core).await
     }
 
+    #[tracing::instrument(err, ret, skip(self, core))]
     pub async fn update(&self, core: &Core, release: &Release) -> Result<bool, errors::Error> {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
@@ -98,6 +101,7 @@ where
         self.resume(&state).await
     }
 
+    #[tracing::instrument(err, ret, skip(self))]
     pub async fn resume(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         match state.phase {
             UpdatePhase::NoUpdate => Ok(false),
@@ -107,6 +111,7 @@ where
         }
     }
 
+    #[tracing::instrument(err, ret, skip(self))]
     async fn prepare(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let next_state = state.for_phase(UpdatePhase::Replace);
         let update_source = state.temporary_application.clone().ok_or(errors::system(
@@ -119,6 +124,7 @@ where
         Ok(true)
     }
 
+    #[tracing::instrument(err, ret, skip(self))]
     async fn replace(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let update_source = state.temporary_application.clone().ok_or(errors::system(
             "Could not locate the temporary update files needed to complete the update process (replace phase).",
@@ -140,6 +146,7 @@ where
         Ok(true)
     }
 
+    #[tracing::instrument(err, ret, skip(self))]
     async fn cleanup(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let update_source = state.temporary_application.clone().ok_or(errors::system(
             "Could not locate the temporary update files needed to complete the update process (cleanup phase).",
@@ -152,6 +159,7 @@ where
     }
 
     #[cfg(unix)]
+    #[tracing::instrument(err, skip(self, file))]
     fn prepare_app_file(&self, file: &std::path::Path) -> Result<(), errors::Error> {
         let mut perms = std::fs::metadata(file).map_err(|err| {
             errors::user_with_internal(
@@ -164,6 +172,9 @@ where
             )
         })?.permissions();
 
+        debug!(
+            "Updating file permissions to 0775 to ensure we can write to the application binary."
+        );
         // u=rwx,g=rwx,o=rx
         perms.set_mode(0o775);
         std::fs::set_permissions(file, perms).map_err(|err| {
@@ -188,11 +199,23 @@ where
 
 #[cfg_attr(test, mockable)]
 impl<S: Source> UpdateManager<S> {
+    #[tracing::instrument(err, skip(self, app_path))]
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
+        let trace_context = {
+            let mut context = std::collections::HashMap::new();
+            let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+            propagator.inject_context(&tracing::Span::current().context(), &mut context);
+
+            serde_json::to_string(&context)
+        }?;
+
         let state_json = serde_json::to_string(state)?;
+
         let mut cmd = Command::new(app_path);
         cmd.arg("--update-resume-internal")
             .arg(&state_json)
+            .arg("--trace-context")
+            .arg(&trace_context)
             .arg("update")
             .arg("--state")
             .arg(&state_json);
@@ -208,6 +231,7 @@ impl<S: Source> UpdateManager<S> {
         Ok(())
     }
 
+    #[tracing::instrument(err, skip(path))]
     async fn delete_file(&self, path: &Path) -> Result<(), errors::Error> {
         let max_retries = 10;
         let mut retries = max_retries;
@@ -229,6 +253,7 @@ impl<S: Source> UpdateManager<S> {
         Ok(())
     }
 
+    #[tracing::instrument(err, skip(from, to))]
     async fn copy_file(&self, from: &Path, to: &Path) -> Result<(), errors::Error> {
         let max_retries = 10;
         let mut retries = max_retries;
@@ -274,6 +299,15 @@ where
             source: S::default(),
             variant: ReleaseVariant::default(),
         }
+    }
+}
+
+impl<S> std::fmt::Debug for UpdateManager<S>
+where
+    S: Source,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} ({})", &self.source, &self.variant)
     }
 }
 

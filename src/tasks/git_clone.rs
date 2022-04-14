@@ -5,6 +5,7 @@ pub struct GitClone {}
 
 #[async_trait::async_trait]
 impl Task for GitClone {
+    #[tracing::instrument(name = "task:git_clone(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         if repo.exists() {
             return Ok(());
@@ -21,6 +22,7 @@ impl Task for GitClone {
         git::git_clone(&repo.get_path(), &url).await
     }
 
+    #[tracing::instrument(name = "task:git_clone(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

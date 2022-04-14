@@ -24,6 +24,7 @@ impl Command for InfoCommand {
 
 #[async_trait]
 impl CommandRunnable for InfoCommand {
+    #[tracing::instrument(name = "gt info", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
         let repo = match matches.value_of("repo") {
@@ -49,6 +50,7 @@ impl CommandRunnable for InfoCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(name = "gt complete -- gt info", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
 

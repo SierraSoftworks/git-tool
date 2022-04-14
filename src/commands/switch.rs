@@ -37,6 +37,7 @@ impl Command for SwitchCommand {
 
 #[async_trait]
 impl CommandRunnable for SwitchCommand {
+    #[tracing::instrument(name = "gt switch", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
@@ -64,7 +65,10 @@ impl CommandRunnable for SwitchCommand {
 
         Ok(0)
     }
-
+    #[tracing::instrument(
+        name = "gt complete -- gt switch",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         if let Ok(repo) = core.resolver().get_current_repo() {
             completer.offer("--create");

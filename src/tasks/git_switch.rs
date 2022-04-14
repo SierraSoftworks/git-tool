@@ -8,6 +8,7 @@ pub struct GitSwitch {
 
 #[async_trait::async_trait]
 impl Task for GitSwitch {
+    #[tracing::instrument(name = "task:git_switch(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let mut create = self.create_if_missing;
 
@@ -23,6 +24,7 @@ impl Task for GitSwitch {
         git::git_switch(&repo.get_path(), &self.branch, create).await
     }
 
+    #[tracing::instrument(name = "task:git_switch(scratchpad)", err, skip(self, _core))]
     async fn apply_scratchpad(
         &self,
         _core: &Core,

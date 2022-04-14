@@ -62,7 +62,7 @@ impl FeaturesBuilder {
     pub fn with_defaults(self) -> Self {
         self.with(CREATE_REMOTE, true)
             .with(CREATE_REMOTE_PRIVATE, true)
-            .with(TELEMETRY, true)
+            .with(TELEMETRY, false)
     }
 
     pub fn with_features(self, features: &Features) -> Self {

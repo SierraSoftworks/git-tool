@@ -73,6 +73,7 @@ impl Command for ConfigCommand {
 
 #[async_trait]
 impl CommandRunnable for ConfigCommand {
+    #[tracing::instrument(name = "gt config", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
@@ -225,6 +226,10 @@ impl CommandRunnable for ConfigCommand {
         Ok(0)
     }
 
+    #[tracing::instrument(
+        name = "gt complete -- gt config",
+        skip(self, core, completer, matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, matches: &ArgMatches) {
         match matches.subcommand() {
             Some(("list", _)) => {}

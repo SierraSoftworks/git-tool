@@ -13,6 +13,7 @@ impl Sequence {
 
 #[async_trait]
 impl Task for Sequence {
+    #[tracing::instrument(name = "task:sequence(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(core, repo).await?;
@@ -21,6 +22,7 @@ impl Task for Sequence {
         Ok(())
     }
 
+    #[tracing::instrument(name = "task:sequence(scratchpad)", err, skip(self, core))]
     async fn apply_scratchpad(
         &self,
         core: &Core,

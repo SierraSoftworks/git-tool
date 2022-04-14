@@ -56,3 +56,9 @@ impl Repo {
         self.path.join(".git").is_dir()
     }
 }
+
+impl std::fmt::Display for Repo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", &self.service, self.get_full_name())
+    }
+}

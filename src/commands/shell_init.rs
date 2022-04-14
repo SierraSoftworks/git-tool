@@ -35,6 +35,7 @@ impl Command for ShellInitCommand {
 
 #[async_trait]
 impl CommandRunnable for ShellInitCommand {
+    #[tracing::instrument(name = "gt shell-init", err, skip(self, core, matches))]
     async fn run(
         &self,
         core: &Core,
@@ -66,7 +67,10 @@ where {
 
         Ok(0)
     }
-
+    #[tracing::instrument(
+        name = "gt complete -- gt shell-init",
+        skip(self, _core, completer, _matches)
+    )]
     async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let shells = get_shells();
         completer.offer_many(shells.iter().map(|s| s.get_name()));
