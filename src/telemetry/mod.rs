@@ -6,7 +6,7 @@ use tracing_subscriber::prelude::*;
 use crate::core::Error;
 
 lazy_static! {
-    static ref ENABLED: RwLock<bool> = RwLock::new(true);
+    static ref ENABLED: RwLock<bool> = RwLock::new(false);
 }
 
 pub fn is_enabled() -> bool {

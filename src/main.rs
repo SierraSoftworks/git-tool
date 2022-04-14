@@ -92,9 +92,9 @@ async fn run<'a>(
 
     let core = Arc::new(core_builder.build());
 
-    // If telemetry is disabled in the config file, then turn it off here.
-    if !core.config().get_features().has(features::TELEMETRY) {
-        telemetry::set_enabled(false);
+    // If telemetry is enabled in the config file, then turn it on here.
+    if core.config().get_features().has(features::TELEMETRY) {
+        telemetry::set_enabled(true);
     }
 
     // Legacy update interoperability for compatibility with the Golang implementation
