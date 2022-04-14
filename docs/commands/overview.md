@@ -38,3 +38,7 @@ Git-Tool has a wealth of configuration options available and discovering them al
 
 [Read more about tweaking your config →](config.md)
 
+## Global Flags
+- `--help` will print contextual help for the command you're about to run, it's always up to date and great for figuring out how to use Git-Tool.
+- `-c`/`--config` allows you to specify the path to the configuration file you want to use with Git-Tool. By default this will use your `GITTOOL_CONFIG` environment variable's value, or `~/.git-tool.yml` if that isn't set.
+- `--trace` <Badge text="v3.1+" /> will generate a Trace ID for you and print it to console, it's great if you're trying to help us troubleshoot a problem.
