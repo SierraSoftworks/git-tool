@@ -6,6 +6,9 @@ labels: bug
 assignees: notheotherben
 
 ---
+ 
+**Git-Tool Version**: v3.0.1
+**Trace ID**: (if known - read https://git-tool.sierrasoftworks.com/guide/reporting-errors for info)
 
 ### Description
 A clear and concise description of what the bug is.
@@ -17,6 +20,9 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 ### How to Reproduce
+If you are able to reproduce the issue, please try running Git-Tool with the `--trace` argument and
+include the reported trace ID in your bug report (v3.x+ only).
+
 #### Configuration File
 *Please place the contents of your configuration file here*
 
