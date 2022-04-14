@@ -70,10 +70,10 @@ impl Session {
                     ),
             )
             .with_trace_config(opentelemetry::sdk::trace::config().with_resource(
-                opentelemetry::sdk::Resource::new(vec![opentelemetry::KeyValue::new(
-                    "service.name",
-                    "git-tool",
-                )]),
+                opentelemetry::sdk::Resource::new(vec![
+                    opentelemetry::KeyValue::new("service.name", "git-tool"),
+                    opentelemetry::KeyValue::new("service.version", version!("v")),
+                ]),
             ))
             .install_batch(opentelemetry::runtime::Tokio)
             .unwrap();
@@ -81,7 +81,14 @@ impl Session {
         tracing_subscriber::registry()
             .with(tracing_subscriber::filter::LevelFilter::DEBUG)
             .with(tracing_subscriber::filter::dynamic_filter_fn(
-                |_metadata, _ctx| is_enabled(),
+                |_metadata, ctx| {
+                    is_enabled()
+                        && !ctx
+                            .lookup_current()
+                            // Exclude the rustls session "Connection" events which don't have a parent span
+                            .map(|s| s.parent().is_none() && s.name() == "Connection")
+                            .unwrap_or_default()
+                },
             ))
             .with(tracing_opentelemetry::layer().with_tracer(tracer))
             .init();
