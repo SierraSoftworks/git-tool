@@ -128,7 +128,7 @@ jobs:
           command: test
           args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
         env:
-          RUSTFLAGS: -Zinstrument-coverage
+          RUSTFLAGS: -Cinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: grcov
