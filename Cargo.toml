@@ -40,7 +40,7 @@ tonic = { version = "0.6.2", features = ["tls"] }
 tracing = "0.1"
 tracing-opentelemetry = "0.17"
 tracing-subscriber = { version = "0.3", features = ["tracing-log"] }
-webpki-roots = "0.21.1"
+webpki-roots = "0.22.3"
 
 [dev-dependencies]
 mocktopus = "0.7.11"
