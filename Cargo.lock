@@ -572,7 +572,7 @@ dependencies = [
  "opentelemetry-otlp",
  "reqwest",
  "rpassword",
- "rustls 0.19.1",
+ "rustls 0.20.4",
  "semver",
  "sentry",
  "serde",
