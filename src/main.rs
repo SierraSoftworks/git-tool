@@ -162,7 +162,10 @@ async fn run<'a>(
     }
 
     // Legacy update interoperability for compatibility with the Golang implementation
-    if let Some(state) = matches.value_of("update-resume-internal") {
+    if let (Some(state), None) = (
+        matches.value_of("update-resume-internal"),
+        matches.subcommand_name(),
+    ) {
         info!("Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command.");
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
             let matches = cmd
