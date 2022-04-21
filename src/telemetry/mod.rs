@@ -51,23 +51,13 @@ impl Session {
             "fd8BghJ1Qd7xBU9s4ULEBC".parse().unwrap(),
         );
 
-        let mut tls_config = rustls::ClientConfig::new();
-        tls_config
-            .root_store
-            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-
-        tls_config.set_protocols(&vec!["h2".to_string().into()]);
-
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()
             .with_exporter(
                 opentelemetry_otlp::new_exporter()
                     .tonic()
                     .with_endpoint("https://api.honeycomb.io:443")
-                    .with_metadata(tracing_metadata)
-                    .with_tls_config(
-                        tonic::transport::ClientTlsConfig::new().rustls_client_config(tls_config),
-                    ),
+                    .with_metadata(tracing_metadata),
             )
             .with_trace_config(opentelemetry::sdk::trace::config().with_resource(
                 opentelemetry::sdk::Resource::new(vec![
