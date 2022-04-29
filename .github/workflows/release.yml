@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: get secrets - sentry
-        uses: hashicorp/vault-action@v2.4.0
+        uses: hashicorp/vault-action@v2.4.1
         with:
           url: https://vault.sierrasoftworks.com
           method: jwt
@@ -140,7 +140,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: get secrets - sentry
-        uses: hashicorp/vault-action@v2.4.0
+        uses: hashicorp/vault-action@v2.4.1
         with:
           url: https://vault.sierrasoftworks.com
           method: jwt
@@ -204,7 +204,7 @@ jobs:
 
     steps:
       - name: get secrets - sentry
-        uses: hashicorp/vault-action@v2.4.0
+        uses: hashicorp/vault-action@v2.4.1
         with:
           url: https://vault.sierrasoftworks.com
           method: jwt
