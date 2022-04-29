@@ -136,7 +136,7 @@ jobs:
         if: matrix.coverage || false
 
       - name: get secrets - codecov
-        uses: hashicorp/vault-action@v2.4.0
+        uses: hashicorp/vault-action@v2.4.1
         with:
           url: https://vault.sierrasoftworks.com
           method: jwt
