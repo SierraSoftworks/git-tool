@@ -1,5 +1,8 @@
-import { defineUserConfig, PageHeader, DefaultThemeOptions } from 'vuepress-vite'
+import { defineUserConfig, PageHeader, defaultTheme, viteBundler } from 'vuepress-vite'
 import { path } from '@vuepress/utils'
+
+import { googleAnalyticsPlugin } from '@vuepress/plugin-google-analytics'
+import { registerComponentsPlugin } from '@vuepress/plugin-register-components'
 
 function htmlDecode(input: string): string {
   return input.replace("&#39;", "'").replace("&amp;", "&").replace("&quot;", '"')
@@ -10,7 +13,7 @@ function fixPageHeader(header: PageHeader) {
   header.children.forEach(child => fixPageHeader(child))
 }
 
-export default defineUserConfig<DefaultThemeOptions>({
+export default defineUserConfig({
   lang: 'en-GB',
   title: 'Git-Tool',
   description: 'Keep your repos organized without having to try.',
@@ -20,22 +23,18 @@ export default defineUserConfig<DefaultThemeOptions>({
     ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
 
-  bundler: "@vuepress/bundler-vite",
+  bundler: viteBundler(),
 
   clientAppEnhanceFiles: [
     path.resolve(__dirname, "enhance", "cloudflare.analytics.js")
   ],
 
-  extendsPageData(page, app) {
+  extendsPage(page, app) {
     const fixedHeaders = page.headers || []
     fixedHeaders.forEach(header => fixPageHeader(header))
-
-    return {
-      headers: fixedHeaders,
-    }
   },
 
-  themeConfig: {
+  theme: defaultTheme({
     logo: 'https://cdn.sierrasoftworks.com/logos/icon.png',
 
     repo: "SierraSoftworks/git-tool",
@@ -125,15 +124,12 @@ export default defineUserConfig<DefaultThemeOptions>({
         }
       ]
     }
-  },
+  }),
 
   plugins: [
-    ["@vuepress/plugin-google-analytics", { id: "G-BF54T4NKMN" }],
-    [
-      '@vuepress/plugin-register-components',
-      {
-        componentsDir: path.resolve(__dirname, './components'),
-      },
-    ]
+    googleAnalyticsPlugin({ id: "G-BF54T4NKMN" }),
+    registerComponentsPlugin({
+      componentsDir: path.resolve(__dirname, './components'),
+    })
   ]
 })
