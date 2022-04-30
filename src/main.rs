@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 status
             }
             Result::Err(err) => {
-                error!(err.message());
+                error!("{}", err.message());
                 println!("{}", err.message());
                 if telemetry::is_enabled() {
                     println!(
