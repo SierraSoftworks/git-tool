@@ -44,12 +44,13 @@ mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let session = Session::new();
+    std::process::exit({
+        let session = Session::new();
 
-    let commands = commands::default_commands();
-    let version = version!("v");
+        let commands = commands::default_commands();
+        let version = version!("v");
 
-    let app = clap::Command::new("Git-Tool")
+        let app = clap::Command::new("Git-Tool")
         .version(version.as_str())
         .author(crate_authors!("\n"))
         .about("Simplify your Git repository management and stop thinking about where things belong.")
@@ -75,55 +76,58 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .takes_value(true))
         .subcommands(commands.iter().map(|x| x.app()));
 
-    let matches = app.clone().get_matches();
+        let matches = app.clone().get_matches();
 
-    let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
-        .trim()
-        .to_string();
+        let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
+            .trim()
+            .to_string();
 
-    let mut span = tracing::info_span!(
-        "run:main",
-        otel.name = &command_name.as_str(),
-        otel.status = ?StatusCode::Unset,
-        status_code = field::Empty,
-        error = field::Empty,
-    );
+        let mut span = tracing::info_span!(
+            "run:main",
+            otel.name = &command_name.as_str(),
+            otel.status = ?StatusCode::Unset,
+            status_code = field::Empty,
+            error = field::Empty,
+        );
 
-    match matches.value_of("trace-context") {
-        Some(context) => load_trace_context(&mut span, context),
-        None => {}
-    };
+        match matches.value_of("trace-context") {
+            Some(context) => load_trace_context(&mut span, context),
+            None => {}
+        };
 
-    match run(app, commands, matches).instrument(span).await {
-        Result::Ok(status) => {
-            session.complete();
-            tracing::Span::current()
-                .record("status_code", &status)
-                .record("otel.status", &field::debug(StatusCode::Ok));
-            std::process::exit(status);
-        }
-        Result::Err(err) => {
-            println!("{}", err.message());
-            if telemetry::is_enabled() {
-                println!(
-                    "Trace ID: {:032x}",
-                    tracing::Span::current()
-                        .context()
-                        .span()
-                        .span_context()
-                        .trace_id()
-                );
+        match run(app, commands, matches).instrument(span).await {
+            Result::Ok(status) => {
+                tracing::Span::current()
+                    .record("status_code", &status)
+                    .record("otel.status", &field::debug(StatusCode::Ok));
+
+                session.complete();
+                status
             }
+            Result::Err(err) => {
+                error!(err.message());
+                println!("{}", err.message());
+                if telemetry::is_enabled() {
+                    println!(
+                        "Trace ID: {:032x}",
+                        tracing::Span::current()
+                            .context()
+                            .span()
+                            .span_context()
+                            .trace_id()
+                    );
+                }
 
-            tracing::Span::current()
-                .record("status_code", &(1 as u32))
-                .record("otel.status", &field::debug(StatusCode::Error))
-                .record("error", &field::display(&err));
+                tracing::Span::current()
+                    .record("status_code", &(1 as u32))
+                    .record("otel.status", &field::debug(StatusCode::Error))
+                    .record("error", &field::display(&err));
 
-            session.crash(err);
-            std::process::exit(1);
+                session.crash(err);
+                1
+            }
         }
-    }
+    });
 }
 
 #[tracing::instrument(err, ret, skip(app, commands, matches), fields(command=matches.subcommand_name().unwrap_or("<none>")))]
