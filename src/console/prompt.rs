@@ -26,6 +26,6 @@ pub fn prompt(msg: &str, default: &str) -> String {
 pub fn mock(answer: Option<&str>) {
     let answer = answer.map(|s| s.to_string());
     prompt.mock_safe(move |_prompt, default| {
-        MockResult::Return(answer.clone().unwrap_or(default.into()))
+        MockResult::Return(answer.clone().unwrap_or_else(|| default.into()))
     });
 }

@@ -352,7 +352,7 @@ mod tests {
         let mut target = sink();
 
         source
-            .get_binary(&core, &latest, &variant, &mut target)
+            .get_binary(&core, latest, variant, &mut target)
             .await
             .unwrap();
 

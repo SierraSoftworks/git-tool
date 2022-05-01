@@ -107,11 +107,11 @@ impl Resolver {
 
         match dir.strip_prefix(&dev_dir) {
             Ok(relative_path) => {
-                let svc = relative_path.components().next().ok_or(errors::user(
+                let svc = relative_path.components().next().ok_or_else(|| errors::user(
                     "Current directory is not a valid repository.",
                     &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
                 let svc_name = svc.as_os_str().to_string_lossy().to_string();
-                repo_from_svc_and_path(&self.config, Some(svc_name), &relative_path.strip_prefix(&svc).unwrap_or(relative_path), false)
+                repo_from_svc_and_path(&self.config, Some(svc_name), relative_path.strip_prefix(&svc).unwrap_or(relative_path), false)
             },
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.", 
@@ -127,7 +127,10 @@ impl Resolver {
 
     #[tracing::instrument(err, skip(self, name))]
     pub fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
-        let true_name = self.config.get_alias(name).unwrap_or(name.to_string());
+        let true_name = self
+            .config
+            .get_alias(name)
+            .unwrap_or_else(|| name.to_string());
 
         if let Ok(repo) = self.get_repo(&true_name) {
             return Ok(repo);
@@ -141,7 +144,7 @@ impl Resolver {
         match repos.len() {
             0 => {
                 match repo_from_str(&self.config, &true_name, true) {
-                    Ok(repo) => Ok(repo.clone()),
+                    Ok(repo) => Ok(repo),
                     Err(_) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
                 }
             },
@@ -191,7 +194,7 @@ impl Resolver {
 
     #[tracing::instrument(err, skip(self))]
     pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-        if !&svc.pattern.split("/").all(|p| p == "*") {
+        if !&svc.pattern.split('/').all(|p| p == "*") {
             return Err(errors::user(
                 &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
                 "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
@@ -199,7 +202,7 @@ impl Resolver {
 
         let path = self.config.get_dev_directory().join(&svc.name);
 
-        let repos = get_child_directories(&path, &&svc.pattern)
+        let repos = get_child_directories(&path, &svc.pattern)
             .iter()
             .map(|p| self.get_repo_from_path(p))
             .filter(|r| r.is_ok())
@@ -218,17 +221,13 @@ fn get_service_and_path_from_str(repo: &str) -> (Option<String>, std::path::Path
 }
 
 #[cfg_attr(test, mockable)]
-fn repo_from_str<'a>(
-    config: &'a Config,
-    repo: &str,
-    fallback_to_default: bool,
-) -> Result<Repo, Error> {
+fn repo_from_str(config: &Config, repo: &str, fallback_to_default: bool) -> Result<Repo, Error> {
     let (svc, path) = get_service_and_path_from_str(repo);
     repo_from_svc_and_path(config, svc, &path, fallback_to_default)
 }
 
-fn repo_from_svc_and_path<'a>(
-    config: &'a Config,
+fn repo_from_svc_and_path(
+    config: &Config,
     svc: Option<String>,
     path: &std::path::Path,
     fallback_to_default: bool,
@@ -241,7 +240,7 @@ fn repo_from_svc_and_path<'a>(
                 "Please check that you have provided the correct service name, and that the service is present in your Git-Tool config."
             ))
         },
-        None if fallback_to_default => config.get_default_service().ok_or(errors::user(
+        None if fallback_to_default => config.get_default_service().ok_or_else(|| errors::user(
             "No services configured for use with Git Tool.",
             "Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."
         )),
@@ -250,7 +249,7 @@ fn repo_from_svc_and_path<'a>(
             "Make sure that your repository starts with the name of a service, such as 'gh:sierrasoftworks/git-tool'."))
     }?;
 
-    let name_length = svc.pattern.split_terminator("/").count();
+    let name_length = svc.pattern.split_terminator('/').count();
     let name_parts: Vec<String> = path
         .components()
         .take(name_length)
@@ -283,7 +282,7 @@ fn repo_from_svc_and_path<'a>(
 
 #[cfg_attr(test, mockable)]
 fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
-    let depth = pattern.split("/").count();
+    let depth = pattern.split('/').count();
 
     get_directory_tree_to_depth(from, depth)
 }

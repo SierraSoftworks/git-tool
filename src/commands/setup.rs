@@ -41,9 +41,9 @@ impl CommandRunnable for SetupCommand {
     ) -> Result<i32, crate::core::Error> {
         match core.config().get_config_file() {
             Some(path) if !matches.is_present("force") => {
-                return Err(errors::user(
+                Err(errors::user(
                     &format!("You already have a Git-Tool config file ({}) which will not be modified.", path.display()),
-                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."));
+                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
             }
             _ => {}
         };

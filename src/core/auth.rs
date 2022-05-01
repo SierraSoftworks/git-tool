@@ -2,8 +2,6 @@ use super::*;
 use std::sync::Arc;
 
 #[cfg(feature = "auth")]
-
-
 #[cfg(test)]
 use mocktopus::macros::*;
 

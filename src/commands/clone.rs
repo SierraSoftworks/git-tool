@@ -66,7 +66,7 @@ impl CommandRunnable for CloneCommand {
             completer.offer_many(
                 repos
                     .iter()
-                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
             );
         }
     }
@@ -110,7 +110,7 @@ features:
 
             MockResult::Return(Ok(Repo::new(
                 "gh:git-fixtures/basic",
-                temp.path().join("repo").into(),
+                temp.path().join("repo"),
             )))
         });
 

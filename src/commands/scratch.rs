@@ -113,7 +113,7 @@ apps:
         Resolver::get_current_scratchpad.mock_safe(move |_| {
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w01",
-                temp_path.join("scratch").join("2020w01").into(),
+                temp_path.join("scratch").join("2020w01"),
             )))
         });
 
@@ -170,7 +170,7 @@ apps:
         Resolver::get_current_scratchpad.mock_safe(move |_| {
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w01",
-                temp_path.join("scratch").join("2020w01").into(),
+                temp_path.join("scratch").join("2020w01"),
             )))
         });
 
@@ -229,7 +229,7 @@ apps:
 
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w07",
-                temp_path.join("scratch").join("2020w07").into(),
+                temp_path.join("scratch").join("2020w07"),
             )))
         });
 
@@ -290,7 +290,7 @@ apps:
 
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w07",
-                temp_path.join("scratch").join("2020w07").into(),
+                temp_path.join("scratch").join("2020w07"),
             )))
         });
 
@@ -350,7 +350,7 @@ apps:
 
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w07",
-                temp.path().join("scratch").join("2020w07").into(),
+                temp.path().join("scratch").join("2020w07"),
             )))
         });
 
@@ -360,10 +360,7 @@ apps:
 
         let core = Core::builder().with_config(&cfg).build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(_) => {}
-        }
+        cmd.run(&core, &args).await.unwrap_or_default();
     }
 
     #[tokio::test]
@@ -398,7 +395,7 @@ apps:
 
             MockResult::Return(Ok(Scratchpad::new(
                 "2020w07",
-                temp_path.join("scratch").join("2020w07").into(),
+                temp_path.join("scratch").join("2020w07"),
             )))
         });
 

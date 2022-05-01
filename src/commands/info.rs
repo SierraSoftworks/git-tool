@@ -70,7 +70,7 @@ impl CommandRunnable for InfoCommand {
             completer.offer_many(
                 repos
                     .iter()
-                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
             );
         }
     }

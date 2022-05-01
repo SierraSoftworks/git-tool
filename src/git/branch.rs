@@ -121,7 +121,7 @@ mod tests {
             GitCheckout { branch: "main" },
             WriteFile {
                 path: PathBuf::from("README.md"),
-                content: "This is a test file".into(),
+                content: "This is a test file",
             },
             GitAdd {
                 paths: vec!["README.md"]
@@ -155,7 +155,7 @@ mod tests {
             GitCheckout { branch: "main" },
             WriteFile {
                 path: PathBuf::from("README.md"),
-                content: "This is a test file".into(),
+                content: "This is a test file",
             },
             GitAdd {
                 paths: vec!["README.md"]
@@ -219,7 +219,7 @@ mod tests {
             GitCheckout { branch: "main" },
             WriteFile {
                 path: PathBuf::from("README.md"),
-                content: "This is a test file".into(),
+                content: "This is a test file",
             },
             GitAdd {
                 paths: vec!["README.md"]
@@ -249,7 +249,7 @@ mod tests {
 
         WriteFile {
             path: PathBuf::from(".git/refs/remotes/origin/HEAD"),
-            content: "ref: refs/remotes/origin/main".into(),
+            content: "ref: refs/remotes/origin/main",
         }
         .apply_repo(&core, &repo)
         .await
@@ -281,7 +281,7 @@ mod tests {
             GitCheckout { branch: "main" },
             WriteFile {
                 path: PathBuf::from("README.md"),
-                content: "This is a test file".into(),
+                content: "This is a test file",
             },
             GitAdd {
                 paths: vec!["README.md"]
@@ -348,7 +348,7 @@ mod tests {
             GitCheckout { branch: "main" },
             WriteFile {
                 path: PathBuf::from("README.md"),
-                content: "This is a test file".into(),
+                content: "This is a test file",
             },
             GitAdd {
                 paths: vec!["README.md"]

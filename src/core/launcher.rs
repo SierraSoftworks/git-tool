@@ -86,7 +86,7 @@ impl Launcher {
 
     #[cfg(unix)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
-        let child_id = child.id().ok_or(crate::errors::user(
+        let child_id = child.id().ok_or_else(|| crate::errors::user(
             "Unable to determine the child process's PID because the child process has already exited.",
             "This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."
         ))?;

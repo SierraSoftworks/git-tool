@@ -243,7 +243,7 @@ impl Config {
 
     pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
         for svc in self.services.iter() {
-            if &svc.name == domain {
+            if svc.name == domain {
                 return Some(svc.as_ref());
             }
         }
@@ -467,7 +467,7 @@ apps:
         );
 
         assert!(new_cfg.apply_template(template.clone(), false).is_err());
-        assert!(new_cfg.apply_template(template.clone(), true).is_ok());
+        assert!(new_cfg.apply_template(template, true).is_ok());
     }
 
     #[test]

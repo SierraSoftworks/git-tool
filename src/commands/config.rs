@@ -250,7 +250,7 @@ impl CommandRunnable for ConfigCommand {
                         completer.offer_many(
                             repos
                                 .iter()
-                                .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+                                .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
                         );
                     }
                 }
@@ -530,9 +530,8 @@ aliases:
         }
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        assert_eq!(
+        assert!(
             new_cfg.get_alias("test").is_none(),
-            true,
             "the alias should be removed from the config file"
         );
     }
@@ -547,7 +546,7 @@ aliases:
   test1: example.com/tests/test1
   test2: example.com/tests/test2
 "#,
-            get_dev_dir().to_str().unwrap().replace("\\", "\\\\")
+            get_dev_dir().to_str().unwrap().replace('\\', "\\\\")
         ))
         .unwrap();
 
@@ -577,9 +576,8 @@ features:
         .unwrap();
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        assert_eq!(
+        assert!(
             cfg.get_features().has("http_transport"),
-            true,
             "the config should have the feature enabled initially"
         );
 
@@ -598,9 +596,8 @@ features:
         }
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        assert_eq!(
-            new_cfg.get_features().has("http_transport"),
-            false,
+        assert!(
+            !new_cfg.get_features().has("http_transport"),
             "the feature should be set to false in the config file"
         );
     }
@@ -615,7 +612,7 @@ features:
     create_remote: true
     telemetry: false
 "#,
-            get_dev_dir().to_str().unwrap().replace("\\", "\\\\")
+            get_dev_dir().to_str().unwrap().replace('\\', "\\\\")
         ))
         .unwrap();
 

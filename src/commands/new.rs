@@ -130,7 +130,7 @@ mod tests {
             .resolver()
             .get_best_repo("gh:test/new-repo-partial")
             .unwrap();
-        assert_eq!(repo.valid(), false);
+        assert!(!repo.valid());
 
         cmd.run(&core, &args).await.unwrap();
 
@@ -161,7 +161,7 @@ mod tests {
             .resolver()
             .get_best_repo("gh:test/new-repo-full")
             .unwrap();
-        assert_eq!(repo.valid(), false);
+        assert!(!repo.valid());
 
         cmd.run(&core, &args).await.unwrap();
 

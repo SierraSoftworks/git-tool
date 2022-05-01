@@ -1,6 +1,9 @@
 #Added by cargo
 
 /target
+*.profraw
+*.profdata
+lcov.info
 
 ## -------- Managed by Git Tool -------- ##
 ## Add any custom rules above this block ##

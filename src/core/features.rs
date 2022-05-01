@@ -85,6 +85,6 @@ mod tests {
 
     #[test]
     fn default() {
-        assert_eq!(Features::default().has(CREATE_REMOTE), true);
+        assert!(Features::default().has(CREATE_REMOTE));
     }
 }

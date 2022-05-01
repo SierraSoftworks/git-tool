@@ -34,6 +34,14 @@ impl<S> UpdateManager<S>
 where
     S: Source,
 {
+    #[cfg(test)]
+    pub fn new(target_application: PathBuf) -> Self {
+        Self {
+            target_application,
+            ..Default::default()
+        }
+    }
+
     pub async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error> {
         self.source.get_releases(core).await
     }
@@ -335,8 +343,7 @@ mod tests {
 
         std::fs::write(&app_path, "Pre-Update").unwrap();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         let launched = Arc::new(Mutex::new(false));
 
@@ -392,7 +399,7 @@ mod tests {
             Release::get_latest(releases.iter()).expect("we should receive a latest release entry");
 
         let has_update = manager
-            .update(&core, &latest_release)
+            .update(&core, latest_release)
             .await
             .expect("the update operation should succeed");
 
@@ -410,8 +417,7 @@ mod tests {
         let app_path = temp.path().join("app").to_owned();
         let temp_app_path = temp.path().join("app-temp").to_owned();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         let launched = Arc::new(Mutex::new(false));
 
@@ -496,8 +502,7 @@ mod tests {
         let app_path = temp.path().join("app").to_owned();
         let temp_app_path = temp.path().join("app-temp").to_owned();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         {
             UpdateManager::<GitHubSource>::launch.mock_safe(move |_, _app, _state| {

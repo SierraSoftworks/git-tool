@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 }
 
                 tracing::Span::current()
-                    .record("status_code", &(1 as u32))
+                    .record("status_code", &1_u32)
                     .record("otel.status", &field::debug(StatusCode::Error))
                     .record("error", &field::display(&err));
 

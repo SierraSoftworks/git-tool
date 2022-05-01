@@ -200,7 +200,7 @@ mod tests {
             "ghp"
         );
         assert_eq!(
-            render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(),
+            render("{{ .Repo.Service.Domain }}", context).unwrap(),
             "ghp"
         );
     }

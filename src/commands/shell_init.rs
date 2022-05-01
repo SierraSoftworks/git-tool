@@ -59,9 +59,9 @@ where {
                 }
             }
             _ => {
-                return Err(errors::user(
+                Err(errors::user(
                     "You did not provide the name of the shell you want to configure.",
-                    "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."));
+                    "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."))?;
             }
         }
 

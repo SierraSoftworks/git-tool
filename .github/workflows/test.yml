@@ -77,7 +77,7 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y gcc-aarch64-linux-gnu lld
 
-              # Ensure that the libgcc
+              # Ensure that the libgcc library can be found
               sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
             flags: --no-default-features
 
@@ -99,9 +99,6 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - name: cache ~/.cargo
-        uses: Swatinem/rust-cache@v1
-
       - name: rustup install nightly
         uses: actions-rs/toolchain@v1.0.7
         with:
@@ -109,6 +106,10 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           override: true
+          components: llvm-tools-preview
+
+      - name: cache ~/.cargo
+        uses: Swatinem/rust-cache@v1
 
       - name: git config
         run: |
@@ -125,23 +126,45 @@ jobs:
 
       - name: cargo test
         uses: actions-rs/cargo@v1.0.3
-        if: "!matrix.skiptests && !matrix.coverage"
+        if: "!matrix.skiptests"
         with:
           command: test
           args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUSTFLAGS: "-C instrument_coverage"
+          LLVM_PROFILE_FILE: default.profraw
 
-      - name: cargo test +coverage
-        uses: actions-rs/tarpaulin@v0.1
-        if: "!matrix.skiptests && matrix.coverage"
+      - name: install rustfilt
+        uses: actions-rs/cargo@v1.0.3
+        if: matrix.coverage || false
         with:
-          args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          command: install
+          args: rustfilt
+
+      - name: prepare coverage output
+        if: matrix.coverage || false
+        shell: pwsh
+        run: |
+          Write-Host "Merging raw profile output files"
+          &"$(rustc --print target-libdir)/../bin/llvm-profdata" merge -sparse default.profraw -o default.profdata
+
+          $latest_asset = Get-ChildItem -Path ./target/${{ matrix.target }}/debug/deps -Filter "git_tool-*" -File `
+          | Where-Object { $_.Name.EndsWith(".exe") -or (-not $_.Name.Contains(".")) } `
+          | Sort-Object -Top 1 -Property LastWriteTime
+
+          Write-Host "Latest Asset: $latest_asset"
+
+          Write-Host "Exporting LCOV coverage report"
+          &"$(rustc --print target-libdir)/../bin/llvm-cov" export -instr-profile default.profdata $latest_asset `
+              -Xdemangler=rustfilt `
+              -ignore-filename-regex='.cargo|rustc' `
+              -compilation-dir=src `
+              -format=lcov > lcov.info
 
       - name: get secrets - codecov
         uses: hashicorp/vault-action@v2.4.1
+        if: matrix.coverage || false
         with:
           url: https://vault.sierrasoftworks.com
           method: jwt

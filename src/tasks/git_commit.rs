@@ -62,7 +62,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
@@ -74,7 +74,6 @@ mod tests {
         };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
-        assert_eq!(scratch.get_path().join(".git").exists(), false);
-        assert_eq!(scratch.exists(), false);
+        assert!(!scratch.exists());
     }
 }

@@ -167,7 +167,7 @@ pub mod helpers {
             responsible.clone(),
             expected.map(|n| n.to_string()),
             "responsible command [{}] should match [{}]",
-            responsible.unwrap_or("<None>".to_string()),
+            responsible.unwrap_or_else(|| "<None>".to_string()),
             expected.unwrap_or("<None>")
         );
     }
@@ -189,7 +189,7 @@ pub mod helpers {
 
         let mut offers = std::collections::HashSet::new();
 
-        for offer in output.split_terminator("\n") {
+        for offer in output.split_terminator('\n') {
             offers.insert(offer);
         }
 
@@ -234,13 +234,12 @@ pub mod helpers {
             .expect("the command should run successfully");
 
         let output = output.to_string();
-        let offers: Vec<&str> = output.split('\n').collect();
 
         for item in contains {
             assert!(
-                offers.contains(&item),
+                output.split('\n').any(|x| x == item),
                 "completion output '{}' should contain '{}'",
-                output.to_string(),
+                output,
                 item
             );
         }

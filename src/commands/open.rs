@@ -42,7 +42,7 @@ impl CommandRunnable for OpenCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         if core.config().get_config_file().is_none() {
             warn!("No configuration file has been loaded, continuing with defaults.");
-            writeln!(core.output(), "Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+            writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
         }
 
         let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
@@ -118,7 +118,7 @@ impl CommandRunnable for OpenCommand {
             completer.offer_many(
                 repos
                     .iter()
-                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
             );
         }
     }
@@ -156,8 +156,6 @@ features:
         let temp = tempdir().unwrap();
         let core = Core::builder().with_config(&cfg).build();
 
-        let _output = crate::console::output::mock();
-
         let temp_path = temp.path().to_owned();
         Resolver::get_best_repo.mock_safe(move |_, name| {
             assert_eq!(
@@ -167,7 +165,7 @@ features:
 
             MockResult::Return(Ok(Repo::new(
                 "gh:git-fixtures/basic",
-                temp_path.join("repo").into(),
+                temp_path.join("repo"),
             )))
         });
 
