@@ -106,6 +106,7 @@ impl EntryService {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<Service> for EntryService {
     fn into(self) -> Service {
         Service {

@@ -9,7 +9,7 @@ pub fn to_native_path<T: Into<PathBuf>>(path: T) -> std::path::PathBuf {
             std::path::Component::Normal(n) => n
                 .to_str()
                 .unwrap()
-                .split("/")
+                .split('/')
                 .map(|p| std::path::Component::Normal(p.as_ref()))
                 .collect(),
             _ => vec![c],

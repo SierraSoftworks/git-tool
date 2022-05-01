@@ -48,17 +48,17 @@ impl Config {
 
     pub fn extend(&self, other: Self) -> Self {
         let mut into = self.clone();
-        let from = other.clone();
+        let from = other;
 
         match from.config_file {
-            Some(path) => into.config_file = Some(path.clone()),
+            Some(path) => into.config_file = Some(path),
             None => {}
         }
         if from.dev_directory.components().count() > 0 {
             into.dev_directory = from.dev_directory.clone();
         }
         match from.scratch_directory {
-            Some(path) => into.scratch_directory = Some(path.clone()),
+            Some(path) => into.scratch_directory = Some(path),
             None => {}
         }
         if !from.services.is_empty() {
@@ -252,7 +252,7 @@ impl Config {
     }
 
     pub fn get_alias(&self, name: &str) -> Option<String> {
-        self.aliases.get(name).map(|r| r.clone())
+        self.aliases.get(name).cloned()
     }
 
     pub fn get_aliases(&self) -> std::collections::hash_map::Iter<String, String> {

@@ -14,7 +14,7 @@ impl Command for OpenCommand {
     fn app<'a>(&self) -> clap::Command<'a> {
         clap::Command::new(self.name().as_str())
             .version("1.0")
-            .visible_aliases(&vec!["o", "run"])
+            .visible_aliases(&["o", "run"])
             .about("opens a repository using an application defined in your config")
             .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
             
@@ -42,7 +42,7 @@ impl CommandRunnable for OpenCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         if core.config().get_config_file().is_none() {
             warn!("No configuration file has been loaded, continuing with defaults.");
-            writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+            writeln!(core.output(), "Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
         }
 
         let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
@@ -53,7 +53,7 @@ impl CommandRunnable for OpenCommand {
                 (app, core.resolver().get_current_repo()?)
             },
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or(errors::user(
+                let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
@@ -108,21 +108,18 @@ impl CommandRunnable for OpenCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+            );
         }
     }
 }
@@ -158,6 +155,8 @@ features:
 
         let temp = tempdir().unwrap();
         let core = Core::builder().with_config(&cfg).build();
+
+        let _output = crate::console::output::mock();
 
         let temp_path = temp.path().to_owned();
         Resolver::get_best_repo.mock_safe(move |_, name| {

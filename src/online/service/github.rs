@@ -4,13 +4,8 @@ use reqwest::{Method, Request, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+#[derive(Default)]
 pub struct GitHubService {}
-
-impl Default for GitHubService {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[async_trait]
 impl OnlineService for GitHubService {
@@ -169,6 +164,7 @@ struct GitHubErrorResponse {
     pub errors: Vec<GitHubError>,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<errors::Error> for GitHubErrorResponse {
     fn into(self) -> errors::Error {
         match self.http_status_code {

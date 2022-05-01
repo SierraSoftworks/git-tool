@@ -45,7 +45,7 @@ impl Launcher {
         let env_args = render_list(a.get_environment(), context.clone())?;
         let env_arg_tuples = env_args
             .iter()
-            .map(|i| i.split("=").collect())
+            .map(|i| i.split('=').collect())
             .map(|i: Vec<&str>| (i[0], i[1]));
 
         let mut child = Command::new(program)

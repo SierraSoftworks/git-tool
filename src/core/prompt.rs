@@ -47,7 +47,7 @@ impl Prompter {
                 return Ok(None);
             }
 
-            if !validate(&line.trim()) {
+            if !validate(line.trim()) {
                 line.clear()
             } else {
                 return Ok(Some(line.trim().into()));

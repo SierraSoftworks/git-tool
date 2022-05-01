@@ -35,7 +35,7 @@ impl CommandRunnable for AuthCommand {
         core: &Core,
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error> {
-        let service = matches.value_of("service").ok_or(errors::user(
+        let service = matches.value_of("service").ok_or_else(|| errors::user(
             "You have not provided the name of the service you wish to authenticate.",
             "Please provide the name of the service when running this command: `git-tool auth gh`.",
         ))?;

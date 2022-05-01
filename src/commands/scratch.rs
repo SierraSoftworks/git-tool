@@ -42,7 +42,7 @@ impl CommandRunnable for ScratchCommand {
             }
             helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_scratchpad()?),
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or(errors::user(
+                let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
@@ -50,7 +50,7 @@ impl CommandRunnable for ScratchCommand {
             }
             helpers::LaunchTarget::Err(err) => return Err(err),
             helpers::LaunchTarget::None => {
-                let app = core.config().get_default_app().ok_or(errors::user(
+                let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
@@ -74,11 +74,8 @@ impl CommandRunnable for ScratchCommand {
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
-        match core.resolver().get_scratchpads() {
-            Ok(pads) => {
-                completer.offer_many(pads.iter().map(|p| p.get_name()));
-            }
-            _ => {}
+        if let Ok(pads) = core.resolver().get_scratchpads() {
+            completer.offer_many(pads.iter().map(|p| p.get_name()));
         }
     }
 }

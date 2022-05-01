@@ -13,7 +13,7 @@ impl Command for RemoveCommand {
     fn app<'a>(&self) -> clap::Command<'a> {
         clap::Command::new(self.name().as_str())
             .version("1.0")
-            .visible_aliases(&vec!["rm"])
+            .visible_aliases(&["rm"])
             .about("removes a repository from your local machine")
             .long_about("This command will remove the specified repository from your local machine. It requires that the repository name be provided in fully-qualified form.")
             .arg(Arg::new("repo")
@@ -65,21 +65,18 @@ impl CommandRunnable for RemoveCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+            );
         }
     }
 }

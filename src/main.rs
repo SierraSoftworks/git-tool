@@ -131,8 +131,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 #[tracing::instrument(err, ret, skip(app, commands, matches), fields(command=matches.subcommand_name().unwrap_or("<none>")))]
-async fn run<'a>(
-    mut app: clap::Command<'a>,
+async fn run(
+    mut app: clap::Command<'_>,
     commands: Vec<Arc<dyn CommandRunnable>>,
     matches: ArgMatches,
 ) -> Result<i32, errors::Error> {
@@ -143,7 +143,7 @@ async fn run<'a>(
         core_builder = core_builder.with_config_file(cfg_file)?;
     }
 
-    let core = Arc::new(core_builder.build());
+    let core = core_builder.build();
 
     // If telemetry is enabled in the config file, then turn it on here.
     if !core.config().get_features().has(features::TELEMETRY) {
@@ -174,7 +174,7 @@ async fn run<'a>(
         if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
-                .try_get_matches_from(vec!["gt", "update", "--state", &state])
+                .try_get_matches_from(vec!["gt", "update", "--state", state])
                 .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
                     "Please report this error to us on GitHub and use the manual update process until it is resolved.",
                     errors::detailed_message(&e.to_string())))?;

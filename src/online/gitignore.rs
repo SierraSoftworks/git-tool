@@ -95,6 +95,7 @@ struct GitIgnoreFileSection {
     content: String,
 }
 
+#[allow(clippy::from_over_into)]
 impl std::convert::Into<String> for GitIgnoreFileSection {
     fn into(self) -> String {
         if self.languages.is_empty() {
@@ -114,7 +115,7 @@ impl GitIgnoreFileSection {
         let mut content: Vec<String> = Vec::new();
         let mut languages: Vec<String> = Vec::new();
 
-        for line in input.split_terminator("\n") {
+        for line in input.split_terminator('\n') {
             if !has_section && line == "## -------- Managed by Git Tool -------- ##" {
                 has_section = true;
             }
@@ -130,11 +131,8 @@ impl GitIgnoreFileSection {
                 continue;
             }
 
-            if line.starts_with("## @languages: ") {
-                languages = line["## @languages: ".len()..]
-                    .split(",")
-                    .map(|x| x.trim().to_string())
-                    .collect();
+            if let Some(langs) = line.strip_prefix("## @languages: ") {
+                languages = langs.split(',').map(|x| x.trim().to_string()).collect();
             }
         }
 
@@ -144,7 +142,7 @@ impl GitIgnoreFileSection {
             Some(GitIgnoreFileSection {
                 prologue: prologue.join("\n").trim().to_string(),
                 content: content.join("\n").trim().to_string(),
-                languages: languages,
+                languages,
             })
         }
     }

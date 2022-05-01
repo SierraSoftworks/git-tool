@@ -41,9 +41,9 @@ impl CommandRunnable for SetupCommand {
     ) -> Result<i32, crate::core::Error> {
         match core.config().get_config_file() {
             Some(path) if !matches.is_present("force") => {
-                Err(errors::user(
+                return Err(errors::user(
                     &format!("You already have a Git-Tool config file ({}) which will not be modified.", path.display()),
-                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
+                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."));
             }
             _ => {}
         };
@@ -130,7 +130,7 @@ impl SetupCommand {
                 default_dir
                     .clone()
                     .map(|v| format!(" [{}]", v))
-                    .unwrap_or("".into())
+                    .unwrap_or_else(|| "".into())
             ),
             |line| {
                 if line.is_empty() {
@@ -155,7 +155,7 @@ impl SetupCommand {
                 Some(v)
             }
         })
-        .ok_or(errors::user(
+        .ok_or_else(|| errors::user(
             "You did not enter a valid directory to store your projects in.",
             "Enter a valid path to a directory which Git-Tool can use to store your projects in.",
         ))?;
@@ -181,7 +181,7 @@ impl SetupCommand {
                 default_path
                     .clone()
                     .map(|v| format!(" [{}]", v.display()))
-                    .unwrap_or("".into())
+                    .unwrap_or_else(|| "".into())
             ),
             |line| {
                 if line.is_empty() {
@@ -206,7 +206,7 @@ impl SetupCommand {
                 Some(PathBuf::from(v))
             }
         })
-        .ok_or(errors::user(
+        .ok_or_else(|| errors::user(
             "You did not enter a valid directory to store your Git-Tool config in.",
             "Enter a valid path to a file where Git-Tool will store its configuration.",
         ))?;

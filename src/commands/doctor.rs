@@ -38,10 +38,10 @@ impl CommandRunnable for DoctorCommand {
         writeln!(output, "[OK] GITTOOL_CONFIG environment variable set")?;
 
         if !std::path::Path::new(&config_path).exists() {
-            Err(errors::user(
+            return Err(errors::user(
                 "GITTOOL_CONFIG environment variable is set to a path that does not exist",
                 "Set the GITTOOL_CONFIG environment variable to the path of your config file",
-            ))?;
+            ));
         }
 
         writeln!(
@@ -51,10 +51,10 @@ impl CommandRunnable for DoctorCommand {
 
         match core.config().get_config_file() {
             Some(config_file) if config_file != std::path::Path::new(&config_path) => {
-                Err(errors::user(
+                return Err(errors::user(
                     "GITTOOL_CONFIG environment variable is set to a path that does not match the config file",
                     "Set the GITTOOL_CONFIG environment variable to the path of your config file",
-                ))?;
+                ));
             }
             _ => {}
         }
@@ -62,19 +62,19 @@ impl CommandRunnable for DoctorCommand {
         writeln!(output, "[OK] GITTOOL_CONFIG value was loaded at startup")?;
 
         if !core.config().get_dev_directory().exists() {
-            Err(errors::user(
+            return Err(errors::user(
                 "Your development directory does not exist.",
                 "Make sure that the dev directory you have specified in your configuration file exists and is writable by Git-Tool.",
-            ))?;
+            ));
         }
 
         writeln!(output, "[OK] Development directory exists")?;
 
         if !core.config().get_scratch_directory().exists() {
-            Err(errors::user(
+            return Err(errors::user(
                 "Your scratch directory does not exist.",
                 "Make sure that the scratch directory you have specified in your configuration file exists and is writable by Git-Tool.",
-            ))?;
+            ));
         }
 
         for svc in core.config().get_services() {

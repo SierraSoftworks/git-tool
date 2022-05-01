@@ -72,7 +72,7 @@ impl CommandRunnable for PruneCommand {
             for branch in to_remove.iter() {
                 writeln!(core.output(), "  {}", branch)?;
             }
-            writeln!(core.output(), "")?;
+            writeln!(core.output())?;
 
             let input = crate::console::prompt::prompt(
                 "Are you sure you want to remove these branches? [y/N]: ",
@@ -262,6 +262,8 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
+        let output = crate::console::output::mock();
+
         crate::console::prompt::mock(Some("y"));
 
         let repo: Repo = setup_test_repo_with_remote(&core, &temp).await;
@@ -296,6 +298,8 @@ mod tests {
         let mut branches = git::git_branches(&repo.get_path()).await.unwrap();
         branches.sort();
         assert_eq!(branches, vec!["feature/test", "main"]);
+
+        assert!(output.to_string().contains("feature/test2"));
     }
 
     #[tokio::test]

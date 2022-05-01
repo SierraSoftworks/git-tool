@@ -14,7 +14,7 @@ impl Command for NewCommand {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("creates a new repository")
-            .visible_aliases(&vec!["n", "create"])
+            .visible_aliases(&["n", "create"])
             .long_about("Creates a new repository with the provided name.")
             .arg(
                 Arg::new("repo")
@@ -64,7 +64,7 @@ impl CommandRunnable for NewCommand {
         tasks.apply_repo(core, &repo).await?;
 
         if matches.is_present("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
-            let app = core.config().get_default_app().ok_or(errors::user(
+            let app = core.config().get_default_app().ok_or_else(|| errors::user(
                 "No default application available.",
                 "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
@@ -79,26 +79,23 @@ impl CommandRunnable for NewCommand {
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                let mut namespaces = std::collections::HashSet::new();
-                let default_svc = core
-                    .config()
-                    .get_default_service()
-                    .map(|s| s.name.clone())
-                    .unwrap_or_default();
+        if let Ok(repos) = core.resolver().get_repos() {
+            let mut namespaces = std::collections::HashSet::new();
+            let default_svc = core
+                .config()
+                .get_default_service()
+                .map(|s| s.name.clone())
+                .unwrap_or_default();
 
-                for repo in repos {
-                    if repo.service == default_svc {
-                        namespaces.insert(format!("{}/", &repo.namespace));
-                    }
-
-                    namespaces.insert(format!("{}:{}/", &repo.service, &repo.namespace));
+            for repo in repos {
+                if repo.service == default_svc {
+                    namespaces.insert(format!("{}/", &repo.namespace));
                 }
 
-                completer.offer_many(namespaces.iter().map(|s| s.as_str()));
+                namespaces.insert(format!("{}:{}/", &repo.service, &repo.namespace));
             }
-            _ => {}
+
+            completer.offer_many(namespaces.iter().map(|s| s.as_str()));
         }
     }
 }

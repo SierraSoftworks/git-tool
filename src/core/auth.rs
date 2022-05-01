@@ -2,7 +2,7 @@ use super::*;
 use std::sync::Arc;
 
 #[cfg(feature = "auth")]
-use keyring;
+
 
 #[cfg(test)]
 use mocktopus::macros::*;

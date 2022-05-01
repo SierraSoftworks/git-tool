@@ -17,7 +17,7 @@ impl Command for SwitchCommand {
         clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("switches to the specified branch.")
-            .visible_aliases(&vec!["sw", "branch", "b", "br"])
+            .visible_aliases(&["sw", "branch", "b", "br"])
             .long_about(
                 "This command switches to the specified branch within the current repository.",
             )
@@ -87,8 +87,8 @@ impl CommandRunnable for SwitchCommand {
 
 impl SwitchCommand {
     fn to_local_branch_name(branch: &str) -> String {
-        if branch.starts_with("origin/") {
-            branch["origin/".len()..].to_owned()
+        if let Some(branch) = branch.strip_prefix("origin/") {
+            branch.to_owned()
         } else {
             branch.to_owned()
         }

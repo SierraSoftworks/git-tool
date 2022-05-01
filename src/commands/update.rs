@@ -118,7 +118,7 @@ where {
             Some(release) => {
                 sentry::capture_message(&format!("Starting Update to {}", release.id), sentry::Level::Info);
                 writeln!(output, "Downloading update {}...", &release.id)?;
-                if manager.update(core, &release).await? {
+                if manager.update(core, release).await? {
                     writeln!(output, "Shutting down to complete the update operation.")?;
                 }
             },
@@ -146,17 +146,14 @@ where {
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
-        match manager.get_releases(core).await {
-            Ok(releases) => {
-                let current_variant = ReleaseVariant::default();
-                completer.offer_many(
-                    releases
-                        .iter()
-                        .filter(|&r| r.get_variant(&current_variant).is_some())
-                        .map(|r| &r.id),
-                );
-            }
-            _ => {}
+        if let Ok(releases) = manager.get_releases(core).await {
+            let current_variant = ReleaseVariant::default();
+            completer.offer_many(
+                releases
+                    .iter()
+                    .filter(|&r| r.get_variant(&current_variant).is_some())
+                    .map(|r| &r.id),
+            );
         }
     }
 }

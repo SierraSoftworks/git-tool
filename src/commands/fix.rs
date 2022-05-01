@@ -44,10 +44,7 @@ impl CommandRunnable for FixCommand {
         match matches.is_present("all") {
             true => {
                 let mut output = core.output();
-                let filter = match matches.value_of("repo") {
-                    Some(name) => name,
-                    None => "",
-                };
+                let filter = matches.value_of("repo").unwrap_or("");
 
                 let repos = core.resolver().get_repos()?;
                 for repo in search::best_matches_by(filter, repos.iter(), |r| {
@@ -82,21 +79,18 @@ impl CommandRunnable for FixCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+            );
         }
     }
 }

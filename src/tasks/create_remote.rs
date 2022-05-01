@@ -27,11 +27,9 @@ impl Task for CreateRemote {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.service).ok_or(
-            crate::errors::user(
-                &format!("Could not find a service entry in your config file for {}", &repo.service), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", &repo.service))
-        )?;
+        let service = core.config().get_service(&repo.service).ok_or_else(|| crate::errors::user(
+                &format!("Could not find a service entry in your config file for {}", repo.service), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service)))?;
 
         if let Some(online_service) = crate::online::services()
             .iter()

@@ -87,10 +87,12 @@ impl CommandRunnable for ConfigCommand {
                 }
             }
             Some(("add", args)) => {
-                let id = args.value_of("id").ok_or(errors::user(
-                    "You have not provided an ID for the config template you wish to add.",
-                    "",
-                ))?;
+                let id = args.value_of("id").ok_or_else(|| {
+                    errors::user(
+                        "You have not provided an ID for the config template you wish to add.",
+                        "",
+                    )
+                })?;
 
                 let registry = crate::online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
@@ -235,35 +237,27 @@ impl CommandRunnable for ConfigCommand {
             Some(("list", _)) => {}
             Some(("add", _)) => {
                 let registry = online::GitHubRegistry;
-                match registry.get_entries(core).await {
-                    Ok(entries) => {
-                        completer.offer_many(entries);
-                    }
-                    _ => {}
+                if let Ok(entries) = registry.get_entries(core).await {
+                    completer.offer_many(entries);
                 }
             }
             Some(("alias", args)) => {
                 if !args.is_present("alias") {
                     completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
-                } else {
-                    if !args.is_present("delete") && !args.is_present("repo") {
-                        completer.offer("-d");
-                        match core.resolver().get_repos() {
-                            Ok(repos) => {
-                                completer.offer_many(
-                                    repos
-                                        .iter()
-                                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                                );
-                            }
-                            _ => {}
-                        }
+                } else if !args.is_present("delete") && !args.is_present("repo") {
+                    completer.offer("-d");
+                    if let Ok(repos) = core.resolver().get_repos() {
+                        completer.offer_many(
+                            repos
+                                .iter()
+                                .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+                        );
                     }
                 }
             }
             Some(("feature", args)) => {
                 if !args.is_present("flag") {
-                    completer.offer_many(features::ALL.iter().map(|&v| v));
+                    completer.offer_many(features::ALL.iter().copied());
                 } else {
                     completer.offer("true");
                     completer.offer("false");

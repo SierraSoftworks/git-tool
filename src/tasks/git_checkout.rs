@@ -9,7 +9,7 @@ pub struct GitCheckout<'a> {
 impl<'a> Task for GitCheckout<'a> {
     #[tracing::instrument(name = "task:git_checkout(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
-        git::git_checkout(&repo.get_path(), &self.branch).await
+        git::git_checkout(&repo.get_path(), self.branch).await
     }
 
     #[tracing::instrument(name = "task:git_checkout(scratchpad)", err, skip(self, _core))]

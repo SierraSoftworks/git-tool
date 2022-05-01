@@ -38,7 +38,7 @@ pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Erro
         if r.ends_with("/HEAD") {
             continue;
         } else if r.starts_with("origin/") {
-            match r.splitn(2, '/').nth(1) {
+            match r.split_once('/').map(|x| x.1) {
                 Some(rs) => unique_refs.insert(rs),
                 None => unique_refs.insert(r),
             };

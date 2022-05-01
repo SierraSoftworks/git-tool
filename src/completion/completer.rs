@@ -18,21 +18,19 @@ impl Completer {
     pub fn new_for(filter: &str, output: Arc<Mutex<dyn std::io::Write + Send>>) -> Self {
         Self {
             filter: Arc::new(filter.to_string()),
-            output: output,
+            output,
         }
     }
 
     pub fn offer(&self, completion: &str) {
-        if matches(completion, &self.filter) {
-            match self.output.lock().map(|mut out| {
-                if has_whitespace(completion) {
-                    writeln!(out, "'{}'", completion)
-                } else {
-                    writeln!(out, "{}", completion)
-                }
-            }) {
-                _ => {}
-            }
+        if !matches(completion, &self.filter) {
+            return;
+        }
+        let mut out = self.output.lock().unwrap();
+        if has_whitespace(completion) {
+            writeln!(out, "'{}'", completion).unwrap_or_default();
+        } else {
+            writeln!(out, "{}", completion).unwrap_or_default();
         }
     }
 
@@ -57,10 +55,5 @@ impl Completer {
 }
 
 fn has_whitespace<T: AsRef<str>>(value: T) -> bool {
-    value
-        .as_ref()
-        .split_ascii_whitespace()
-        .skip(1)
-        .next()
-        .is_some()
+    value.as_ref().split_ascii_whitespace().nth(1).is_some()
 }

@@ -12,7 +12,7 @@ impl Command for ListCommand {
     fn app<'a>(&self) -> clap::Command<'a> {
         clap::Command::new(&self.name())
             .version("1.0")
-            .visible_aliases(&vec!["ls", "ll"])
+            .visible_aliases(&["ls", "ll"])
             .about("list your repositories")
             .after_help("Gets the list of repositories managed by Git-Tool. These repositories can be opened using the `git-tool open` command.")
             .arg(Arg::new("filter")
@@ -40,10 +40,7 @@ impl CommandRunnable for ListCommand {
 where {
         let mut output = core.output();
 
-        let filter = match matches.value_of("filter") {
-            Some(name) => name,
-            None => "",
-        };
+        let filter = matches.value_of("filter").unwrap_or("");
 
         let quiet = matches.is_present("quiet");
         let full = matches.is_present("full");
@@ -81,8 +78,8 @@ Path:           {path}",
 URLs:
   - Website:    {website}
   - Git:    {git}",
-                        website = svc.get_website(&repo)?,
-                        git = svc.get_git_url(&repo)?,
+                        website = svc.get_website(repo)?,
+                        git = svc.get_git_url(repo)?,
                     )?,
                     None => {}
                 };
@@ -93,7 +90,7 @@ URLs:
                         "{}:{} ({})",
                         &repo.service,
                         repo.get_full_name(),
-                        svc.get_website(&repo)?
+                        svc.get_website(repo)?
                     )?,
                     None => writeln!(output, "{}:{}", &repo.service, repo.get_full_name())?,
                 };

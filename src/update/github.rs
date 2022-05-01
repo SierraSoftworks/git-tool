@@ -140,15 +140,14 @@ impl GitHubSource {
                 continue;
             }
 
-            match r.tag_name[self.release_tag_prefix.len()..].parse() {
-                Ok(version) => output.push(Release {
+            if let Ok(version) = r.tag_name[self.release_tag_prefix.len()..].parse() {
+                output.push(Release {
                     id: r.tag_name.clone(),
                     changelog: r.body.clone(),
                     version,
                     prerelease: r.prerelease,
                     variants: self.get_variants_from_response(&r),
-                }),
-                Err(_) => {}
+                })
             }
         }
 
@@ -214,10 +213,10 @@ impl GitHubSource {
                     })?;
                 }
 
-                return Ok(())
+                Ok(())
             },
             reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
-                return Err(errors::user(
+                Err(errors::user(
                     "GitHub has rate limited requests from your IP address.",
                     "Please wait until GitHub removes this rate limit before trying again."))
             },

@@ -39,7 +39,7 @@ impl CommandRunnable for InfoCommand {
 
         match core.config().get_service(&repo.service) {
             Some(svc) => {
-                writeln!(output, "")?;
+                writeln!(output)?;
                 writeln!(output, "URLs:")?;
                 writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
                 writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?)?;
@@ -60,21 +60,18 @@ impl CommandRunnable for InfoCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", r.service, r.get_full_name())),
+            );
         }
     }
 }

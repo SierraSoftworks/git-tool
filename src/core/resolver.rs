@@ -53,8 +53,8 @@ impl Resolver {
     #[tracing::instrument(err, skip(self, name))]
     pub fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
-            name.clone(),
-            self.config.get_scratch_directory().join(name.clone()),
+            name,
+            self.config.get_scratch_directory().join(name),
         ))
     }
 
@@ -129,9 +129,8 @@ impl Resolver {
     pub fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
         let true_name = self.config.get_alias(name).unwrap_or(name.to_string());
 
-        match self.get_repo(&true_name) {
-            Ok(repo) => return Ok(repo),
-            Err(_) => {}
+        if let Ok(repo) = self.get_repo(&true_name) {
+            return Ok(repo);
         }
 
         let all_repos = self.get_repos()?;
@@ -293,12 +292,12 @@ fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::p
 #[tracing::instrument(skip(from))]
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
-        return vec![from.clone()];
+        return vec![from.to_owned()];
     }
 
     from.read_dir()
         .map(|dirs| {
-            dirs.map(|dir| match dir {
+            dirs.filter_map(|dir| match dir {
                 Ok(d) => match d.file_type() {
                     Ok(ft) => {
                         if ft.is_dir() {
@@ -311,8 +310,6 @@ fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<s
                 },
                 Err(_) => None,
             })
-            .filter(|d| d.is_some())
-            .map(|d| d.unwrap())
             .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
             .collect()
         })

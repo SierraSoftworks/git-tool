@@ -14,7 +14,7 @@ impl Release {
     pub fn get_variant(&self, variant: &ReleaseVariant) -> Option<&ReleaseVariant> {
         for v in self.variants.iter() {
             if v == variant {
-                return Some(&v);
+                return Some(v);
             }
         }
 
