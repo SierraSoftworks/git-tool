@@ -3,10 +3,37 @@ on:
   push:
     paths-ignore:
       - "README.md"
-env:
-  GRCOV_VERSION: 0.8.0
 
 jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2.4.0
+
+      - name: cache ~/.cargo
+        uses: Swatinem/rust-cache@v1
+
+      - name: rustup install
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          profile: minimal
+          components: cargo-clippy, rustfmt
+          override: true
+
+      - name: cargo clippy
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: clippy
+          args: --all-targets --all-features
+
+      - name: cargo fmt --check
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: fmt
+          args: --check --all
+
   test-platforms:
     name: ${{ matrix.os }}-${{ matrix.arch }}-test
     runs-on: ${{ matrix.run_on }}
@@ -81,23 +108,9 @@ jobs:
         with:
           toolchain: nightly
           profile: minimal
+          components: cargo-clippy, rustfmt
           target: ${{ matrix.target }}
           override: true
-
-      - name: rustup install nightly llvm-tools-preview
-        uses: actions-rs/toolchain@v1.0.7
-        if: matrix.coverage || false
-        with:
-          toolchain: nightly
-          target: ${{ matrix.target }}
-          override: true
-          components: llvm-tools-preview
-
-      - name: cargo install grcov
-        uses: SierraSoftworks/setup-grcov@v1
-        if: matrix.coverage || false
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: git config
         run: |
@@ -122,18 +135,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: cargo test +coverage
-        uses: actions-rs/cargo@v1.0.3
+        uses: actions-rs/tarpaulin@v0.1
         if: "!matrix.skiptests && matrix.coverage"
         with:
-          command: test
           args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
         env:
-          RUSTFLAGS: -Cinstrument-coverage
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: grcov
-        run: grcov . --binary-path target/${{ matrix.target }}/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' --ignore 'C:/' -o ./lcov.info
-        if: matrix.coverage || false
 
       - name: get secrets - codecov
         uses: hashicorp/vault-action@v2.4.1
@@ -151,11 +158,12 @@ jobs:
         if: matrix.coverage || false
         with:
           token: ${{ env.CODECOV_TOKEN }}
-          file: ./lcov.info
 
   test-done:
     name: Tests Complete
-    needs: test-platforms
+    needs:
+      - test-platforms
+      - code-quality
     runs-on: ubuntu-20.04
     steps:
       - run: echo "Tests Complete for All Platforms"
