@@ -18,8 +18,7 @@ jobs:
         uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
-          profile: minimal
-          components: cargo-clippy, rustfmt
+          components: clippy, rustfmt
           override: true
 
       - name: cargo clippy
@@ -108,7 +107,6 @@ jobs:
         with:
           toolchain: nightly
           profile: minimal
-          components: cargo-clippy, rustfmt
           target: ${{ matrix.target }}
           override: true
 
