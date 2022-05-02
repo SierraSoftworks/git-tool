@@ -17,7 +17,7 @@ clap = { version = "3.1.12", features = ["cargo", "env"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
-human-errors = "0.1.2"
+human-errors = "0.1.3"
 http = "0.2"
 itertools = "0.10"
 keyring = { version = "1.1", optional = true }

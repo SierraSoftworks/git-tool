@@ -723,9 +723,9 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "human-errors"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1a2d5ae7ab61b4b658b6c88d10851ec539087a775083df8ce30e6598241328f"
+checksum = "44acdf3f328626384ebd297ee1321b32319745eb12c339b16a738028f952cfdf"
 
 [[package]]
 name = "hyper"
