@@ -72,6 +72,7 @@ impl EntryApp {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<App> for EntryApp {
     fn into(self) -> App {
         App::builder()
@@ -106,6 +107,7 @@ impl EntryService {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<Service> for EntryService {
     fn into(self) -> Service {
         Service {
@@ -131,14 +133,11 @@ mod tests {
 
     #[test]
     fn is_compatible() {
-        assert_eq!(
-            EntryConfig {
-                platform: "any".to_string(),
-                ..Default::default()
-            }
-            .is_compatible(),
-            true
-        );
+        assert!(EntryConfig {
+            platform: "any".to_string(),
+            ..Default::default()
+        }
+        .is_compatible());
 
         assert_eq!(
             EntryConfig {

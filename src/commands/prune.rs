@@ -72,7 +72,7 @@ impl CommandRunnable for PruneCommand {
             for branch in to_remove.iter() {
                 writeln!(core.output(), "  {}", branch)?;
             }
-            writeln!(core.output(), "")?;
+            writeln!(core.output())?;
 
             let input = crate::console::prompt::prompt(
                 "Are you sure you want to remove these branches? [y/N]: ",
@@ -133,7 +133,7 @@ mod tests {
     async fn setup_test_repo_with_remote(core: &Core, temp: &tempfile::TempDir) -> Repo {
         let repo: Repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         let repo_path = repo.get_path();
@@ -146,7 +146,7 @@ mod tests {
 
         let origin_repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command2",
-            temp.path().join("repo2").into(),
+            temp.path().join("repo2"),
         );
 
         sequence!(
@@ -155,7 +155,7 @@ mod tests {
             tasks::GitRemote { name: "origin" },
             // Create the branch we want to switch to
             tasks::GitCheckout {
-                branch: "feature/test".into(),
+                branch: "feature/test",
             },
             tasks::WriteFile {
                 path: "README.md".into(),
@@ -168,9 +168,7 @@ mod tests {
                 message: "Add README.md",
                 paths: vec!["README.md"],
             },
-            tasks::GitCheckout {
-                branch: "main".into(),
-            }
+            tasks::GitCheckout { branch: "main" }
         )
         .apply_repo(core, &origin_repo)
         .await
@@ -217,7 +215,7 @@ mod tests {
             },
             tasks::WriteFile {
                 path: ".git/refs/remotes/origin/HEAD".into(),
-                content: "ref: refs/remotes/origin/main".into(),
+                content: "ref: refs/remotes/origin/main",
             }
         )
         .apply_repo(core, &repo)
@@ -305,17 +303,17 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo: Repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-prune-command",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(&temp.path()))
+            .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
         Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "gh:sierrasoftworks/test-git-prune-command",
-                temp.path().join("repo").into(),
+                temp.path().join("repo"),
             )))
         });
 

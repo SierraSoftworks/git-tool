@@ -64,7 +64,7 @@ impl<'a> SequenceMatcher<'a> {
     pub fn score<T: AsRef<str>>(&self, value: T) -> Option<f32> {
         let value = value.as_ref();
 
-        if value.len() == 0 {
+        if value.is_empty() {
             return None;
         }
 
@@ -124,9 +124,8 @@ impl<'a> SequenceMatcher<'a> {
         }
 
         // If we've reached the end of our sequence and the end of the pattern simultaneously, then mark the end index
-        match (match_max_index, pattern_iter.peek()) {
-            (None, None) => match_max_index = Some(index),
-            _ => {}
+        if let (None, None) = (match_max_index, pattern_iter.peek()) {
+            match_max_index = Some(index)
         }
 
         match (match_min_index, match_max_index) {

@@ -34,6 +34,14 @@ impl<S> UpdateManager<S>
 where
     S: Source,
 {
+    #[cfg(test)]
+    pub fn new(target_application: PathBuf) -> Self {
+        Self {
+            target_application,
+            ..Default::default()
+        }
+    }
+
     pub async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error> {
         self.source.get_releases(core).await
     }
@@ -46,11 +54,11 @@ where
             phase: UpdatePhase::Prepare,
         };
 
-        let app = state.temporary_application.clone().ok_or(errors::system(
+        let app = state.temporary_application.clone().ok_or_else(|| errors::system(
             "A temporary application path was not provided and the update cannot proceed (prepare -> replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
-        let variant = release.get_variant(&self.variant).ok_or(errors::system(
+        let variant = release.get_variant(&self.variant).ok_or_else(|| errors::system(
             &format!("Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
             "Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."))?;
 
@@ -61,7 +69,7 @@ where
             );
             let permissions = tokio::fs::metadata(self.target_application.clone()).await?;
             if permissions.permissions().readonly() {
-                Err(errors::user(
+                return Err(errors::user(
                     "The application binary is read-only. Please make sure that the application binary is writable by the current user.",
                     {
                         #[cfg(windows)] {
@@ -71,7 +79,7 @@ where
                         #[cfg(unix)]{
                             "Try running this command as root with `sudo git-tool update`."
                         }
-                    }))?;
+                    }));
             }
         }
 
@@ -114,7 +122,7 @@ where
     #[tracing::instrument(err, ret, skip(self))]
     async fn prepare(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let next_state = state.for_phase(UpdatePhase::Replace);
-        let update_source = state.temporary_application.clone().ok_or(errors::system(
+        let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
             "Could not launch the new application version to continue the update process (prepare -> replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
@@ -126,10 +134,10 @@ where
 
     #[tracing::instrument(err, ret, skip(self))]
     async fn replace(&self, state: &UpdateState) -> Result<bool, errors::Error> {
-        let update_source = state.temporary_application.clone().ok_or(errors::system(
+        let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
             "Could not locate the temporary update files needed to complete the update process (replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
-        let update_target = state.target_application.clone().ok_or(errors::system(
+        let update_target = state.target_application.clone().ok_or_else(|| errors::system(
             "Could not locate the application which was meant to be updated due to an issue loading the update state (replace phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
@@ -148,7 +156,7 @@ where
 
     #[tracing::instrument(err, ret, skip(self))]
     async fn cleanup(&self, state: &UpdateState) -> Result<bool, errors::Error> {
-        let update_source = state.temporary_application.clone().ok_or(errors::system(
+        let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
             "Could not locate the temporary update files needed to complete the update process (cleanup phase).",
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
@@ -283,7 +291,7 @@ impl<S: Source> UpdateManager<S> {
                 .extension()
                 .and_then(|e| e.to_str())
                 .map(|e| ".".to_string() + e)
-                .unwrap_or(if cfg!(windows) { ".exe" } else { "" }.to_string())
+                .unwrap_or_else(|| if cfg!(windows) { ".exe" } else { "" }.to_string())
         );
         std::env::temp_dir().join(file_name)
     }
@@ -295,7 +303,7 @@ where
 {
     fn default() -> Self {
         Self {
-            target_application: PathBuf::from(std::env::current_exe().unwrap_or_default()),
+            target_application: std::env::current_exe().unwrap_or_default(),
             source: S::default(),
             variant: ReleaseVariant::default(),
         }
@@ -335,8 +343,7 @@ mod tests {
 
         std::fs::write(&app_path, "Pre-Update").unwrap();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         let launched = Arc::new(Mutex::new(false));
 
@@ -392,7 +399,7 @@ mod tests {
             Release::get_latest(releases.iter()).expect("we should receive a latest release entry");
 
         let has_update = manager
-            .update(&core, &latest_release)
+            .update(&core, latest_release)
             .await
             .expect("the update operation should succeed");
 
@@ -410,8 +417,7 @@ mod tests {
         let app_path = temp.path().join("app").to_owned();
         let temp_app_path = temp.path().join("app-temp").to_owned();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         let launched = Arc::new(Mutex::new(false));
 
@@ -496,8 +502,7 @@ mod tests {
         let app_path = temp.path().join("app").to_owned();
         let temp_app_path = temp.path().join("app-temp").to_owned();
 
-        let mut manager: UpdateManager<GitHubSource> = UpdateManager::default();
-        manager.target_application = app_path.clone();
+        let manager: UpdateManager<GitHubSource> = UpdateManager::new(app_path.clone());
 
         {
             UpdateManager::<GitHubSource>::launch.mock_safe(move |_, _app, _state| {

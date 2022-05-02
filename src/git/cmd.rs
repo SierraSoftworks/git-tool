@@ -5,6 +5,10 @@ use tokio::process::Command;
 
 #[tracing::instrument(err, skip(cmd), fields(otel.kind = %SpanKind::Client))]
 pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
+    // NOTE: We disable logging to stdout to avoid breaking the test output
+    #[cfg(test)]
+    let cmd = cmd.stderr(Stdio::piped());
+
     let child = cmd.stdout(Stdio::piped()).spawn().map_err(|err| errors::user_with_internal(
         "Could not run git, which is a dependency of Git-Tool.",
         "Please ensure that git is installed, present on your $PATH and executable before running Git-Tool again.",

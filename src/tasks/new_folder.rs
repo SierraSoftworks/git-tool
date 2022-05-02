@@ -64,16 +64,16 @@ mod tests {
 
         let task = NewFolder {};
 
-        assert_eq!(repo.get_path().exists(), true);
+        assert!(repo.get_path().exists());
 
         task.apply_repo(&core, &repo).await.unwrap();
-        assert_eq!(repo.get_path().exists(), true);
+        assert!(repo.get_path().exists());
     }
 
     #[tokio::test]
     async fn test_repo_new() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new("gh:sierrasoftworks/test3", temp.path().join("repo").into());
+        let repo = core::Repo::new("gh:sierrasoftworks/test3", temp.path().join("repo"));
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
@@ -81,10 +81,10 @@ mod tests {
 
         let task = NewFolder {};
 
-        assert_eq!(repo.get_path().exists(), false);
+        assert!(!repo.get_path().exists());
 
         task.apply_repo(&core, &repo).await.unwrap();
-        assert_eq!(repo.get_path().exists(), true);
+        assert!(repo.get_path().exists());
     }
 
     #[tokio::test]
@@ -98,16 +98,16 @@ mod tests {
 
         let task = NewFolder {};
 
-        assert_eq!(scratch.get_path().exists(), true);
+        assert!(scratch.get_path().exists());
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
-        assert_eq!(scratch.get_path().exists(), true);
+        assert!(scratch.get_path().exists());
     }
 
     #[tokio::test]
     async fn test_scratch_new() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w19", temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w19", temp.path().join("scratch"));
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
@@ -115,9 +115,9 @@ mod tests {
 
         let task = NewFolder {};
 
-        assert_eq!(scratch.get_path().exists(), false);
+        assert!(!scratch.get_path().exists());
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
-        assert_eq!(scratch.get_path().exists(), true);
+        assert!(scratch.get_path().exists());
     }
 }

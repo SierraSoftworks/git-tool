@@ -47,7 +47,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         crate::console::output::mock();
@@ -58,9 +58,7 @@ mod tests {
 
         sequence![
             GitInit {},
-            GitCheckout {
-                branch: "main".into(),
-            },
+            GitCheckout { branch: "main" },
             GitSwitch {
                 branch: "test".into(),
                 create_if_missing: true,
@@ -82,7 +80,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         let core = core::Core::builder()
@@ -93,9 +91,7 @@ mod tests {
 
         sequence![
             GitInit {},
-            GitCheckout {
-                branch: "main".into(),
-            },
+            GitCheckout { branch: "main" },
             GitSwitch {
                 branch: "test".into(),
                 create_if_missing: false,
@@ -115,7 +111,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
@@ -129,7 +125,6 @@ mod tests {
         };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
-        assert_eq!(scratch.get_path().join(".git").exists(), false);
-        assert_eq!(scratch.exists(), false);
+        assert!(!scratch.exists());
     }
 }

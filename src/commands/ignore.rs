@@ -75,9 +75,8 @@ impl CommandRunnable for IgnoreCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        match online::gitignore::list(core).await {
-            Ok(langs) => completer.offer_many(langs),
-            _ => {}
+        if let Ok(langs) = online::gitignore::list(core).await {
+            completer.offer_many(langs)
         }
     }
 }

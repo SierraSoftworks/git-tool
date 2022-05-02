@@ -32,22 +32,12 @@ impl App {
     }
 }
 
+#[derive(Default, Debug)]
 pub struct AppBuilder {
     name: String,
     command: String,
     args: Vec<String>,
     environment: Vec<String>,
-}
-
-impl Default for AppBuilder {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            command: Default::default(),
-            args: Default::default(),
-            environment: Default::default(),
-        }
-    }
 }
 
 impl AppBuilder {

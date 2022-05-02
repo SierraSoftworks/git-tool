@@ -49,6 +49,7 @@ struct RepoWithService<'a> {
     service: &'a Service,
 }
 
+#[allow(clippy::from_over_into)]
 impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
     fn into(self) -> Value {
         let service: Value = self.service.into();
@@ -72,11 +73,12 @@ impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
                 "HttpURL" => Value::String(self.service.get_git_url(self.repo).unwrap_or_default()),
                 "Service" => service.clone()
             }),
-            "Service" => service.clone()
+            "Service" => service
         })
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl<'a> std::convert::Into<Value> for &Service {
     fn into(self) -> Value {
         Value::Object(map! {
@@ -88,6 +90,7 @@ impl<'a> std::convert::Into<Value> for &Service {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl<'a> std::convert::Into<Value> for &Repo {
     fn into(self) -> Value {
         let service = Value::Object(map! {
@@ -115,11 +118,12 @@ impl<'a> std::convert::Into<Value> for &Repo {
                 "HttpURL" => Value::NoValue,
                 "Service" => service.clone()
             }),
-            "Service" => service.clone()
+            "Service" => service
         })
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl std::convert::Into<Value> for &Scratchpad {
     fn into(self) -> Value {
         Value::Object(map! {
@@ -196,7 +200,7 @@ mod tests {
             "ghp"
         );
         assert_eq!(
-            render("{{ .Repo.Service.Domain }}", context.clone()).unwrap(),
+            render("{{ .Repo.Service.Domain }}", context).unwrap(),
             "ghp"
         );
     }

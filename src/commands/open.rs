@@ -14,7 +14,7 @@ impl Command for OpenCommand {
     fn app<'a>(&self) -> clap::Command<'a> {
         clap::Command::new(self.name().as_str())
             .version("1.0")
-            .visible_aliases(&vec!["o", "run"])
+            .visible_aliases(&["o", "run"])
             .about("opens a repository using an application defined in your config")
             .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
             
@@ -53,7 +53,7 @@ impl CommandRunnable for OpenCommand {
                 (app, core.resolver().get_current_repo()?)
             },
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or(errors::user(
+                let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
@@ -108,21 +108,18 @@ impl CommandRunnable for OpenCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
+            );
         }
     }
 }
@@ -168,7 +165,7 @@ features:
 
             MockResult::Return(Ok(Repo::new(
                 "gh:git-fixtures/basic",
-                temp_path.join("repo").into(),
+                temp_path.join("repo"),
             )))
         });
 

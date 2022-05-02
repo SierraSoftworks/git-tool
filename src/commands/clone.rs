@@ -27,7 +27,7 @@ impl Command for CloneCommand {
 impl CommandRunnable for CloneCommand {
     #[tracing::instrument(name = "gt clone", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo_name = matches.value_of("repo").ok_or(errors::user(
+        let repo_name = matches.value_of("repo").ok_or_else(|| errors::user(
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
 
@@ -56,21 +56,18 @@ impl CommandRunnable for CloneCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        match core.resolver().get_repos() {
-            Ok(repos) => {
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .filter(|r| r.service == default_svc)
-                        .map(|r| r.get_full_name()),
-                );
-                completer.offer_many(
-                    repos
-                        .iter()
-                        .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-                );
-            }
-            _ => {}
+        if let Ok(repos) = core.resolver().get_repos() {
+            completer.offer_many(
+                repos
+                    .iter()
+                    .filter(|r| r.service == default_svc)
+                    .map(|r| r.get_full_name()),
+            );
+            completer.offer_many(
+                repos
+                    .iter()
+                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
+            );
         }
     }
 }
@@ -113,7 +110,7 @@ features:
 
             MockResult::Return(Ok(Repo::new(
                 "gh:git-fixtures/basic",
-                temp.path().join("repo").into(),
+                temp.path().join("repo"),
             )))
         });
 

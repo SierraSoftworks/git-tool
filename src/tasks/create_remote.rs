@@ -27,11 +27,9 @@ impl Task for CreateRemote {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.service).ok_or(
-            crate::errors::user(
-                &format!("Could not find a service entry in your config file for {}", &repo.service), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", &repo.service))
-        )?;
+        let service = core.config().get_service(&repo.service).ok_or_else(|| crate::errors::user(
+                &format!("Could not find a service entry in your config file for {}", repo.service), 
+                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service)))?;
 
         if let Some(online_service) = crate::online::services()
             .iter()
@@ -72,7 +70,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-remote",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         KeyChain::get_token.mock_safe(|_, token| {
@@ -94,7 +92,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch").into());
+        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
             .with_config(&Config::for_dev_directory(temp.path()))
@@ -103,7 +101,6 @@ mod tests {
         let task = CreateRemote { enabled: true };
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
-        assert_eq!(scratch.get_path().join(".git").exists(), false);
-        assert_eq!(scratch.exists(), false);
+        assert!(!scratch.exists());
     }
 }

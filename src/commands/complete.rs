@@ -66,7 +66,7 @@ impl CompleteCommand {
     ) -> Option<(String, String)> {
         let mut cmd = args.to_string();
 
-        if cmd == "" {
+        if cmd.is_empty() {
             return None;
         }
 
@@ -81,12 +81,9 @@ impl CompleteCommand {
         }
 
         let mut filter = "".to_string();
-        match cmd.match_indices(" ").last() {
-            Some((last_space_index, _)) => {
-                filter = cmd[last_space_index + 1..].to_string();
-                cmd = cmd[..last_space_index].to_string();
-            }
-            _ => {}
+        if let Some((last_space_index, _)) = cmd.match_indices(' ').last() {
+            filter = cmd[last_space_index + 1..].to_string();
+            cmd = cmd[..last_space_index].to_string();
         }
 
         Some((cmd, filter))
@@ -94,18 +91,15 @@ impl CompleteCommand {
 
     fn get_responsible_command(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable>>,
+        commands: &[Arc<dyn CommandRunnable>],
         args: &str,
     ) -> Option<(Arc<dyn CommandRunnable>, ArgMatches)> {
-        match self.get_completion_matches(commands, args) {
-            Ok(complete_matches) => {
-                for cmd in commands.iter() {
-                    if let Some(cmd_matches) = complete_matches.subcommand_matches(cmd.name()) {
-                        return Some((cmd.clone(), cmd_matches.clone()));
-                    }
+        if let Ok(complete_matches) = self.get_completion_matches(commands, args) {
+            for cmd in commands.iter() {
+                if let Some(cmd_matches) = complete_matches.subcommand_matches(cmd.name()) {
+                    return Some((cmd.clone(), cmd_matches.clone()));
                 }
             }
-            _ => {}
         }
 
         None
@@ -114,13 +108,13 @@ impl CompleteCommand {
     async fn offer_completions(
         &self,
         core: &Core,
-        commands: &Vec<Arc<dyn CommandRunnable>>,
+        commands: &[Arc<dyn CommandRunnable>],
         args: &str,
         completer: &Completer,
     ) {
         match self.get_responsible_command(commands, args) {
             Some((cmd, matches)) => {
-                cmd.complete(core, &completer, &matches).await;
+                cmd.complete(core, completer, &matches).await;
             }
             None => {
                 for cmd in commands.iter() {
@@ -132,7 +126,7 @@ impl CompleteCommand {
 
     fn get_completion_matches(
         &self,
-        commands: &Vec<Arc<dyn CommandRunnable>>,
+        commands: &[Arc<dyn CommandRunnable>],
         args: &str,
     ) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)
@@ -173,7 +167,7 @@ pub mod helpers {
             responsible.clone(),
             expected.map(|n| n.to_string()),
             "responsible command [{}] should match [{}]",
-            responsible.unwrap_or("<None>".to_string()),
+            responsible.unwrap_or_else(|| "<None>".to_string()),
             expected.unwrap_or("<None>")
         );
     }
@@ -195,7 +189,7 @@ pub mod helpers {
 
         let mut offers = std::collections::HashSet::new();
 
-        for offer in output.split_terminator("\n") {
+        for offer in output.split_terminator('\n') {
             offers.insert(offer);
         }
 
@@ -240,13 +234,12 @@ pub mod helpers {
             .expect("the command should run successfully");
 
         let output = output.to_string();
-        let offers: Vec<&str> = output.split('\n').collect();
 
         for item in contains {
             assert!(
-                offers.contains(&item),
+                output.split('\n').any(|x| x == item),
                 "completion output '{}' should contain '{}'",
-                output.to_string(),
+                output,
                 item
             );
         }

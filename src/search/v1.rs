@@ -15,10 +15,7 @@ pub fn matches(value: &str, sequence: &str) -> bool {
         }
     }
 
-    match seq_iter.peek() {
-        Some(_) => false,
-        None => true,
-    }
+    seq_iter.peek().is_none()
 }
 
 #[cfg(test)]

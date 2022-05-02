@@ -45,7 +45,7 @@ impl Launcher {
         let env_args = render_list(a.get_environment(), context.clone())?;
         let env_arg_tuples = env_args
             .iter()
-            .map(|i| i.split("=").collect())
+            .map(|i| i.split('=').collect())
             .map(|i: Vec<&str>| (i[0], i[1]));
 
         let mut child = Command::new(program)
@@ -86,7 +86,7 @@ impl Launcher {
 
     #[cfg(unix)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
-        let child_id = child.id().ok_or(crate::errors::user(
+        let child_id = child.id().ok_or_else(|| crate::errors::user(
             "Unable to determine the child process's PID because the child process has already exited.",
             "This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."
         ))?;

@@ -17,7 +17,7 @@ impl Command for SwitchCommand {
         clap::Command::new(self.name().as_str())
             .version("1.0")
             .about("switches to the specified branch.")
-            .visible_aliases(&vec!["sw", "branch", "b", "br"])
+            .visible_aliases(&["sw", "branch", "b", "br"])
             .long_about(
                 "This command switches to the specified branch within the current repository.",
             )
@@ -87,8 +87,8 @@ impl CommandRunnable for SwitchCommand {
 
 impl SwitchCommand {
     fn to_local_branch_name(branch: &str) -> String {
-        if branch.starts_with("origin/") {
-            branch["origin/".len()..].to_owned()
+        if let Some(short_branch) = branch.strip_prefix("origin/") {
+            short_branch.to_owned()
         } else {
             branch.to_owned()
         }
@@ -120,7 +120,7 @@ mod tests {
     async fn setup_test_repo_with_remote(core: &Core, temp: &tempfile::TempDir) -> Repo {
         let repo: Repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         let repo_path = repo.get_path();
@@ -133,7 +133,7 @@ mod tests {
 
         let origin_repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command2",
-            temp.path().join("repo2").into(),
+            temp.path().join("repo2"),
         );
 
         sequence!(
@@ -142,7 +142,7 @@ mod tests {
             tasks::GitRemote { name: "origin" },
             // Create the branch we want to switch to
             tasks::GitCheckout {
-                branch: "feature/test".into(),
+                branch: "feature/test",
             },
             tasks::WriteFile {
                 path: "README.md".into(),
@@ -155,9 +155,7 @@ mod tests {
                 message: "Add README.md",
                 paths: vec!["README.md"],
             },
-            tasks::GitCheckout {
-                branch: "main".into(),
-            }
+            tasks::GitCheckout { branch: "main" }
         )
         .apply_repo(core, &origin_repo)
         .await
@@ -179,9 +177,7 @@ mod tests {
         git::git_fetch(&repo.get_path(), "origin").await.unwrap();
 
         sequence!(
-            tasks::GitCheckout {
-                branch: "main".into(),
-            },
+            tasks::GitCheckout { branch: "main" },
             tasks::WriteFile {
                 path: "README.md".into(),
                 content: "This is an example README file with some changes.",
@@ -229,11 +225,9 @@ mod tests {
 
         sequence!(
             tasks::GitCheckout {
-                branch: "feature/test".into()
+                branch: "feature/test"
             },
-            tasks::GitCheckout {
-                branch: "main".into()
-            }
+            tasks::GitCheckout { branch: "main" }
         )
         .apply_repo(&core, &repo)
         .await
@@ -360,17 +354,17 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo: Repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
-            temp.path().join("repo").into(),
+            temp.path().join("repo"),
         );
 
         let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(&temp.path()))
+            .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
         Resolver::get_current_repo.mock_safe(move |_| {
             MockResult::Return(Ok(core::Repo::new(
                 "gh:sierrasoftworks/test-git-switch-command",
-                temp.path().join("repo").into(),
+                temp.path().join("repo"),
             )))
         });
 

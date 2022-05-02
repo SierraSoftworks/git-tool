@@ -32,18 +32,18 @@ pub mod mocks {
                 .map(|data| {
                     self.position
                         .write()
-                        .and_then(|mut pos| {
+                        .map(|mut pos| {
                             let max_read = data.len() - *pos;
                             let n = if n > max_read { max_read } else { n };
 
                             if n == 0 {
-                                return Ok(String::new());
+                                return String::new();
                             }
 
                             let read = data[*pos..n].to_string();
                             *pos += n;
 
-                            Ok(read)
+                            read
                         })
                         .unwrap()
                 })

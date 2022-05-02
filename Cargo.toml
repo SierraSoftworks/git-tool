@@ -41,7 +41,7 @@ tracing-opentelemetry = "0.17"
 tracing-subscriber = { version = "0.3", features = ["tracing-log"] }
 
 [dev-dependencies]
-mocktopus = "0.7.11"
+mocktopus = { git = "https://github.com/notheotherben/mocktopus.git" }
 tempfile = "3.2"
 sentry = { version = "0.25", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 

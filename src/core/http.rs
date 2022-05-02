@@ -23,7 +23,7 @@ impl HttpClient {
     #[tracing::instrument(err, skip(uri))]
     pub async fn get(&self, uri: reqwest::Url) -> Result<Response, Error> {
         let req = Request::new(reqwest::Method::GET, uri);
-        Ok(self.request(req).await?)
+        self.request(req).await
     }
 
     #[tracing::instrument(

@@ -8,7 +8,7 @@ pub struct Shell {
 
 impl Shell {
     pub fn get_name(&self) -> &str {
-        &self.name
+        self.name
     }
 
     pub fn get_short_init(&self) -> &str {
@@ -21,12 +21,14 @@ impl Shell {
 }
 
 pub fn get_shells() -> Vec<Shell> {
+    let app = args().next().unwrap_or_else(|| "git-tool".to_string());
+
     vec![
         Shell {
             name: "powershell",
             short_init: format!(
                 r#"Invoke-Expression (@(&"{app}" shell-init powershell --full) -join "`n")"#,
-                app = args().next().unwrap_or("git-tool".to_string())
+                app = &app
             ),
             long_init: format!(
                 r#"
@@ -38,7 +40,7 @@ param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
 }}
 }} -Native
             "#,
-                app = args().next().unwrap_or("git-tool".to_string())
+                app = &app
             ),
         },
         Shell {
@@ -52,7 +54,7 @@ else
 source /dev/stdin <<<"$("%s" shell-init bash --full)"
 fi
             "#,
-                app = args().next().unwrap_or("git-tool".to_string())
+                app = &app
             ),
             long_init: format!(
                 r#"
@@ -70,15 +72,12 @@ _gittool_bash_autocomplete() {{
 
 complete -F _gittool_bash_autocomplete gt git-tool
             "#,
-                app = args().next().unwrap_or("git-tool".to_string())
+                app = &app
             ),
         },
         Shell {
             name: "zsh",
-            short_init: format!(
-                r#"source <("{app}" shell-init zsh --full)"#,
-                app = args().next().unwrap_or("git-tool".to_string())
-            ),
+            short_init: format!(r#"source <("{app}" shell-init zsh --full)"#, app = &app),
             long_init: format!(
                 r#"
 _gittool_zsh_autocomplete() {{
@@ -89,19 +88,13 @@ _gittool_zsh_autocomplete() {{
     
 compctl -U -K _gittool_zsh_autocomplete git-tool
             "#,
-                app = args().next().unwrap_or("git-tool".to_string())
+                app = &app
             ),
         },
         Shell {
             name: "fish",
-            short_init: format!(
-                r#"complete -f -c {app} "({app} complete)"#,
-                app = args().next().unwrap_or("git-tool".to_string())
-            ),
-            long_init: format!(
-                r#"complete -f -c {app} "({app} complete)"#,
-                app = args().next().unwrap_or("git-tool".to_string())
-            ),
+            short_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
+            long_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
         },
     ]
 }

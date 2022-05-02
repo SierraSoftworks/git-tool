@@ -38,7 +38,7 @@ impl Features {
     }
 
     pub fn has(&self, flag: &str) -> bool {
-        self.flags.get(flag).map(|&v| v).unwrap_or_default()
+        self.flags.get(flag).copied().unwrap_or_default()
     }
 
     pub fn to_builder(&self) -> FeaturesBuilder {
@@ -85,6 +85,6 @@ mod tests {
 
     #[test]
     fn default() {
-        assert_eq!(Features::default().has(CREATE_REMOTE), true);
+        assert!(Features::default().has(CREATE_REMOTE));
     }
 }

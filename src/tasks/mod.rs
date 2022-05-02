@@ -10,7 +10,7 @@ mod sequence;
 #[macro_export]
 macro_rules! sequence {
     [$($task:expr),+] => {
-        crate::tasks::Sequence::new(
+        $crate::tasks::Sequence::new(
             vec![
                 $(std::sync::Arc::new($task)),+
             ]
