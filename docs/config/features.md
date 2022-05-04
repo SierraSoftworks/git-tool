@@ -51,15 +51,23 @@ Use `gt config feature open_new_repo_in_default_app true` to turn this flag on d
 :::
 
 ## `telemetry` <Badge text="v2.1.21+"/>
- - **Default** `true`
+ - **Default** `false`
 
-Git-Tool sends limited telemetry to [Sentry.io](https://sentry.io) when system-level crashes occur
-to try and help us figure out the these crashes and improve the tool for everyone. If you would prefer
-not to submit this telemetry, you can disable it with this feature flag.
+Git-Tool can send limited telemetry to [Sentry.io](https://sentry.io) and [Honeycomb](https://honeycomb.io) 
+to try and help us figure out the cause of crashes and improve the tool for everyone. If you would like to
+share your telemetry with us, you can enable this feature flag.
 
 ::: tip
 Use `gt config feature telemetry true` to turn this flag on directly from your command line.
 :::
+
+## `check_for_updates` <Badge text="v3.2+"/>
+  - **Default** `true`
+
+Git-Tool receives regular updates and includes a built in [`gt update`](./commands/setup.md#update) command
+which you can use to update to the latest version. This feature flag controls whether Git-Tool will check
+for new updates when you open a repository and let you know about them when you exit it. This model is
+designed to avoid any latency penalties, while keeping you up to date with the latest updates.
 
 ## `native_clone` <Badge text="v1.2.18+" /> <Badge text="v2.0+" type="warning"/>
  - **Default** `false`

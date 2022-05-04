@@ -7,13 +7,15 @@ pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
 pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
 
 pub const TELEMETRY: &str = "telemetry";
+pub const CHECK_FOR_UPDATES: &str = "check_for_updates";
 
 lazy_static! {
     pub static ref ALL: Vec<&'static str> = vec![
         CREATE_REMOTE,
         CREATE_REMOTE_PRIVATE,
         OPEN_NEW_REPO,
-        TELEMETRY
+        TELEMETRY,
+        CHECK_FOR_UPDATES,
     ];
 }
 
@@ -63,6 +65,7 @@ impl FeaturesBuilder {
         self.with(CREATE_REMOTE, true)
             .with(CREATE_REMOTE_PRIVATE, true)
             .with(TELEMETRY, false)
+            .with(CHECK_FOR_UPDATES, true)
     }
 
     pub fn with_features(self, features: &Features) -> Self {
@@ -81,10 +84,11 @@ impl FeaturesBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{Features, CREATE_REMOTE};
+    use super::*;
 
     #[test]
     fn default() {
         assert!(Features::default().has(CREATE_REMOTE));
+        assert!(Features::default().has(CHECK_FOR_UPDATES));
     }
 }

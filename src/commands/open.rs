@@ -1,7 +1,9 @@
 use super::Command;
 use super::*;
-use crate::core::Target;
+use crate::core::features;
 use crate::tasks::*;
+use crate::update::{GitHubSource, Release, ReleaseVariant};
+use crate::{core::Target, update::UpdateManager};
 use clap::{Arg, ArgMatches};
 
 pub struct OpenCommand {}
@@ -88,8 +90,22 @@ impl CommandRunnable for OpenCommand {
             }
         }
 
-        let status = core.launcher().run(app, &repo).await?;
-        Ok(status)
+        if core
+            .config()
+            .get_features()
+            .has(features::CHECK_FOR_UPDATES)
+        {
+            let (status, latest_release) =
+                futures::join!(core.launcher().run(app, &repo), self.check_for_update(core));
+
+            if let Ok(Some(latest_release)) = latest_release {
+                writeln!(core.output(), "A new version of Git-Tool is available (v{}). You can update it using `gt update`,", latest_release.version)?;
+            }
+
+            Ok(status?)
+        } else {
+            Ok(core.launcher().run(app, &repo).await?)
+        }
     }
 
     #[tracing::instrument(
@@ -121,6 +137,31 @@ impl CommandRunnable for OpenCommand {
                     .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
             );
         }
+    }
+}
+
+impl OpenCommand {
+    #[tracing::instrument(err, skip(self, core))]
+    async fn check_for_update(&self, core: &Core) -> Result<Option<Release>, errors::Error> {
+        let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
+            "Could not parse the current application version into a SemVer version number.",
+            "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
+            err))?;
+
+        info!("Current application version is v{}", current_version);
+
+        let manager: UpdateManager<GitHubSource> = Default::default();
+
+        let releases = manager.get_releases(core).await?;
+        let current_variant = ReleaseVariant::default();
+
+        let target_release = Release::get_latest(releases.iter().filter(|&r| {
+            r.get_variant(&current_variant).is_some()
+                && r.version > current_version
+                && (!r.prerelease)
+        }));
+
+        Ok(target_release.cloned())
     }
 }
 
