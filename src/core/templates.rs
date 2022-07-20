@@ -79,7 +79,7 @@ impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> std::convert::Into<Value> for &Service {
+impl std::convert::Into<Value> for &Service {
     fn into(self) -> Value {
         Value::Object(map! {
             "Name" => Value::String(self.name.clone()),
@@ -91,7 +91,7 @@ impl<'a> std::convert::Into<Value> for &Service {
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> std::convert::Into<Value> for &Repo {
+impl std::convert::Into<Value> for &Repo {
     fn into(self) -> Value {
         let service = Value::Object(map! {
             "Domain" => Value::String(self.service.clone()),
