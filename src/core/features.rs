@@ -5,6 +5,7 @@ pub const CREATE_REMOTE: &str = "create_remote";
 pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
 
 pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
+pub const ALWAYS_OPEN_BEST_MATCH: &str = "always_open_best_match";
 
 pub const TELEMETRY: &str = "telemetry";
 pub const CHECK_FOR_UPDATES: &str = "check_for_updates";
@@ -14,6 +15,7 @@ lazy_static! {
         CREATE_REMOTE,
         CREATE_REMOTE_PRIVATE,
         OPEN_NEW_REPO,
+        ALWAYS_OPEN_BEST_MATCH,
         TELEMETRY,
         CHECK_FOR_UPDATES,
     ];

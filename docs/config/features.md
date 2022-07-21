@@ -50,6 +50,15 @@ default application when running `gt new`. This is equivalent to passing the `--
 Use `gt config feature open_new_repo_in_default_app true` to turn this flag on directly from your command line.
 :::
 
+## `always_open_best_match` <Badge text="v3.2+"/>
+
+When this feature flag is enabled, Git-Tool will always open the best matching repository if there are
+multiple repositories which may be matched by your current pattern.
+
+:::
+Use `gt config feature always_open_best_match true` to turn this flag on directly from your command line.
+:::
+
 ## `telemetry` <Badge text="v2.1.21+"/>
  - **Default** `false`
 

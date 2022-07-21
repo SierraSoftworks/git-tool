@@ -90,9 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             error = field::Empty,
         );
 
-        match matches.value_of("trace-context") {
-            Some(context) => load_trace_context(&mut span, context),
-            None => {}
+        if let Some(context) = matches.value_of("trace-context") {
+            load_trace_context(&mut span, context)
         };
 
         match run(app, commands, matches).instrument(span).await {

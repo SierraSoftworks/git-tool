@@ -12,13 +12,7 @@ pub struct Release {
 
 impl Release {
     pub fn get_variant(&self, variant: &ReleaseVariant) -> Option<&ReleaseVariant> {
-        for v in self.variants.iter() {
-            if v == variant {
-                return Some(v);
-            }
-        }
-
-        None
+        self.variants.iter().find(|&v| v == variant)
     }
 
     pub fn get_latest<'a, I>(releases: I) -> Option<&'a Self>

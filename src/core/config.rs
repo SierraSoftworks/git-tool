@@ -50,16 +50,14 @@ impl Config {
         let mut into = self.clone();
         let from = other;
 
-        match from.config_file {
-            Some(path) => into.config_file = Some(path),
-            None => {}
+        if let Some(path) = from.config_file {
+            into.config_file = Some(path)
         }
         if from.dev_directory.components().count() > 0 {
             into.dev_directory = from.dev_directory.clone();
         }
-        match from.scratch_directory {
-            Some(path) => into.scratch_directory = Some(path),
-            None => {}
+        if let Some(path) = from.scratch_directory {
+            into.scratch_directory = Some(path)
         }
         if !from.services.is_empty() {
             into.services = from.services.clone();
@@ -88,42 +86,33 @@ impl Config {
     ) -> Result<Self, errors::Error> {
         let mut into = self.clone();
 
-        match template.app {
-            Some(app) => {
-                if let Some(existing_position) =
-                    into.apps.iter().position(|a| a.get_name() == app.name)
-                {
-                    if !replace_existing {
-                        return Err(errors::user(
-                            &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
-                            &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app=&app.name)));
-                    } else {
-                        into.apps[existing_position] = Arc::new(app.into());
-                    }
+        if let Some(app) = template.app {
+            if let Some(existing_position) = into.apps.iter().position(|a| a.get_name() == app.name)
+            {
+                if !replace_existing {
+                    return Err(errors::user(
+                        &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
+                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app=&app.name)));
                 } else {
-                    into.apps.push(Arc::new(app.into()));
+                    into.apps[existing_position] = Arc::new(app.into());
                 }
+            } else {
+                into.apps.push(Arc::new(app.into()));
             }
-            None => {}
         }
 
-        match template.service {
-            Some(svc) => {
-                if let Some(existing_position) =
-                    into.services.iter().position(|s| s.name == svc.name)
-                {
-                    if !replace_existing {
-                        return Err(errors::user(
-                            &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
-                            &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.name)));
-                    } else {
-                        into.services[existing_position] = Arc::new(svc.into());
-                    }
+        if let Some(svc) = template.service {
+            if let Some(existing_position) = into.services.iter().position(|s| s.name == svc.name) {
+                if !replace_existing {
+                    return Err(errors::user(
+                        &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
+                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.name)));
                 } else {
-                    into.services.push(Arc::new(svc.into()));
+                    into.services[existing_position] = Arc::new(svc.into());
                 }
+            } else {
+                into.services.push(Arc::new(svc.into()));
             }
-            None => {}
         }
 
         Ok(into)
@@ -427,9 +416,8 @@ apps:
                     None => panic!("The new apps should be present."),
                 }
 
-                match cfg.get_app("shell") {
-                    Some(_) => panic!("The default apps should not be present."),
-                    None => {}
+                if cfg.get_app("shell").is_some() {
+                    panic!("The default apps should not be present.")
                 }
             }
             Err(e) => panic!("{}", e.message()),

@@ -14,9 +14,8 @@ impl<'a> Task for WriteFile<'a> {
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path().join(&self.path);
 
-        match path.parent() {
-            Some(parent) => tokio::fs::create_dir_all(parent).await?,
-            None => {}
+        if let Some(parent) = path.parent() {
+            tokio::fs::create_dir_all(parent).await?
         };
 
         tokio::fs::write(&path, self.content).await.map_err(|err| {
