@@ -37,14 +37,11 @@ impl CommandRunnable for InfoCommand {
         writeln!(output, "Service:   {}", &repo.service)?;
         writeln!(output, "Path:      {}", repo.path.display())?;
 
-        match core.config().get_service(&repo.service) {
-            Some(svc) => {
-                writeln!(output)?;
-                writeln!(output, "URLs:")?;
-                writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
-                writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?)?;
-            }
-            None => {}
+        if let Some(svc) = core.config().get_service(&repo.service) {
+            writeln!(output)?;
+            writeln!(output, "URLs:")?;
+            writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
+            writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?)?;
         }
 
         Ok(0)

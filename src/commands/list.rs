@@ -71,8 +71,8 @@ Path:           {path}",
                     path = repo.path.display()
                 )?;
 
-                match core.config().get_service(&repo.service) {
-                    Some(svc) => writeln!(
+                if let Some(svc) = core.config().get_service(&repo.service) {
+                    writeln!(
                         output,
                         "
 URLs:
@@ -80,8 +80,7 @@ URLs:
   - Git:    {git}",
                         website = svc.get_website(repo)?,
                         git = svc.get_git_url(repo)?,
-                    )?,
-                    None => {}
+                    )?
                 };
             } else {
                 match core.config().get_service(&repo.service) {

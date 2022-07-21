@@ -221,7 +221,7 @@ impl GitHubSource {
                     "Please wait until GitHub removes this rate limit before trying again."))
             },
             status => {
-                return Err(errors::system(
+                Err(errors::system(
                     &format!("Received an HTTP {} response from GitHub when attempting to download the update for your platform ({}).", status, uri),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."))
             }

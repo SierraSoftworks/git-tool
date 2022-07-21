@@ -223,15 +223,14 @@ bin/
 
     #[test]
     fn parse_section_missing() {
-        match GitIgnoreFileSection::parse(
+        if let Some(_section) = GitIgnoreFileSection::parse(
             "
 junit.xml
 bin/
 *.exe
 *.obj",
         ) {
-            Some(_section) => panic!("we should not have parsed a section"),
-            None => {}
+            panic!("we should not have parsed a section")
         }
     }
 

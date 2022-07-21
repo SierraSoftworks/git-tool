@@ -1,3 +1,4 @@
+use super::features::ALWAYS_OPEN_BEST_MATCH;
 use super::{errors, Config, Error, Repo, Scratchpad, Service};
 use crate::{fs::to_native_path, search};
 use chrono::prelude::*;
@@ -149,6 +150,7 @@ impl Resolver {
                 }
             },
             1 => Ok((*repos.first().unwrap()).clone()),
+            _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => Ok((*repos.first().unwrap()).clone()),
             _ => {
                 match repos.iter().find(|r| r.get_full_name() == name) {
                     Some(repo) => Ok((*repo).clone()),
@@ -174,11 +176,8 @@ impl Resolver {
                         "Check that Git-Tool has permission to access this directory and try again.",
                         err
                     ))?.is_dir() {
-                        match self.config.get_service(dir.file_name().to_str().unwrap()) {
-                            Some(svc) => {
-                                repos.extend(self.get_repos_for(svc)?);
-                            },
-                            None => {}
+                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
+                            repos.extend(self.get_repos_for(svc)?);
                         }
                     }
                 },
@@ -205,8 +204,7 @@ impl Resolver {
         let repos = get_child_directories(&path, &svc.pattern)
             .iter()
             .map(|p| self.get_repo_from_path(p))
-            .filter(|r| r.is_ok())
-            .map(|r| r.unwrap())
+            .filter_map(|r| r.ok())
             .collect();
 
         Ok(repos)
