@@ -42,21 +42,44 @@ impl CommandRunnable for AuthCommand {
         )
         })?;
 
-        if matches.is_present("remove-token") {
-            core.keychain().remove_token(service)?;
-        } else {
-            let token = match matches.value_of("token") {
-                Some(token) => token.to_string(),
-                None => {
-                    writeln!(core.output(), "Access Token: ")?;
-                    rpassword::read_password().map_err(|e| errors::user_with_internal(
-                    "Could not read the access token that you entered.",
-                    "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
-                    e))?
-                }
-            };
+        if let Some(svc) = core.config().get_service(service) {
+            if svc.api.is_none() {
+                return Err(errors::user(
+                    &format!("The service '{}' does not include an API which supports authentication.", &svc.name),
+                    "You do not need to configure authentication for this service, but you can check the services in your configuration using `git-tool services`."
+                ));
+            }
 
-            core.keychain().set_token(service, &token)?;
+            if matches.is_present("remove-token") {
+                core.keychain().remove_token(service)?;
+            } else {
+                let token = match matches.value_of("token") {
+                    Some(token) => token.to_string(),
+                    None => {
+                        writeln!(core.output(), "Access Token: ")?;
+                        rpassword::read_password().map_err(|e| errors::user_with_internal(
+                        "Could not read the access token that you entered.",
+                        "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
+                        e))?
+                    }
+                };
+
+                core.keychain().set_token(service, &token)?;
+
+                writeln!(core.output(), "Access Token set for service '{}'", service)?;
+                if let Some(online_service) =
+                    crate::online::services().iter().find(|s| s.handles(svc))
+                {
+                    writeln!(core.output(), "Testing authentication token...")?;
+                    online_service.test(core, svc).await?;
+                    writeln!(core.output(), "Authentication token is valid.")?;
+                }
+            }
+        } else {
+            return Err(errors::user(
+                "The service you specified does not exist in your configuration.",
+                "Please run `git-tool services` to see a list of available services.",
+            ));
         }
 
         Ok(0)
