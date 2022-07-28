@@ -108,6 +108,17 @@ mod tests {
             assert_eq!(value, "12345", "the correct value should be saved");
             MockResult::Return(Ok(()))
         });
+        core::KeyChain::get_token.mock_safe(|_, token| {
+            assert_eq!(token, "gh", "the correct token should be retrieved");
+            MockResult::Return(Ok("".into()))
+        });
+
+        core::HttpClient::mock(vec![core::HttpClient::route(
+            "GET",
+            "https://api.github.com/user",
+            200,
+            r#"{"login":"test"}"#,
+        )]);
 
         let cmd = AuthCommand {};
         let args = cmd
