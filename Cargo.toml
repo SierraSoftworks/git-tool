@@ -32,7 +32,7 @@ semver = "1.0"
 sentry = { version = "0.27", default-features = false, features = ["reqwest", "log", "rustls"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
-serde_yaml = "0.8"
+serde_yaml = "0.9"
 shell-words = "1.1"
 tokio = { version = "1.20", features = ["rt", "time", "fs", "process", "macros", "signal"] }
 tonic = { version = "0.6.2", features = ["tls-roots"] }
