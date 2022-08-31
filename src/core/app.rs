@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -29,6 +31,22 @@ impl App {
 
     pub fn get_environment(&self) -> Vec<String> {
         self.environment.clone()
+    }
+}
+
+impl Display for App {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: ", &self.name)?;
+        if !self.environment.is_empty() {
+            write!(f, "{} ", &self.environment.join(" "))?;
+        }
+
+        write!(f, "{}", &self.command)?;
+        if !self.args.is_empty() {
+            write!(f, " {}", &self.args.join(" "))?;
+        }
+
+        Ok(())
     }
 }
 

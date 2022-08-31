@@ -56,7 +56,7 @@ impl GitHubRegistry {
 
 #[async_trait::async_trait]
 impl Registry for GitHubRegistry {
-    #[tracing::instrument(err, ret, skip(self, core))]
+    #[tracing::instrument(err, skip(self, core))]
     async fn get_entries(&self, core: &Core) -> Result<Vec<String>, Error> {
         let resp = self.get(core, "https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true").await?;
 
@@ -76,6 +76,7 @@ impl Registry for GitHubRegistry {
                     {
                         let len = node.path.len();
                         let name: String = node.path[prefix.len()..(len - suffix.len())].into();
+                        debug!("Found entry '{}'", &name);
                         entries.push(name);
                     }
                 }
@@ -100,7 +101,7 @@ impl Registry for GitHubRegistry {
         }
     }
 
-    #[tracing::instrument(err, ret, skip(self, core))]
+    #[tracing::instrument(err, skip(self, core))]
     async fn get_entry(&self, core: &Core, id: &str) -> Result<Entry, Error> {
         let resp = self
             .get(
@@ -116,6 +117,7 @@ impl Registry for GitHubRegistry {
             http::StatusCode::OK => {
                 let body = resp.bytes().await?;
                 let entity = serde_yaml::from_slice(&body)?;
+                debug!("{}", entity);
                 Ok(entity)
             },
             http::StatusCode::NOT_FOUND => {
