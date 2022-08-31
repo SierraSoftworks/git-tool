@@ -1159,19 +1159,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opentelemetry-http"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "449048140ee61e28f57abe6e9975eedc1f3a29855c7407bd6c12b18578863379"
-dependencies = [
- "async-trait",
- "bytes",
- "http",
- "opentelemetry",
- "reqwest",
-]
-
-[[package]]
 name = "opentelemetry-otlp"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1182,10 +1169,7 @@ dependencies = [
  "futures-util",
  "http",
  "opentelemetry",
- "opentelemetry-http",
  "prost",
- "prost-build",
- "reqwest",
  "thiserror",
  "tokio",
  "tonic",
