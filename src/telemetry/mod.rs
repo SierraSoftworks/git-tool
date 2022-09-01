@@ -31,7 +31,7 @@ impl Session {
                 #[cfg(debug_assertions)]
                 environment: Some("Development".into()),
                 #[cfg(not(debug_assertions))]
-                environment: Some("Customer"),
+                environment: Some("Customer".into()),
                 default_integrations: true,
                 attach_stacktrace: true,
                 send_default_pii: false,
