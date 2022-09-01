@@ -73,7 +73,7 @@ impl Registry for FileRegistry {
                             PathBuf::from(type_entry.file_name()).display(),
                             PathBuf::from(file_name).display()
                         );
-                        
+
                         debug!("Found entry '{}'", &entry);
 
                         entries.push(entry);
