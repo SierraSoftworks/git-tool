@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 }
 
-#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=field::Empty, exception=field::Empty))]
+#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=?StatusCode::Unset, exception=field::Empty))]
 async fn host(
     app: clap::Command<'_>,
     commands: Vec<Arc<dyn CommandRunnable>>,
