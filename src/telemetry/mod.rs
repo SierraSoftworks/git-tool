@@ -28,6 +28,10 @@ impl Session {
             "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
             sentry::ClientOptions {
                 release: Some(version!("git-tool@v").into()),
+                #[cfg(debug_assertions)]
+                environment: Some("Development".into()),
+                #[cfg(not(debug_assertions))]
+                environment: Some("Customer"),
                 default_integrations: true,
                 attach_stacktrace: true,
                 send_default_pii: false,
@@ -48,7 +52,10 @@ impl Session {
         let mut tracing_metadata = tonic::metadata::MetadataMap::new();
         tracing_metadata.insert(
             "x-honeycomb-team",
-            "fd8BghJ1Qd7xBU9s4ULEBC".parse().unwrap(),
+            #[cfg(debug_assertions)]
+            "X6naTEMkzy10PMiuzJKifF".parse().unwrap(),
+            #[cfg(not(debug_assertions))]
+            "vdf1xcENEju8V0d8ffQq2Y".parse().unwrap(),
         );
 
         let tracer = opentelemetry_otlp::new_pipeline()
@@ -63,6 +70,8 @@ impl Session {
                 opentelemetry::sdk::Resource::new(vec![
                     opentelemetry::KeyValue::new("service.name", "git-tool"),
                     opentelemetry::KeyValue::new("service.version", version!("v")),
+                    opentelemetry::KeyValue::new("host.os", std::env::consts::OS),
+                    opentelemetry::KeyValue::new("host.architecture", std::env::consts::ARCH),
                 ]),
             ))
             .install_batch(opentelemetry::runtime::Tokio)

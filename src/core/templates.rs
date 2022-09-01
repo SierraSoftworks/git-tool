@@ -13,8 +13,8 @@ macro_rules! map(
      };
 );
 
-#[tracing::instrument(err, skip(context))]
 pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
+    debug!("Rendering template '{}' with context {}", tmpl, context);
     template(tmpl, context).map_err(|e| errors::user_with_internal(
         format!("We couldn't render your template '{}'.", tmpl).as_str(),
         "Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/",

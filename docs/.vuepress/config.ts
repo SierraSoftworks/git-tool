@@ -1,4 +1,4 @@
-import { defineUserConfig, PageHeader, defaultTheme, viteBundler } from 'vuepress-vite'
+import { defineUserConfig, PageHeader, defaultTheme } from 'vuepress-vite'
 import { path } from '@vuepress/utils'
 
 import { googleAnalyticsPlugin } from '@vuepress/plugin-google-analytics'
@@ -21,12 +21,6 @@ export default defineUserConfig({
   head: [
     ['meta', { name: "description", content: "Documentation for Git-Tool, a powerful command-line helper which keeps your Git repositories organized automatically." }],
     ['link', { rel: 'icon', href: '/favicon.ico' }]
-  ],
-
-  bundler: viteBundler(),
-
-  clientAppEnhanceFiles: [
-    path.resolve(__dirname, "enhance", "cloudflare.analytics.js")
   ],
 
   extendsPage(page, app) {

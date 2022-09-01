@@ -36,7 +36,7 @@ impl std::fmt::Debug for Launcher {
 
 #[cfg_attr(test, mockable)]
 impl Launcher {
-    #[tracing::instrument(name = "launch", err, ret, skip(t))]
+    #[tracing::instrument(name = "launch", err, skip(t, a), fields(app=%a, target=%t))]
     pub async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
         let context = t.template_context(&self.config);
 
@@ -100,23 +100,32 @@ impl Launcher {
         let mut sigterm =
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
         let mut sigquit = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())?;
+        let mut sighup = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?;
 
         loop {
             let sigint = sigint.recv().fuse();
             let sigterm = sigterm.recv().fuse();
             let sigquit = sigquit.recv().fuse();
+            let sighup = sighup.recv().fuse();
 
             pin_mut!(sigint, sigterm, sigquit);
 
             tokio::select! {
                 _ = sigint => {
+                    debug!("Forwarding SIGINT to child process.");
                     nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGINT)?;
                 },
                 _ = sigterm => {
+                    debug!("Forwarding SIGTERM to child process.");
                     nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGTERM)?;
                 },
                 _ = sigquit => {
+                    debug!("Forwarding SIGQUIT to child process.");
                     nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGQUIT)?;
+                },
+                _ = sighup => {
+                    debug!("Forwarding SIGHUP to child process.");
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGHUP)?;
                 },
                 status = child.wait() => {
                     return Ok(status?.code().unwrap_or_default())

@@ -13,14 +13,14 @@ extern crate tokio;
 
 use crate::commands::CommandRunnable;
 use crate::core::features;
-use clap::{crate_authors, Arg, ArgMatches};
+use clap::{crate_authors, Arg};
 use opentelemetry::{
     propagation::TextMapPropagator,
     trace::{StatusCode, TraceContextExt},
 };
 use std::sync::Arc;
 use telemetry::Session;
-use tracing::{field, Instrument};
+use tracing::field;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[macro_use]
@@ -51,77 +51,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let version = version!("v");
 
         let app = clap::Command::new("Git-Tool")
-        .version(version.as_str())
-        .author(crate_authors!("\n"))
-        .about("Simplify your Git repository management and stop thinking about where things belong.")
-        .arg(Arg::new("config")
-            .short('c')
-            .long("config")
-            .env("GITTOOL_CONFIG")
-            .value_name("FILE")
-            .help("The path to your git-tool configuration file.")
-            .takes_value(true))
-        .arg(Arg::new("update-resume-internal")
-            .long("update-resume-internal")
-            .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
-            .takes_value(true)
-            .hide(true))
-        .arg(Arg::new("trace")
-            .long("trace")
-            .global(true)
-            .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
-        .arg(Arg::new("trace-context")
-            .long("trace-context")
-            .help("Configures the trace context used by this Git-Tool execution.")
-            .takes_value(true))
-        .subcommands(commands.iter().map(|x| x.app()));
+            .version(version.as_str())
+            .author(crate_authors!("\n"))
+            .about("Simplify your Git repository management and stop thinking about where things belong.")
+            .arg(Arg::new("config")
+                .short('c')
+                .long("config")
+                .env("GITTOOL_CONFIG")
+                .value_name("FILE")
+                .help("The path to your git-tool configuration file.")
+                .takes_value(true))
+            .arg(Arg::new("update-resume-internal")
+                .long("update-resume-internal")
+                .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
+                .takes_value(true)
+                .hide(true))
+            .arg(Arg::new("trace")
+                .long("trace")
+                .global(true)
+                .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
+            .arg(Arg::new("trace-context")
+                .long("trace-context")
+                .help("Configures the trace context used by this Git-Tool execution.")
+                .takes_value(true))
+            .subcommands(commands.iter().map(|x| x.app()));
 
-        let matches = app.clone().get_matches();
-
-        let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
-            .trim()
-            .to_string();
-
-        let mut span = tracing::info_span!(
-            "run:main",
-            otel.name = &command_name.as_str(),
-            otel.status = ?StatusCode::Unset,
-            status_code = field::Empty,
-            error = field::Empty,
-        );
-
-        if let Some(context) = matches.value_of("trace-context") {
-            load_trace_context(&mut span, context)
-        };
-
-        match run(app, commands, matches).instrument(span).await {
+        match host(app, commands).await {
             Result::Ok(status) => {
-                tracing::Span::current()
-                    .record("status_code", &status)
-                    .record("otel.status", &field::debug(StatusCode::Ok));
-
                 session.complete();
                 status
             }
             Result::Err(err) => {
-                error!("{}", err.message());
-                println!("{}", err.message());
-                if telemetry::is_enabled() {
-                    println!(
-                        "Trace ID: {:032x}",
-                        tracing::Span::current()
-                            .context()
-                            .span()
-                            .span_context()
-                            .trace_id()
-                    );
-                }
-
-                tracing::Span::current()
-                    .record("status_code", &1_u32)
-                    .record("otel.status", &field::debug(StatusCode::Error))
-                    .record("error", &field::display(&err));
-
                 session.crash(err);
                 1
             }
@@ -129,11 +89,120 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 }
 
-#[tracing::instrument(err, ret, skip(app, commands, matches), fields(command=matches.subcommand_name().unwrap_or("<none>")))]
-async fn run(
-    mut app: clap::Command<'_>,
+#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=field::Empty, exception=field::Empty))]
+async fn host(
+    app: clap::Command<'_>,
     commands: Vec<Arc<dyn CommandRunnable>>,
-    matches: ArgMatches,
+) -> Result<i32, errors::Error> {
+    let matches = match app.clone().try_get_matches() {
+        Ok(matches) => {
+            if let Some(context) = matches.value_of("trace-context") {
+                load_trace_context(&tracing::Span::current(), context);
+                info!("Loaded trace context from command line parameters.");
+            }
+
+            let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
+                .trim()
+                .to_string();
+
+            tracing::Span::current().record("otel.name", command_name.as_str());
+
+            matches
+        }
+        Err(error)
+            if error.kind() != clap::ErrorKind::DisplayVersion
+                && error.kind() != clap::ErrorKind::DisplayHelp =>
+        {
+            tracing::Span::current()
+                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("exit_code", &1_u32)
+                .record("exception", &field::display(&error));
+
+            if telemetry::is_enabled() {
+                println!(
+                    "Trace ID: {:032x}",
+                    tracing::Span::current()
+                        .context()
+                        .span()
+                        .span_context()
+                        .trace_id()
+                );
+            }
+
+            error.print().unwrap_or_default();
+
+            return Err(errors::user_with_internal(
+                "You did no provide a valid set of command line arguments to Git-Tool.",
+                "Read the help message printed above and try running Git-Tool again, or take a look at our documentation on https://git-tool.sierrasoftworks.com.",
+                error,
+            ));
+        }
+        Err(error) => {
+            error.print().unwrap_or_default();
+            return Ok(2);
+        }
+    };
+
+    let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
+        .trim()
+        .to_string();
+
+    tracing::Span::current()
+        .record("command", command_name.as_str())
+        .record("otel.name", command_name.as_str());
+
+    match run(commands, matches).await {
+        Ok(2) => {
+            app.clone().print_help().unwrap_or_default();
+
+            tracing::Span::current()
+                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("exit_code", &2_u32);
+
+            warn!("Exiting with status code {}", 2);
+            Ok(2)
+        }
+        Ok(status) => {
+            info!("Exiting with status code {}", status);
+            tracing::Span::current()
+                .record("otel.status", &field::debug(StatusCode::Ok))
+                .record("exit_code", &status);
+            Ok(status)
+        }
+        Err(error) => {
+            println!("{}", error);
+
+            error!("Exiting with status code {}", 1);
+            tracing::Span::current()
+                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("exit_code", &1_u32);
+
+            if error.is_system() {
+                tracing::Span::current().record("exception", &field::display(&error));
+            } else {
+                tracing::Span::current().record("exception", &error.description());
+            }
+
+            if telemetry::is_enabled() {
+                println!(
+                    "Trace ID: {:032x}",
+                    tracing::Span::current()
+                        .context()
+                        .span()
+                        .span_context()
+                        .trace_id()
+                );
+            }
+
+            Err(error)
+        }
+    }
+}
+
+#[tracing::instrument(err, skip(commands, matches), fields(command=matches.subcommand_name().unwrap_or("")))]
+async fn run(
+    commands: Vec<Arc<dyn CommandRunnable>>,
+    matches: clap::ArgMatches,
 ) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
@@ -188,6 +257,8 @@ async fn run(
     debug!("Looking for an appropriate matching command implementation.");
     for cmd in commands.iter() {
         if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
+            debug!("Found a command implementation for '{}'", cmd.name());
+
             sentry::add_breadcrumb(sentry::Breadcrumb {
                 ty: "default".into(),
                 level: sentry::Level::Info,
@@ -206,11 +277,10 @@ async fn run(
     }
 
     warn!("Did not find a matching command, printing the help message.");
-    app.print_help().unwrap_or_default();
-    Ok(-1)
+    Ok(2)
 }
 
-fn load_trace_context(span: &mut tracing::Span, context: &str) {
+fn load_trace_context(span: &tracing::Span, context: &str) {
     let carrier: std::collections::HashMap<String, String> =
         serde_json::from_str(context).unwrap_or_default();
     let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();

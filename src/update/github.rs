@@ -22,7 +22,7 @@ impl Default for GitHubSource {
 
 #[async_trait::async_trait]
 impl Source for GitHubSource {
-    #[tracing::instrument(err, ret, skip(self, core))]
+    #[tracing::instrument(err, skip(self, core))]
     async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::core::Error> {
         let uri = format!("https://api.github.com/repos/{}/releases", self.repo);
         info!("Making GET request to {} to check for new releases.", uri);
@@ -141,6 +141,7 @@ impl GitHubSource {
             }
 
             if let Ok(version) = r.tag_name[self.release_tag_prefix.len()..].parse() {
+                debug!("Found release '{}'", r.tag_name);
                 output.push(Release {
                     id: r.tag_name.clone(),
                     changelog: r.body.clone(),

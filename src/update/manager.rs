@@ -46,7 +46,7 @@ where
         self.source.get_releases(core).await
     }
 
-    #[tracing::instrument(err, ret, skip(self, core))]
+    #[tracing::instrument(err, skip(self, core))]
     pub async fn update(&self, core: &Core, release: &Release) -> Result<bool, errors::Error> {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
@@ -103,13 +103,14 @@ where
                 .get_binary(core, release, variant, &mut app_file)
                 .await?;
 
+            debug!("Preparing application file for execution.");
             self.prepare_app_file(&app)?;
         }
 
         self.resume(&state).await
     }
 
-    #[tracing::instrument(err, ret, skip(self))]
+    #[tracing::instrument(err, skip(self))]
     pub async fn resume(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         match state.phase {
             UpdatePhase::NoUpdate => Ok(false),
@@ -119,7 +120,7 @@ where
         }
     }
 
-    #[tracing::instrument(err, ret, skip(self))]
+    #[tracing::instrument(err, skip(self))]
     async fn prepare(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let next_state = state.for_phase(UpdatePhase::Replace);
         let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
@@ -132,7 +133,7 @@ where
         Ok(true)
     }
 
-    #[tracing::instrument(err, ret, skip(self))]
+    #[tracing::instrument(err, skip(self))]
     async fn replace(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
             "Could not locate the temporary update files needed to complete the update process (replace phase).",
@@ -154,7 +155,7 @@ where
         Ok(true)
     }
 
-    #[tracing::instrument(err, ret, skip(self))]
+    #[tracing::instrument(err, skip(self))]
     async fn cleanup(&self, state: &UpdateState) -> Result<bool, errors::Error> {
         let update_source = state.temporary_application.clone().ok_or_else(|| errors::system(
             "Could not locate the temporary update files needed to complete the update process (cleanup phase).",

@@ -83,8 +83,8 @@ impl Resolver {
         }
     }
 
-    #[tracing::instrument(err, skip(self, path))]
     pub fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
+        debug!("Constructing repo object from path '{}'", path.display());
         let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
             &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
             "Check that the directory exists and that Git-Tool has permission to access it.",
@@ -191,7 +191,7 @@ impl Resolver {
         Ok(repos)
     }
 
-    #[tracing::instrument(err, skip(self))]
+    #[tracing::instrument(err, skip(self, svc), fields(service.name=svc.name, service.pattern=svc.pattern))]
     pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
             return Err(errors::user(
@@ -286,11 +286,16 @@ fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::p
 }
 
 #[cfg_attr(test, mockable)]
-#[tracing::instrument(skip(from))]
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
         return vec![from.to_owned()];
     }
+
+    debug!(
+        "Enumerating child directories of '{}' to depth {}",
+        from.display(),
+        depth
+    );
 
     from.read_dir()
         .map(|dirs| {
