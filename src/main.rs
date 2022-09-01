@@ -152,7 +152,7 @@ async fn host(
         .record("otel.name", command_name.as_str());
 
     match run(commands, matches).await {
-        Ok(2) => {
+        Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
             tracing::Span::current()
@@ -277,7 +277,7 @@ async fn run(
     }
 
     warn!("Did not find a matching command, printing the help message.");
-    Ok(2)
+    Ok(-2)
 }
 
 fn load_trace_context(span: &tracing::Span, context: &str) {
