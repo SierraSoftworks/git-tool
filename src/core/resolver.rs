@@ -191,7 +191,7 @@ impl Resolver {
         Ok(repos)
     }
 
-    #[tracing::instrument(err, skip(self, svc), fields(service.name=svc.name, service.pattern=svc.pattern))]
+    #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
     pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
             return Err(errors::user(
