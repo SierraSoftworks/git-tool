@@ -40,6 +40,23 @@ you can disable this feature flag.
 Use `gt config feature create_remote_private false` to turn this flag off directly from your command line.
 :::
 
+## `check_exists` <Badge text="v3.3+"/>
+  - **Default** `true`
+  
+The [`gt new`](../commands/new.md) command is responsible for creating repositories which do not exist yet.
+Unfortunately, sometimes people forget that they've already created one with the same name and this can lead
+to unexpected conflicts. To help avoid this, Git-Tool can check whether a repository already exists on a
+supported remote service before attempting to create a new one.
+
+::: tip
+Use `gt config feature check_exists false` to turn this flag off directly from your command line.
+:::
+
+::: warning
+This feature is not supported for all services. For a service to support this feature it must include
+a supported [`api`](./services.md#api) field in its configuration.
+:::
+
 ## `open_new_repo_in_default_app` <Badge text="v2.1.1+"/>
  - **Default** `false`
 
