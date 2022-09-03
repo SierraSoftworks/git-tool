@@ -83,6 +83,7 @@ helping you quickly figure out where your repo should be created.
 
 #### Options
  - `-R`/`--no-create-remote` <Badge text="v2.1+"/> will disable the [creation of a remote repository](../config/features.md#create-remote).
+ - `-E`/`--no-check-exists` <Badge text="v3.3+"/> will disable [checking if the repository already exists](../config/features.md#check-exists).
  - `-o`/`--open` <Badge text="v2.1+"/> will open this repository in your default application once it has been created. You can make this behaviour the default with the [`open_new_repo_in_default_app`](../config/features.md#open-new-repo-in-default-app) feature flag.
 
 #### Example

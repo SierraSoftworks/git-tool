@@ -1,8 +1,8 @@
 use crate::errors;
 use opentelemetry::trace::{SpanKind, StatusCode};
-use tracing::{field, Span};
 use std::process::Stdio;
 use tokio::process::Command;
+use tracing::{field, Span};
 
 #[tracing::instrument(err, skip(cmd), fields(otel.kind = %SpanKind::Client, command=?cmd, otel.status = ?StatusCode::Ok, status_code = field::Empty))]
 pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
@@ -33,9 +33,10 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                     "Git exited with a failure status code.",
                     "Please check the output printed by Git to determine why the command failed and take appropriate action.",
                     errors::system(&format!("{:?} exited with status code {}.", cmd, code), &output_text)))
-            },
+            }
             None => {
-                Span::current().record("status_code", &1_i32)
+                Span::current()
+                    .record("status_code", &1_i32)
                     .record("otel.status", &field::debug(StatusCode::Error));
                 Err(errors::system_with_internal(
                     "Git exited prematurely because it received an unexpected signal.",

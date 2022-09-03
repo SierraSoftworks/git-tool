@@ -8,6 +8,7 @@ pub mod github;
 pub trait OnlineService: Send + Sync {
     fn handles(&self, service: &Service) -> bool;
     async fn test(&self, core: &Core, service: &Service) -> Result<(), Error>;
+    async fn is_created(&self, core: &Core, service: &Service, repo: &Repo) -> Result<bool, Error>;
     async fn ensure_created(
         &self,
         core: &Core,

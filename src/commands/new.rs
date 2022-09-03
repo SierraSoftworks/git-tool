@@ -33,6 +33,12 @@ impl Command for NewCommand {
                     .short('R')
                     .help("prevent the creation of a remote repository (on supported services)"),
             )
+            .arg(
+                Arg::new("no-check-exists")
+                    .long("no-check-exists")
+                    .short('E')
+                    .help("don't check whether the repository already exists on the remote service before creating a new local repository"),
+            )
     }
 }
 
@@ -53,6 +59,9 @@ impl CommandRunnable for NewCommand {
         }
 
         let tasks = sequence![
+            EnsureNoRemote {
+                enabled: !matches.is_present("no-check-exists")
+            },
             GitInit {},
             GitRemote { name: "origin" },
             GitCheckout { branch: "main" },
@@ -122,7 +131,7 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        crate::online::service::github::mocks::repo_created("test");
+        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-partial");
 
         let core = Core::builder().with_config(&cfg).build();
 
@@ -153,7 +162,7 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        crate::online::service::github::mocks::repo_created("test");
+        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-full");
 
         let core = Core::builder().with_config(&cfg).build();
 
