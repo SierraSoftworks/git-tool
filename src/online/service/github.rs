@@ -425,20 +425,68 @@ pub mod mocks {
     }
 
     pub fn get_repo_exists(repo: &str) {
-        super::HttpClient::mock(vec![super::HttpClient::route(
-            "GET",
-            format!("https://api.github.com/repos/{}", repo).as_str(),
-            200,
-            r#"{ "id": 1234 }"#,
-        )]);
+        super::HttpClient::mock(vec![
+            super::HttpClient::route(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                "https://api.github.com/user/repos",
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                format!(
+                    "https://api.github.com/orgs/{}/repos",
+                    repo.split('/').next().unwrap()
+                )
+                .as_str(),
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+            super::HttpClient::route(
+                "GET",
+                format!("https://api.github.com/repos/{}", repo).as_str(),
+                200,
+                r#"{ "id": 1234 }"#,
+            ),
+        ]);
     }
 
     pub fn get_repo_not_exists(repo: &str) {
-        super::HttpClient::mock(vec![super::HttpClient::route(
-            "GET",
-            format!("https://api.github.com/repos/{}", repo).as_str(),
-            404,
-            r#"{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}"#,
-        )]);
+        super::HttpClient::mock(vec![
+            super::HttpClient::route(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                "https://api.github.com/user/repos",
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+            super::HttpClient::route(
+                "POST",
+                format!(
+                    "https://api.github.com/orgs/{}/repos",
+                    repo.split('/').next().unwrap()
+                )
+                .as_str(),
+                201,
+                r#"{ "id": 1234 }"#,
+            ),
+            super::HttpClient::route(
+                "GET",
+                format!("https://api.github.com/repos/{}", repo).as_str(),
+                404,
+                r#"{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}"#,
+            ),
+        ]);
     }
 }

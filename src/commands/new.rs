@@ -131,7 +131,7 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        crate::online::service::github::mocks::repo_created("test");
+        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-partial");
 
         let core = Core::builder().with_config(&cfg).build();
 
@@ -162,7 +162,7 @@ mod tests {
             MockResult::Return(Ok("test_token".into()))
         });
 
-        crate::online::service::github::mocks::repo_created("test");
+        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-full");
 
         let core = Core::builder().with_config(&cfg).build();
 
