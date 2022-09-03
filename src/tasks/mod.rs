@@ -19,6 +19,7 @@ macro_rules! sequence {
 }
 
 mod create_remote;
+mod ensure_no_remote;
 mod git_add;
 mod git_checkout;
 mod git_clone;
@@ -30,6 +31,7 @@ mod new_folder;
 mod write_file;
 
 pub use create_remote::CreateRemote;
+pub use ensure_no_remote::EnsureNoRemote;
 pub use git_add::GitAdd;
 pub use git_checkout::GitCheckout;
 pub use git_clone::GitClone;

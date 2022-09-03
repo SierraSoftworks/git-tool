@@ -33,6 +33,12 @@ impl Command for NewCommand {
                     .short('R')
                     .help("prevent the creation of a remote repository (on supported services)"),
             )
+            .arg(
+                Arg::new("no-check-exists")
+                    .long("no-check-exists")
+                    .short('E')
+                    .help("don't check whether the repository already exists on the remote service before creating a new local repository"),
+            )
     }
 }
 
@@ -53,6 +59,9 @@ impl CommandRunnable for NewCommand {
         }
 
         let tasks = sequence![
+            EnsureNoRemote {
+                enabled: !matches.is_present("no-check-exists")
+            },
             GitInit {},
             GitRemote { name: "origin" },
             GitCheckout { branch: "main" },

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 pub const CREATE_REMOTE: &str = "create_remote";
 pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
+pub const CHECK_EXISTS: &str = "check_exists";
 
 pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
 pub const ALWAYS_OPEN_BEST_MATCH: &str = "always_open_best_match";
@@ -14,6 +15,7 @@ lazy_static! {
     pub static ref ALL: Vec<&'static str> = vec![
         CREATE_REMOTE,
         CREATE_REMOTE_PRIVATE,
+        CHECK_EXISTS,
         OPEN_NEW_REPO,
         ALWAYS_OPEN_BEST_MATCH,
         TELEMETRY,
@@ -68,6 +70,7 @@ impl FeaturesBuilder {
             .with(CREATE_REMOTE_PRIVATE, true)
             .with(TELEMETRY, false)
             .with(CHECK_FOR_UPDATES, true)
+            .with(CHECK_EXISTS, true)
     }
 
     pub fn with_features(self, features: &Features) -> Self {
