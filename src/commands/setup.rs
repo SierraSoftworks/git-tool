@@ -168,7 +168,7 @@ impl SetupCommand {
             match ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
                 Some(dirs) => {
                     let mut path = dirs.config_dir().to_path_buf();
-                    path.push("git-tool.yml");
+                    path.push("config.yml");
                     Some(path)
                 }
                 None => None,

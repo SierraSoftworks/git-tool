@@ -263,13 +263,37 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let dev_dir = path::PathBuf::from(std::env::var("DEV_DIRECTORY").unwrap_or_default());
+        let dev_dir = match std::env::var("DEV_DIRECTORY").ok() {
+            Some(dir) => path::PathBuf::from(dir),
+            None => match directories_next::UserDirs::new() {
+                Some(dirs) => dirs.home_dir().join("dev"),
+                None => path::PathBuf::from("~/dev"),
+            },
+        };
 
         let default_shell = match OS {
-            "linux" => "bash",
-            "macos" => "zsh",
-            "windows" => "powershell",
-            _ => "bash",
+            "linux" => app::App::builder()
+                .with_name("shell")
+                .with_command("bash")
+                .into(),
+            "macos" => app::App::builder()
+                .with_name("shell")
+                .with_command("zsh")
+                .into(),
+            "windows" => app::App::builder()
+                .with_name("shell")
+                .with_command("powershell")
+                .with_args(vec![
+                    "-NoExit",
+                    "-NoLogo",
+                    "-Command",
+                    "$host.ui.RawUI.WindowTitle = '{{ with .Repo }}{{ .Service.Name }}:{{ .FullName }}{{ else }}{{ .Target.Name }}{{ end }}'"
+                ])
+                .into(),
+            _ => app::App::builder()
+                .with_name("shell")
+                .with_command("sh")
+                .into(),
         };
 
         let has_ssh_keys = directories_next::UserDirs::new()
@@ -289,12 +313,9 @@ impl Default for Config {
             config_file: None,
             dev_directory: dev_dir,
             scratch_directory: None,
-            apps: vec![Arc::new(
-                app::App::builder()
-                    .with_name("shell")
-                    .with_command(default_shell)
-                    .into(),
-            )],
+            apps: vec![
+                Arc::new(default_shell),
+            ],
             services: vec![
                 Arc::new(service::Service {
                     name: "gh".into(),

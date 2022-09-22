@@ -1,5 +1,5 @@
 use super::{Config, Core, Error, HttpClient, KeyChain, Launcher, Resolver};
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 pub struct CoreBuilder {
     pub(super) config: Arc<Config>,
@@ -28,8 +28,8 @@ impl CoreBuilder {
         Self { config: c }
     }
 
-    pub fn with_config_file(self, cfg_file: &str) -> Result<Self, Error> {
-        let cfg = Config::from_file(&std::path::PathBuf::from(cfg_file))?;
+    pub fn with_config_file<P: Into<PathBuf>>(self, cfg_file: P) -> Result<Self, Error> {
+        let cfg = Config::from_file(&cfg_file.into())?;
 
         Ok(self.with_config(&cfg))
     }

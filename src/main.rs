@@ -209,6 +209,13 @@ async fn run(
     if let Some(cfg_file) = matches.value_of("config") {
         debug!("Loading configuration file...");
         core_builder = core_builder.with_config_file(cfg_file)?;
+    } else if let Some(dirs) =
+        directories_next::ProjectDirs::from("com", "SierraSoftworks", "Git-Tool")
+    {
+        debug!("Loading configuration from default config file...");
+        core_builder = core_builder.with_config_file(dirs.config_dir().join("config.yml"))?;
+    } else {
+        warn!("No configuration file was specified and we were unable to determine the default configuration file location.");
     }
 
     let core = core_builder.build();
