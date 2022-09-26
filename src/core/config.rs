@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
 use std::{env::consts::OS, vec::Vec};
 use std::{path, sync::Arc};
 
 use super::super::errors;
-use super::app;
 use super::features;
 use super::service;
+use super::{app, Error};
 use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -34,6 +35,13 @@ pub struct Config {
 }
 
 impl Config {
+    fn with_config_file<P: Into<PathBuf>>(self, path: P) -> Self {
+        let mut c = self;
+        c.config_file = Some(path.into());
+
+        c
+    }
+
     pub fn with_dev_directory(&self, dev_dir: &Path) -> Self {
         let mut into = self.clone();
         into.dev_directory = dev_dir.to_owned();
@@ -156,6 +164,16 @@ impl Config {
         Ok(cfg)
     }
 
+    pub fn from_file_or_default(path: &path::Path) -> Self {
+        match Self::from_file(path) {
+            Ok(cfg) => cfg,
+            Err(err) => {
+                tracing::warn!("Failed to load config file: {}", err);
+                Self::default().with_config_file(path)
+            }
+        }
+    }
+
     pub fn from_reader<R>(rdr: R) -> Result<Self, errors::Error>
     where
         R: std::io::Read,
@@ -169,6 +187,26 @@ impl Config {
                     e,
                 )
             })
+    }
+
+    pub async fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+        let path = path.as_ref();
+
+        if let Some(parent) = path.parent() {
+            tokio::fs::create_dir_all(parent).await.map_err(|err| errors::user_with_internal(
+                &format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
+                "Make sure that Git-Tool has permission to write to your config directory and then try again.",
+                err
+            ))?;
+        }
+
+        tokio::fs::write(&path, self.to_string()?).await.map_err(|err| errors::user_with_internal(
+            &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
+            "Make sure that Git-Tool has permission to write to your config file and then try again.",
+            err
+        ))?;
+
+        Ok(())
     }
 
     pub fn to_string(&self) -> Result<String, errors::Error> {

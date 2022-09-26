@@ -130,11 +130,7 @@ mod tests {
         );
 
         // Ensure that the config file is created
-        std::fs::write(
-            temp.path().join("config.yml"),
-            serde_yaml::to_string(&cfg).unwrap(),
-        )
-        .unwrap();
+        cfg.save(temp.path().join("config.yml")).await.unwrap();
 
         let cmd = DoctorCommand {};
         match cmd.run(&core, &args).await {

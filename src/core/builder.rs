@@ -33,4 +33,8 @@ impl CoreBuilder {
 
         Ok(self.with_config(&cfg))
     }
+
+    pub fn with_config_file_or_default<P: Into<PathBuf>>(self, cfg_file: P) -> Self {
+        self.with_config(&Config::from_file_or_default(&cfg_file.into()))
+    }
 }

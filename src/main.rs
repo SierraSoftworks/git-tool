@@ -213,7 +213,8 @@ async fn run(
         directories_next::ProjectDirs::from("com", "SierraSoftworks", "Git-Tool")
     {
         debug!("Loading configuration from default config file...");
-        core_builder = core_builder.with_config_file(dirs.config_dir().join("config.yml"))?;
+        core_builder =
+            core_builder.with_config_file_or_default(dirs.config_dir().join("config.yml"));
     } else {
         warn!("No configuration file was specified and we were unable to determine the default configuration file location.");
     }
