@@ -129,7 +129,11 @@ jobs:
             $protoc_arch = 'osx-x86_64'
           }
 
-          Invoke-WebRequest -OutFile protoc.zip -Uri https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protoc-3.20.2-$protoc_arch.zip
+          $protoc_url = "https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protoc-3.20.2-$protoc_arch.zip"
+
+          Write-Host "Downloading protoc from '$protoc_url'"
+
+          Invoke-WebRequest -OutFile protoc.zip -Uri $protoc_url
           Expand-Archive protoc.zip -DestinationPath ../tools
           Add-Content -Path $env:GITHUB_PATH -Value "$((Get-Item ./).Parent.FullName)/tools/bin"
         shell: pwsh
