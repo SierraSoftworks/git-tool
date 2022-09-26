@@ -90,11 +90,7 @@ impl CommandRunnable for SetupCommand {
             .with_dev_directory(&dev_directory)
             .with_feature_flag("telemetry", enable_telemetry);
 
-        tokio::fs::write(&config_path, new_config.to_string()?).await.map_err(|err| errors::user_with_internal(
-            &format!("We couldn't write the new config file to '{}' due to a system error.", config_path.display()),
-            "For access denied errors, make sure you have write permission to the location containing your config file. If you run into trouble, please create a GitHub issue and we will try to help.",
-            err
-        ))?;
+        new_config.save(&config_path).await?;
 
         writeln!(core.output(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
         self.prompt_setup_shell(core, &config_path, &mut prompter)?;
@@ -165,14 +161,8 @@ impl SetupCommand {
 
     fn prompt_config_path(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
         let default_path = core.config().get_config_file().or_else(|| {
-            match ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
-                Some(dirs) => {
-                    let mut path = dirs.config_dir().to_path_buf();
-                    path.push("git-tool.yml");
-                    Some(path)
-                }
-                None => None,
-            }
+            ProjectDirs::from("com", "SierraSoftworks", "Git-Tool")
+                .map(|dirs| dirs.config_dir().join("config.yml"))
         });
 
         let config_path = prompter.prompt(
