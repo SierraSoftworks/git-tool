@@ -123,9 +123,9 @@ jobs:
         run: |
           if ('{{ matrix.os }}' -eq 'windows') {
             $protoc_arch = 'win64'
-          } else if ('{{ matrix.os }}' -eq 'linux') {
+          } elseif ('{{ matrix.os }}' -eq 'linux') {
             $protoc_arch = 'linux-x86_64'
-          } else if ('{{ matrix.os }}' -eq 'macos') {
+          } elseif ('{{ matrix.os }}' -eq 'macos') {
             $protoc_arch = 'osx-x86_64'
           }
 
