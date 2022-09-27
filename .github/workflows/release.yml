@@ -167,9 +167,9 @@ jobs:
 
       - name: install protoc
         run: |
-          if ($env:OS -eq 'windows') {
+          if ('${{ matrix.os }}' -eq 'windows') {
             $protoc_arch = 'win64'
-          } elseif ($env:OS -eq 'macos') {
+          } elseif ('${{ matrix.os }}' -eq 'macos') {
             $protoc_arch = 'osx-x86_64'
           } else {
             $protoc_arch = 'linux-x86_64'
@@ -183,8 +183,6 @@ jobs:
           Expand-Archive protoc.zip -DestinationPath ../tools
           Add-Content -Path $env:GITHUB_PATH -Value "$((Get-Item ./).Parent.FullName)/tools/bin"
         shell: pwsh
-        env:
-          OS: "{{ matrix.os }}"
 
       - name: cargo build
         uses: actions-rs/cargo@v1.0.3
