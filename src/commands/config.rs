@@ -68,6 +68,18 @@ impl Command for ConfigCommand {
                 .arg(Arg::new("enable")
                     .help("whether the feature flag should be enabled or not (true/false)")
                     .index(2)))
+
+            .subcommand(clap::Command::new("path")
+                .version("1.0")
+                .about("manage the path used to store your repositories and scratchpads")
+                .long_about("Set the folder used to store the repositories managed by Git-Tool, or your scratchpads.")
+                .arg(Arg::new("path")
+                    .help("the path to use for storing repositories and scratchpads")
+                    .index(1))
+                .arg(Arg::new("scratch")
+                    .long("scratch")
+                    .short('s')
+                    .help("configure the scratchpads path instead of the repositories path")))
     }
 }
 
@@ -212,6 +224,44 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
             },
+            Some(("path", args)) if args.is_present("scratch") => match args.value_of("path") {
+                Some(path) => {
+                    let cfg = core.config().with_scratch_directory(path);
+
+                    match cfg.get_config_file() {
+                        Some(path) => {
+                            cfg.save(&path).await?;
+                        }
+                        None => {
+                            writeln!(output, "{}", cfg.to_string()?)?;
+                        }
+                    }
+                }
+                None => {
+                    writeln!(
+                        output,
+                        "{}",
+                        core.config().get_scratch_directory().display()
+                    )?;
+                }
+            },
+            Some(("path", args)) => match args.value_of("path") {
+                Some(path) => {
+                    let cfg = core.config().with_dev_directory(path);
+
+                    match cfg.get_config_file() {
+                        Some(path) => {
+                            cfg.save(&path).await?;
+                        }
+                        None => {
+                            writeln!(output, "{}", cfg.to_string()?)?;
+                        }
+                    }
+                }
+                None => {
+                    writeln!(output, "{}", core.config().get_dev_directory().display())?;
+                }
+            },
             _ => {
                 writeln!(output, "{}", core.config().to_string()?)?;
             }
@@ -255,8 +305,13 @@ impl CommandRunnable for ConfigCommand {
                     completer.offer("false");
                 }
             }
+            Some(("path", args)) => {
+                if !args.is_present("scratch") {
+                    completer.offer("--scratch");
+                }
+            }
             _ => {
-                completer.offer_many(vec!["list", "add", "alias", "feature"]);
+                completer.offer_many(vec!["list", "add", "alias", "feature", "path"]);
             }
         }
     }
@@ -264,6 +319,8 @@ impl CommandRunnable for ConfigCommand {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
@@ -623,5 +680,69 @@ features:
             vec!["true", "false"],
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn run_paths() {
+        let temp = tempfile::tempdir().unwrap();
+        tokio::fs::write(
+            temp.path().join("config.yml"),
+            r#"
+directory: /dev
+scratchpads: /scratch
+            "#,
+        )
+        .await
+        .unwrap();
+
+        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+
+        let core = Core::builder().with_config(&cfg).build();
+
+        crate::console::output::mock();
+
+        let cmd = ConfigCommand {};
+
+        // Update the dev path
+        let args = cmd.app().get_matches_from(vec!["config", "path", "/devel"]);
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!("{}", err.message()),
+        }
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(new_cfg.get_dev_directory(), PathBuf::from("/devel"));
+        assert_eq!(new_cfg.get_scratch_directory(), PathBuf::from("/scratch"));
+
+        // Update the scratch path
+        let args =
+            cmd.app()
+                .get_matches_from(vec!["config", "path", "--scratch", "/devel/scratch"]);
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!("{}", err.message()),
+        }
+
+        let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        assert_eq!(new_cfg.get_dev_directory(), PathBuf::from("/dev"));
+        assert_eq!(
+            new_cfg.get_scratch_directory(),
+            PathBuf::from("/devel/scratch")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_path_completion() {
+        let cfg = Config::from_str(&format!(
+            r#"
+directory: "{}"
+"#,
+            get_dev_dir().to_str().unwrap().replace('\\', "\\\\")
+        ))
+        .unwrap();
+
+        test_completions_with_config(&cfg, "gt config path", "", vec!["--scratch"]).await;
+
+        test_completions_with_config(&cfg, "gt config", "", vec!["path"]).await;
     }
 }

@@ -15,6 +15,10 @@ used repos.
 The first thing to set up in your `config.yml` file is your development directory path. This is
 the directory into which Git-Tool will place your repositories whenever you clone or create them.
 
+::: tip
+You can change your development directory at any time using the [`gt config path`](../commands/config.md#config-path) command.
+:::
+
 :::: code-group
 ::: code-group-item Windows
 ```yaml
@@ -42,8 +46,9 @@ you want to place your scratchpads in a different directory to your repositories
 them to be replicated using your cloud storage service, or maybe you like to live dangerously and
 want them on a `/tmp` RAMDisk.
 
-
 ::: tip
+You can change your scratchpad directory at any time using the [`gt config path --scratch`](../commands/config.md#config-path) command.
+
 If you don't specify a `scratchpads` directory, Git-Tool will use a `scratch` folder within your development
 directory to hold your scratchpads.
 :::

@@ -15,6 +15,30 @@ autocomplete suggestions).
 gt config
 ```
 
+### config path <Badge text="v3.4+"/>
+Git-Tool stores repositories and scratchpads in directories you specify in your
+configuration file. The `gt config path` command allows you to quickly view
+and modify these directories, simplifying setup (especially when using the default
+configuration file location).
+
+#### Options
+ - `--scratch` will show or change the scratchpad directory instead of the repository directory.
+
+#### Example
+```powershell
+# Show the current repository path
+gt config path
+
+# Set the repository path to a new location
+gt config path /path/to/repositories
+
+# Show the current scratchpad path
+gt config path --scratch
+
+# Set the scratchpad path to a new location
+gt config path --scratch /path/to/scratchpads
+```
+
 ### config list <Badge text="v1.5+"/>
 Git-Tool has a [registry](../config/registry.md) of useful apps and services
 which you can easily add to your configuration. The `gt config list` command
