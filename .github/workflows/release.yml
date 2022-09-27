@@ -165,6 +165,25 @@ jobs:
         with:
           name: cargofile
 
+      - name: install protoc
+        run: |
+          if ('${{ matrix.os }}' -eq 'windows') {
+            $protoc_arch = 'win64'
+          } elseif ('${{ matrix.os }}' -eq 'darwin') {
+            $protoc_arch = 'osx-x86_64'
+          } else {
+            $protoc_arch = 'linux-x86_64'
+          }
+
+          $protoc_url = "https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protoc-3.20.2-$protoc_arch.zip"
+
+          Write-Host "Downloading protoc from '$protoc_url'"
+
+          Invoke-WebRequest -OutFile protoc.zip -Uri $protoc_url
+          Expand-Archive protoc.zip -DestinationPath ../tools
+          Add-Content -Path $env:GITHUB_PATH -Value "$((Get-Item ./).Parent.FullName)/tools/bin"
+        shell: pwsh
+
       - name: cargo build
         uses: actions-rs/cargo@v1.0.3
         with:

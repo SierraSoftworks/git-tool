@@ -14,10 +14,7 @@ extern crate tokio;
 use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg};
-use opentelemetry::{
-    propagation::TextMapPropagator,
-    trace::{StatusCode, TraceContextExt},
-};
+use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
 use std::sync::Arc;
 use telemetry::Session;
 use tracing::field;
@@ -89,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 }
 
-#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=?StatusCode::Unset, exception=field::Empty))]
+#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=field::Empty, exception=field::Empty))]
 async fn host(
     app: clap::Command<'_>,
     commands: Vec<Arc<dyn CommandRunnable>>,
@@ -114,7 +111,7 @@ async fn host(
                 && error.kind() != clap::ErrorKind::DisplayHelp =>
         {
             tracing::Span::current()
-                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("otel.status", "error")
                 .record("exit_code", &1_u32)
                 .record("exception", &field::display(&error));
 
@@ -156,7 +153,7 @@ async fn host(
             app.clone().print_help().unwrap_or_default();
 
             tracing::Span::current()
-                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("otel.status", "error")
                 .record("exit_code", &2_u32);
 
             warn!("Exiting with status code {}", 2);
@@ -165,7 +162,7 @@ async fn host(
         Ok(status) => {
             info!("Exiting with status code {}", status);
             tracing::Span::current()
-                .record("otel.status", &field::debug(StatusCode::Ok))
+                .record("otel.status", "ok")
                 .record("exit_code", &status);
             Ok(status)
         }
@@ -174,7 +171,7 @@ async fn host(
 
             error!("Exiting with status code {}", 1);
             tracing::Span::current()
-                .record("otel.status", &field::debug(StatusCode::Error))
+                .record("otel.status", "error")
                 .record("exit_code", &1_u32);
 
             if error.is_system() {
