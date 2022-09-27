@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use opentelemetry::trace::{SpanKind, StatusCode};
+use opentelemetry::trace::SpanKind;
 use reqwest::{Client, Request, Response};
 use tracing::field;
 
@@ -31,7 +31,7 @@ impl HttpClient {
         skip(req),
         fields(
             otel.kind = ?SpanKind::Client,
-            otel.status = ?StatusCode::Unset,
+            otel.status = field::Empty,
             otel.status_message = field::Empty,
             http.method = %req.method(),
             http.url = %req.url(),
@@ -48,11 +48,10 @@ impl HttpClient {
         let response = client.execute(req).await?;
 
         let span_status = if response.status().is_success() {
-            StatusCode::Ok
+            "ok"
         } else {
-            StatusCode::Error
-        }
-        .as_str();
+            "error"
+        };
 
         tracing::span::Span::current()
             .record("http.status_code", &response.status().as_u16())
