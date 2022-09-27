@@ -21,6 +21,9 @@ configuration file. The `gt config path` command allows you to quickly view
 and modify these directories, simplifying setup (especially when using the default
 configuration file location).
 
+#### Options
+ - `--scratch` will show or change the scratchpad directory instead of the repository directory.
+
 #### Example
 ```powershell
 # Show the current repository path
