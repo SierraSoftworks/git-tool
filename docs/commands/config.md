@@ -15,7 +15,7 @@ autocomplete suggestions).
 gt config
 ```
 
-### config path <Badge text="v3.2+"/>
+### config path <Badge text="v3.4+"/>
 Git-Tool stores repositories and scratchpads in directories you specify in your
 configuration file. The `gt config path` command allows you to quickly view
 and modify these directories, simplifying setup (especially when using the default
