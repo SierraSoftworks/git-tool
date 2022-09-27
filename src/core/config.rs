@@ -42,9 +42,15 @@ impl Config {
         c
     }
 
-    pub fn with_dev_directory(&self, dev_dir: &Path) -> Self {
+    pub fn with_dev_directory<P: Into<PathBuf>>(&self, dev_dir: P) -> Self {
         let mut into = self.clone();
-        into.dev_directory = dev_dir.to_owned();
+        into.dev_directory = dev_dir.into();
+        into
+    }
+
+    pub fn with_scratch_directory<P: Into<PathBuf>>(&self, scratch_dir: P) -> Self {
+        let mut into = self.clone();
+        into.scratch_directory = Some(scratch_dir.into());
         into
     }
 

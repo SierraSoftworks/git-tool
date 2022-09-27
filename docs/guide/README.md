@@ -12,70 +12,18 @@ more detailed, use the links in each **Step**.
 
 #### Step #1: [Installation](installation.md)
 You can download the latest version of Git-Tool from our [GitHub releases][release] page.
-Pop it into your `$PATH`, setup a [config](../config/README.md) file,
-[configure your shell](installation.md#setting-up-your-shell) and you're good to go!
+Pop it into your `$PATH` and you're good to go!
 
-:::: code-group
-::: code-group-item PowerShell
-```powershell
-# $PROFILE.CurrentUserAllHosts
-
-$env:GITTOOL_CONFIG="${env:HOME}/git-tool.yml"
-
-# This adds an alias for Git-Tool so you can simply type "gt"
-New-Alias -Name gt -Value git-tool
-
-# This sets up autocomplete support for git-tool and "gt"
-Invoke-Expression (&git-tool shell-init powershell)
-```
+::: tip
+At this point, you'll be able to run `git-tool` to open repositories, create new ones,
+or manage your weekly scratchpads without any further configuration, however you'll
+probably want to continue through the remaining steps to get the most out of your setup.
 :::
 
-::: code-group-item bash
-```bash
-# ~/.bashrc
-
-export GITTOOL_CONFIG="$HOME/.config/git-tool.yml"
-
-alias gt="git-tool"
-eval "$(git-tool shell-init bash)"
-```
-:::
-
-::: code-group-item zsh
-```bash
-# ~/.zshrc
-
-export GITTOOL_CONFIG="$HOME/Library/Preferences/git-tool.yml"
-
-alias gt="git-tool"
-eval "$(git-tool shell-init zsh)"
-```
-:::
-::::
-
-#### Step #2: [Configuration](../config/README.md)
-Setup your `$GITTOOL_CONFIG` file with the repository hosting services and apps you want
-to use, point it at your development directory and Git-Tool will do the rest.
-
-```yaml
----
-directory: "C:\\dev" # CHANGE ME
-services:
-  - domain: gh
-    website: "https://github.com/{{ .Repo.FullName }}"
-    gitUrl: "git@github.com:{{ .Repo.FullName }}.git"
-    pattern: "*/*"
-    api:
-      kind: GitHub/v3
-      url: https://api.github.com
-apps:
-  - name: shell
-    command: pwsh # CHANGE ME
-
-features:
-  #  Set this to false if you don't want to send crash information to us
-  telemetry: true
-```
+#### Step #2: [Setup](../commands/setup.md)
+To get the most out of Git-Tool, you should run the setup wizard with `git-tool setup`.
+This wizard will guide you through the process of setting up your configuration file
+and shell autocompletion to ensure you get the most out of Git-Tool.
 
 #### Step #3: [Linking to GitHub](github.md)
 Git-Tool <3 GitHub and can automatically create repositories there whenever you run `gt new`.
