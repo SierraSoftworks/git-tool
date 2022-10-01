@@ -35,6 +35,16 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn default_path() -> Option<PathBuf> {
+        match directories_next::ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
+            Some(dir) => Some(dir.config_dir().join("config.yml")),
+            None => {
+                tracing::warn!("Could not find a config directory for your OS. Using the current directory instead.");
+                None
+            }
+        }
+    }
+
     fn with_config_file<P: Into<PathBuf>>(self, path: P) -> Self {
         let mut c = self;
         c.config_file = Some(path.into());
@@ -90,6 +100,13 @@ impl Config {
         }
 
         into
+    }
+
+    pub fn file_exists(&self) -> bool {
+        self.config_file
+            .as_ref()
+            .map(|p| p.exists())
+            .unwrap_or(false)
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -354,7 +371,7 @@ impl Default for Config {
             schema: Some(
                 "https://schemas.sierrasoftworks.com/git-tool/v2/config.schema.json".into(),
             ),
-            config_file: None,
+            config_file: Self::default_path(),
             dev_directory: dev_dir,
             scratch_directory: None,
             apps: vec![

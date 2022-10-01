@@ -1,15 +1,13 @@
 use crate::{
+    completion::get_shells,
     core::{Error, Prompter},
     fs::to_native_path,
 };
-use std::{
-    io::ErrorKind,
-    path::{Path, PathBuf},
-    writeln,
-};
+use std::{io::ErrorKind, path::PathBuf, writeln};
 
 use clap::Arg;
-use directories_next::{ProjectDirs, UserDirs};
+use directories_next::UserDirs;
+use itertools::Itertools;
 
 use super::*;
 
@@ -39,14 +37,11 @@ impl CommandRunnable for SetupCommand {
         core: &Core,
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error> {
-        match core.config().get_config_file() {
-            Some(path) if !matches.is_present("force") => {
-                Err(errors::user(
-                    &format!("You already have a Git-Tool config file ({}) which will not be modified.", path.display()),
-                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
-            }
-            _ => {}
-        };
+        if core.config().file_exists() && !matches.is_present("force") {
+            Err(errors::user(
+                &format!("You already have a Git-Tool config file ({}) which will not be modified.", core.config().get_config_file().unwrap().display()),
+                "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
+        }
 
         writeln!(core.output(), "Welcome to the Git-Tool setup wizard.")?;
         writeln!(core.output(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
@@ -60,40 +55,31 @@ impl CommandRunnable for SetupCommand {
             dev_directory.display()
         )?;
 
-        let config_path = self.prompt_config_path(core, &mut prompter)?;
-        writeln!(
-            core.output(),
-            "\nGotcha, we'll store your Git-Tool config in {}.",
-            config_path.display()
-        )?;
-
         let enable_telemetry = prompter
             .prompt_bool(
-                "Are you happy sharing crash reports with us automatically? [Y/n]: ",
+                "Are you happy sharing crash reports and performance telemetry with us automatically? [Y/n]: ",
                 Some(true),
             )?
             .unwrap_or(true);
-
-        match config_path.parent() {
-            Some(parent) if !parent.exists() => {
-                std::fs::create_dir_all(parent).map_err(|err| errors::user_with_internal(
-                    &format!("We couldn't create the config file parent directory at '{}' due to a system error.", parent.display()),
-                    "For access denied errors, make sure you have write permission to the location containing your config file. If you run into trouble, please create a GitHub issue and we will try to help.",
-                    err
-                ))?;
-            }
-            _ => {}
-        };
 
         let new_config = core
             .config()
             .with_dev_directory(&dev_directory)
             .with_feature_flag("telemetry", enable_telemetry);
 
-        new_config.save(&config_path).await?;
+        new_config
+            .save(
+                &new_config
+                    .get_config_file()
+                    .or_else(|| core::Config::default_path())
+                    .ok_or_else(|| errors::system(
+                        "Could not determine a default configuration file path for your system.",
+                        "Set the GITTOOL_CONFIG environment variable to a valid configuration file path and try again."))?,
+            )
+            .await?;
 
         writeln!(core.output(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
-        self.prompt_setup_shell(core, &config_path, &mut prompter)?;
+        self.prompt_setup_shell(core, &mut prompter)?;
 
         Ok(0)
     }
@@ -159,146 +145,49 @@ impl SetupCommand {
         Ok(to_native_path(dev_dir))
     }
 
-    fn prompt_config_path(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
-        let default_path = core.config().get_config_file().or_else(|| {
-            ProjectDirs::from("com", "SierraSoftworks", "Git-Tool")
-                .map(|dirs| dirs.config_dir().join("config.yml"))
-        });
+    fn prompt_setup_shell(&self, core: &Core, prompter: &mut Prompter) -> Result<(), Error> {
+        #[cfg(windows)]
+        let default_shell = "powershell";
+        #[cfg(target_os = "linux")]
+        let default_shell = "bash";
+        #[cfg(target_os = "macos")]
+        let default_shell = "zsh";
 
-        let config_path = prompter.prompt(
-            &format!(
-                "Enter a path to your git-tool.yml config file{}: ",
-                default_path
-                    .clone()
-                    .map(|v| format!(" [{}]", v.display()))
-                    .unwrap_or_else(|| "".into())
-            ),
-            |line| {
-                if line.is_empty() {
-                    return true;
-                }
+        let shells = get_shells();
 
-                let path = PathBuf::from(line);
-                match path.canonicalize() {
-                    Ok(_) => { true },
-                    Err(err) if err.kind() == ErrorKind::NotFound => { true },
-                    Err(err) => {
-                        writeln!(core.output(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
-                        false
-                    }
-                }
-            },
-        )?
-        .and_then(|v| {
+        let other_shells = shells
+            .iter()
+            .map(|s| s.get_name())
+            .filter(|&s| s != default_shell)
+            .join("/");
+
+        let shell = prompter.prompt(&format!("Enter the shell you wish to configure [{}/{}]:", default_shell.to_uppercase(), other_shells), |v| {
             if v.is_empty() {
-                default_path.clone()
-            } else {
-                Some(PathBuf::from(v))
+                return true;
             }
-        })
-        .ok_or_else(|| errors::user(
-            "You did not enter a valid directory to store your Git-Tool config in.",
-            "Enter a valid path to a file where Git-Tool will store its configuration.",
-        ))?;
 
-        Ok(to_native_path(config_path))
-    }
+            if shells.iter().find(|s| s.get_name() == v).is_some() {
+                return true;
+            }
 
-    #[cfg(windows)]
-    fn prompt_setup_shell(
-        &self,
-        core: &Core,
-        config_path: &Path,
-        _prompter: &mut Prompter,
-    ) -> Result<(), Error> {
-        let mut writer = core.output();
+            writeln!(core.output(), " [!] That shell is not supported, please select a supported shell and try again.").unwrap_or_default();
+            false
+        })?.map(|v| if v.is_empty() {
+            default_shell.into()
+        } else {
+            v
+        }).unwrap_or(default_shell.into());
 
-        writeln!(
-            writer,
-            "\nStep 1: Open your PowerShell Profile file in Notepad"
-        )?;
-        writeln!(writer, "\n        notepad.exe $PROFILE.CurrentUserAllHosts")?;
-        writeln!(writer, "\nStep 2: Add the following to it")?;
-        writeln!(writer, "\n        $env:GITTOOL_CONFIG = \"{}\" # This tells Git-Tool where to find your config file", config_path.display())?;
-        writeln!(writer, "        Invoke-Expression (&git-tool shell-init powershell) # This sets up auto-complete")?;
-        writeln!(writer, "        New-Alias -Name gt -Value \"git-tool.exe\" # This adds the 'gt' command line alias")?;
-        writeln!(writer, "\nStep 3: Save the profile file and close Notepad")?;
-        writeln!(
-            writer,
-            "\nStep 4: Restart your terminal and try running `gt`"
-        )?;
-
-        Ok(())
-    }
-
-    #[cfg(target_os = "linux")]
-    fn prompt_setup_shell(
-        &self,
-        core: &Core,
-        config_path: &Path,
-        _prompter: &mut Prompter,
-    ) -> Result<(), Error> {
-        let mut writer = core.output();
-
-        writeln!(
-            writer,
-            "\nStep 1: Open your .bashrc profile file in your favourite editor"
-        )?;
-        writeln!(writer, "\n        editor ~/.bashrc")?;
-        writeln!(writer, "\nStep 2: Add the following to it")?;
-        writeln!(writer, "\n        export GITTOOL_CONFIG=\"{}\" # This tells Git-Tool where to find your config file", config_path.display())?;
-        writeln!(
-            writer,
-            "        eval \"$(git-tool shell-init bash)\" # This sets up auto-complete"
-        )?;
-        writeln!(
-            writer,
-            "        alias gt=git-tool # This adds the 'gt' command line alias"
-        )?;
-        writeln!(
-            writer,
-            "\nStep 3: Save the profile file and close your editor (`ESC :wq` for VI)"
-        )?;
-        writeln!(
-            writer,
-            "\nStep 4: Restart your terminal and try running `gt`"
-        )?;
-
-        Ok(())
-    }
-
-    #[cfg(target_os = "macos")]
-    fn prompt_setup_shell(
-        &self,
-        core: &Core,
-        config_path: &Path,
-        _prompter: &mut Prompter,
-    ) -> Result<(), Error> {
-        let mut writer = core.output();
-
-        writeln!(
-            writer,
-            "\nStep 1: Open your .zshrc profile file in your favourite editor"
-        )?;
-        writeln!(writer, "\n        editor ~/.zshrc")?;
-        writeln!(writer, "\nStep 2: Add the following to it")?;
-        writeln!(writer, "\n        export GITTOOL_CONFIG=\"{}\" # This tells Git-Tool where to find your config file", config_path.display())?;
-        writeln!(
-            writer,
-            "        eval \"$(git-tool shell-init zsh)\" # This sets up auto-complete"
-        )?;
-        writeln!(
-            writer,
-            "        alias gt=git-tool # This adds the 'gt' command line alias"
-        )?;
-        writeln!(
-            writer,
-            "\nStep 3: Save the profile file and close your editor (`ESC :wq` for VI)"
-        )?;
-        writeln!(
-            writer,
-            "\nStep 4: Restart your terminal and try running `gt`"
-        )?;
+        writeln!(core.output())?;
+        if let Some(shell) = shells.iter().find(|s| s.get_name() == shell) {
+            writeln!(core.output(), "To use Git-Tool, you'll need to add the following to your shell's config file ({}):", shell.get_config_file())?;
+            writeln!(core.output(), "{}", shell.get_install())?;
+        } else {
+            writeln!(
+                core.output(),
+                "Git-Tool doesn't support your current shell with native auto-completion, please let us know about this by opening a GitHub issue."
+            )?;
+        }
 
         Ok(())
     }

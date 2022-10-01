@@ -4,6 +4,9 @@ pub struct Shell {
     name: &'static str,
     short_init: String,
     long_init: String,
+
+    config_file: String,
+    install: String,
 }
 
 impl Shell {
@@ -17,6 +20,14 @@ impl Shell {
 
     pub fn get_long_init(&self) -> &str {
         &self.long_init
+    }
+
+    pub fn get_config_file(&self) -> &str {
+        &self.config_file
+    }
+
+    pub fn get_install(&self) -> &str {
+        &self.install
     }
 }
 
@@ -40,6 +51,14 @@ param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
 }}
 }} -Native
             "#,
+                app = &app
+            ),
+
+            config_file: "$PROFILE.CurrentUserAllHosts".to_string(),
+            install: format!(
+                r#"
+Invoke-Expression (&{app} shell-init powershell)
+New-Alias -Name gt -Value {app}"#,
                 app = &app
             ),
         },
@@ -74,6 +93,14 @@ complete -F _gittool_bash_autocomplete gt git-tool
             "#,
                 app = &app
             ),
+
+            config_file: "~/.bashrc".to_string(),
+            install: format!(
+                r#"
+eval "$({app} shell-init bash)"
+alias gt={app}"#,
+                app = &app
+            ),
         },
         Shell {
             name: "zsh",
@@ -90,11 +117,27 @@ compctl -U -K _gittool_zsh_autocomplete git-tool
             "#,
                 app = &app
             ),
+
+            config_file: "~/.zshrc".to_string(),
+            install: format!(
+                r#"
+eval "$({app} shell-init zsh)"
+alias gt={app}"#,
+                app = &app
+            ),
         },
         Shell {
             name: "fish",
             short_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
             long_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
+
+            config_file: "~/.fishrc".to_string(),
+            install: format!(
+                r#"
+eval "$({app} shell-init fish)"
+alias gt={app}"#,
+                app = &app
+            ),
         },
     ]
 }
