@@ -37,6 +37,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           lib = pkgs.lib;
+          stdenv = pkgs.stdenv;
           rustPlatform = pkgs.rustPlatform;
           nodePackages = pkgs.nodePackages;
         in
@@ -63,7 +64,7 @@
               pkgs.libiconv
               pkgs.openssl
             ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security]
+              ++ lib.optionals stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security]
               ++ lib.optionals stdenv.isLinux [ pkgs.dbus ];
 
             PROTOC = "${pkgs.protobuf}/bin/protoc";
