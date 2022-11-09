@@ -80,7 +80,7 @@
 
               outputHashes = {
                   "tracing-0.2.0" = "sha256-xK2F6TNne+scfKgU4Vr1tfe0kdXyOZt0N7bex0Jzcmg=";
-                  "mocktopus-0.7.12" = "sha256-aOP5rwWpFzs6gOliC4Fgjz1cXX5cyDUOnExEoyt8i/g=";
+                  "mocktopus-0.7.12" = "sha256-aHaKemhKuX6HSqrbgVjpjbAs41b5OJcvPsv2kgZq6xQ=";
               };
             };
 
