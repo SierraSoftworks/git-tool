@@ -28,7 +28,7 @@ jobs:
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
           token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -151,7 +151,7 @@ jobs:
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
           token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
@@ -234,7 +234,7 @@ jobs:
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
           token: ${{ env.SENTRY_AUTH_TOKEN }}
           organization: sierra-softworks
