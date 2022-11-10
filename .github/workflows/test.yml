@@ -190,7 +190,7 @@ jobs:
               -format=lcov > lcov.info
 
       - name: get secrets - codecov
-        uses: hashicorp/vault-action@v2.4.2
+        uses: hashicorp/vault-action@v2.4.3
         if: matrix.coverage || false
         with:
           url: https://vault.sierrasoftworks.com
