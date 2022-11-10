@@ -62,6 +62,16 @@ cargo install --git https://github.com/SierraSoftworks/git-tool.git
 :::
 ::::
 
+### Using Nix
+If you're running on [NixOS](https://nixos.org) or are using the Nix package manager on your system,
+you can install Git-Tool using the experimental Nix flake at `github:SierraSoftworks/git-tool`. This
+flake builds the latest `main` branch branch release and will contain the latest security fixes and
+features.
+
+```bash
+nix profile install github:SierraSoftworks/git-tool
+```
+
 ## Setting up your `PATH`
 
 ::: danger

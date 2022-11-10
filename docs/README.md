@@ -1,5 +1,6 @@
 ---
 home: true
+title: Home
 
 actions:
     - text: Get Started
