@@ -395,8 +395,8 @@ mod tests {
 
         println!("{}", output.to_string());
         assert!(
-            output.to_string().contains("name: bash\n"),
-            "the output should contain the new config"
+            output.to_string().contains("Applying Bash\n"),
+            "the output should explain which config is being applied"
         );
     }
 
