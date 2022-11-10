@@ -1,6 +1,6 @@
 [package]
 name = "git-tool"
-version = "0.2.0"
+version = "3.5.0"
 authors = ["Benjamin Pannell <benjamin@pannell.dev>", "Aideen Fay <me@aideen.dev>"]
 edition = "2018"
 
