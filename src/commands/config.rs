@@ -127,11 +127,7 @@ impl CommandRunnable for ConfigCommand {
 
                 match cfg.get_config_file() {
                     Some(path) => {
-                        tokio::fs::write(&path, cfg.to_string()?).await.map_err(|err| errors::user_with_internal(
-                            &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
-                            "Make sure that Git-Tool has permission to write to your config file and then try again.",
-                            err
-                        ))?;
+                        cfg.save(&path).await?;
                     }
                     None => {
                         writeln!(output, "{}", cfg.to_string()?)?;
@@ -395,8 +391,8 @@ mod tests {
 
         println!("{}", output.to_string());
         assert!(
-            output.to_string().contains("name: bash\n"),
-            "the output should contain the new config"
+            output.to_string().contains("Applying Bash\n"),
+            "the output should explain which config is being applied"
         );
     }
 

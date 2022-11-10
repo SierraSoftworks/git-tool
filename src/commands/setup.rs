@@ -201,8 +201,6 @@ mod tests {
 
     #[tokio::test]
     async fn run() {
-        let args = ArgMatches::default();
-
         let temp = tempdir().unwrap();
 
         let cfg = Config::default();
@@ -210,13 +208,10 @@ mod tests {
 
         let output = crate::console::output::mock();
 
-        crate::console::input::mock(&format!(
-            "{}\n{}\ny\n",
-            temp.path().display(),
-            temp.path().join("config.yml").display()
-        ));
+        crate::console::input::mock(&format!("{}\ny\nzsh\n", temp.path().display(),));
 
         let cmd = SetupCommand {};
+        let args = cmd.app().get_matches_from(vec!["setup", "--force"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {}
             Err(err) => panic!("{}", err.message()),
@@ -229,14 +224,12 @@ mod tests {
             "the output should contain the project directory"
         );
         assert!(
-            output
-                .to_string()
-                .contains(&format!("{}", temp.path().join("config.yml").display())),
-            "the output should contain the config path"
+            output.to_string().contains("zsh"),
+            "the output should contain the selected shell"
         );
         assert!(
-            output.to_string().contains("Step 4: Restart your terminal"),
-            "the output should contain the final setup steps"
+            output.to_string().contains("alias gt="),
+            "the output should contain the alias command"
         );
     }
 }
