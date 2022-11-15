@@ -10,8 +10,8 @@ impl Command for RemoveCommand {
         String::from("remove")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .visible_aliases(&["rm"])
             .about("removes a repository from your local machine")
@@ -27,7 +27,7 @@ impl Command for RemoveCommand {
 impl CommandRunnable for RemoveCommand {
     #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo_name = matches.value_of("repo").ok_or_else(|| {
+        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {
             errors::user(
                 "No repository name was provided.",
                 "Provide the name of the repository you wish to remove.",

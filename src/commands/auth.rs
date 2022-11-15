@@ -7,7 +7,7 @@ impl Command for AuthCommand {
     fn name(&self) -> String {
         String::from("auth")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("configure authentication tokens")
@@ -19,11 +19,12 @@ impl Command for AuthCommand {
             .arg(Arg::new("remove-token")
                 .long("delete")
                 .short('d')
-                .help("delete any access token associated with the service"))
-                .arg(Arg::new("token")
-                    .long("token")
-                    .help("specifies the token to be set (don't use this unless you have to)")
-                    .takes_value(true))
+                .help("delete any access token associated with the service")
+                .action(clap::ArgAction::SetTrue))
+            .arg(Arg::new("token")
+                .long("token")
+                .help("specifies the token to be set (don't use this unless you have to)")
+                .action(clap::ArgAction::Set))
     }
 }
 
@@ -35,7 +36,7 @@ impl CommandRunnable for AuthCommand {
         core: &Core,
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error> {
-        let service = matches.value_of("service").ok_or_else(|| {
+        let service = matches.get_one::<String>("service").ok_or_else(|| {
             errors::user(
             "You have not provided the name of the service you wish to authenticate.",
             "Please provide the name of the service when running this command: `git-tool auth gh`.",
@@ -50,10 +51,10 @@ impl CommandRunnable for AuthCommand {
                 ));
             }
 
-            if matches.is_present("remove-token") {
+            if matches.get_flag("remove-token") {
                 core.keychain().remove_token(service)?;
             } else {
-                let token = match matches.value_of("token") {
+                let token = match matches.get_one::<String>("token") {
                     Some(token) => token.to_string(),
                     None => {
                         writeln!(core.output(), "Access Token: ")?;

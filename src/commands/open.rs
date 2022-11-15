@@ -13,8 +13,8 @@ impl Command for OpenCommand {
         String::from("open")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .visible_aliases(&["o", "run"])
             .about("opens a repository using an application defined in your config")
@@ -30,11 +30,13 @@ New applications can be configured either by making changes to your configuratio
             .arg(Arg::new("create")
                     .long("create")
                     .short('c')
-                    .help("create the repository if it does not exist."))
+                    .help("create the repository if it does not exist.")
+                    .action(clap::ArgAction::SetTrue))
             .arg(Arg::new("no-create-remote")
                     .long("no-create-remote")
                     .short('R')
-                    .help("prevent the creation of a remote repository (on supported services)"))
+                    .help("prevent the creation of a remote repository (on supported services)")
+                    .action(clap::ArgAction::SetTrue))
     }
 }
 
@@ -47,7 +49,7 @@ impl CommandRunnable for OpenCommand {
             writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
         }
 
-        let (app, repo) = match helpers::get_launch_app(core, matches.value_of("app"), matches.value_of("repo")) {
+        let (app, repo) = match helpers::get_launch_app(core, matches.get_one::<String>("app"), matches.get_one::<String>("repo")) {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_best_repo(target)?)
             },
@@ -74,13 +76,13 @@ impl CommandRunnable for OpenCommand {
         if !repo.exists() {
             match sequence![GitClone {}].apply_repo(core, &repo).await {
                 Ok(()) => {}
-                Err(_) if matches.is_present("create") => {
+                Err(_) if matches.get_flag("create") => {
                     sequence![
                         GitInit {},
                         GitRemote { name: "origin" },
                         GitCheckout { branch: "main" },
                         CreateRemote {
-                            enabled: !matches.is_present("no-create-remote")
+                            enabled: !matches.get_flag("no-create-remote")
                         }
                     ]
                     .apply_repo(core, &repo)

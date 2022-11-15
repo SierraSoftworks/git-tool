@@ -13,8 +13,8 @@ impl Command for SwitchCommand {
         String::from("switch")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("switches to the specified branch.")
             .visible_aliases(&["sw", "branch", "b", "br"])
@@ -30,7 +30,8 @@ impl Command for SwitchCommand {
                 Arg::new("no-create")
                     .short('N')
                     .long("no-create")
-                    .help("don't create the branch if it doesn't exist."),
+                    .help("don't create the branch if it doesn't exist.")
+                    .action(clap::ArgAction::SetTrue),
             )
     }
 }
@@ -41,11 +42,11 @@ impl CommandRunnable for SwitchCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
-        match matches.value_of("branch") {
+        match matches.get_one::<String>("branch") {
             Some(branch) => {
                 let task = tasks::GitSwitch {
                     branch: branch.to_string(),
-                    create_if_missing: !matches.is_present("no-create"),
+                    create_if_missing: !matches.get_flag("no-create"),
                 };
 
                 task.apply_repo(core, &repo).await?;

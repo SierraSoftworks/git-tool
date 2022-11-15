@@ -8,7 +8,7 @@ impl Command for UpdateCommand {
     fn name(&self) -> String {
         String::from("update")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
@@ -17,16 +17,18 @@ impl Command for UpdateCommand {
                 .long("state")
                 .help("State information used to resume an update operation.")
                 .hide(true)
-                .takes_value(true))
+                .action(clap::ArgAction::Set))
             .arg(Arg::new("list")
                 .long("list")
-                .help("Prints the list of available releases."))
-            .arg(Arg::new("version")
+                .help("Prints the list of available releases.")
+                .action(clap::ArgAction::SetTrue))
+            .arg(Arg::new("target-version")
                 .help("The version you wish to update to. Defaults to the latest available version.")
                 .index(1))
             .arg(Arg::new("prerelease")
                 .help("Install pre-release and/or early access versions of Git-Tool.")
-                .long("prerelease"))
+                .long("prerelease")
+                .action(clap::ArgAction::SetTrue))
     }
 }
 
@@ -47,7 +49,7 @@ where {
             err))?;
         let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
-        let resume_successful = match matches.value_of("state") {
+        let resume_successful = match matches.get_one::<String>("state") {
             Some(state) => {
                 debug!("Received update state: {}", state);
                 sentry::configure_scope(|scope| {
@@ -81,7 +83,7 @@ where {
         let releases = manager.get_releases(core).await?;
         let current_variant = ReleaseVariant::default();
 
-        if matches.is_present("list") {
+        if matches.get_flag("list") {
             for release in releases {
                 let style = if release.version == current_version {
                     "*"
@@ -103,15 +105,15 @@ where {
             return Ok(0);
         }
 
-        let include_prerelease = matches.is_present("prerelease");
+        let include_prerelease = matches.get_flag("prerelease");
         let mut target_release = Release::get_latest(releases.iter().filter(|&r| {
             r.get_variant(&current_variant).is_some()
                 && r.version > current_version
                 && (!r.prerelease || include_prerelease)
         }));
 
-        if let Some(target_version) = matches.value_of("version") {
-            target_release = releases.iter().find(|r| r.id == target_version);
+        if let Some(target_version) = matches.get_one::<String>("target-version") {
+            target_release = releases.iter().find(|r| &r.id == target_version);
         }
 
         match target_release {
@@ -122,7 +124,7 @@ where {
                     writeln!(output, "Shutting down to complete the update operation.")?;
                 }
             },
-            None if matches.is_present("version") => {
+            None if matches.contains_id("version") => {
                 return Err(errors::user(
                     "Could not find an available update for your platform matching the version you provided.",
                     "If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`."))

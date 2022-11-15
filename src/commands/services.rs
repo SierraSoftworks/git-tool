@@ -6,7 +6,7 @@ impl Command for ServicesCommand {
     fn name(&self) -> String {
         String::from("services")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("list services which can be used with Git-Tool")

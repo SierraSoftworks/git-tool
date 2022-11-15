@@ -11,8 +11,8 @@ impl Command for CloneCommand {
         String::from("clone")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("clones a repository")
             .long_about("This command clones a repository if it does not already exist in your dev directory. It works similarly to the `gt open` command, however it will not launch an application in the repository upon completion.")
@@ -27,7 +27,7 @@ impl Command for CloneCommand {
 impl CommandRunnable for CloneCommand {
     #[tracing::instrument(name = "gt clone", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo_name = matches.value_of("repo").ok_or_else(|| errors::user(
+        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| errors::user(
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
 

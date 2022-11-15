@@ -10,7 +10,7 @@ impl Command for NewCommand {
         "new".into()
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("creates a new repository")
@@ -25,19 +25,22 @@ impl Command for NewCommand {
                 Arg::new("open")
                     .long("open")
                     .short('o')
-                    .help("opens the repository in your default application after it is created."),
+                    .help("opens the repository in your default application after it is created.")
+                    .action(clap::ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("no-create-remote")
                     .long("no-create-remote")
                     .short('R')
-                    .help("prevent the creation of a remote repository (on supported services)"),
+                    .help("prevent the creation of a remote repository (on supported services)")
+                    .action(clap::ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("no-check-exists")
                     .long("no-check-exists")
                     .short('E')
-                    .help("don't check whether the repository already exists on the remote service before creating a new local repository"),
+                    .help("don't check whether the repository already exists on the remote service before creating a new local repository")
+                    .action(clap::ArgAction::SetTrue),
             )
     }
 }
@@ -46,7 +49,7 @@ impl Command for NewCommand {
 impl CommandRunnable for NewCommand {
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo = match matches.value_of("repo") {
+        let repo = match matches.get_one::<String>("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => Err(errors::user(
                 "No repository name provided for creation.",
@@ -60,19 +63,19 @@ impl CommandRunnable for NewCommand {
 
         let tasks = sequence![
             EnsureNoRemote {
-                enabled: !matches.is_present("no-check-exists")
+                enabled: !matches.get_flag("no-check-exists")
             },
             GitInit {},
             GitRemote { name: "origin" },
             GitCheckout { branch: "main" },
             CreateRemote {
-                enabled: !matches.is_present("no-create-remote")
+                enabled: !matches.get_flag("no-create-remote")
             }
         ];
 
         tasks.apply_repo(core, &repo).await?;
 
-        if matches.is_present("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
+        if matches.get_flag("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
             let app = core.config().get_default_app().ok_or_else(|| errors::user(
                 "No default application available.",
                 "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;

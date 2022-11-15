@@ -8,7 +8,7 @@ impl Command for DoctorCommand {
         String::from("doctor")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("checks that your environment is configured correctly for Git-Tool")

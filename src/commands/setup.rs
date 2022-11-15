@@ -17,15 +17,16 @@ impl Command for SetupCommand {
     fn name(&self) -> String {
         String::from("setup")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(&self.name())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("runs the setup wizard for first time users")
             .long_about("This setup wizard will guide you through the process of getting your first Git-Tool config set up.")
             .arg(Arg::new("force")
                 .long("force")
                 .short('f')
-                .help("Run the setup wizard even if you already have a config file."))
+                .help("Run the setup wizard even if you already have a config file.")
+                .action(clap::ArgAction::SetTrue))
     }
 }
 
@@ -37,7 +38,7 @@ impl CommandRunnable for SetupCommand {
         core: &Core,
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error> {
-        if core.config().file_exists() && !matches.is_present("force") {
+        if core.config().file_exists() && !matches.get_flag("force") {
             Err(errors::user(
                 &format!("You already have a Git-Tool config file ({}) which will not be modified.", core.config().get_config_file().unwrap().display()),
                 "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
@@ -216,6 +217,8 @@ mod tests {
             Ok(_) => {}
             Err(err) => panic!("{}", err.message()),
         }
+
+        println!("{}", output.to_string());
 
         assert!(
             output

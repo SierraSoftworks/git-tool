@@ -10,8 +10,8 @@ impl Command for ScratchCommand {
         String::from("scratch")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .visible_alias("s")
             .about("opens a scratchpad using an application defined in your config")
@@ -34,8 +34,8 @@ impl CommandRunnable for ScratchCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(
             core,
-            matches.value_of("app"),
-            matches.value_of("scratchpad"),
+            matches.get_one::<String>("app"),
+            matches.get_one::<String>("scratchpad"),
         ) {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_scratchpad(target)?)

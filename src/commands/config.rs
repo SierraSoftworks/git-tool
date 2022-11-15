@@ -13,8 +13,8 @@ impl Command for ConfigCommand {
         String::from("config")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("manage your Git-Tool configuration file")
             .long_about("This tool allows you to easily make changes to your Git-Tool config file.")
@@ -37,11 +37,12 @@ impl Command for ConfigCommand {
                     .long("name")
                     .short('n')
                     .help("the name you would like to associated with this entry")
-                    .takes_value(true))
+                    .action(clap::ArgAction::Set))
                 .arg(Arg::new("force")
                     .long("force")
                     .short('f')
-                    .help("overwrites any existing entries with those from the template.")))
+                    .help("overwrites any existing entries with those from the template.")
+                    .action(clap::ArgAction::SetTrue)))
 
             .subcommand(clap::Command::new("alias")
                 .version("1.0")
@@ -50,7 +51,8 @@ impl Command for ConfigCommand {
                 .arg(Arg::new("delete")
                     .short('d')
                     .long("delete")
-                    .help("delete the alias from your config file"))
+                    .help("delete the alias from your config file")
+                    .action(clap::ArgAction::SetTrue))
                 .arg(Arg::new("alias")
                     .help("the name of the alias to manage")
                     .index(1))
@@ -79,7 +81,8 @@ impl Command for ConfigCommand {
                 .arg(Arg::new("scratch")
                     .long("scratch")
                     .short('s')
-                    .help("configure the scratchpads path instead of the repositories path")))
+                    .help("configure the scratchpads path instead of the repositories path")
+                    .action(clap::ArgAction::SetTrue)))
     }
 }
 
@@ -99,7 +102,7 @@ impl CommandRunnable for ConfigCommand {
                 }
             }
             Some(("add", args)) => {
-                let id = args.value_of("id").ok_or_else(|| {
+                let id = args.get_one::<String>("id").ok_or_else(|| {
                     errors::user(
                         "You have not provided an ID for the config template you wish to add.",
                         "",
@@ -115,13 +118,13 @@ impl CommandRunnable for ConfigCommand {
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
-                        let ec = if let Some(name) = args.value_of("as") {
+                        let ec = if let Some(name) = args.get_one::<String>("as") {
                             ec.with_name(name)
                         } else {
                             ec
                         };
 
-                        cfg = cfg.apply_template(ec, args.is_present("force"))?;
+                        cfg = cfg.apply_template(ec, args.get_flag("force"))?;
                     }
                 }
 
@@ -134,9 +137,9 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
             }
-            Some(("alias", args)) => match args.value_of("alias") {
+            Some(("alias", args)) => match args.get_one::<String>("alias") {
                 Some(alias) => {
-                    if args.is_present("delete") {
+                    if args.get_flag("delete") {
                         let mut cfg = core.config().clone();
                         cfg.remove_alias(alias);
 
@@ -152,7 +155,7 @@ impl CommandRunnable for ConfigCommand {
                         return Ok(0);
                     }
 
-                    match args.value_of("repo") {
+                    match args.get_one::<String>("repo") {
                         Some(repo) => {
                             let mut cfg = core.config().clone();
                             cfg.add_alias(alias, repo);
@@ -182,8 +185,8 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
             },
-            Some(("feature", args)) => match args.value_of("flag") {
-                Some(flag) => match args.value_of("enable") {
+            Some(("feature", args)) => match args.get_one::<String>("flag") {
+                Some(flag) => match args.get_one::<String>("enable") {
                     Some(value) if value == "true" || value == "false" => {
                         let cfg = core.config().with_feature_flag(flag, value == "true");
 
@@ -220,28 +223,30 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
             },
-            Some(("path", args)) if args.is_present("scratch") => match args.value_of("path") {
-                Some(path) => {
-                    let cfg = core.config().with_scratch_directory(path);
+            Some(("path", args)) if args.get_flag("scratch") => {
+                match args.get_one::<String>("path") {
+                    Some(path) => {
+                        let cfg = core.config().with_scratch_directory(path);
 
-                    match cfg.get_config_file() {
-                        Some(path) => {
-                            cfg.save(&path).await?;
-                        }
-                        None => {
-                            writeln!(output, "{}", cfg.to_string()?)?;
+                        match cfg.get_config_file() {
+                            Some(path) => {
+                                cfg.save(&path).await?;
+                            }
+                            None => {
+                                writeln!(output, "{}", cfg.to_string()?)?;
+                            }
                         }
                     }
+                    None => {
+                        writeln!(
+                            output,
+                            "{}",
+                            core.config().get_scratch_directory().display()
+                        )?;
+                    }
                 }
-                None => {
-                    writeln!(
-                        output,
-                        "{}",
-                        core.config().get_scratch_directory().display()
-                    )?;
-                }
-            },
-            Some(("path", args)) => match args.value_of("path") {
+            }
+            Some(("path", args)) => match args.get_one::<String>("path") {
                 Some(path) => {
                     let cfg = core.config().with_dev_directory(path);
 
@@ -280,9 +285,9 @@ impl CommandRunnable for ConfigCommand {
                 }
             }
             Some(("alias", args)) => {
-                if !args.is_present("alias") {
+                if !args.contains_id("alias") {
                     completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
-                } else if !args.is_present("delete") && !args.is_present("repo") {
+                } else if !args.get_flag("delete") && !args.contains_id("repo") {
                     completer.offer("-d");
                     if let Ok(repos) = core.resolver().get_repos() {
                         completer.offer_many(
@@ -294,7 +299,7 @@ impl CommandRunnable for ConfigCommand {
                 }
             }
             Some(("feature", args)) => {
-                if !args.is_present("flag") {
+                if !args.contains_id("flag") {
                     completer.offer_many(features::ALL.iter().copied());
                 } else {
                     completer.offer("true");
@@ -302,7 +307,7 @@ impl CommandRunnable for ConfigCommand {
                 }
             }
             Some(("path", args)) => {
-                if !args.is_present("scratch") {
+                if !args.get_flag("scratch") {
                     completer.offer("--scratch");
                 }
             }

@@ -10,8 +10,8 @@ impl Command for InfoCommand {
         String::from("info")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("gets the details of a specific repository")
             .visible_alias("i")
@@ -27,7 +27,7 @@ impl CommandRunnable for InfoCommand {
     #[tracing::instrument(name = "gt info", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
-        let repo = match matches.value_of("repo") {
+        let repo = match matches.get_one::<String>("repo") {
             Some(name) => core.resolver().get_best_repo(name)?,
             None => core.resolver().get_current_repo()?,
         };

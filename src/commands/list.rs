@@ -9,7 +9,7 @@ impl Command for ListCommand {
     fn name(&self) -> String {
         String::from("list")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .visible_aliases(&["ls", "ll"])
@@ -21,11 +21,13 @@ impl Command for ListCommand {
             .arg(Arg::new("quiet")
                 .long("quiet")
                 .short('q')
-                .help("Prints only the name of the repository."))
+                .help("Prints only the name of the repository.")
+                .action(clap::ArgAction::SetTrue))
             .arg(Arg::new("full")
                 .long("full")
                 .help("Prints detailed information about each repository.")
-                .conflicts_with("quiet"))
+                .conflicts_with("quiet")
+                .action(clap::ArgAction::SetTrue))
     }
 }
 
@@ -40,10 +42,13 @@ impl CommandRunnable for ListCommand {
 where {
         let mut output = core.output();
 
-        let filter = matches.value_of("filter").unwrap_or("");
+        let filter = matches
+            .get_one::<String>("filter")
+            .map(|s| s.as_str())
+            .unwrap_or("");
 
-        let quiet = matches.is_present("quiet");
-        let full = matches.is_present("full");
+        let quiet = matches.get_flag("quiet");
+        let full = matches.get_flag("full");
 
         let repos = core.resolver().get_repos()?;
 
