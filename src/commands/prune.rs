@@ -12,8 +12,8 @@ impl Command for PruneCommand {
         String::from("prune")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("removes local branches that have been merged.")
             .long_about(
@@ -25,12 +25,12 @@ impl Command for PruneCommand {
                 Arg::new("yes")
                     .long("yes")
                     .short('y')
-                    .help("Do not prompt for confirmation before deleting branches"),
+                    .help("Do not prompt for confirmation before deleting branches")
+                    .action(clap::ArgAction::SetTrue),
             )
             .arg(Arg::new("pattern")
                 .help("The branch patterns which should be pruned")
-                .takes_value(true)
-                .multiple_values(true))
+                .action(clap::ArgAction::Append))
     }
 }
 
@@ -67,7 +67,7 @@ impl CommandRunnable for PruneCommand {
             return Ok(0);
         }
 
-        if !matches.is_present("yes") {
+        if !matches.get_flag("yes") {
             writeln!(core.output(), "The following branches will be removed:")?;
             for branch in to_remove.iter() {
                 writeln!(core.output(), "  {}", branch)?;

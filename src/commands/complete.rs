@@ -7,7 +7,7 @@ impl Command for CompleteCommand {
     fn name(&self) -> String {
         String::from("complete")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         clap::Command::new(&self.name())
             .version("1.0")
             .about("provides command auto-completion")
@@ -15,7 +15,8 @@ impl Command for CompleteCommand {
             .arg(Arg::new("position")
                     .long("position")
                     .help("The position of the cursor when the completion is requested")
-                    .takes_value(true))
+                    .action(clap::ArgAction::Set)
+                    .value_parser(clap::value_parser!(usize)))
             .arg(Arg::new("args")
                 .help("The parameters being passed to Git-Tool for auto-completion.")
                 .index(1))
@@ -32,10 +33,9 @@ impl CommandRunnable for CompleteCommand {
     ) -> Result<i32, crate::core::Error>
 where {
         let position: Option<usize> = matches
-            .value_of("position")
-            .map(|v| v.parse().unwrap_or_default());
+            .get_one::<usize>("position").map(|s| *s);
 
-        let args = matches.value_of("args").unwrap_or_default();
+        let args = matches.get_one::<String>("args").map(|s| s.as_str()).unwrap_or_default();
 
         let commands = super::commands();
         let (cmd, filter) = self
@@ -96,7 +96,7 @@ impl CompleteCommand {
     ) -> Option<(Arc<dyn CommandRunnable>, ArgMatches)> {
         if let Ok(complete_matches) = self.get_completion_matches(commands, args) {
             for cmd in commands.iter() {
-                if let Some(cmd_matches) = complete_matches.subcommand_matches(cmd.name()) {
+                if let Some(cmd_matches) = complete_matches.subcommand_matches(&cmd.name()) {
                     return Some((cmd.clone(), cmd_matches.clone()));
                 }
             }

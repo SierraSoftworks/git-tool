@@ -35,7 +35,7 @@ mod update;
 
 pub trait Command: Send + Sync {
     fn name(&self) -> String;
-    fn app<'a>(&self) -> clap::Command<'a>;
+    fn app(&self) -> clap::Command;
 }
 
 #[async_trait]

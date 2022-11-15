@@ -10,17 +10,17 @@ pub enum LaunchTarget<'a> {
 }
 
 #[tracing::instrument(skip(core))]
-pub fn get_launch_app<'a>(
+pub fn get_launch_app<'a, S: AsRef<str> + std::fmt::Debug + std::fmt::Display + ?Sized>(
     core: &'a Core,
-    first: Option<&'a str>,
-    second: Option<&'a str>,
+    first: Option<&'a S>,
+    second: Option<&'a S>,
 ) -> LaunchTarget<'a> {
     match (first, second) {
         (Some(first), Some(second)) => {
-            if let Some(app) = core.config().get_app(first) {
-                LaunchTarget::AppAndTarget(app, second)
-            } else if let Some(app) = core.config().get_app(second) {
-                LaunchTarget::AppAndTarget(app, first)
+            if let Some(app) = core.config().get_app(first.as_ref()) {
+                LaunchTarget::AppAndTarget(app, second.as_ref())
+            } else if let Some(app) = core.config().get_app(second.as_ref()) {
+                LaunchTarget::AppAndTarget(app, first.as_ref())
             } else {
                 LaunchTarget::Err(errors::user(
                     format!("Could not find application with name '{}'.", first).as_str(),
@@ -28,17 +28,17 @@ pub fn get_launch_app<'a>(
             }
         }
         (Some(first), None) => {
-            if let Some(app) = core.config().get_app(first) {
+            if let Some(app) = core.config().get_app(first.as_ref()) {
                 LaunchTarget::App(app)
             } else {
-                LaunchTarget::Target(first)
+                LaunchTarget::Target(first.as_ref())
             }
         }
         (None, Some(second)) => {
-            if let Some(app) = core.config().get_app(second) {
+            if let Some(app) = core.config().get_app(second.as_ref()) {
                 LaunchTarget::App(app)
             } else {
-                LaunchTarget::Target(second)
+                LaunchTarget::Target(second.as_ref())
             }
         }
         (None, None) => LaunchTarget::None,
@@ -113,7 +113,7 @@ mod tests {
     fn test_no_args() {
         let core = Core::builder().build();
 
-        match get_launch_app(&core, None, None) {
+        match get_launch_app::<String>(&core, None, None) {
             LaunchTarget::None => {}
             _ => panic!("Expected to receive none"),
         }

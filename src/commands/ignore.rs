@@ -11,8 +11,8 @@ impl Command for IgnoreCommand {
         String::from("ignore")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .visible_alias("gitignore")
             .about("generates a .gitignore file for the provided languages")
@@ -22,11 +22,10 @@ impl Command for IgnoreCommand {
                     .help("The path to the .gitignore file you wish to update.")
                     .default_value(".gitignore")
                     .value_name("GITIGNORE")
-                    .takes_value(true))
+                    .action(clap::ArgAction::Set))
             .arg(Arg::new("language")
-                    .forbid_empty_values(true)
                     .help("The name of a language which should be added to your .gitignore file.")
-                    .multiple_values(true)
+                    .action(clap::ArgAction::Append)
                     .index(1))
     }
 }
@@ -37,7 +36,7 @@ impl CommandRunnable for IgnoreCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
 
-        match matches.values_of("language") {
+        match matches.get_many::<String>("language") {
             None => {
                 let languages = gitignore::list(core).await?;
 
@@ -49,14 +48,14 @@ impl CommandRunnable for IgnoreCommand {
                 let mut original_content: String = String::default();
 
                 let ignore_path =
-                    std::path::PathBuf::from(matches.value_of("path").unwrap_or(".gitignore"));
+                    matches.get_one::<std::path::PathBuf>("path").cloned().unwrap_or_else(|| std::path::PathBuf::from(".gitignore"));
 
                 if let Ok(content) = tokio::fs::read_to_string(&ignore_path).await {
                     original_content = content;
                 }
 
                 let content =
-                    gitignore::add_or_update(core, original_content.as_str(), languages.collect())
+                    gitignore::add_or_update(core, original_content.as_str(), languages.map(|s| s.as_str()).collect())
                         .await?;
 
                 tokio::fs::write(&ignore_path, content).await.map_err(|err| errors::user_with_internal(

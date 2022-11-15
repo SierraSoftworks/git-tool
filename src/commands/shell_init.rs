@@ -8,23 +8,24 @@ impl Command for ShellInitCommand {
     fn name(&self) -> String {
         String::from("shell-init")
     }
-    fn app<'a>(&self) -> clap::Command<'a> {
+    fn app(&self) -> clap::Command {
         let shells = get_shells();
 
-        let mut cmd = clap::Command::new(&self.name())
+        let mut cmd = clap::Command::new(self.name())
             .version("1.0")
             .about("configures your shell for use with Git-Tool")
             .long_about("Used to configure your shell environment to ensure that it works correctly with Git-Tool, including auto-complete support.");
 
         for shell in shells {
             cmd = cmd.subcommand(
-                clap::Command::new(shell.get_name())
+                clap::Command::new(shell.get_name().to_owned())
                     .about("prints the initialization script for this shell")
                     .arg(
                         Arg::new("full")
                             .long("full")
                             .help("prints the full initialization script for this shell")
-                            .hide(true),
+                            .hide(true)
+                            .action(clap::ArgAction::SetTrue),
                     ),
             );
         }
@@ -52,7 +53,7 @@ where {
                     "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
                 ))?;
 
-                if matches.is_present("full") {
+                if matches.get_flag("full") {
                     write!(output, "{}", shell.get_long_init())?;
                 } else {
                     write!(output, "{}", shell.get_short_init())?;

@@ -10,11 +10,10 @@ impl Command for FixCommand {
         String::from("fix")
     }
 
-    fn app<'a>(&self) -> clap::Command<'a> {
-        clap::Command::new(self.name().as_str())
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
             .version("1.0")
             .about("fixes the remote configuration for a repository")
-            .visible_alias("i")
             .long_about("Updates the remote configuration for a repository to match its directory location.")
             .arg(Arg::new("repo")
                     .help("The name of the repository to fix.")
@@ -22,11 +21,13 @@ impl Command for FixCommand {
             .arg(Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("apply fixes to all matched repositories"))
+                .help("apply fixes to all matched repositories")
+                .action(clap::ArgAction::SetTrue))
             .arg(Arg::new("no-create-remote")
                 .long("no-create-remote")
                 .short('R')
-                .help("prevent the creation of a remote repository (on supported services)"))
+                .help("prevent the creation of a remote repository (on supported services)")
+                .action(clap::ArgAction::SetTrue))
     }
 }
 
@@ -37,14 +38,17 @@ impl CommandRunnable for FixCommand {
         let tasks = sequence![
             GitRemote { name: "origin" },
             CreateRemote {
-                enabled: !matches.is_present("no-create-remote")
+                enabled: !matches.get_flag("no-create-remote")
             }
         ];
 
-        match matches.is_present("all") {
+        match matches.get_flag("all") {
             true => {
                 let mut output = core.output();
-                let filter = matches.value_of("repo").unwrap_or("");
+                let filter = matches
+                    .get_one::<String>("repo")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
 
                 let repos = core.resolver().get_repos()?;
                 for repo in search::best_matches_by(filter, repos.iter(), |r| {
@@ -55,7 +59,7 @@ impl CommandRunnable for FixCommand {
                 }
             }
             false => {
-                let repo = match matches.value_of("repo") {
+                let repo = match matches.get_one::<String>("repo") {
                     Some(name) => core.resolver().get_best_repo(name)?,
                     None => core.resolver().get_current_repo()?,
                 };

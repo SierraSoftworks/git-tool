@@ -45,33 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let session = Session::new();
 
         let commands = commands::default_commands();
-        let version = version!("v");
 
-        let app = clap::Command::new("Git-Tool")
-            .version(version.as_str())
-            .author(crate_authors!("\n"))
-            .about("Simplify your Git repository management and stop thinking about where things belong.")
-            .arg(Arg::new("config")
-                .short('c')
-                .long("config")
-                .env("GITTOOL_CONFIG")
-                .value_name("FILE")
-                .help("The path to your git-tool configuration file.")
-                .takes_value(true))
-            .arg(Arg::new("update-resume-internal")
-                .long("update-resume-internal")
-                .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
-                .takes_value(true)
-                .hide(true))
-            .arg(Arg::new("trace")
-                .long("trace")
-                .global(true)
-                .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
-            .arg(Arg::new("trace-context")
-                .long("trace-context")
-                .help("Configures the trace context used by this Git-Tool execution.")
-                .takes_value(true))
-            .subcommands(commands.iter().map(|x| x.app()));
+        let app = build_app(&commands);
 
         match host(app, commands).await {
             Result::Ok(status) => {
@@ -86,14 +61,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 }
 
+fn build_app(commands: &[Arc<dyn CommandRunnable>]) -> clap::Command {
+    clap::Command::new("Git-Tool")
+            .version(version!("v"))
+            .author(crate_authors!("\n"))
+            .about("Simplify your Git repository management and stop thinking about where things belong.")
+            .arg(Arg::new("config")
+                .short('c')
+                .long("config")
+                .env("GITTOOL_CONFIG")
+                .value_name("FILE")
+                .help("The path to your git-tool configuration file.")
+                .action(clap::ArgAction::Set))
+            .arg(Arg::new("update-resume-internal")
+                .long("update-resume-internal")
+                .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
+                .action(clap::ArgAction::Set)
+                .hide(true))
+            .arg(Arg::new("trace")
+                .long("trace")
+                .global(true)
+                .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
+            .arg(Arg::new("trace-context")
+                .long("trace-context")
+                .help("Configures the trace context used by this Git-Tool execution.")
+                .action(clap::ArgAction::Set))
+            .subcommands(commands.iter().map(|x| x.app()))
+}
+
 #[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=field::Empty, exception=field::Empty))]
 async fn host(
-    app: clap::Command<'_>,
+    app: clap::Command,
     commands: Vec<Arc<dyn CommandRunnable>>,
 ) -> Result<i32, errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
-            if let Some(context) = matches.value_of("trace-context") {
+            if let Some(context) = matches.get_one::<String>("trace-context") {
                 load_trace_context(&tracing::Span::current(), context);
                 info!("Loaded trace context from command line parameters.");
             }
@@ -107,8 +110,8 @@ async fn host(
             matches
         }
         Err(error)
-            if error.kind() != clap::ErrorKind::DisplayVersion
-                && error.kind() != clap::ErrorKind::DisplayHelp =>
+            if error.kind() != clap::error::ErrorKind::DisplayVersion
+                && error.kind() != clap::error::ErrorKind::DisplayHelp =>
         {
             tracing::Span::current()
                 .record("otel.status", "error")
@@ -203,7 +206,7 @@ async fn run(
 ) -> Result<i32, errors::Error> {
     let mut core_builder = core::Core::builder();
 
-    if let Some(cfg_file) = matches.value_of("config") {
+    if let Some(cfg_file) = matches.get_one::<String>("config") {
         debug!("Loading configuration file...");
         core_builder = core_builder.with_config_file(cfg_file)?;
     } else if let Some(dirs) = core::Config::default_path() {
@@ -221,7 +224,7 @@ async fn run(
     }
 
     // If the user explicitly enables tracing, then turn it on and print your trace ID
-    if matches.is_present("trace") {
+    if matches.contains_id("trace") {
         debug!("Tracing enabled by command line flag.");
         telemetry::set_enabled(true);
         writeln!(
@@ -237,7 +240,7 @@ async fn run(
 
     // Legacy update interoperability for compatibility with the Golang implementation
     if let (Some(state), None) = (
-        matches.value_of("update-resume-internal"),
+        matches.get_one::<String>("update-resume-internal"),
         matches.subcommand_name(),
     ) {
         info!("Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command.");
@@ -258,7 +261,7 @@ async fn run(
 
     debug!("Looking for an appropriate matching command implementation.");
     for cmd in commands.iter() {
-        if let Some(cmd_matches) = matches.subcommand_matches(cmd.name()) {
+        if let Some(cmd_matches) = matches.subcommand_matches(&cmd.name()) {
             debug!("Found a command implementation for '{}'", cmd.name());
 
             sentry::add_breadcrumb(sentry::Breadcrumb {
@@ -288,4 +291,16 @@ fn load_trace_context(span: &tracing::Span, context: &str) {
     let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
     let parent_context = propagator.extract(&carrier);
     span.set_parent(parent_context);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_command() {
+        let commands = commands::default_commands();
+        let app = build_app(&commands);
+        app.debug_assert();
+    }
 }
