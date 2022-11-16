@@ -86,6 +86,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_no_args() {
         let cfg = Config::from_str("directory: /dev").unwrap();
         let core = Core::builder().with_config(&cfg).build();

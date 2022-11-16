@@ -4,8 +4,6 @@ version = "3.5.0"
 authors = ["Benjamin Pannell <benjamin@pannell.dev>", "Aideen Fay <me@aideen.dev>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [[bin]]
 name = "git-tool"
 
@@ -50,6 +48,14 @@ sentry = { version = "0.29", default-features = false, features = ["reqwest", "r
 [features]
 default = ["auth"]
 auth = ["keyring", "rpassword"]
+
+# This feature disables tests which access the network, system secret store,
+# or portions of the filesystem OTHER than the $TMP directory.
+# 
+# We explicitly permit access to $TMP to permit validation of a range
+# of behaviours which are otherwise extremely costly to mock and subject
+# to complex failure modes.
+pure-tests = []
 
 [profile.release]
 debug = true

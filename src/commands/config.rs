@@ -378,6 +378,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_add_no_file() {
         let cfg = Config::from_str("directory: /dev").unwrap();
         let core = Core::builder().with_config(&cfg).build();
@@ -402,6 +403,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_add_with_file() {
         let temp = tempfile::tempdir().unwrap();
         tokio::fs::write(

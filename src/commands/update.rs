@@ -166,6 +166,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_list() {
         let cfg = Config::default();
         let core = Core::builder().with_config(&cfg).build();

@@ -59,6 +59,9 @@
             *.nix
             '' ./.;
 
+            checkFeatures = ["pure-tests"];
+            
+            # TODO: Enable this as soon as we can run the test suite on stable rustc
             doCheck = false;
 
             nativeBuildInputs = [

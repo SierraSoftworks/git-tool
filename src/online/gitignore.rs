@@ -235,6 +235,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_empty() {
         let core = Core::builder().build();
         match add_or_update(&core, "", vec!["rust"]).await {
@@ -247,6 +248,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_no_languages() {
         let core = Core::builder().build();
         match add_or_update(&core, "", vec![]).await {
@@ -258,6 +260,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_invalid_language() {
         let core = Core::builder().build();
         match add_or_update(&core, "", vec!["thisisnotareallanguage"]).await {
@@ -271,6 +274,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_unmanaged() {
         let core = Core::builder().build();
         match add_or_update(&core, "/tmp", vec!["rust"]).await {
@@ -284,6 +288,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_same_langs() {
         let core = Core::builder().build();
         match add_or_update(
@@ -309,6 +314,7 @@ bin/
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_new_langs() {
         let core = Core::builder().build();
         match add_or_update(

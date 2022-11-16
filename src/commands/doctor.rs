@@ -1,5 +1,4 @@
 use super::*;
-use std::env;
 
 pub struct DoctorCommand {}
 
@@ -28,38 +27,14 @@ impl CommandRunnable for DoctorCommand {
 
         writeln!(output, "Checking environment...")?;
 
-        let config_path = env::var("GITTOOL_CONFIG").map_err(|_| {
-            errors::user(
-                "GITTOOL_CONFIG environment variable is not set",
-                "Set the GITTOOL_CONFIG environment variable to the path of your config file",
-            )
-        })?;
-
-        writeln!(output, "[OK] GITTOOL_CONFIG environment variable set")?;
-
-        if !std::path::Path::new(&config_path).exists() {
-            Err(errors::user(
-                "GITTOOL_CONFIG environment variable is set to a path that does not exist",
-                "Set the GITTOOL_CONFIG environment variable to the path of your config file",
-            ))?;
+        if core.config().file_exists() {
+            writeln!(output, "[OK] Config file exists")?;
+        } else {
+            writeln!(
+                output,
+                "[WARNING] Config file does not exist, you are using the built-in defaults"
+            )?;
         }
-
-        writeln!(
-            output,
-            "[OK] GITTOOL_CONFIG environment variable points to a valid file"
-        )?;
-
-        match core.config().get_config_file() {
-            Some(config_file) if config_file != std::path::Path::new(&config_path) => {
-                Err(errors::user(
-                    "GITTOOL_CONFIG environment variable is set to a path that does not match the config file",
-                    "Set the GITTOOL_CONFIG environment variable to the path of your config file",
-                ))?;
-            }
-            _ => {}
-        }
-
-        writeln!(output, "[OK] GITTOOL_CONFIG value was loaded at startup")?;
 
         if !core.config().get_dev_directory().exists() {
             Err(errors::user(
@@ -113,6 +88,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run() {
         let args = ArgMatches::default();
 

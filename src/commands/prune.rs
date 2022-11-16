@@ -260,6 +260,7 @@ mod tests {
             .with_config(&core::Config::for_dev_directory(temp.path()))
             .build();
 
+        let output = crate::console::output::mock();
         crate::console::prompt::mock(Some("y"));
 
         let repo: Repo = setup_test_repo_with_remote(&core, &temp).await;
@@ -289,6 +290,11 @@ mod tests {
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["prune"]);
         cmd.run(&core, &args).await.unwrap();
+
+        assert!(
+            output.to_string().contains("feature/test2"),
+            "the output should contain the branch name being cleaned up"
+        );
 
         assert!(repo.valid(), "the repository should still be valid");
         let mut branches = git::git_branches(&repo.get_path()).await.unwrap();

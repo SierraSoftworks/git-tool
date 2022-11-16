@@ -162,6 +162,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_entries() {
         let core = Core::builder().build();
         let registry = GitHubRegistry;
@@ -172,6 +173,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_entry() {
         let core = Core::builder().build();
         let registry = GitHubRegistry;
