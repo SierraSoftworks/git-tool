@@ -10,6 +10,8 @@ mod remote;
 mod switch;
 
 #[cfg(test)]
+mod config;
+#[cfg(test)]
 mod refs;
 
 pub use add::git_add;
@@ -25,5 +27,7 @@ pub use init::git_init;
 pub use remote::{git_remote_add, git_remote_list, git_remote_set_url};
 pub use switch::git_switch;
 
+#[cfg(test)]
+pub use config::git_config_set;
 #[cfg(test)]
 pub use refs::{git_rev_parse, git_update_ref};
