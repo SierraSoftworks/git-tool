@@ -200,6 +200,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run() {
         let temp = tempdir().unwrap();
 
