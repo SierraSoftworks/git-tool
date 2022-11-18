@@ -245,7 +245,7 @@ impl CommandRunnable for ConfigCommand {
 
                     None => {
                         writeln!(
-                            output,
+                            core.output(),
                             "{}",
                             core.config().get_scratch_directory().display()
                         )?;

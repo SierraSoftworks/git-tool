@@ -34,8 +34,6 @@ impl Command for IgnoreCommand {
 impl CommandRunnable for IgnoreCommand {
     #[tracing::instrument(name = "gt ignore", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output();
-
         match matches.get_many::<String>("language") {
             None => {
                 let languages = gitignore::list(core).await?;
