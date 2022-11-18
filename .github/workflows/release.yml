@@ -46,7 +46,7 @@ jobs:
       - name: Generate Package Version
         id: version
         shell: pwsh
-        run: Write-Host "::set-output name=version::$('${{ github.event.release.tag_name }}'.substring(1))"
+        run: Add-Content -Path $env:GITHUB_ENV -Value "version=$('${{ github.event.release.tag_name }}'.substring(1))"
 
       - name: Set Package Version
         uses: ciiiii/toml-editor@1.0.0

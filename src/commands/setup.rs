@@ -72,7 +72,7 @@ impl CommandRunnable for SetupCommand {
             .save(
                 &new_config
                     .get_config_file()
-                    .or_else(|| core::Config::default_path())
+                    .or_else(core::Config::default_path)
                     .ok_or_else(|| errors::system(
                         "Could not determine a default configuration file path for your system.",
                         "Set the GITTOOL_CONFIG environment variable to a valid configuration file path and try again."))?,
@@ -167,7 +167,7 @@ impl SetupCommand {
                 return true;
             }
 
-            if shells.iter().find(|s| s.get_name() == v).is_some() {
+            if shells.iter().any(|s| s.get_name() == v) {
                 return true;
             }
 
@@ -177,7 +177,7 @@ impl SetupCommand {
             default_shell.into()
         } else {
             v
-        }).unwrap_or(default_shell.into());
+        }).unwrap_or_else(|| default_shell.into());
 
         writeln!(core.output())?;
         if let Some(shell) = shells.iter().find(|s| s.get_name() == shell) {
