@@ -63,6 +63,7 @@
             nativeBuildInputs = [
               pkgs.protobuf
               pkgs.pkg-config
+              pkgs.gitMinimal
             ];
 
             buildInputs = [
