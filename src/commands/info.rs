@@ -75,9 +75,10 @@ impl CommandRunnable for InfoCommand {
 
 #[cfg(test)]
 mod tests {
+    use mockall::predicate::eq;
+
     use super::*;
-    use crate::core::*;
-    use mocktopus::mocking::*;
+    use crate::{console::MockConsoleProvider, core::*};
 
     #[tokio::test]
     async fn run() {
@@ -87,21 +88,19 @@ mod tests {
 
         let cfg = Config::from_str("directory: /dev").unwrap();
 
-        Resolver::get_best_repo.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "repo",
-                "it should be called with the name of the repo to be cloned"
-            );
-
-            MockResult::Return(Ok(Repo::new(
-                "gh:sierrasoftworks/git-tool",
-                std::path::PathBuf::from("/test"),
-            )))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
+        let console = Arc::new(MockConsoleProvider::new());
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .with_mock_resolver(|mock| {
+                mock.expect_get_best_repo().with(eq("repo")).returning(|_| {
+                    Ok(Repo::new(
+                        "gh:sierrasoftworks/git-tool",
+                        std::path::PathBuf::from("/test"),
+                    ))
+                });
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}

@@ -52,7 +52,7 @@ impl CommandRunnable for AuthCommand {
             }
 
             if matches.get_flag("remove-token") {
-                core.keychain().remove_token(service)?;
+                core.keychain().delete_token(service)?;
             } else {
                 let token = match matches.get_one::<String>("token") {
                     Some(token) => token.to_string(),
@@ -94,37 +94,36 @@ impl CommandRunnable for AuthCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
     use super::*;
-    use mocktopus::mocking::*;
+    use mockall::predicate::*;
 
     #[tokio::test]
     async fn run_store() {
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
-        core::KeyChain::set_token.mock_safe(|_, token, value| {
-            assert_eq!(token, "gh", "the correct token should be saved");
-            assert_eq!(value, "12345", "the correct value should be saved");
-            MockResult::Return(Ok(()))
-        });
-        core::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be retrieved");
-            MockResult::Return(Ok("".into()))
-        });
-
-        core::HttpClient::mock(vec![core::HttpClient::route(
-            "GET",
-            "https://api.github.com/user",
-            200,
-            r#"{"login":"test"}"#,
-        )]);
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_set_token()
+                    .with(eq("gh"), eq("mock-token"))
+                    .times(1)
+                    .returning(|_, _| Ok(()));
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .times(1)
+                    .returning(|_| Ok("mock-token".to_string()));
+            })
+            .with_null_console()
+            .with_mock_http_client(vec![core::MockHttpRoute::new(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{"login": "test"}"#,
+            )])
+            .build();
 
         let cmd = AuthCommand {};
         let args = cmd
             .app()
-            .get_matches_from(vec!["auth", "gh", "--token", "12345"]);
+            .get_matches_from(vec!["auth", "gh", "--token", "mock-token"]);
         match cmd.run(&core, &args).await {
             Ok(_) => {}
             Err(err) => panic!("{}", err.message()),
@@ -133,14 +132,16 @@ mod tests {
 
     #[tokio::test]
     async fn run_delete() {
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
-        core::KeyChain::remove_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be removed");
-            MockResult::Return(Ok(()))
-        });
+        let core = Core::builder()
+            .with_default_config()
+            .with_null_console()
+            .with_mock_keychain(|mock| {
+                mock.expect_delete_token()
+                    .with(eq("gh"))
+                    .times(1)
+                    .returning(|_| Ok(()));
+            })
+            .build();
 
         let cmd = AuthCommand {};
         let args = cmd.app().get_matches_from(vec!["auth", "gh", "--delete"]);

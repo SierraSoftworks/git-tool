@@ -60,8 +60,7 @@ impl Task for CreateRemote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Config, KeyChain, Target};
-    use mocktopus::mocking::*;
+    use crate::core::Target;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -73,15 +72,16 @@ mod tests {
             temp.path().join("repo"),
         );
 
-        KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        crate::online::service::github::mocks::repo_created("sierrasoftworks");
-
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_http_client(crate::online::service::github::mocks::repo_created(
+                "sierrasoftworks",
+            ))
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(mockall::predicate::eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
             .build();
         CreateRemote { enabled: true }
             .apply_repo(&core, &repo)
@@ -95,7 +95,7 @@ mod tests {
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         let task = CreateRemote { enabled: true };

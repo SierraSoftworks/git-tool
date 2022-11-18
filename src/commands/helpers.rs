@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_normal_ordering() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app(&core, Some("shell"), Some("gh:test/test")) {
             LaunchTarget::AppAndTarget(app, repo) => {
@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_odd_ordering() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app(&core, Some("gh:test/test"), Some("shell")) {
             LaunchTarget::AppAndTarget(app, repo) => {
@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_app_only() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app(&core, Some("shell"), None) {
             LaunchTarget::App(app) => {
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_target_only() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app(&core, Some("gh:test/test"), None) {
             LaunchTarget::Target(repo) => {
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_unknown_app() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app(&core, Some("unknown"), Some("gh:test/test")) {
             LaunchTarget::Err(e) => assert!(!e.is_system()),
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_no_args() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         match get_launch_app::<String>(&core, None, None) {
             LaunchTarget::None => {}

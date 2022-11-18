@@ -9,7 +9,7 @@ use super::{
 use futures::{pin_mut, FutureExt};
 
 #[cfg(test)]
-use mocktopus::macros::*;
+use mockall::automock;
 
 use std::sync::Arc;
 use tokio::process::Command;
@@ -17,27 +17,30 @@ use tokio::process::Command;
 #[cfg(unix)]
 use std::convert::TryInto;
 
-#[cfg_attr(test, mockable)]
-pub struct Launcher {
+#[async_trait::async_trait]
+#[cfg_attr(test, automock)]
+pub trait Launcher: Send + Sync {
+    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
+}
+
+pub fn launcher(config: Arc<Config>) -> Arc<dyn Launcher + Send + Sync> {
+    Arc::new(TrueLauncher { config })
+}
+
+struct TrueLauncher {
     config: Arc<Config>,
 }
 
-impl From<Arc<Config>> for Launcher {
-    fn from(config: Arc<Config>) -> Self {
-        Launcher { config }
-    }
-}
-
-impl std::fmt::Debug for Launcher {
+impl std::fmt::Debug for dyn Launcher {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Launcher")
     }
 }
 
-#[cfg_attr(test, mockable)]
-impl Launcher {
-    #[tracing::instrument(name = "launch", err, skip(t, a), fields(app=%a, target=%t))]
-    pub async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
+#[async_trait::async_trait]
+impl Launcher for TrueLauncher {
+    #[tracing::instrument(name = "launch", err, skip(self, t, a), fields(app=%a, target=%t))]
+    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
         let context = t.template_context(&self.config);
 
         let program = render(a.get_command(), context.clone())?;
@@ -61,7 +64,9 @@ impl Launcher {
 
         self.forward_signals(&mut child).await
     }
+}
 
+impl TrueLauncher {
     #[cfg(windows)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
         loop {
@@ -160,7 +165,7 @@ mod tests {
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
-        let launcher = Launcher::from(config);
+        let launcher = launcher(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
@@ -180,7 +185,7 @@ mod tests {
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
-        let launcher = Launcher::from(config);
+        let launcher = launcher(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);

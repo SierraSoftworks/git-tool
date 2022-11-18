@@ -40,17 +40,18 @@ impl CommandRunnable for ServicesCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
     use super::*;
+    use crate::console::MockConsoleProvider;
 
     #[tokio::test]
     async fn run() {
         let args = ArgMatches::default();
 
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = Arc::new(MockConsoleProvider::new());
+        let core = Core::builder()
+            .with_default_config()
+            .with_console(console.clone())
+            .build();
 
         let cmd = ServicesCommand {};
         match cmd.run(&core, &args).await {
@@ -59,7 +60,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("gh\n"),
+            console.to_string().contains("gh\n"),
             "the output should contain each service"
         );
     }

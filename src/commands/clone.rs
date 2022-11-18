@@ -76,10 +76,10 @@ impl CommandRunnable for CloneCommand {
 mod tests {
     use super::*;
     use crate::core::*;
-    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run() {
         let cmd = CloneCommand {};
 
@@ -102,23 +102,23 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        Resolver::get_best_repo.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "repo",
-                "it should be called with the name of the repo to be cloned"
-            );
 
-            MockResult::Return(Ok(Repo::new(
-                "gh:git-fixtures/basic",
-                temp.path().join("repo"),
-            )))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::core::Launcher::run.mock_safe(|_, _app, _target| {
-            panic!("No program should have been run");
-        });
+        let temp_path = temp.path().to_path_buf();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_launcher(|mock| {
+                mock.expect_run().never();
+            })
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_best_repo()
+                    .once()
+                    .with(mockall::predicate::eq("repo"))
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
+                    });
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {

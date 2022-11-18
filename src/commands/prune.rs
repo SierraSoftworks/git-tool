@@ -74,12 +74,15 @@ impl CommandRunnable for PruneCommand {
             }
             writeln!(core.output())?;
 
-            let input = crate::console::prompt::prompt(
-                "Are you sure you want to remove these branches? [y/N]: ",
-                "n",
-            );
+            let remove_branches = core
+                .prompter()
+                .prompt_bool(
+                    "Are you sure you want to remove these branches? [y/N]: ",
+                    Some(false),
+                )?
+                .unwrap_or_default();
 
-            if input.to_lowercase().trim() != "y" {
+            if !remove_branches {
                 writeln!(core.output(), "Okay, we'll keep them as-is.")?;
                 return Ok(0);
             }
@@ -110,10 +113,10 @@ impl CommandRunnable for PruneCommand {
 mod tests {
 
     use super::*;
+    use crate::core::builder::CoreBuilderWithConfig;
     use crate::core::*;
     use crate::tasks::{self, Task};
     use complete::helpers::test_completions_with_core;
-    use mocktopus::mocking::*;
     use tempfile::tempdir;
 
     /// Sets up a test repo in your provided temp directory.
@@ -130,19 +133,27 @@ mod tests {
     ///  - `origin/main`
     ///  - `main`
     ///  ` `feature/test2`
-    async fn setup_test_repo_with_remote(core: &Core, temp: &tempfile::TempDir) -> Repo {
+    async fn setup_test_repo_with_remote(
+        core: CoreBuilderWithConfig,
+        temp: &tempfile::TempDir,
+    ) -> (Core, Repo) {
         let repo: Repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo"),
         );
 
         let repo_path = repo.get_path();
-        Resolver::get_current_repo.mock_safe(move |_| {
-            MockResult::Return(Ok(core::Repo::new(
-                "gh:sierrasoftworks/test-git-switch-command",
-                repo_path.clone(),
-            )))
-        });
+        let core = core
+            .with_mock_resolver(|mock| {
+                let repo_path = repo_path.clone();
+                mock.expect_get_current_repo().returning(move || {
+                    Ok(core::Repo::new(
+                        "gh:sierrasoftworks/test-git-switch-command",
+                        repo_path.clone(),
+                    ))
+                });
+            })
+            .build();
 
         let origin_repo = core::Repo::new(
             "gh:sierrasoftworks/test-git-switch-command2",
@@ -170,12 +181,12 @@ mod tests {
             },
             tasks::GitCheckout { branch: "main" }
         )
-        .apply_repo(core, &origin_repo)
+        .apply_repo(&core, &origin_repo)
         .await
         .unwrap();
 
         sequence!(tasks::GitInit {}, tasks::GitRemote { name: "origin" })
-            .apply_repo(core, &repo)
+            .apply_repo(&core, &repo)
             .await
             .unwrap();
 
@@ -218,23 +229,21 @@ mod tests {
                 content: "ref: refs/remotes/origin/main",
             }
         )
-        .apply_repo(core, &repo)
+        .apply_repo(&core, &repo)
         .await
         .unwrap();
 
         assert!(repo.valid(), "the repository should exist and be valid");
-        repo
+        (core, repo)
     }
 
     #[tokio::test]
     async fn prune_completions() {
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
-            .build();
+        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
 
-        let repo: Repo = setup_test_repo_with_remote(&core, &temp).await;
+        let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
         crate::git::git_cmd(
             tokio::process::Command::new("git")
@@ -245,8 +254,6 @@ mod tests {
         .await
         .unwrap();
 
-        Resolver::get_current_repo.mock_safe(move |_| MockResult::Return(Ok(repo.clone())));
-
         test_completions_with_core(&core, "gt prune", "", vec!["--yes", "feature/test2"]).await;
     }
 
@@ -256,18 +263,14 @@ mod tests {
 
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
-            .build();
-
-        crate::console::prompt::mock(Some("y"));
-
-        let repo: Repo = setup_test_repo_with_remote(&core, &temp).await;
-
-        {
-            let repo = repo.clone();
-            Resolver::get_current_repo.mock_safe(move |_| MockResult::Return(Ok(repo.clone())));
-        }
+        let console = crate::console::mock_with_input("y\n");
+        let (core, repo) = setup_test_repo_with_remote(
+            Core::builder()
+                .with_config_for_dev_directory(temp.path())
+                .with_console(console.clone()),
+            &temp,
+        )
+        .await;
 
         crate::git::git_cmd(
             tokio::process::Command::new("git")
@@ -290,6 +293,11 @@ mod tests {
         let args: ArgMatches = cmd.app().get_matches_from(vec!["prune"]);
         cmd.run(&core, &args).await.unwrap();
 
+        assert!(
+            console.to_string().contains("feature/test2"),
+            "the output should contain the branch name being cleaned up"
+        );
+
         assert!(repo.valid(), "the repository should still be valid");
         let mut branches = git::git_branches(&repo.get_path()).await.unwrap();
         branches.sort();
@@ -307,15 +315,17 @@ mod tests {
         );
 
         let core = core::Core::builder()
-            .with_config(&core::Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_resolver(|mock| {
+                let temp_path = temp.path().to_path_buf();
+                mock.expect_get_current_repo().returning(move || {
+                    Ok(core::Repo::new(
+                        "gh:sierrasoftworks/test-git-prune-command",
+                        temp_path.join("repo"),
+                    ))
+                });
+            })
             .build();
-
-        Resolver::get_current_repo.mock_safe(move |_| {
-            MockResult::Return(Ok(core::Repo::new(
-                "gh:sierrasoftworks/test-git-prune-command",
-                temp.path().join("repo"),
-            )))
-        });
 
         // Run a `git init` to setup the repo
         tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();

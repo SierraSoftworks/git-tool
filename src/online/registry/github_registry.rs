@@ -162,8 +162,9 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_entries() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         let registry = GitHubRegistry;
 
         let entries = registry.get_entries(&core).await.unwrap();
@@ -172,8 +173,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_entry() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         let registry = GitHubRegistry;
 
         let entry = registry.get_entry(&core, "apps/bash").await.unwrap();

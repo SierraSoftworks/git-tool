@@ -119,17 +119,17 @@ URLs:
 mod tests {
     use super::core::*;
     use super::*;
+    use crate::console::MockConsoleProvider;
     use crate::test::get_dev_dir;
-    use mocktopus::mocking::*;
     use std::path::PathBuf;
 
     #[tokio::test]
     async fn run_normal() {
+        let console = Arc::new(MockConsoleProvider::new());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(&get_dev_dir()))
+            .with_config_for_dev_directory(&get_dev_dir())
+            .with_console(console.clone())
             .build();
-
-        let output = crate::console::output::mock();
 
         let cmd = ListCommand {};
 
@@ -141,27 +141,30 @@ mod tests {
         }
 
         assert!(
-            output
+            console
                 .to_string()
                 .contains("gh:sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)\n"),
             "the output should contain the repo: {}\ngot: {}",
             "gh:sierrasoftworks/test1 (https://github.com/sierrasoftworks/test1)",
-            &output.to_string()
+            &console.to_string()
         );
     }
 
     #[tokio::test]
     async fn run_search_full() {
-        Resolver::get_repos.mock_safe(|_| {
-            MockResult::Return(Ok(vec![
-                Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-            ]))
-        });
-
-        let core = Core::builder().build();
-        crate::console::output::mock();
+        let core = Core::builder()
+            .with_default_config()
+            .with_null_console()
+            .with_mock_resolver(|mock| {
+                mock.expect_get_repos().returning(|| {
+                    Ok(vec![
+                        Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                        Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                        Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                    ])
+                });
+            })
+            .build();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
@@ -174,16 +177,20 @@ mod tests {
 
     #[tokio::test]
     async fn run_search_quiet() {
-        Resolver::get_repos.mock_safe(|_| {
-            MockResult::Return(Ok(vec![
-                Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
-                Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
-                Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
-            ]))
-        });
-
-        let core = Core::builder().build();
-        let output = crate::console::output::mock();
+        let console = Arc::new(MockConsoleProvider::new());
+        let core = Core::builder()
+            .with_default_config()
+            .with_console(console.clone())
+            .with_mock_resolver(|mock| {
+                mock.expect_get_repos().returning(|| {
+                    Ok(vec![
+                        Repo::new("example.com:ns1/a", PathBuf::from("/dev/example.com/ns1/a")),
+                        Repo::new("example.com:ns1/b", PathBuf::from("/dev/example.com/ns1/b")),
+                        Repo::new("example.com:ns2/c", PathBuf::from("/dev/example.com/ns2/c")),
+                    ])
+                });
+            })
+            .build();
 
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);
@@ -194,11 +201,11 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("example.com:ns1/a\n"),
+            console.to_string().contains("example.com:ns1/a\n"),
             "the output should contain the first match"
         );
         assert!(
-            output.to_string().contains("example.com:ns1/b\n"),
+            console.to_string().contains("example.com:ns1/b\n"),
             "the output should contain the second match"
         );
     }

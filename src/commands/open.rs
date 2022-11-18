@@ -171,10 +171,11 @@ impl OpenCommand {
 mod tests {
     use super::*;
     use crate::core::*;
-    use mocktopus::mocking::*;
+    use mockall::predicate::eq;
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run() {
         let cmd = OpenCommand {};
 
@@ -197,36 +198,23 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
         let temp_path = temp.path().to_owned();
-        Resolver::get_best_repo.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "repo",
-                "it should be called with the name of the repo to be cloned"
-            );
-
-            MockResult::Return(Ok(Repo::new(
-                "gh:git-fixtures/basic",
-                temp_path.join("repo"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("repo"),
-                "the target should be launched in the correct directory"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(5) }))
-        });
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_best_repo()
+                    .with(eq("repo"))
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .withf(|app, repo| app.get_name() == "test-app" && repo.get_name() == "basic")
+                    .returning(|_, _| Box::pin(async { Ok(5) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {

@@ -47,7 +47,7 @@ impl CommandRunnable for SetupCommand {
         writeln!(core.output(), "Welcome to the Git-Tool setup wizard.")?;
         writeln!(core.output(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
 
-        let mut prompter = Prompter::new();
+        let mut prompter = core.prompter();
 
         let dev_directory = self.prompt_dev_directory(core, &mut prompter)?;
         writeln!(
@@ -196,20 +196,20 @@ impl SetupCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
     use super::*;
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run() {
         let temp = tempdir().unwrap();
 
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
-
-        crate::console::input::mock(&format!("{}\ny\nzsh\n", temp.path().display(),));
+        let console =
+            crate::console::mock_with_input(&format!("{}\ny\nzsh\n", temp.path().display()));
+        let core = Core::builder()
+            .with_default_config()
+            .with_console(console.clone())
+            .build();
 
         let cmd = SetupCommand {};
         let args = cmd.app().get_matches_from(vec!["setup", "--force"]);
@@ -218,20 +218,20 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", output.to_string());
+        println!("{}", console.to_string());
 
         assert!(
-            output
+            console
                 .to_string()
                 .contains(&format!("{}", temp.path().display())),
             "the output should contain the project directory"
         );
         assert!(
-            output.to_string().contains("zsh"),
+            console.to_string().contains("zsh"),
             "the output should contain the selected shell"
         );
         assert!(
-            output.to_string().contains("alias gt="),
+            console.to_string().contains("alias gt="),
             "the output should contain the alias command"
         );
     }
