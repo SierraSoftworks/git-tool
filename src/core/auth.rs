@@ -12,10 +12,15 @@ pub trait KeyChain: Send + Sync {
     fn delete_token(&self, service: &str) -> Result<(), Error>;
 }
 
+#[cfg(feature = "auth")]
 pub fn keychain() -> Arc<dyn KeyChain + Send + Sync> {
     Arc::new(TrueKeyChain {})
 }
 
+#[cfg(not(feature = "auth"))]
+pub fn keychain() -> Arc<dyn KeyChain + Send + Sync> {
+    Arc::new(UnsupportedKeyChain {})
+}
 #[cfg(feature = "auth")]
 struct TrueKeyChain {}
 
