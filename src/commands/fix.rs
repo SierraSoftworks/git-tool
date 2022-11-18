@@ -44,7 +44,6 @@ impl CommandRunnable for FixCommand {
 
         match matches.get_flag("all") {
             true => {
-                let mut output = core.output();
                 let filter = matches
                     .get_one::<String>("repo")
                     .map(|s| s.as_str())
@@ -54,7 +53,12 @@ impl CommandRunnable for FixCommand {
                 for repo in search::best_matches_by(filter, repos.iter(), |r| {
                     format!("{}:{}", &r.service, r.get_full_name())
                 }) {
-                    writeln!(output, "Fixing {}/{}", &repo.service, repo.get_full_name())?;
+                    writeln!(
+                        core.output(),
+                        "Fixing {}/{}",
+                        &repo.service,
+                        repo.get_full_name()
+                    )?;
                     tasks.apply_repo(core, repo).await?;
                 }
             }
@@ -101,9 +105,10 @@ impl CommandRunnable for FixCommand {
 
 #[cfg(test)]
 mod tests {
+    use mockall::predicate::eq;
+
     use super::*;
     use crate::core::*;
-    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run() {
@@ -112,34 +117,32 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["fix", "repo"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::for_dev_directory(temp.path());
 
-        Resolver::get_best_repo.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "repo",
-                "it should be called with the name of the repo to be cloned"
-            );
-
-            MockResult::Return(Ok(Repo::new("gh:exampleB/test", temp.path().into())))
-        });
-
-        #[cfg(feature = "auth")]
-        KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        crate::online::service::github::mocks::repo_created("exampleB");
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
+        let temp_path = temp.path().to_path_buf();
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_null_console()
+            .with_mock_http_client(crate::online::service::github::mocks::repo_created(
+                "exampleB",
+            ))
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_best_repo()
+                    .with(eq("repo"))
+                    .returning(move |_| Ok(Repo::new("gh:exampleB/test", temp_path.clone())));
+            })
+            .build();
 
         // Prep the repo
         sequence![GitInit {}, GitRemote { name: "origin" }]
             .apply_repo(
                 &core,
-                &Repo::new("gh:exampleA/test", cfg.get_dev_directory().into()),
+                &Repo::new("gh:exampleA/test", core.config().get_dev_directory().into()),
             )
             .await
             .unwrap();

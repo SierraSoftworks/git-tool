@@ -245,18 +245,19 @@ struct GitHubError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mocktopus::mocking::*;
+    use mockall::predicate::eq;
 
     #[tokio::test]
     async fn test_happy_path_user_repo() {
-        super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        mocks::repo_created("test");
-
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks::repo_created("test"))
+            .build();
 
         let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -281,14 +282,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_happy_path_user_repo_exists() {
-        super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        mocks::repo_exists("test");
-
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks::repo_exists("test/user-repo"))
+            .build();
 
         let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -313,14 +315,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_exists_yes() {
-        super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        mocks::get_repo_exists("test/user-repo");
-
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks::get_repo_exists("test/user-repo"))
+            .build();
 
         let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -345,14 +348,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_exists_no() {
-        super::KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        mocks::get_repo_not_exists("test/user-repo");
-
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks::get_repo_not_exists("test/user-repo"))
+            .build();
 
         let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
         let service = GitHubService::default();
@@ -378,67 +382,67 @@ mod tests {
 
 #[cfg(test)]
 pub mod mocks {
-    pub fn repo_created(org: &str) {
-        super::HttpClient::mock(vec![
-            super::HttpClient::route(
+    pub fn repo_created(org: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/user",
                 200,
                 r#"{ "login": "test" }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 "https://api.github.com/user/repos",
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 format!("https://api.github.com/orgs/{}/repos", org).as_str(),
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-        ]);
+        ]
     }
 
-    pub fn repo_exists(org: &str) {
-        super::HttpClient::mock(vec![
-            super::HttpClient::route(
+    pub fn repo_exists(org: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/user",
                 200,
                 r#"{ "login": "test" }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 "https://api.github.com/user/repos",
                 422,
                 r#"{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 format!("https://api.github.com/orgs/{}/repos", org).as_str(),
                 422,
                 r#"{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}"#,
             ),
-        ]);
+        ]
     }
 
-    pub fn get_repo_exists(repo: &str) {
-        super::HttpClient::mock(vec![
-            super::HttpClient::route(
+    pub fn get_repo_exists(repo: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/user",
                 200,
                 r#"{ "login": "test" }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 "https://api.github.com/user/repos",
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 format!(
                     "https://api.github.com/orgs/{}/repos",
@@ -448,30 +452,30 @@ pub mod mocks {
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "GET",
                 format!("https://api.github.com/repos/{}", repo).as_str(),
                 200,
                 r#"{ "id": 1234 }"#,
             ),
-        ]);
+        ]
     }
 
-    pub fn get_repo_not_exists(repo: &str) {
-        super::HttpClient::mock(vec![
-            super::HttpClient::route(
+    pub fn get_repo_not_exists(repo: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/user",
                 200,
                 r#"{ "login": "test" }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 "https://api.github.com/user/repos",
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "POST",
                 format!(
                     "https://api.github.com/orgs/{}/repos",
@@ -481,12 +485,12 @@ pub mod mocks {
                 201,
                 r#"{ "id": 1234 }"#,
             ),
-            super::HttpClient::route(
+            super::MockHttpRoute::new(
                 "GET",
                 format!("https://api.github.com/repos/{}", repo).as_str(),
                 404,
                 r#"{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}"#,
             ),
-        ]);
+        ]
     }
 }

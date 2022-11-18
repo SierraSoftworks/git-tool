@@ -41,7 +41,7 @@ tracing-opentelemetry = { git="https://github.com/SierraSoftworks/tracing.git" }
 tracing-subscriber = { git="https://github.com/SierraSoftworks/tracing.git" , features = ["tracing-log"] }
 
 [dev-dependencies]
-mocktopus = { git = "https://github.com/notheotherben/mocktopus.git" }
+mockall = "0.11.2"
 tempfile = "3.2"
 sentry = { version = "0.29", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 

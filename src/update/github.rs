@@ -247,11 +247,11 @@ struct GitHubAsset {
 
 #[cfg(test)]
 pub mod mocks {
-    use crate::core::HttpClient;
+    use crate::core::MockHttpRoute;
 
-    pub fn mock_get_releases() {
-        HttpClient::mock(vec![
-            HttpClient::route(
+    pub fn mock_get_releases() -> Vec<MockHttpRoute> {
+        vec![
+            MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/repos/SierraSoftworks/git-tool/releases",
                 200,
@@ -271,37 +271,37 @@ pub mod mocks {
                             }
                         ]"#,
             ),
-            HttpClient::route(
+            MockHttpRoute::new(
                 "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-windows-amd64.exe",
                 200,
                 r#"testdata"#,
             ),
-            HttpClient::route(
+            MockHttpRoute::new(
                 "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-linux-amd64",
                 200,
                 r#"testdata"#,
             ),
-            HttpClient::route(
+            MockHttpRoute::new(
                 "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-linux-arm64",
                 200,
                 r#"testdata"#,
             ),
-            HttpClient::route(
+            MockHttpRoute::new(
                 "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-darwin-amd64",
                 200,
                 r#"testdata"#,
             ),
-            HttpClient::route(
+            MockHttpRoute::new(
                 "GET",
                 "https://github.com/SierraSoftworks/git-tool/releases/download/v2.0.0/git-tool-darwin-arm64",
                 200,
                 r#"testdata"#,
             ),
-        ]);
+        ]
     }
 }
 
@@ -316,9 +316,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_releases() {
         let source = GitHubSource::default();
-        mocks::mock_get_releases();
 
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_http_client(mocks::mock_get_releases())
+            .build();
 
         let releases = source.get_releases(&core).await.unwrap();
 
@@ -338,9 +340,11 @@ mod tests {
     #[tokio::test]
     async fn test_download() {
         let source = GitHubSource::default();
-        mocks::mock_get_releases();
 
-        let core = Core::builder().build();
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_http_client(mocks::mock_get_releases())
+            .build();
 
         let releases = source.get_releases(&core).await.unwrap();
         let latest =

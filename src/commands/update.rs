@@ -41,8 +41,6 @@ impl CommandRunnable for UpdateCommand {
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error>
 where {
-        let mut output = core.output();
-
         let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",
             "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
@@ -99,7 +97,7 @@ where {
                     ""
                 };
 
-                writeln!(output, "{} {}{}", style, release.id, suffix)?;
+                writeln!(core.output(), "{} {}{}", style, release.id, suffix)?;
             }
 
             return Ok(0);
@@ -119,9 +117,9 @@ where {
         match target_release {
             Some(release) => {
                 sentry::capture_message(&format!("Starting Update to {}", release.id), sentry::Level::Info);
-                writeln!(output, "Downloading update {}...", &release.id)?;
+                writeln!(core.output(), "Downloading update {}...", &release.id)?;
                 if manager.update(core, release).await? {
-                    writeln!(output, "Shutting down to complete the update operation.")?;
+                    writeln!(core.output(), "Shutting down to complete the update operation.")?;
                 }
             },
             None if matches.contains_id("version") => {
@@ -131,10 +129,10 @@ where {
             },
             None => {
                 writeln!(
-                    output,
+                    core.output(),
                     "It doesn't look like there is an update available for your platform yet."
                 )?;
-                writeln!(output, "If you would like to rollback to a specific version, you can do so with `gt update v{}`.", version!())?;
+                writeln!(core.output(), "If you would like to rollback to a specific version, you can do so with `gt update v{}`.", version!())?;
             }
         }
 
@@ -162,16 +160,18 @@ where {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
+    use crate::console::MockConsoleProvider;
+
     use super::*;
 
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_list() {
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = Arc::new(MockConsoleProvider::new());
+        let core = Core::builder()
+            .with_default_config()
+            .with_console(console.clone())
+            .build();
 
         let cmd = UpdateCommand {};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
@@ -182,7 +182,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("  v2.2.7\n"),
+            console.to_string().contains("  v2.2.7\n"),
             "the output should contain a list of versions"
         );
     }

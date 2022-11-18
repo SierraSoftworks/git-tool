@@ -36,7 +36,7 @@ mod tests {
         let repo = core::Repo::new("gh:git-fixtures/basic", temp.path().into());
 
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![
@@ -65,7 +65,7 @@ mod tests {
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         let task = GitCommit {

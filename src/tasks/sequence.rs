@@ -48,7 +48,7 @@ mod tests {
         let repo = get_repo();
         let scratch = get_scratch();
         let core = core::Core::builder()
-            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
         seq.apply_repo(&core, &repo).await.unwrap();
@@ -63,7 +63,7 @@ mod tests {
 
         let repo = get_repo();
         let core = core::Core::builder()
-            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
         seq.apply_repo(&core, &repo).await.unwrap();
@@ -83,7 +83,7 @@ mod tests {
 
         let scratch = get_scratch();
         let core = core::Core::builder()
-            .with_config(&Config::from_str("directory: /dev").unwrap())
+            .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
         seq.apply_scratchpad(&core, &scratch).await.unwrap();

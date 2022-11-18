@@ -90,13 +90,12 @@ impl Command for ConfigCommand {
 impl CommandRunnable for ConfigCommand {
     #[tracing::instrument(name = "gt config", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let mut output = core.output();
-
         match matches.subcommand() {
             Some(("list", _args)) => {
                 let registry = crate::online::GitHubRegistry;
 
                 let entries = registry.get_entries(core).await?;
+                let mut output = core.output();
                 for entry in entries {
                     writeln!(output, "{}", entry)?;
                 }
@@ -112,8 +111,8 @@ impl CommandRunnable for ConfigCommand {
                 let registry = crate::online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
 
-                writeln!(output, "Applying {}", entry.name)?;
-                writeln!(output, "> {}", entry.description)?;
+                writeln!(core.output(), "Applying {}", entry.name)?;
+                writeln!(core.output(), "> {}", entry.description)?;
 
                 let mut cfg = core.config().clone();
                 for ec in entry.configs {
@@ -133,7 +132,7 @@ impl CommandRunnable for ConfigCommand {
                         cfg.save(&path).await?;
                     }
                     None => {
-                        writeln!(output, "{}", cfg.to_string()?)?;
+                        writeln!(core.output(), "{}", cfg.to_string()?)?;
                     }
                 }
             }
@@ -148,7 +147,7 @@ impl CommandRunnable for ConfigCommand {
                                 cfg.save(&path).await?;
                             }
                             None => {
-                                writeln!(output, "{}", cfg.to_string()?)?;
+                                writeln!(core.output(), "{}", cfg.to_string()?)?;
                             }
                         }
 
@@ -165,21 +164,26 @@ impl CommandRunnable for ConfigCommand {
                                     cfg.save(&path).await?;
                                 }
                                 None => {
-                                    writeln!(output, "{}", cfg.to_string()?)?;
+                                    writeln!(core.output(), "{}", cfg.to_string()?)?;
                                 }
                             }
                         }
                         None => match core.config().get_alias(alias) {
                             Some(repo) => {
-                                writeln!(output, "{} = {}", alias, repo)?;
+                                writeln!(core.output(), "{} = {}", alias, repo)?;
                             }
                             None => {
-                                writeln!(output, "No alias exists with the name '{}'", alias)?;
+                                writeln!(
+                                    core.output(),
+                                    "No alias exists with the name '{}'",
+                                    alias
+                                )?;
                             }
                         },
                     }
                 }
                 None => {
+                    let mut output = core.output();
                     for (alias, repo) in core.config().get_aliases() {
                         writeln!(output, "{} = {}", alias, repo)?;
                     }
@@ -195,17 +199,17 @@ impl CommandRunnable for ConfigCommand {
                                 cfg.save(&path).await?;
                             }
                             None => {
-                                writeln!(output, "{}", cfg.to_string()?)?;
+                                writeln!(core.output(), "{}", cfg.to_string()?)?;
                             }
                         }
                     }
                     Some(invalid) => {
-                        writeln!(output, "Cannot set the feature flag {} to {} because only 'true' and 'false' are valid settings.", flag, invalid)?;
+                        writeln!(core.output(), "Cannot set the feature flag {} to {} because only 'true' and 'false' are valid settings.", flag, invalid)?;
                         return Ok(1);
                     }
                     None => {
                         writeln!(
-                            output,
+                            core.output(),
                             "{} = {}",
                             flag,
                             core.config().get_features().has(flag)
@@ -213,6 +217,7 @@ impl CommandRunnable for ConfigCommand {
                     }
                 },
                 None => {
+                    let mut output = core.output();
                     for &feature in features::ALL.iter() {
                         writeln!(
                             output,
@@ -233,10 +238,11 @@ impl CommandRunnable for ConfigCommand {
                                 cfg.save(&path).await?;
                             }
                             None => {
-                                writeln!(output, "{}", cfg.to_string()?)?;
+                                writeln!(core.output(), "{}", cfg.to_string()?)?;
                             }
                         }
                     }
+
                     None => {
                         writeln!(
                             output,
@@ -255,16 +261,20 @@ impl CommandRunnable for ConfigCommand {
                             cfg.save(&path).await?;
                         }
                         None => {
-                            writeln!(output, "{}", cfg.to_string()?)?;
+                            writeln!(core.output(), "{}", cfg.to_string()?)?;
                         }
                     }
                 }
                 None => {
-                    writeln!(output, "{}", core.config().get_dev_directory().display())?;
+                    writeln!(
+                        core.output(),
+                        "{}",
+                        core.config().get_dev_directory().display()
+                    )?;
                 }
             },
             _ => {
-                writeln!(output, "{}", core.config().to_string()?)?;
+                writeln!(core.output(), "{}", core.config().to_string()?)?;
             }
         }
 
@@ -332,9 +342,11 @@ mod tests {
     async fn run() {
         let args = ArgMatches::default();
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
 
@@ -344,7 +356,7 @@ mod tests {
         }
 
         assert!(
-            output
+            console
                 .to_string()
                 .contains(&core.config().to_string().unwrap()),
             "the output should contain the config"
@@ -354,9 +366,11 @@ mod tests {
     #[tokio::test]
     async fn run_list() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "list"]);
@@ -366,13 +380,13 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", output.to_string());
+        println!("{}", console.to_string());
         assert!(
-            output.to_string().contains("apps/bash\n"),
+            console.to_string().contains("apps/bash\n"),
             "the output should contain some apps"
         );
         assert!(
-            output.to_string().contains("services/github-ssh\n"),
+            console.to_string().contains("services/github-ssh\n"),
             "the output should contain some services"
         );
     }
@@ -381,9 +395,11 @@ mod tests {
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_add_no_file() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -395,9 +411,9 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", output.to_string());
+        println!("{}", console.to_string());
         assert!(
-            output.to_string().contains("Applying Bash\n"),
+            console.to_string().contains("Applying Bash\n"),
             "the output should explain which config is being applied"
         );
     }
@@ -413,10 +429,12 @@ mod tests {
         .await
         .unwrap();
 
-        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config_file(&temp.path().join("config.yml"))
+            .expect("the config should be loaded")
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -429,7 +447,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("Applying Bash\n> "),
+            console.to_string().contains("Applying Bash\n> "),
             "the output should describe what is being done"
         );
 
@@ -452,9 +470,12 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = Core::builder().with_config(&cfg).build();
 
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias"]);
@@ -464,15 +485,15 @@ aliases:
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", output.to_string());
+        println!("{}", console.to_string());
         assert!(
-            output
+            console
                 .to_string()
                 .contains("test1 = example.com/tests/test1\n"),
             "the output should contain the aliases"
         );
         assert!(
-            output
+            console
                 .to_string()
                 .contains("test2 = example.com/tests/test2\n"),
             "the output should contain the aliases"
@@ -491,9 +512,12 @@ aliases:
 "#,
         )
         .unwrap();
-        let core = Core::builder().with_config(&cfg).build();
 
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias", "test1"]);
@@ -503,9 +527,9 @@ aliases:
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", output.to_string());
+        println!("{}", console.to_string());
         assert!(
-            output
+            console
                 .to_string()
                 .contains("test1 = example.com/tests/test1\n"),
             "the output should contain the alias"
@@ -522,11 +546,11 @@ aliases:
         .await
         .unwrap();
 
-        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
+        let core = Core::builder()
+            .with_config_file(&temp.path().join("config.yml"))
+            .expect("the config should be loaded")
+            .with_null_console()
+            .build();
 
         let cmd = ConfigCommand {};
         let args =
@@ -560,16 +584,17 @@ aliases:
         .await
         .unwrap();
 
-        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        let core = Core::builder()
+            .with_config_file(&temp.path().join("config.yml"))
+            .expect("the config should be loaded")
+            .with_null_console()
+            .build();
+
         assert_eq!(
-            cfg.get_alias("test").unwrap(),
+            core.config().get_alias("test").unwrap(),
             "example.com/tests/test",
             "the config should have an alias initially"
         );
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -627,15 +652,16 @@ features:
         .await
         .unwrap();
 
-        let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
+        let core = Core::builder()
+            .with_config_file(&temp.path().join("config.yml"))
+            .expect("the config should be loaded")
+            .with_null_console()
+            .build();
+
         assert!(
-            cfg.get_features().has("http_transport"),
+            core.config().get_features().has("http_transport"),
             "the config should have the feature enabled initially"
         );
-
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
 
         let cmd = ConfigCommand {};
         let args = cmd
@@ -700,9 +726,7 @@ scratchpads: /scratch
 
         let cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
 
-        let core = Core::builder().with_config(&cfg).build();
-
-        crate::console::output::mock();
+        let core = Core::builder().with_config(cfg).with_null_console().build();
 
         let cmd = ConfigCommand {};
 

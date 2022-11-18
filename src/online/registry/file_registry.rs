@@ -120,7 +120,7 @@ mod tests {
     #[tokio::test]
     async fn get_entries() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         let entries = registry.get_entries(&core).await.unwrap();
         assert_ne!(entries.len(), 0);
@@ -130,7 +130,7 @@ mod tests {
     #[tokio::test]
     async fn get_entry() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         let entry = registry.get_entry(&core, "apps/bash").await.unwrap();
         assert_eq!(entry.name, "Bash");
@@ -145,7 +145,7 @@ mod registry_compliance {
     #[tokio::test]
     async fn registry_validation() {
         let registry = FileRegistry::new(get_repo_root().join("registry"));
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
 
         let mut valid = true;
         for entry in registry.get_entries(&core).await.unwrap() {
@@ -165,7 +165,7 @@ mod registry_compliance {
     }
 
     async fn validate_entry(registry: &FileRegistry, name: &str) -> Result<bool, Error> {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         let entry = registry.get_entry(&core, name).await?;
         let mut valid = true;
 

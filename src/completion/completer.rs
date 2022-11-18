@@ -1,24 +1,20 @@
-use crate::search::matches;
-use std::{
-    fmt::Display,
-    sync::{Arc, Mutex},
-};
+use crate::{console::ConsoleProvider, search::matches};
+use std::{fmt::Display, sync::Arc};
 
 pub struct Completer {
     filter: Arc<String>,
-    output: Arc<Mutex<dyn std::io::Write + Send>>,
+    console: Arc<dyn ConsoleProvider + Send + Sync>,
 }
 
 impl Completer {
     pub fn new(core: &crate::core::Core, filter: &str) -> Self {
-        let output = core.output();
-        Self::new_for(filter, Arc::new(Mutex::new(output)))
+        Self::new_for(filter, core.console())
     }
 
-    pub fn new_for(filter: &str, output: Arc<Mutex<dyn std::io::Write + Send>>) -> Self {
+    pub fn new_for(filter: &str, console: Arc<dyn ConsoleProvider + Send + Sync>) -> Self {
         Self {
             filter: Arc::new(filter.to_string()),
-            output,
+            console,
         }
     }
 
@@ -26,7 +22,7 @@ impl Completer {
         if !matches(completion, &self.filter) {
             return;
         }
-        let mut out = self.output.lock().unwrap();
+        let mut out = self.console.output();
         if has_whitespace(completion) {
             writeln!(out, "'{}'", completion).unwrap_or_default();
         } else {
@@ -39,18 +35,14 @@ impl Completer {
         S: IntoIterator,
         S::Item: AsRef<str> + Display + Clone,
     {
-        self.output
-            .lock()
-            .map(|mut out| {
-                for completion in crate::search::best_matches(&self.filter, completions) {
-                    if has_whitespace(&completion) {
-                        writeln!(out, "'{}'", &completion).unwrap_or_default();
-                    } else {
-                        writeln!(out, "{}", &completion).unwrap_or_default();
-                    }
-                }
-            })
-            .unwrap_or_default();
+        let mut out = self.console.output();
+        for completion in crate::search::best_matches(&self.filter, completions) {
+            if has_whitespace(&completion) {
+                writeln!(out, "'{}'", &completion).unwrap_or_default();
+            } else {
+                writeln!(out, "{}", &completion).unwrap_or_default();
+            }
+        }
     }
 }
 

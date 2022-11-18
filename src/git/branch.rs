@@ -113,7 +113,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![
@@ -146,7 +146,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![
@@ -210,7 +210,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![
@@ -272,7 +272,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![
@@ -339,7 +339,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
         let core = Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
             .build();
 
         sequence![

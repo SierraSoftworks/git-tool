@@ -23,15 +23,13 @@ impl CommandRunnable for DoctorCommand {
         core: &Core,
         _matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error> {
-        let mut output = core.output();
-
-        writeln!(output, "Checking environment...")?;
+        writeln!(core.output(), "Checking environment...")?;
 
         if core.config().file_exists() {
-            writeln!(output, "[OK] Config file exists")?;
+            writeln!(core.output(), "[OK] Config file exists")?;
         } else {
             writeln!(
-                output,
+                core.output(),
                 "[WARNING] Config file does not exist, you are using the built-in defaults"
             )?;
         }
@@ -43,7 +41,7 @@ impl CommandRunnable for DoctorCommand {
             ))?;
         }
 
-        writeln!(output, "[OK] Development directory exists")?;
+        writeln!(core.output(), "[OK] Development directory exists")?;
 
         if !core.config().get_scratch_directory().exists() {
             Err(errors::user(
@@ -57,11 +55,11 @@ impl CommandRunnable for DoctorCommand {
             {
                 match online_service.test(core, svc).await {
                     Ok(_) => {
-                        writeln!(output, "[OK] Access to '{}' is working", &svc.name)?;
+                        writeln!(core.output(), "[OK] Access to '{}' is working", &svc.name)?;
                     }
                     Err(err) => {
                         writeln!(
-                            output,
+                            core.output(),
                             "[ERROR] Access to '{}' is not working, run `git-tool auth {}` to fix it: {}",
                             &svc.name,
                             &svc.name,
@@ -84,7 +82,6 @@ impl CommandRunnable for DoctorCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
     use super::*;
 
     #[tokio::test]
@@ -93,12 +90,14 @@ mod tests {
         let args = ArgMatches::default();
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::for_dev_directory(temp.path());
-        std::fs::create_dir_all(cfg.get_scratch_directory()).unwrap();
 
-        let core = Core::builder().with_config(&cfg).build();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_console(console.clone())
+            .build();
 
-        let output = crate::console::output::mock();
+        std::fs::create_dir_all(core.config().get_scratch_directory()).unwrap();
 
         std::env::set_var(
             "GITTOOL_CONFIG",
@@ -106,7 +105,10 @@ mod tests {
         );
 
         // Ensure that the config file is created
-        cfg.save(temp.path().join("config.yml")).await.unwrap();
+        core.config()
+            .save(temp.path().join("config.yml"))
+            .await
+            .unwrap();
 
         let cmd = DoctorCommand {};
         match cmd.run(&core, &args).await {
@@ -115,7 +117,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("Checking environment..."),
+            console.to_string().contains("Checking environment..."),
             "the output should contain the default app"
         );
     }

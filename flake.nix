@@ -61,9 +61,6 @@
 
             checkFeatures = ["pure-tests"];
             
-            # TODO: Enable this as soon as we can run the test suite on stable rustc
-            doCheck = false;
-
             nativeBuildInputs = [
               pkgs.protobuf
               pkgs.pkg-config
@@ -83,7 +80,6 @@
 
               outputHashes = {
                   "tracing-0.2.0" = "sha256-xK2F6TNne+scfKgU4Vr1tfe0kdXyOZt0N7bex0Jzcmg=";
-                  "mocktopus-0.7.12" = "sha256-aHaKemhKuX6HSqrbgVjpjbAs41b5OJcvPsv2kgZq6xQ=";
               };
             };
 

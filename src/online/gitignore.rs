@@ -155,7 +155,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_list() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match list(&core).await {
             Ok(items) => {
                 assert!(!items.is_empty());
@@ -170,7 +170,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_ignore() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match ignore(&core, vec!["csharp"]).await {
             Ok(ignore) => {
                 assert_ne!(ignore, String::from(""));
@@ -237,7 +237,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_empty() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(&core, "", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
@@ -250,7 +250,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_no_languages() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(&core, "", vec![]).await {
             Ok(result) => {
                 assert_eq!(result, "");
@@ -262,7 +262,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_invalid_language() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(&core, "", vec!["thisisnotareallanguage"]).await {
             Ok(_result) => {
                 panic!("It should return an error, not succeed");
@@ -276,7 +276,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_unmanaged() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(&core, "/tmp", vec!["rust"]).await {
             Ok(result) => {
                 assert!(result.contains("## @languages: rust\n"));
@@ -290,7 +290,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_same_langs() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(
             &core,
             "
@@ -316,7 +316,7 @@ bin/
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn add_or_update_existing_new_langs() {
-        let core = Core::builder().build();
+        let core = Core::builder().with_default_config().build();
         match add_or_update(
             &core,
             "

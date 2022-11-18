@@ -41,22 +41,27 @@ impl CommandRunnable for IgnoreCommand {
                 let languages = gitignore::list(core).await?;
 
                 for lang in languages {
-                    writeln!(output, "{}", lang)?;
+                    writeln!(core.output(), "{}", lang)?;
                 }
             }
             Some(languages) => {
                 let mut original_content: String = String::default();
 
-                let ignore_path =
-                    matches.get_one::<std::path::PathBuf>("path").cloned().unwrap_or_else(|| std::path::PathBuf::from(".gitignore"));
+                let ignore_path = matches
+                    .get_one::<std::path::PathBuf>("path")
+                    .cloned()
+                    .unwrap_or_else(|| std::path::PathBuf::from(".gitignore"));
 
                 if let Ok(content) = tokio::fs::read_to_string(&ignore_path).await {
                     original_content = content;
                 }
 
-                let content =
-                    gitignore::add_or_update(core, original_content.as_str(), languages.map(|s| s.as_str()).collect())
-                        .await?;
+                let content = gitignore::add_or_update(
+                    core,
+                    original_content.as_str(),
+                    languages.map(|s| s.as_str()).collect(),
+                )
+                .await?;
 
                 tokio::fs::write(&ignore_path, content).await.map_err(|err| errors::user_with_internal(
                     &format!("Could not write to your '{}' file due to an OS-level error.", ignore_path.display()),
@@ -89,9 +94,11 @@ mod tests {
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_no_args() {
         let cfg = Config::from_str("directory: /dev").unwrap();
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone())
+            .build();
 
         let cmd = IgnoreCommand {};
         let args = cmd.app().get_matches_from(&["ignore"]);
@@ -102,7 +109,7 @@ mod tests {
         }
 
         assert!(
-            output.to_string().contains("visualstudio"),
+            console.to_string().contains("visualstudio"),
             "the ignore list should be printed"
         );
     }

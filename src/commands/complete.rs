@@ -153,7 +153,6 @@ pub mod helpers {
     use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
-    use std::sync::Mutex;
 
     pub fn test_responsible_command(args: &str, expected: Option<&str>) {
         let cmd = CompleteCommand {};
@@ -181,11 +180,11 @@ pub mod helpers {
         let cmd = CompleteCommand {};
         let cmds = default_commands();
 
-        let writer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
-        let completer = Completer::new_for(filter, writer.clone());
+        let console = crate::console::mock();
+        let completer = Completer::new_for(filter, console.clone());
         cmd.offer_completions(core, &cmds, args, &completer).await;
 
-        let output = String::from_utf8(writer.lock().unwrap().to_vec()).unwrap();
+        let output = console.to_string();
 
         let mut offers = std::collections::HashSet::new();
 
@@ -209,7 +208,7 @@ pub mod helpers {
         filter: &str,
         contains: Vec<&str>,
     ) {
-        let core = Core::builder().with_config(cfg).build();
+        let core = Core::builder().with_config(cfg.clone()).build();
 
         test_completions_with_core(&core, args, filter, contains).await;
     }
@@ -221,10 +220,11 @@ pub mod helpers {
     }
 
     pub async fn test_completions2(args: Vec<&str>, contains: Vec<&str>) {
-        let cfg = Config::for_dev_directory(&get_dev_dir());
-        let core = Core::builder().with_config(&cfg).build();
-
-        let output = crate::console::output::mock();
+        let console = crate::console::mock();
+        let core = Core::builder()
+            .with_config_for_dev_directory(&get_dev_dir())
+            .with_console(console.clone())
+            .build();
 
         let cmd = CompleteCommand {};
 
@@ -233,7 +233,7 @@ pub mod helpers {
             .await
             .expect("the command should run successfully");
 
-        let output = output.to_string();
+        let output = console.to_string();
 
         for item in contains {
             assert!(
@@ -248,14 +248,12 @@ pub mod helpers {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
     use super::helpers::*;
     use super::*;
 
     #[tokio::test]
     async fn run() {
-        let cfg = Config::default();
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder().with_default_config().build();
 
         let cmd = CompleteCommand {};
         let args = cmd

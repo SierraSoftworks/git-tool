@@ -36,8 +36,6 @@ impl Task for GitSwitch {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::Config;
-
     use super::*;
     use crate::tasks::GitInit;
     use tempfile::tempdir;
@@ -50,10 +48,9 @@ mod tests {
             temp.path().join("repo"),
         );
 
-        crate::console::output::mock();
-
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
+            .with_null_console()
             .build();
 
         sequence![
@@ -84,10 +81,9 @@ mod tests {
         );
 
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
+            .with_null_console()
             .build();
-
-        crate::console::output::mock();
 
         sequence![
             GitInit {},
@@ -114,10 +110,9 @@ mod tests {
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = core::Core::builder()
-            .with_config(&Config::for_dev_directory(temp.path()))
+            .with_config_for_dev_directory(temp.path())
+            .with_null_console()
             .build();
-
-        crate::console::output::mock();
 
         let task = GitSwitch {
             branch: "test".into(),

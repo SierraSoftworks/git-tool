@@ -84,7 +84,7 @@ impl CommandRunnable for ScratchCommand {
 mod tests {
     use super::*;
     use crate::core::*;
-    use mocktopus::mocking::*;
+    use mockall::predicate::eq;
 
     #[tokio::test]
     async fn run_no_args() {
@@ -110,30 +110,28 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        Resolver::get_current_scratchpad.mock_safe(move |_| {
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w01",
-                temp_path.join("scratch").join("2020w01"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("scratch").join("2020w01"),
-                "the app should be launched in the correct directory"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(5) }))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_current_scratchpad().returning(move || {
+                    Ok(Scratchpad::new(
+                        "2020w07",
+                        temp_path.join("scratch").join("2020w01"),
+                    ))
+                });
+            })
+            .with_mock_launcher(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_run()
+                    .once()
+                    .withf(move |app, target| {
+                        app.get_name() == "test-app"
+                            && target.get_path() == temp_path.join("scratch").join("2020w01")
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(5) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {
@@ -167,29 +165,28 @@ apps:
         .unwrap();
 
         let temp_path = temp.path().to_owned();
-        Resolver::get_current_scratchpad.mock_safe(move |_| {
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w01",
-                temp_path.join("scratch").join("2020w01"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("scratch").join("2020w01"),
-                "the app should be launched in the correct directory"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(0) }))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_current_scratchpad().returning(move || {
+                    Ok(Scratchpad::new(
+                        "2020w07",
+                        temp_path.join("scratch").join("2020w01"),
+                    ))
+                });
+            })
+            .with_mock_launcher(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_run()
+                    .once()
+                    .withf(move |app, target| {
+                        app.get_name() == "test-app"
+                            && target.get_path() == temp_path.join("scratch").join("2020w01")
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -220,35 +217,23 @@ apps:
         ))
         .unwrap();
 
-        let temp_path = temp.path().to_owned();
-        Resolver::get_scratchpad.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "2020w07",
-                "it should attempt to resolve the correct scratchpad name"
-            );
-
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w07",
-                temp_path.join("scratch").join("2020w07"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("scratch").join("2020w07"),
-                "the app should be launched in the correct directory"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(0) }))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let scratch_path = temp.path().join("scratch");
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let scratch_path = scratch_path.clone();
+                mock.expect_get_scratchpad()
+                    .with(eq("2020w07"))
+                    .returning(move |_| {
+                        Ok(Scratchpad::new("2020w07", scratch_path.join("2020w07")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .once()
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -281,35 +266,23 @@ apps:
         ))
         .unwrap();
 
-        let temp_path = temp.path().to_owned();
-        Resolver::get_scratchpad.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "2020w07",
-                "it should attempt to resolve the correct scratchpad name"
-            );
-
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w07",
-                temp_path.join("scratch").join("2020w07"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("scratch").join("2020w07"),
-                "the app should be launched in the correct directory"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(0) }))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let scratch_path = temp.path().join("scratch");
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let scratch_path = scratch_path.clone();
+                mock.expect_get_scratchpad()
+                    .with(eq("2020w07"))
+                    .returning(move |_| {
+                        Ok(Scratchpad::new("2020w07", scratch_path.join("2020w07")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .once()
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}
@@ -342,23 +315,21 @@ apps:
         ))
         .unwrap();
 
-        Resolver::get_scratchpad.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "2020w07",
-                "it should attempt to resolve the correct scratchpad name"
-            );
-
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w07",
-                temp.path().join("scratch").join("2020w07"),
-            )))
-        });
-
-        Launcher::run.mock_safe(|_, _app, _target| {
-            panic!("It should not launch an app.");
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let scratch_path = temp.path().join("scratch");
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let scratch_path = scratch_path.clone();
+                mock.expect_get_scratchpad()
+                    .with(eq("2020w07"))
+                    .returning(move |_| {
+                        Ok(Scratchpad::new("2020w07", scratch_path.join("2020w07")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run().never();
+            })
+            .build();
 
         cmd.run(&core, &args).await.unwrap_or_default();
     }
@@ -386,40 +357,22 @@ apps:
         ))
         .unwrap();
 
-        let temp_path = temp.path().to_owned();
-        Resolver::get_scratchpad.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "2020w07",
-                "it should attempt to resolve the correct scratchpad name"
-            );
-
-            MockResult::Return(Ok(Scratchpad::new(
-                "2020w07",
-                temp_path.join("scratch").join("2020w07"),
-            )))
-        });
-
-        Launcher::run.mock_safe(move |_, app, target| {
-            assert_eq!(
-                app.get_name(),
-                "test-app",
-                "it should launch the correct app"
-            );
-            assert_eq!(
-                target.get_path(),
-                temp.path().join("scratch").join("2020w07"),
-                "the app should be launched in the correct directory"
-            );
-
-            assert!(
-                target.get_path().exists(),
-                "the target directory should be created"
-            );
-
-            MockResult::Return(Box::pin(async move { Ok(0) }))
-        });
-
-        let core = Core::builder().with_config(&cfg).build();
+        let scratch_path = temp.path().join("scratch");
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let scratch_path = scratch_path.clone();
+                mock.expect_get_scratchpad()
+                    .with(eq("2020w07"))
+                    .returning(move |_| {
+                        Ok(Scratchpad::new("2020w07", scratch_path.join("2020w07")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}

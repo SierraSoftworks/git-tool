@@ -6,23 +6,37 @@ use std::env;
 use std::sync::Arc;
 
 #[cfg(test)]
-use mocktopus::macros::*;
+use mockall::automock;
 
-#[cfg_attr(test, mockable)]
-pub struct Resolver {
+#[cfg_attr(test, automock)]
+pub trait Resolver: Send + Sync {
+    fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
+    fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
+    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error>;
+
+    fn get_repos(&self) -> Result<Vec<Repo>, Error>;
+    fn get_repos_for(&self, service: &Service) -> Result<Vec<Repo>, Error>;
+    fn get_best_repo(&self, name: &str) -> Result<Repo, Error>;
+    fn get_current_repo(&self) -> Result<Repo, Error>;
+}
+
+pub fn resolver(config: Arc<Config>) -> Arc<dyn Resolver + Send + Sync> {
+    Arc::new(TrueResolver { config })
+}
+
+struct TrueResolver {
     config: Arc<Config>,
 }
 
-impl From<Arc<Config>> for Resolver {
+impl From<Arc<Config>> for TrueResolver {
     fn from(config: Arc<Config>) -> Self {
         Self { config }
     }
 }
 
-#[cfg_attr(test, mockable)]
-impl Resolver {
+impl Resolver for TrueResolver {
     #[tracing::instrument(err, skip(self))]
-    pub fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
+    fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
         let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
             &format!("Could not retrieve the list of directories within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
             "Check that Git-Tool has permission to access this directory and try again.",
@@ -52,7 +66,7 @@ impl Resolver {
     }
 
     #[tracing::instrument(err, skip(self, name))]
-    pub fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
+    fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         Ok(Scratchpad::new(
             name,
             self.config.get_scratch_directory().join(name),
@@ -60,14 +74,14 @@ impl Resolver {
     }
 
     #[tracing::instrument(err, skip(self))]
-    pub fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
+    fn get_current_scratchpad(&self) -> Result<Scratchpad, Error> {
         let time = Local::now();
 
         self.get_scratchpad(&time.format("%Yw%V").to_string())
     }
 
     #[tracing::instrument(err, skip(self))]
-    pub fn get_current_repo(&self) -> Result<Repo, Error> {
+    fn get_current_repo(&self) -> Result<Repo, Error> {
         let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
             "Could not determine your current working directory due to an OS-level error.",
             "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
@@ -83,7 +97,93 @@ impl Resolver {
         }
     }
 
-    pub fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
+    #[tracing::instrument(err, skip(self, name))]
+    fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
+        let true_name = self
+            .config
+            .get_alias(name)
+            .unwrap_or_else(|| name.to_string());
+
+        if let Ok(repo) = repo_from_str(&self.config, &true_name, true) {
+            return Ok(repo);
+        }
+
+        let all_repos = self.get_repos()?;
+        let repos: Vec<&Repo> = search::best_matches_by(name, all_repos.iter(), |r| {
+            format!("{}:{}", &r.service, r.get_full_name())
+        });
+
+        match repos.len() {
+            0 => {
+                match repo_from_str(&self.config, &true_name, true) {
+                    Ok(repo) => Ok(repo),
+                    Err(_) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
+                }
+            },
+            1 => Ok((*repos.first().unwrap()).clone()),
+            _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => Ok((*repos.first().unwrap()).clone()),
+            _ => {
+                match repos.iter().find(|r| r.get_full_name() == name) {
+                    Some(repo) => Ok((*repo).clone()),
+                    None => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
+                }
+            }
+        }
+    }
+
+    #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
+    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
+        if !&svc.pattern.split('/').all(|p| p == "*") {
+            return Err(errors::user(
+                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
+                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
+        }
+
+        let path = self.config.get_dev_directory().join(&svc.name);
+
+        let repos = get_child_directories(&path, &svc.pattern)
+            .iter()
+            .map(|p| self.get_repo_from_path(p))
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(repos)
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    fn get_repos(&self) -> Result<Vec<Repo>, Error> {
+        let mut repos = vec![];
+
+        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
+            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
+            "Check that Git-Tool has permission to access this directory and try again.",
+            err
+        ))? {
+            match svc_dir {
+                Ok(dir) => {
+                    if dir.file_type().map_err(|err| errors::user_with_internal(
+                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
+                        "Check that Git-Tool has permission to access this directory and try again.",
+                        err
+                    ))?.is_dir() {
+                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
+                            repos.extend(self.get_repos_for(svc)?);
+                        }
+                    }
+                },
+                Err(e) => return Err(errors::system_with_internal(
+                    "We were unable to access your development directory.",
+                    "Please make sure that your development directory exists and that git-tool has permission to access it.",
+                    e))
+            }
+        }
+
+        Ok(repos)
+    }
+}
+
+impl TrueResolver {
+    fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
         debug!("Constructing repo object from path '{}'", path.display());
         let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
             &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
@@ -120,95 +220,6 @@ impl Resolver {
                 e))
         }
     }
-
-    #[tracing::instrument(err, skip(self, repo))]
-    pub fn get_repo(&self, repo: &str) -> Result<Repo, Error> {
-        repo_from_str(&self.config, repo, true)
-    }
-
-    #[tracing::instrument(err, skip(self, name))]
-    pub fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
-        let true_name = self
-            .config
-            .get_alias(name)
-            .unwrap_or_else(|| name.to_string());
-
-        if let Ok(repo) = self.get_repo(&true_name) {
-            return Ok(repo);
-        }
-
-        let all_repos = self.get_repos()?;
-        let repos: Vec<&Repo> = search::best_matches_by(name, all_repos.iter(), |r| {
-            format!("{}:{}", &r.service, r.get_full_name())
-        });
-
-        match repos.len() {
-            0 => {
-                match repo_from_str(&self.config, &true_name, true) {
-                    Ok(repo) => Ok(repo),
-                    Err(_) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
-                }
-            },
-            1 => Ok((*repos.first().unwrap()).clone()),
-            _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => Ok((*repos.first().unwrap()).clone()),
-            _ => {
-                match repos.iter().find(|r| r.get_full_name() == name) {
-                    Some(repo) => Ok((*repo).clone()),
-                    None => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
-                }
-            }
-        }
-    }
-
-    #[tracing::instrument(err, skip(self))]
-    pub fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-        let mut repos = vec![];
-
-        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
-            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
-            "Check that Git-Tool has permission to access this directory and try again.",
-            err
-        ))? {
-            match svc_dir {
-                Ok(dir) => {
-                    if dir.file_type().map_err(|err| errors::user_with_internal(
-                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
-                        "Check that Git-Tool has permission to access this directory and try again.",
-                        err
-                    ))?.is_dir() {
-                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
-                            repos.extend(self.get_repos_for(svc)?);
-                        }
-                    }
-                },
-                Err(e) => return Err(errors::system_with_internal(
-                    "We were unable to access your development directory.",
-                    "Please make sure that your development directory exists and that git-tool has permission to access it.",
-                    e))
-            }
-        }
-
-        Ok(repos)
-    }
-
-    #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
-    pub fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-        if !&svc.pattern.split('/').all(|p| p == "*") {
-            return Err(errors::user(
-                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
-                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
-        }
-
-        let path = self.config.get_dev_directory().join(&svc.name);
-
-        let repos = get_child_directories(&path, &svc.pattern)
-            .iter()
-            .map(|p| self.get_repo_from_path(p))
-            .filter_map(|r| r.ok())
-            .collect();
-
-        Ok(repos)
-    }
 }
 
 fn get_service_and_path_from_str(repo: &str) -> (Option<String>, std::path::PathBuf) {
@@ -218,7 +229,6 @@ fn get_service_and_path_from_str(repo: &str) -> (Option<String>, std::path::Path
     }
 }
 
-#[cfg_attr(test, mockable)]
 fn repo_from_str(config: &Config, repo: &str, fallback_to_default: bool) -> Result<Repo, Error> {
     let (svc, path) = get_service_and_path_from_str(repo);
     repo_from_svc_and_path(config, svc, &path, fallback_to_default)
@@ -278,14 +288,12 @@ fn repo_from_svc_and_path(
     }
 }
 
-#[cfg_attr(test, mockable)]
 fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
     let depth = pattern.split('/').count();
 
     get_directory_tree_to_depth(from, depth)
 }
 
-#[cfg_attr(test, mockable)]
 fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
     if depth == 0 {
         return vec![from.to_owned()];
@@ -321,7 +329,8 @@ fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<s
 #[cfg(test)]
 mod tests {
     use super::super::Target;
-    use super::{Config, Resolver};
+    use super::{resolver, Config, Resolver};
+    use crate::core::resolver::TrueResolver;
     use crate::test::get_dev_dir;
     use chrono::prelude::*;
     use std::sync::Arc;
@@ -400,8 +409,9 @@ mod tests {
     #[test]
     fn get_repos_for() {
         let resolver = get_resolver();
+        let config = Config::default();
 
-        let svc = resolver.config.get_service("gh").unwrap();
+        let svc = config.get_service("gh").unwrap();
 
         let results = resolver.get_repos_for(svc).unwrap();
         assert_eq!(results.len(), 5);
@@ -431,13 +441,11 @@ mod tests {
     fn get_repo_exists() {
         let resolver = get_resolver();
 
-        let example = resolver.get_repo("gh:sierrasoftworks/test1").unwrap();
+        let example = resolver.get_best_repo("gh:sierrasoftworks/test1").unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(
             example.get_path(),
-            resolver
-                .config
-                .get_dev_directory()
+            get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")
                 .join("test1")
@@ -446,13 +454,13 @@ mod tests {
 
     #[test]
     fn get_repo_exists_absolute() {
-        let resolver = get_resolver();
+        let resolver = TrueResolver {
+            config: Arc::new(Config::for_dev_directory(&get_dev_dir())),
+        };
 
         let example = resolver
             .get_repo_from_path(
-                &resolver
-                    .config
-                    .get_dev_directory()
+                &get_dev_dir()
                     .join("gh")
                     .join("sierrasoftworks")
                     .join("test1"),
@@ -461,9 +469,7 @@ mod tests {
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(
             example.get_path(),
-            resolver
-                .config
-                .get_dev_directory()
+            get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")
                 .join("test1")
@@ -471,16 +477,14 @@ mod tests {
     }
 
     #[test]
-    fn get_repo_new() {
+    fn get_best_repo_new() {
         let resolver = get_resolver();
 
-        let example = resolver.get_repo("gh:sierrasoftworks/test3").unwrap();
+        let example = resolver.get_best_repo("gh:sierrasoftworks/test3").unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(
             example.get_path(),
-            resolver
-                .config
-                .get_dev_directory()
+            get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")
                 .join("test3")
@@ -543,9 +547,9 @@ mod tests {
             .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
     }
 
-    fn get_resolver() -> Resolver {
+    fn get_resolver() -> Arc<dyn Resolver + Send + Sync> {
         let config = Arc::new(Config::for_dev_directory(&get_dev_dir()));
 
-        Resolver::from(config)
+        resolver(config)
     }
 }

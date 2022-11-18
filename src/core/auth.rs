@@ -3,56 +3,63 @@ use std::sync::Arc;
 
 #[cfg(feature = "auth")]
 #[cfg(test)]
-use mocktopus::macros::*;
+use mockall::{automock, predicate::*};
 
-#[cfg_attr(test, mockable)]
-pub struct KeyChain {}
+#[cfg_attr(test, automock)]
+pub trait KeyChain: Send + Sync {
+    fn get_token(&self, service: &str) -> Result<String, Error>;
+    fn set_token(&self, service: &str, token: &str) -> Result<(), Error>;
+    fn delete_token(&self, service: &str) -> Result<(), Error>;
+}
 
-impl From<Arc<Config>> for KeyChain {
-    fn from(_: Arc<Config>) -> Self {
-        Self {}
-    }
+pub fn keychain() -> Arc<dyn KeyChain + Send + Sync> {
+    Arc::new(TrueKeyChain {})
 }
 
 #[cfg(feature = "auth")]
-#[cfg_attr(test, mockable)]
-impl KeyChain {
+struct TrueKeyChain {}
+
+#[cfg(feature = "auth")]
+impl KeyChain for TrueKeyChain {
     #[tracing::instrument(err, skip(self))]
-    pub fn get_token(&self, service: &str) -> Result<String, Error> {
+    fn get_token(&self, service: &str) -> Result<String, Error> {
         let token = keyring::Entry::new("git-tool", service).get_password()?;
 
         Ok(token)
     }
 
     #[tracing::instrument(err, skip(self, token))]
-    pub fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
+    fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
         keyring::Entry::new("git-tool", service).set_password(token)?;
         Ok(())
     }
 
     #[tracing::instrument(err, skip(self))]
-    pub fn remove_token(&self, service: &str) -> Result<(), Error> {
+    fn delete_token(&self, service: &str) -> Result<(), Error> {
         keyring::Entry::new("git-tool", service).delete_password()?;
         Ok(())
     }
 }
 
 #[cfg(not(feature = "auth"))]
-#[cfg_attr(test, mockable)]
 #[allow(dead_code)]
-impl KeyChain {
-    pub fn get_token(&self, _service: &str) -> Result<String, Error> {
+struct UnsupportedKeyChain {}
+
+#[cfg(not(feature = "auth"))]
+#[allow(dead_code)]
+impl KeyChain for UnsupportedKeyChain {
+    fn get_token(&self, _service: &str) -> Result<String, Error> {
         Err(errors::user(
             "This version of Git-Tool was compiled without support for authentication.",
             "Use a version of Git-Tool which supports authentication, or compile Git-Tool yourself with --features=auth.",
         ))
     }
 
-    pub fn set_token(&self, _service: &str, _token: &str) -> Result<(), Error> {
+    fn set_token(&self, _service: &str, _token: &str) -> Result<(), Error> {
         Ok(())
     }
 
-    pub fn remove_token(&self, _service: &str) -> Result<(), Error> {
+    fn remove_token(&self, _service: &str) -> Result<(), Error> {
         Ok(())
     }
 }
@@ -64,8 +71,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_keychain() {
-        let config = Arc::new(Config::default());
-        let keychain = KeyChain::from(config);
+        let keychain = keychain();
 
         assert!(keychain.get_token("test.example.com/missing").is_err());
 
@@ -76,7 +82,7 @@ mod tests {
             keychain.get_token("test.example.com/present").unwrap(),
             "example-token"
         );
-        keychain.remove_token("test.example.com/present").unwrap();
+        keychain.delete_token("test.example.com/present").unwrap();
         assert!(keychain.get_token("test.example.com/present").is_err());
     }
 }

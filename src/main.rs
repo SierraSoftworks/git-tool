@@ -204,17 +204,18 @@ async fn run(
     commands: Vec<Arc<dyn CommandRunnable>>,
     matches: clap::ArgMatches,
 ) -> Result<i32, errors::Error> {
-    let mut core_builder = core::Core::builder();
+    let core_builder = core::Core::builder();
 
-    if let Some(cfg_file) = matches.get_one::<String>("config") {
+    let core_builder = if let Some(cfg_file) = matches.get_one::<String>("config") {
         debug!("Loading configuration file...");
-        core_builder = core_builder.with_config_file(cfg_file)?;
+        core_builder.with_config_file(cfg_file)?
     } else if let Some(dirs) = core::Config::default_path() {
         debug!("Loading configuration from default config file...");
-        core_builder = core_builder.with_config_file_or_default(dirs);
+        core_builder.with_config_file_or_default(dirs)
     } else {
         warn!("No configuration file was specified and we were unable to determine the default configuration file location.");
-    }
+        core_builder.with_default_config()
+    };
 
     let core = core_builder.build();
 

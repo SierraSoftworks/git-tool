@@ -85,7 +85,7 @@ impl CommandRunnable for RemoveCommand {
 mod tests {
     use super::*;
     use crate::core::*;
-    use mocktopus::mocking::*;
+    use mockall::predicate::eq;
 
     #[tokio::test]
     async fn run() {
@@ -94,24 +94,21 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["remove", "repo"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::for_dev_directory(temp.path());
-
         std::fs::create_dir_all(temp.path().join("repo")).expect("the test repo should be created");
 
-        let core = Core::builder().with_config(&cfg).build();
-
         let temp_path = temp.path().to_owned();
-        Resolver::get_best_repo.mock_safe(move |_, name| {
-            assert_eq!(
-                name, "repo",
-                "it should be called with the name of the repo to be removed"
-            );
-
-            MockResult::Return(Ok(Repo::new(
-                "gh:git-fixtures/basic",
-                temp_path.join("repo"),
-            )))
-        });
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_best_repo()
+                    .with(eq("repo"))
+                    .times(1)
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
+                    });
+            })
+            .build();
 
         match cmd.run(&core, &args).await {
             Ok(status) => {

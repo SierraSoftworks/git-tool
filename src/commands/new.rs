@@ -114,9 +114,9 @@ impl CommandRunnable for NewCommand {
 
 #[cfg(test)]
 mod tests {
+    use mockall::predicate::eq;
+
     use super::*;
-    use crate::core::*;
-    use mocktopus::mocking::*;
 
     #[tokio::test]
     async fn run_partial() {
@@ -127,16 +127,18 @@ mod tests {
             .get_matches_from(vec!["new", "test/new-repo-partial"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::for_dev_directory(temp.path());
 
-        KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-partial");
-
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(crate::online::service::github::mocks::get_repo_not_exists(
+                "test/new-repo-partial",
+            ))
+            .build();
 
         let repo = core
             .resolver()
@@ -158,16 +160,18 @@ mod tests {
             .get_matches_from(vec!["new", "gh:test/new-repo-full"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::for_dev_directory(temp.path());
 
-        KeyChain::get_token.mock_safe(|_, token| {
-            assert_eq!(token, "gh", "the correct token should be requested");
-            MockResult::Return(Ok("test_token".into()))
-        });
-
-        crate::online::service::github::mocks::get_repo_not_exists("test/new-repo-full");
-
-        let core = Core::builder().with_config(&cfg).build();
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(crate::online::service::github::mocks::get_repo_not_exists(
+                "test/new-repo-full",
+            ))
+            .build();
 
         let repo = core
             .resolver()

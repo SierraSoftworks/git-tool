@@ -1,6 +1,6 @@
 mod app;
 mod auth;
-mod builder;
+pub mod builder;
 mod config;
 pub mod features;
 mod http;
@@ -16,7 +16,9 @@ mod templates;
 use std::{io::Write, sync::Arc};
 
 #[cfg(test)]
-use mocktopus::macros::*;
+pub use self::http::mocks::MockHttpRoute;
+
+use crate::console::ConsoleProvider;
 
 use super::errors;
 pub use errors::Error;
@@ -33,43 +35,49 @@ pub use scratchpad::Scratchpad;
 pub use service::{Service, ServiceAPI};
 pub use target::Target;
 
-#[cfg_attr(test, mockable)]
 pub struct Core {
     config: Arc<Config>,
-    launcher: Arc<Launcher>,
-    resolver: Arc<Resolver>,
-    keychain: Arc<KeyChain>,
-    http_client: Arc<HttpClient>,
+    console: Arc<dyn ConsoleProvider + Send + Sync>,
+    launcher: Arc<dyn Launcher + Send + Sync>,
+    resolver: Arc<dyn Resolver + Send + Sync>,
+    keychain: Arc<dyn KeyChain + Send + Sync>,
+    http_client: Arc<dyn HttpClient + Send + Sync>,
 }
 
-#[cfg_attr(test, mockable)]
 impl Core {
-    pub fn builder() -> builder::CoreBuilder {
-        let config = Arc::new(Config::default());
-        builder::CoreBuilder { config }
+    pub fn builder() -> builder::CoreBuilderWithoutConfig {
+        builder::CoreBuilderWithoutConfig::default()
     }
 
     pub fn config(&self) -> &Config {
         &self.config
     }
 
-    pub fn keychain(&self) -> &KeyChain {
-        &self.keychain
+    pub fn keychain(&self) -> &(dyn KeyChain + Send + Sync) {
+        self.keychain.as_ref()
     }
 
-    pub fn launcher(&self) -> &Launcher {
-        &self.launcher
+    pub fn launcher(&self) -> &(dyn Launcher + Send + Sync) {
+        self.launcher.as_ref()
     }
 
-    pub fn resolver(&self) -> &Resolver {
-        &self.resolver
+    pub fn resolver(&self) -> &(dyn Resolver + Send + Sync) {
+        self.resolver.as_ref()
+    }
+
+    pub fn console(&self) -> Arc<dyn ConsoleProvider + Send + Sync> {
+        self.console.clone()
     }
 
     pub fn output(&self) -> Box<dyn Write + Send> {
-        crate::console::output::output()
+        self.console.output()
     }
 
-    pub fn http_client(&self) -> &HttpClient {
-        &self.http_client
+    pub fn prompter(&self) -> Prompter {
+        Prompter::new(self.console.clone())
+    }
+
+    pub fn http_client(&self) -> &(dyn HttpClient + Send + Sync) {
+        self.http_client.as_ref()
     }
 }
