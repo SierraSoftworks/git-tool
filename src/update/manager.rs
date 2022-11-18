@@ -272,7 +272,7 @@ mod tests {
                 mock.expect_launch()
                     .once()
                     .withf(move |path, state| {
-                        path == &temp_app_path && state.phase == UpdatePhase::Replace
+                        path == temp_app_path && state.phase == UpdatePhase::Replace
                     })
                     .returning(|_, _| Ok(()));
             })
@@ -311,7 +311,7 @@ mod tests {
                 mock.expect_launch()
                     .once()
                     .withf(move |path, state| {
-                        path == &app_path && state.phase == UpdatePhase::Cleanup
+                        path == app_path && state.phase == UpdatePhase::Cleanup
                     })
                     .returning(|_, _| Ok(()));
             })
@@ -322,11 +322,11 @@ mod tests {
                 mock.expect_get_temp_app_path().never();
                 mock.expect_copy_file()
                     .once()
-                    .withf(move |src, dst| src == &temp_app_path && dst == &app_path_copy)
+                    .withf(move |src, dst| src == temp_app_path && dst == app_path_copy)
                     .returning(|_, _| Ok(()));
                 mock.expect_delete_file()
                     .once()
-                    .withf(move |path| path == &app_path)
+                    .withf(move |path| path == app_path)
                     .returning(|_| Ok(()));
             });
 
@@ -367,7 +367,7 @@ mod tests {
                 mock.expect_get_temp_app_path().never();
                 mock.expect_delete_file()
                     .once()
-                    .withf(move |path| path == &temp_app_path)
+                    .withf(move |path| path == temp_app_path)
                     .returning(|path| {
                         std::fs::remove_file(path).expect("we should be able to delete the path");
                         Ok(())

@@ -80,7 +80,7 @@ impl FileSystem for DefaultFileSystem {
         let file_name = format!(
             "git-tool-update-{}{}",
             release.id,
-            if cfg!(windows) { ".exe" } else { "" }.to_string()
+            if cfg!(windows) { ".exe" } else { "" }
         );
         std::env::temp_dir().join(file_name)
     }

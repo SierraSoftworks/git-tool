@@ -32,7 +32,7 @@ impl CommandRunnable for CompleteCommand {
         matches: &clap::ArgMatches,
     ) -> Result<i32, crate::core::Error>
 where {
-        let position: Option<usize> = matches.get_one::<usize>("position").map(|s| *s);
+        let position: Option<usize> = matches.get_one::<usize>("position").copied();
 
         let args = matches
             .get_one::<String>("args")
