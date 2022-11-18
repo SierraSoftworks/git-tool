@@ -59,7 +59,7 @@ impl KeyChain for UnsupportedKeyChain {
         Ok(())
     }
 
-    fn remove_token(&self, _service: &str) -> Result<(), Error> {
+    fn delete_token(&self, _service: &str) -> Result<(), Error> {
         Ok(())
     }
 }
