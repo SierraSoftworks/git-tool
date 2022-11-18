@@ -7,7 +7,15 @@ pub struct GitInit {}
 impl Task for GitInit {
     #[tracing::instrument(name = "task:git_init(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
-        git::git_init(&repo.get_path()).await
+        git::git_init(&repo.get_path()).await?;
+
+        #[cfg(test)]
+        {
+            git::git_config_set(&repo.get_path(), "user.name", "Example User").await?;
+            git::git_config_set(&repo.get_path(), "user.email", "user@example.com").await?;
+        }
+
+        Ok(())
     }
 
     #[tracing::instrument(name = "task:git_init(scratchpad)", err, skip(self, _core))]

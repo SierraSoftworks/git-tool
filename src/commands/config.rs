@@ -364,6 +364,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn run_list() {
         let cfg = Config::from_str("directory: /dev").unwrap();
         let console = crate::console::mock();

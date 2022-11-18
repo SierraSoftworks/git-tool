@@ -34,6 +34,14 @@ mod tests {
 
         git_init(temp.path()).await.unwrap();
 
+        // Configure Git's user to avoid requiring this to be set in the environment
+        git_config_set(temp.path(), "user.name", "Test User")
+            .await
+            .unwrap();
+        git_config_set(temp.path(), "user.email", "user@example.com")
+            .await
+            .unwrap();
+
         std::fs::write(temp.path().join("test.txt"), "testing").unwrap();
         assert!(
             temp.path().join("test.txt").exists(),

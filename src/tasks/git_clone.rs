@@ -17,7 +17,15 @@ impl Task for GitClone {
 
         let url = service.get_git_url(repo)?;
 
-        git::git_clone(&repo.get_path(), &url).await
+        git::git_clone(&repo.get_path(), &url).await?;
+
+        #[cfg(test)]
+        {
+            git::git_config_set(&repo.get_path(), "user.name", "Example User").await?;
+            git::git_config_set(&repo.get_path(), "user.email", "user@example.com").await?;
+        }
+
+        Ok(())
     }
 
     #[tracing::instrument(name = "task:git_clone(scratchpad)", err, skip(self, _core))]
