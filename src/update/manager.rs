@@ -247,12 +247,6 @@ where
     }
 }
 
-#[cfg(windows)]
-mod windows {
-    pub const DETACHED_PROCESS: u32 = 0x00000008;
-    pub const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

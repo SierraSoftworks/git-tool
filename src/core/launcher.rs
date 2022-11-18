@@ -165,7 +165,7 @@ mod tests {
         let t = Scratchpad::new("123", test_dir);
 
         let config = Arc::new(Config::default());
-        let launcher = Launcher::from(config);
+        let launcher = launcher(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
