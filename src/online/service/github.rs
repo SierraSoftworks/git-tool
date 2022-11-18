@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use super::*;
 use crate::errors;
-use reqwest::{Method, Request, StatusCode};
+use reqwest::{Method, Request, StatusCode, Url};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -113,7 +115,7 @@ impl GitHubService {
         }
     }
 
-    async fn make_request<B: Into<reqwest::Body>, T: DeserializeOwned>(
+    async fn make_request<B: Into<reqwest::Body> + Clone, T: DeserializeOwned>(
         &self,
         core: &Core,
         service: &Service,
@@ -122,7 +124,7 @@ impl GitHubService {
         body: B,
         acceptable: Vec<StatusCode>,
     ) -> Result<Result<T, GitHubErrorResponse>, Error> {
-        let url = uri.parse().map_err(|e| {
+        let url: Url = uri.parse().map_err(|e| {
             errors::system_with_internal(
                 &format!("Unable to parse GitHub API URL '{}'.", uri),
                 "Please report this error to us by opening an issue on GitHub.",
@@ -132,29 +134,63 @@ impl GitHubService {
 
         let token = core.keychain().get_token(&service.name)?;
 
-        let mut req = Request::new(method, url);
+        let mut remaining_attempts = 3;
+        let retryable = vec![
+            StatusCode::TOO_MANY_REQUESTS,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            StatusCode::BAD_GATEWAY,
+            StatusCode::SERVICE_UNAVAILABLE,
+        ];
 
-        *req.body_mut() = Some(body.into());
+        loop {
+            remaining_attempts -= 1;
 
-        let headers = req.headers_mut();
+            let mut req = Request::new(method.clone(), url.clone());
 
-        headers.append("User-Agent", version!("Git-Tool/v").parse()?);
-        headers.append("Accept", "application/vnd.github.v3+json".parse()?);
-        headers.append("Authorization", format!("token {}", token).parse()?);
+            *req.body_mut() = Some(body.clone().into());
 
-        let resp = core.http_client().request(req).await?;
+            let headers = req.headers_mut();
 
-        match resp.status() {
-            status if acceptable.contains(&status) => {
-                let result = resp.json().await?;
+            headers.append("User-Agent", version!("Git-Tool/v").parse()?);
+            headers.append("Accept", "application/vnd.github.v3+json".parse()?);
+            headers.append("Authorization", format!("token {}", token).parse()?);
 
-                Ok(Ok(result))
-            }
-            status => {
-                let mut result: GitHubErrorResponse = resp.json().await?;
-                result.http_status_code = status;
+            match core.http_client().request(req).await {
+                Ok(resp) if acceptable.contains(&resp.status()) => {
+                    let result = resp.json().await?;
 
-                Ok(Err(result))
+                    return Ok(Ok(result));
+                }
+                Ok(resp) if remaining_attempts > 0 && retryable.contains(&resp.status()) => {
+                    tracing::warn!(
+                        "GitHub API request failed with status code {}. Retrying...",
+                        resp.status()
+                    );
+
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+
+                    continue;
+                }
+                Ok(resp) => {
+                    let status = resp.status();
+                    let mut result: GitHubErrorResponse = resp.json().await?;
+                    result.http_status_code = status;
+
+                    return Ok(Err(result));
+                }
+                Err(error) if remaining_attempts > 0 => {
+                    tracing::warn!(
+                        "GitHub API request failed with error {}. Retrying...",
+                        error
+                    );
+
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+
+                    continue;
+                }
+                Err(error) => {
+                    return Err(error);
+                }
             }
         }
     }
