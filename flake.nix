@@ -53,7 +53,6 @@
             /docs
             /example
             /result
-            /registry
             /scripts
             /target
             *.nix
