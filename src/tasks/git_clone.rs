@@ -37,6 +37,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn test_repo_basic() {
         let temp = tempdir().unwrap();
         let repo = core::Repo::new("gh:git-fixtures/basic", temp.path().join("repo"));

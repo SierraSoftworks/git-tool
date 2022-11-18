@@ -154,6 +154,7 @@ mod tests {
     use crate::core::Core;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_list() {
         let core = Core::builder().with_default_config().build();
         match list(&core).await {
@@ -169,6 +170,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn get_ignore() {
         let core = Core::builder().with_default_config().build();
         match ignore(&core, vec!["csharp"]).await {
