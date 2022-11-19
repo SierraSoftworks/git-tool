@@ -1,102 +1,113 @@
 {
   description = "Simplify checking out your Git repositories in a structured directory space.";
 
-  outputs = { self, nixpkgs }:
-    {
-      devShells = nixpkgs.lib.genAttrs ["aarch64-darwin" "aarch64-linux" "x86_64-darwin" "x86_64-linux"] (system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          lib = pkgs.lib;
-          stdenv = pkgs.stdenv;
-        in
-        {
-          default = stdenv.mkDerivation {
-            name = "git-tool-shell-${system}";
-            system = system;
-            nativeBuildInputs = [
-              pkgs.rustc
-              pkgs.cargo
-              pkgs.nodejs
-              pkgs.protobuf
-              pkgs.pkg-config
-            ];
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-            buildInputs = [
-              pkgs.libiconv
-              pkgs.openssl
-            ]
-              ++ lib.optionals stdenv.isDarwin [ pkgs.darwin.apple_sdk.frameworks.Security ]
-              ++ lib.optionals stdenv.isLinux [ pkgs.dbus ];
-
-            PROTOC = "${pkgs.protobuf}/bin/protoc";
-          };
-        }
-      );
-
-      packages = nixpkgs.lib.genAttrs ["aarch64-darwin" "aarch64-linux" "x86_64-darwin" "x86_64-linux"] (system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          lib = pkgs.lib;
-          stdenv = pkgs.stdenv;
-          rustPlatform = pkgs.rustPlatform;
-          nodePackages = pkgs.nodePackages;
-        in
-        {
-          git-tool = rustPlatform.buildRustPackage rec {
-            name = "git-tool-${system}";
-            pname = "git-tool";
-
-            src = pkgs.nix-gitignore.gitignoreSourcePure ''
-            /.github
-            /.vscode
-            /config
-            /docs
-            /example
-            /result
-            /scripts
-            /target
-            *.nix
-            '' ./.;
-
-            checkFeatures = ["pure-tests"];
-            
-            nativeBuildInputs = [
-              pkgs.protobuf
-              pkgs.pkg-config
-              pkgs.gitMinimal
-            ];
-
-            buildInputs = [
-              pkgs.libiconv
-              pkgs.openssl
-            ]
-              ++ lib.optionals stdenv.isDarwin [pkgs.darwin.apple_sdk.frameworks.Security]
-              ++ lib.optionals stdenv.isLinux [ pkgs.dbus ];
-
-            PROTOC = "${pkgs.protobuf}/bin/protoc";
-
-            cargoLock = {
-              lockFile = ./Cargo.lock;
-
-              outputHashes = {
-                  "tracing-0.2.0" = "sha256-xK2F6TNne+scfKgU4Vr1tfe0kdXyOZt0N7bex0Jzcmg=";
-              };
-            };
-
-            meta = with lib; {
-              description = "Simplify checking out your Git repositories in a structured directory space.";
-              homepage = "https://git-tool.sierrasoftworks.com";
-              license = licenses.mit;
-              maintainers = [
-                {
-                  name = "Benjamin Pannell";
-                  email = "contact@sierrasoftworks.com";
-                }
-              ];
-            };
-          };
-          default = self.packages.${system}.git-tool;
-        }
-      );
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flake-utils.url = "github:numtide/flake-utils";
+
+    advisory-db = {
+      url = "github:rustsec/advisory-db";
+      flake = false;
+    };
+  };
+
+  outputs = { self, nixpkgs, crane, flake-utils, advisory-db, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+        };
+
+        inherit (pkgs) lib stdenv;
+
+        craneLib = crane.lib.${system};
+        src = craneLib.cleanCargoSource ./.;
+
+        nativeBuildInputs = [pkgs.pkg-config pkgs.protobuf pkgs.gitMinimal];
+
+        buildInputs = [ pkgs.openssl ]
+        ++ lib.optionals stdenv.isDarwin [pkgs.libiconv pkgs.darwin.apple_sdk.frameworks.Security]
+        ++ lib.optionals stdenv.isLinux [pkgs.dbus];
+
+        cargoArtifacts = craneLib.buildDepsOnly {
+          inherit src nativeBuildInputs buildInputs;
+        };
+
+        git-tool = craneLib.buildPackage {
+          inherit cargoArtifacts src nativeBuildInputs buildInputs;
+
+          doCheck = false;
+        };
+      in
+      {
+        checks = {
+          # Build the crate as part of `nix flake check` for convenience
+          inherit git-tool;
+
+          # Run clippy (and deny all warnings) on the crate source,
+          # again, resuing the dependency artifacts from above.
+          #
+          # Note that this is done as a separate derivation so that
+          # we can block the CI if there are issues here, but not
+          # prevent downstream consumers from building our crate by itself.
+          git-tool-clippy = craneLib.cargoClippy {
+            inherit cargoArtifacts src buildInputs;
+            cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+          };
+
+          git-tool-doc = craneLib.cargoDoc {
+            inherit cargoArtifacts src;
+          };
+
+          # Check formatting
+          git-tool-fmt = craneLib.cargoFmt {
+            inherit src;
+          };
+
+          # Audit dependencies
+          git-tool-audit = craneLib.cargoAudit {
+            inherit src advisory-db;
+          };
+
+          # Run tests with cargo-nextest
+          # Consider setting `doCheck = false` on `my-crate` if you do not want
+          # the tests to run twice
+          git-tool-nextest = craneLib.cargoNextest {
+            inherit cargoArtifacts src nativeBuildInputs buildInputs;
+            partitions = 1;
+            partitionType = "count";
+
+            # Disable impure tests (which access the network and/or filesystem)
+            cargoExtraArgs = "--features default,pure-tests";
+          };
+        } // lib.optionalAttrs (system == "x86_64-linux") {
+          # NB: cargo-tarpaulin only supports x86_64 systems
+          # Check code coverage (note: this will not upload coverage anywhere)
+          git-tool-coverage = craneLib.cargoTarpaulin {
+            inherit cargoArtifacts src;
+          };
+        };
+
+        packages.default = git-tool;
+
+        apps.default = flake-utils.lib.mkApp {
+          drv = git-tool;
+        };
+
+        devShells.default = pkgs.mkShell {
+          inputsFrom = builtins.attrValues self.checks;
+
+          # Extra inputs can be added here
+          nativeBuildInputs = with pkgs; [
+            cargo
+            rustc
+          ] ++ nativeBuildInputs;
+        };
+      });
 }
