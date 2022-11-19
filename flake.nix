@@ -79,7 +79,7 @@
           # Consider setting `doCheck = false` on `my-crate` if you do not want
           # the tests to run twice
           git-tool-nextest = craneLib.cargoNextest {
-            inherit cargoArtifacts src buildInputs;
+            inherit cargoArtifacts src nativeBuildInputs buildInputs;
             partitions = 1;
             partitionType = "count";
 

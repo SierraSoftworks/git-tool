@@ -10,7 +10,7 @@ pub fn get_repo_root() -> std::path::PathBuf {
 }
 
 pub fn get_dev_dir() -> std::path::PathBuf {
-    get_repo_root().join("test").join("devdir")
+    get_repo_root().join("src").join("test").join("devdir")
 }
 
 #[test]

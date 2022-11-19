@@ -543,6 +543,7 @@ apps:
     #[test]
     fn test_load_file() {
         let file_path = get_repo_root()
+            .join("src")
             .join("test")
             .join("data")
             .join("config.valid.yml");
