@@ -541,6 +541,7 @@ apps:
     }
 
     #[test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     fn test_load_file() {
         let file_path = get_repo_root()
             .join("src")
