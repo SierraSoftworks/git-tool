@@ -27,7 +27,17 @@
         inherit (pkgs) lib stdenv;
 
         craneLib = crane.lib.${system};
-        src = craneLib.cleanCargoSource ./.;
+        src = let
+          # Only keeps markdown files
+          testDataFilter = path: _type: builtins.match ".*/src/test/.*$" path != null;
+          registryDataFilter = path: _type: builtins.match ".*/registry/.*$" path != null;
+          testDataOrCargo = path: type:
+            (testDataFilter path type) || (registryDataFilter path type) || (craneLib.filterCargoSources path type);
+        in
+        lib.cleanSourceWith {
+          src = ./.;
+          filter = testDataOrCargo;
+        };
 
         nativeBuildInputs = [pkgs.pkg-config pkgs.protobuf pkgs.gitMinimal];
 
@@ -85,6 +95,7 @@
 
             # Disable impure tests (which access the network and/or filesystem)
             cargoExtraArgs = "--features default,pure-tests";
+            cargoNextestExtraArgs = "--no-fail-fast";
           };
         } // lib.optionalAttrs (system == "x86_64-linux") {
           # NB: cargo-tarpaulin only supports x86_64 systems
