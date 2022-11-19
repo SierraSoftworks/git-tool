@@ -157,7 +157,10 @@ impl GitHubService {
 
             match core.http_client().request(req).await {
                 Ok(resp) if acceptable.contains(&resp.status()) => {
-                    let result = resp.json().await?;
+                    let result = resp.json().await.map_err(|e| errors::system_with_internal(
+                        "We could not deserialize the response from GitHub because it didn't match the expected response format.",
+                        "Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate.",
+                        e))?;
 
                     return Ok(Ok(result));
                 }
@@ -173,7 +176,17 @@ impl GitHubService {
                 }
                 Ok(resp) => {
                     let status = resp.status();
-                    let mut result: GitHubErrorResponse = resp.json().await?;
+                    let mut result: GitHubErrorResponse = resp.json().await.map_err(|e| {
+                        errors::system_with_internal(
+                            &format!(
+                                "We received an unexpected HTTP {} {} status code from GitHub and weren't able to parse the response (which likely indicates an outage or network connectivity issue).",
+                                status.as_u16(),
+                                status.canonical_reason().unwrap_or("Unknown")
+                            ),
+                            "GitHub might be having reliability difficulties at the moment, please take a look at https://www.githubstatus.com/ to see if there are any known issues.",
+                            e,
+                        )
+                    })?;
                     result.http_status_code = status;
 
                     return Ok(Err(result));
