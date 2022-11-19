@@ -2575,7 +2575,7 @@ dependencies = [
 [[package]]
 name = "tracing"
 version = "0.2.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "cfg-if 1.0.0",
  "log",
@@ -2598,7 +2598,7 @@ dependencies = [
 [[package]]
 name = "tracing-attributes"
 version = "0.2.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2617,7 +2617,7 @@ dependencies = [
 [[package]]
 name = "tracing-core"
 version = "0.2.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "once_cell",
 ]
@@ -2635,7 +2635,7 @@ dependencies = [
 [[package]]
 name = "tracing-futures"
 version = "0.3.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "futures 0.3.25",
  "futures-task",
@@ -2648,7 +2648,7 @@ dependencies = [
 [[package]]
 name = "tracing-log"
 version = "0.2.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "log",
  "once_cell",
@@ -2658,7 +2658,7 @@ dependencies = [
 [[package]]
 name = "tracing-opentelemetry"
 version = "0.16.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "async-trait",
  "once_cell",
@@ -2672,7 +2672,7 @@ dependencies = [
 [[package]]
 name = "tracing-subscriber"
 version = "0.3.0"
-source = "git+https://github.com/SierraSoftworks/tracing.git#93b644dd42273ae6d8df903d2d9b6f65f6931df0"
+source = "git+https://github.com/SierraSoftworks/tracing.git#39a100a1b4087d540f3ae28d8adaefbe8d1a245e"
 dependencies = [
  "nu-ansi-term",
  "sharded-slab",
