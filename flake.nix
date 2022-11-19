@@ -97,12 +97,6 @@
             cargoExtraArgs = "--features default,pure-tests";
             cargoNextestExtraArgs = "--no-fail-fast";
           };
-        } // lib.optionalAttrs (system == "x86_64-linux") {
-          # NB: cargo-tarpaulin only supports x86_64 systems
-          # Check code coverage (note: this will not upload coverage anywhere)
-          git-tool-coverage = craneLib.cargoTarpaulin {
-            inherit cargoArtifacts src;
-          };
         };
 
         packages.default = git-tool;
