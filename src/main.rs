@@ -139,6 +139,18 @@ async fn host(
         }
         Err(error) => {
             error.print().unwrap_or_default();
+
+            tracing::Span::current()
+                .record(
+                    "otel.name",
+                    if error.kind() == clap::error::ErrorKind::DisplayVersion {
+                        "gt --version"
+                    } else {
+                        "gt --help"
+                    },
+                )
+                .record("exit_code", &2_u32);
+
             return Ok(2);
         }
     };
