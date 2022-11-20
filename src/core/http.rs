@@ -45,7 +45,7 @@ impl HttpClient for TrueHttpClient {
         skip(self, req),
         fields(
             otel.kind = ?SpanKind::Client,
-            otel.status = field::Empty,
+            otel.status_code = 0,
             otel.status_message = field::Empty,
             http.method = %req.method(),
             http.url = %req.url(),
@@ -61,22 +61,20 @@ impl HttpClient for TrueHttpClient {
 
         let response = client.execute(req).await?;
 
-        let span_status = if response.status().is_success() {
-            "ok"
-        } else {
-            "error"
-        };
+        if !response.status().is_success() {
+            tracing::span::Span::current()
+                .record("otel.status_code", &2_u32)
+                .record(
+                    "otel.status_message",
+                    &response.status().canonical_reason().unwrap_or("<none>"),
+                );
+        }
 
         tracing::span::Span::current()
             .record("http.status_code", &response.status().as_u16())
             .record(
                 "http.response_content_length",
                 &response.content_length().unwrap_or(0),
-            )
-            .record("otel.status", &span_status)
-            .record(
-                "otel.status_message",
-                &response.status().canonical_reason().unwrap_or("<none>"),
             );
 
         Ok(response)

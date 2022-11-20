@@ -89,7 +89,7 @@ fn build_app(commands: &[Arc<dyn CommandRunnable>]) -> clap::Command {
             .subcommands(commands.iter().map(|x| x.app()))
 }
 
-#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status=field::Empty, exception=field::Empty))]
+#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status_code=0, exception=field::Empty))]
 async fn host(
     app: clap::Command,
     commands: Vec<Arc<dyn CommandRunnable>>,
@@ -114,7 +114,7 @@ async fn host(
                 && error.kind() != clap::error::ErrorKind::DisplayHelp =>
         {
             tracing::Span::current()
-                .record("otel.status", "error")
+                .record("otel.status_code", &2_u32)
                 .record("exit_code", &1_u32)
                 .record("exception", &field::display(&error));
 
@@ -156,7 +156,7 @@ async fn host(
             app.clone().print_help().unwrap_or_default();
 
             tracing::Span::current()
-                .record("otel.status", "error")
+                .record("otel.status_code", &2_u32)
                 .record("exit_code", &2_u32);
 
             warn!("Exiting with status code {}", 2);
@@ -164,9 +164,7 @@ async fn host(
         }
         Ok(status) => {
             info!("Exiting with status code {}", status);
-            tracing::Span::current()
-                .record("otel.status", "ok")
-                .record("exit_code", &status);
+            tracing::Span::current().record("exit_code", &status);
             Ok(status)
         }
         Err(error) => {
@@ -174,7 +172,7 @@ async fn host(
 
             error!("Exiting with status code {}", 1);
             tracing::Span::current()
-                .record("otel.status", "error")
+                .record("otel.status_code", &2_u32)
                 .record("exit_code", &1_u32);
 
             if error.is_system() {
