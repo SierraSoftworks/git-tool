@@ -57,6 +57,14 @@ impl CommandRunnable for AuthCommand {
                 let token = match matches.get_one::<String>("token") {
                     Some(token) => token.to_string(),
                     None => {
+                        if let Some(online_service) = crate::online::service::services()
+                            .iter()
+                            .cloned()
+                            .find(|s| s.handles(svc))
+                        {
+                            writeln!(core.output(), "{}", online_service.auth_instructions())?;
+                        }
+
                         writeln!(core.output(), "Access Token: ")?;
                         rpassword::read_password().map_err(|e| errors::user_with_internal(
                         "Could not read the access token that you entered.",
