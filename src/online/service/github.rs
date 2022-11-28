@@ -19,6 +19,10 @@ impl OnlineService for GitHubService {
             .unwrap_or(false)
     }
 
+    fn auth_instructions(&self) -> String {
+        "Create a new Personal Access Token with the 'repo' scope at https://github.com/settings/tokens/new?scopes=repo".into()
+    }
+
     async fn test(&self, core: &Core, service: &Service) -> Result<(), Error> {
         self.get_user_login(core, service).await?;
         Ok(())
