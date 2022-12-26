@@ -2,7 +2,7 @@ use super::async_trait;
 use super::online::gitignore;
 use super::Command;
 use super::*;
-use clap::{Arg, ArgMatches};
+use clap::{value_parser, Arg, ArgMatches};
 
 pub struct IgnoreCommand {}
 
@@ -22,7 +22,8 @@ impl Command for IgnoreCommand {
                     .help("The path to the .gitignore file you wish to update.")
                     .default_value(".gitignore")
                     .value_name("GITIGNORE")
-                    .action(clap::ArgAction::Set))
+                    .action(clap::ArgAction::Set)
+                    .value_parser(value_parser!(std::path::PathBuf)))
             .arg(Arg::new("language")
                     .help("The name of a language which should be added to your .gitignore file.")
                     .action(clap::ArgAction::Append)
