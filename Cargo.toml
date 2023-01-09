@@ -9,7 +9,7 @@ name = "git-tool"
 
 [dependencies]
 async-trait = "0.1"
-base64 = "0.20"
+base64 = "0.21"
 chrono = { git="https://github.com/chronotope/chrono.git" }
 clap = { version = "4.0.32", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
