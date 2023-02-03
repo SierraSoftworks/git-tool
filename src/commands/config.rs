@@ -97,7 +97,7 @@ impl CommandRunnable for ConfigCommand {
                 let entries = registry.get_entries(core).await?;
                 let mut output = core.output();
                 for entry in entries {
-                    writeln!(output, "{}", entry)?;
+                    writeln!(output, "{entry}")?;
                 }
             }
             Some(("add", args)) => {
@@ -170,14 +170,10 @@ impl CommandRunnable for ConfigCommand {
                         }
                         None => match core.config().get_alias(alias) {
                             Some(repo) => {
-                                writeln!(core.output(), "{} = {}", alias, repo)?;
+                                writeln!(core.output(), "{alias} = {repo}")?;
                             }
                             None => {
-                                writeln!(
-                                    core.output(),
-                                    "No alias exists with the name '{}'",
-                                    alias
-                                )?;
+                                writeln!(core.output(), "No alias exists with the name '{alias}'")?;
                             }
                         },
                     }
@@ -185,7 +181,7 @@ impl CommandRunnable for ConfigCommand {
                 None => {
                     let mut output = core.output();
                     for (alias, repo) in core.config().get_aliases() {
-                        writeln!(output, "{} = {}", alias, repo)?;
+                        writeln!(output, "{alias} = {repo}")?;
                     }
                 }
             },
@@ -204,7 +200,7 @@ impl CommandRunnable for ConfigCommand {
                         }
                     }
                     Some(invalid) => {
-                        writeln!(core.output(), "Cannot set the feature flag {} to {} because only 'true' and 'false' are valid settings.", flag, invalid)?;
+                        writeln!(core.output(), "Cannot set the feature flag '{flag}' to '{invalid}' because only 'true' and 'false' are valid settings.")?;
                         return Ok(1);
                     }
                     None => {
@@ -432,7 +428,7 @@ mod tests {
 
         let console = crate::console::mock();
         let core = Core::builder()
-            .with_config_file(&temp.path().join("config.yml"))
+            .with_config_file(temp.path().join("config.yml"))
             .expect("the config should be loaded")
             .with_console(console.clone())
             .build();
@@ -548,7 +544,7 @@ aliases:
         .unwrap();
 
         let core = Core::builder()
-            .with_config_file(&temp.path().join("config.yml"))
+            .with_config_file(temp.path().join("config.yml"))
             .expect("the config should be loaded")
             .with_null_console()
             .build();
@@ -586,7 +582,7 @@ aliases:
         .unwrap();
 
         let core = Core::builder()
-            .with_config_file(&temp.path().join("config.yml"))
+            .with_config_file(temp.path().join("config.yml"))
             .expect("the config should be loaded")
             .with_null_console()
             .build();
@@ -654,7 +650,7 @@ features:
         .unwrap();
 
         let core = Core::builder()
-            .with_config_file(&temp.path().join("config.yml"))
+            .with_config_file(temp.path().join("config.yml"))
             .expect("the config should be loaded")
             .with_null_console()
             .build();

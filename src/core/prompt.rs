@@ -25,7 +25,7 @@ impl Prompter {
         let mut reader = self.console.input();
 
         for _i in 0..3 {
-            write!(writer, "{}", message)?;
+            write!(writer, "{message}")?;
             writer.flush()?;
 
             let line = Self::read_line(&mut reader)?;

@@ -27,17 +27,17 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
         match output.status.code() {
             Some(code) => {
                 Span::current()
-                    .record("status_code", &code)
-                    .record("otel.status_code", &2_u32);
+                    .record("status_code", code)
+                    .record("otel.status_code", 2_u32);
                 Err(errors::user_with_cause(
                     "Git exited with a failure status code.",
                     "Please check the output printed by Git to determine why the command failed and take appropriate action.",
-                    errors::system(&format!("{:?} exited with status code {}.", cmd, code), &output_text)))
+                    errors::system(&format!("{cmd:?} exited with status code {code}."), &output_text)))
             }
             None => {
                 Span::current()
-                    .record("status_code", &1_i32)
-                    .record("otel.status_code", &2_u32);
+                    .record("status_code", 1_i32)
+                    .record("otel.status_code", 2_u32);
                 Err(errors::system_with_internal(
                     "Git exited prematurely because it received an unexpected signal.",
                     "Please check the output printed by Git to determine why the command failed and take appropriate action.",

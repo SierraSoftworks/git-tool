@@ -14,7 +14,7 @@ impl From<keyring::Error> for Error {
             e => user_with_internal(
                 "A problem occurred while trying to access the secure token store.",
                 "This might indicate that you haven't configured an access token yet, which you can do with `git-tool auth github.com`. It may also indicate that there is an issue with your system secure token store. Please open a GitHub issue if you cannot resolve this.",
-                detailed_message(&format!("{:?}", e)))
+                detailed_message(&format!("{e:?}")))
         }
     }
 }

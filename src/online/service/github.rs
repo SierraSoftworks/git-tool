@@ -130,7 +130,7 @@ impl GitHubService {
     ) -> Result<Result<T, GitHubErrorResponse>, Error> {
         let url: Url = uri.parse().map_err(|e| {
             errors::system_with_internal(
-                &format!("Unable to parse GitHub API URL '{}'.", uri),
+                &format!("Unable to parse GitHub API URL '{uri}'."),
                 "Please report this error to us by opening an issue on GitHub.",
                 e,
             )
@@ -157,7 +157,7 @@ impl GitHubService {
 
             headers.append("User-Agent", version!("Git-Tool/v").parse()?);
             headers.append("Accept", "application/vnd.github.v3+json".parse()?);
-            headers.append("Authorization", format!("token {}", token).parse()?);
+            headers.append("Authorization", format!("token {token}").parse()?);
 
             match core.http_client().request(req).await {
                 Ok(resp) if acceptable.contains(&resp.status()) => {
@@ -255,14 +255,14 @@ impl Into<errors::Error> for GitHubErrorResponse {
                 errors::user_with_internal(
                     &format!("You do not have permission to perform this action on GitHub: {}", self.message),
                     "Check your GitHub account permissions for this organization or repository and try again.",
-                    errors::detailed_message(&format!("{:?}", self)),
+                    errors::detailed_message(&format!("{self:?}")),
                 )
             },
             http::StatusCode::NOT_FOUND => {
                 errors::user_with_internal(
                     "We could not create the GitHub repo because the organization or user you specified could not be found.",
                     "Check that you have specified the correct organization or user in the repository name and try again.",
-                    errors::detailed_message(&format!("{:?}", self))
+                    errors::detailed_message(&format!("{self:?}"))
                 )
             },
             http::StatusCode::TOO_MANY_REQUESTS => {
@@ -274,7 +274,7 @@ impl Into<errors::Error> for GitHubErrorResponse {
                 errors::system_with_internal(
                     &format!("Received an HTTP {} {} response from GitHub.", status.as_u16(), status.canonical_reason().unwrap_or_default()),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    errors::detailed_message(&format!("{:?}", self)))
+                    errors::detailed_message(&format!("{self:?}")))
             }
         }
     }
@@ -451,7 +451,7 @@ pub mod mocks {
             ),
             super::MockHttpRoute::new(
                 "POST",
-                format!("https://api.github.com/orgs/{}/repos", org).as_str(),
+                format!("https://api.github.com/orgs/{org}/repos").as_str(),
                 201,
                 r#"{ "id": 1234 }"#,
             ),
@@ -474,7 +474,7 @@ pub mod mocks {
             ),
             super::MockHttpRoute::new(
                 "POST",
-                format!("https://api.github.com/orgs/{}/repos", org).as_str(),
+                format!("https://api.github.com/orgs/{org}/repos").as_str(),
                 422,
                 r#"{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name already exists on this account"}],"documentation_url":"https://developer.github.com/v3/repos/#create"}"#,
             ),
@@ -507,7 +507,7 @@ pub mod mocks {
             ),
             super::MockHttpRoute::new(
                 "GET",
-                format!("https://api.github.com/repos/{}", repo).as_str(),
+                format!("https://api.github.com/repos/{repo}").as_str(),
                 200,
                 r#"{ "id": 1234 }"#,
             ),
@@ -540,7 +540,7 @@ pub mod mocks {
             ),
             super::MockHttpRoute::new(
                 "GET",
-                format!("https://api.github.com/repos/{}", repo).as_str(),
+                format!("https://api.github.com/repos/{repo}").as_str(),
                 404,
                 r#"{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}"#,
             ),

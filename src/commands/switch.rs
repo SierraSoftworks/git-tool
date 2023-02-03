@@ -17,7 +17,7 @@ impl Command for SwitchCommand {
         clap::Command::new(self.name())
             .version("1.0")
             .about("switches to the specified branch.")
-            .visible_aliases(&["sw", "branch", "b", "br"])
+            .visible_aliases(["sw", "branch", "b", "br"])
             .long_about(
                 "This command switches to the specified branch within the current repository.",
             )
@@ -59,7 +59,7 @@ impl CommandRunnable for SwitchCommand {
                     .unique()
                     .sorted()
                 {
-                    println!("{}", branch);
+                    writeln!(core.output(), "{branch}")?;
                 }
             }
         };

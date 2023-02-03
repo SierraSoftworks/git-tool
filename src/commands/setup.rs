@@ -112,7 +112,7 @@ impl SetupCommand {
                 "Enter a directory to hold your repositories{}: ",
                 default_dir
                     .clone()
-                    .map(|v| format!(" [{}]", v))
+                    .map(|v| format!(" [{v}]"))
                     .unwrap_or_else(|| "".into())
             ),
             |line| {
@@ -125,7 +125,7 @@ impl SetupCommand {
                     Ok(_) => { true },
                     Err(err) if err.kind() == ErrorKind::NotFound => { true },
                     Err(err) => {
-                        writeln!(core.output(), " [!] That doesn't look like a valid path to us, please try again ({}).", err).unwrap_or_default();
+                        writeln!(core.output(), " [!] That doesn't look like a valid path to us, please try again ({err}).").unwrap_or_default();
                         false
                     }
                 }

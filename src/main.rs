@@ -114,8 +114,8 @@ async fn host(
                 && error.kind() != clap::error::ErrorKind::DisplayHelp =>
         {
             tracing::Span::current()
-                .record("otel.status_code", &2_u32)
-                .record("exit_code", &1_u32)
+                .record("otel.status_code", 2_u32)
+                .record("exit_code", 1_u32)
                 .record("exception", &field::display(&error));
 
             if telemetry::is_enabled() {
@@ -149,7 +149,7 @@ async fn host(
                         "gt --help"
                     },
                 )
-                .record("exit_code", &2_u32);
+                .record("exit_code", 2_u32);
 
             return Ok(2);
         }
@@ -168,24 +168,24 @@ async fn host(
             app.clone().print_help().unwrap_or_default();
 
             tracing::Span::current()
-                .record("otel.status_code", &2_u32)
-                .record("exit_code", &2_u32);
+                .record("otel.status_code", 2_u32)
+                .record("exit_code", 2_u32);
 
             warn!("Exiting with status code {}", 2);
             Ok(2)
         }
         Ok(status) => {
             info!("Exiting with status code {}", status);
-            tracing::Span::current().record("exit_code", &status);
+            tracing::Span::current().record("exit_code", status);
             Ok(status)
         }
         Err(error) => {
-            println!("{}", error);
+            println!("{error}");
 
             error!("Exiting with status code {}", 1);
             tracing::Span::current()
-                .record("otel.status_code", &2_u32)
-                .record("exit_code", &1_u32);
+                .record("otel.status_code", 2_u32)
+                .record("exit_code", 1_u32);
 
             if error.is_system() {
                 tracing::Span::current().record("exception", &field::display(&error));

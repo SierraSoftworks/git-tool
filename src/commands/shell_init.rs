@@ -49,7 +49,7 @@ where {
             Some((name, matches)) => {
                 let shells = get_shells();
                 let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| errors::user(
-                    &format!("The shell '{}' is not currently supported by Git-Tool.", name),
+                    &format!("The shell '{name}' is not currently supported by Git-Tool."),
                     "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
                 ))?;
 

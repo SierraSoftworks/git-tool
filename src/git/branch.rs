@@ -189,7 +189,7 @@ mod tests {
             .await
             .expect("should be able to get the branches list");
 
-        println!("{:?}", branch);
+        println!("{branch:?}");
 
         assert!(
             branch.iter().any(|x| x == "main"),
@@ -259,7 +259,7 @@ mod tests {
             .await
             .expect("should be able to get the branches list");
 
-        println!("{:?}", default_branch);
+        println!("{default_branch:?}");
 
         assert_eq!(
             default_branch, "main",
@@ -318,7 +318,7 @@ mod tests {
             .await
             .expect("should be able to get the branches list");
 
-        println!("{:?}", branches);
+        println!("{branches:?}");
 
         assert!(
             !branches.iter().any(|x| x == "main"),
@@ -386,7 +386,7 @@ mod tests {
             .await
             .expect("should be able to get the branches list");
 
-        println!("{:?}", branch);
+        println!("{branch:?}");
 
         assert!(
             branch.iter().any(|x| x == "main"),

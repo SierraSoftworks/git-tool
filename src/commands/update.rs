@@ -9,7 +9,7 @@ impl Command for UpdateCommand {
         String::from("update")
     }
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
             .long_about("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")

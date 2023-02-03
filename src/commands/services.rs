@@ -7,7 +7,7 @@ impl Command for ServicesCommand {
         String::from("services")
     }
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("list services which can be used with Git-Tool")
             .long_about("Gets the list of services that you have added to your configuration file. These services are responsible for hosting your Git repositories.")

@@ -8,7 +8,7 @@ impl Command for AuthCommand {
         String::from("auth")
     }
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("configure authentication tokens")
             .long_about("Configures the authentication tokens used by Git-Tool to create and manage your remote repositories.")
@@ -75,7 +75,7 @@ impl CommandRunnable for AuthCommand {
 
                 core.keychain().set_token(service, &token)?;
 
-                writeln!(core.output(), "Access Token set for service '{}'", service)?;
+                writeln!(core.output(), "Access Token set for service '{service}'")?;
                 if let Some(online_service) =
                     crate::online::services().iter().find(|s| s.handles(svc))
                 {
