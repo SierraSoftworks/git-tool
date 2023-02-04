@@ -13,15 +13,16 @@ gt config add services/github
 
 ## Authenticating
 To enable the automatic creation of GitHub repositories, you'll need to be authenticated. This is
-done by creating a [new Personal Access Token](https://github.com/settings/tokens/new?scopes=repo)
+done by creating a [new Personal Access Token](https://github.com/settings/personal-access-tokens/new)
 and providing that to Git-Tool.
 
-The Personal Access Token you generate needs to have the following scopes:
-
- - `repo`
+The Personal Access Token you generate needs to have the following options configured:
+  - **Repository Access**: All repositories
+  - **Permissions**
+    - *Repository permissions / Administration*: Read and Write
 
 Once you've generated the new Personal Access Token, run the [`gt auth`](../commands/config.md#auth)
-command and paste the token there.
+command for your service and paste the token there.
 
 ```powershell
 gt auth gh
