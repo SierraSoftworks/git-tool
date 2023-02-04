@@ -20,7 +20,12 @@ impl OnlineService for GitHubService {
     }
 
     fn auth_instructions(&self) -> String {
-        "Create a new Personal Access Token with the 'repo' scope at https://github.com/settings/tokens/new?scopes=repo".into()
+        r#"
+Create a new Personal Access Token with the 'repo' scope at https://github.com/settings/personal-access-tokens/new
+Configure it with the following:
+  - Repository Access: All repositories
+  - Permissions
+    - Repository permissions / Administration: Read and Write"#.trim().into()
     }
 
     async fn test(&self, core: &Core, service: &Service) -> Result<(), Error> {
