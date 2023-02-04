@@ -10,9 +10,9 @@ impl Command for ListCommand {
         String::from("list")
     }
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
-            .visible_aliases(&["ls", "ll"])
+            .visible_aliases(["ls", "ll"])
             .about("list your repositories")
             .after_help("Gets the list of repositories managed by Git-Tool. These repositories can be opened using the `git-tool open` command.")
             .arg(Arg::new("filter")
@@ -127,7 +127,7 @@ mod tests {
     async fn run_normal() {
         let console = Arc::new(MockConsoleProvider::new());
         let core = Core::builder()
-            .with_config_for_dev_directory(&get_dev_dir())
+            .with_config_for_dev_directory(get_dev_dir())
             .with_console(console.clone())
             .build();
 

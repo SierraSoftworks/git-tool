@@ -63,18 +63,18 @@ impl HttpClient for TrueHttpClient {
 
         if !response.status().is_success() {
             tracing::span::Span::current()
-                .record("otel.status_code", &2_u32)
+                .record("otel.status_code", 2_u32)
                 .record(
                     "otel.status_message",
-                    &response.status().canonical_reason().unwrap_or("<none>"),
+                    response.status().canonical_reason().unwrap_or("<none>"),
                 );
         }
 
         tracing::span::Span::current()
-            .record("http.status_code", &response.status().as_u16())
+            .record("http.status_code", response.status().as_u16())
             .record(
                 "http.response_content_length",
-                &response.content_length().unwrap_or(0),
+                response.content_length().unwrap_or(0),
             );
 
         Ok(response)

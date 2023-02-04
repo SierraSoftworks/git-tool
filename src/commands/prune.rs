@@ -70,7 +70,7 @@ impl CommandRunnable for PruneCommand {
         if !matches.get_flag("yes") {
             writeln!(core.output(), "The following branches will be removed:")?;
             for branch in to_remove.iter() {
-                writeln!(core.output(), "  {}", branch)?;
+                writeln!(core.output(), "  {branch}")?;
             }
             writeln!(core.output())?;
 

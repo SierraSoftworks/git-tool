@@ -40,7 +40,7 @@ impl CommandRunnable for IgnoreCommand {
                 let languages = gitignore::list(core).await?;
 
                 for lang in languages {
-                    writeln!(core.output(), "{}", lang)?;
+                    writeln!(core.output(), "{lang}")?;
                 }
             }
             Some(languages) => {
@@ -100,7 +100,7 @@ mod tests {
             .build();
 
         let cmd = IgnoreCommand {};
-        let args = cmd.app().get_matches_from(&["ignore"]);
+        let args = cmd.app().get_matches_from(["ignore"]);
 
         match cmd.run(&core, &args).await {
             Ok(_) => {}

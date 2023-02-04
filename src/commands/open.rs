@@ -16,7 +16,7 @@ impl Command for OpenCommand {
     fn app(&self) -> clap::Command {
         clap::Command::new(self.name())
             .version("1.0")
-            .visible_aliases(&["o", "run"])
+            .visible_aliases(["o", "run"])
             .about("opens a repository using an application defined in your config")
             .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
             

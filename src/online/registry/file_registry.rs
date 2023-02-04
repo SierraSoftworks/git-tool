@@ -87,7 +87,7 @@ impl Registry for FileRegistry {
 
     #[tracing::instrument(err, skip(self, _core))]
     async fn get_entry(&self, _core: &Core, id: &str) -> Result<Entry, Error> {
-        let path = self.path.join(to_native_path(format!("{}.yaml", id)));
+        let path = self.path.join(to_native_path(format!("{id}.yaml")));
         let contents = read_to_string(&path).map_err(|err| {
             errors::user_with_internal(
                 &format!(
@@ -102,8 +102,7 @@ impl Registry for FileRegistry {
         Ok(serde_yaml::from_str(&contents).map_err(|err| {
             errors::user_with_internal(
                 &format!(
-                    "Could not deserialize the registry entry '{}' due to a YAML parser error.",
-                    id
+                    "Could not deserialize the registry entry '{id}' due to a YAML parser error."
                 ),
                 "Check that the registry entry is valid YAML and matches the registry entry schema.",
                 err,
@@ -149,7 +148,7 @@ mod registry_compliance {
 
         let mut valid = true;
         for entry in registry.get_entries(&core).await.unwrap() {
-            println!("Validating {}", entry);
+            println!("Validating {entry}");
             match validate_entry(&registry, &entry).await {
                 Ok(v) => {
                     valid = valid && v;
@@ -173,17 +172,17 @@ mod registry_compliance {
         let is_service = name.starts_with("services/");
 
         if !name.is_ascii() {
-            println!("- {} has a non-ascii ID", name);
+            println!("- {name} has a non-ascii ID");
             valid = false;
         }
 
         if entry.name.is_empty() {
-            println!("- {} has an empty name field", name);
+            println!("- {name} has an empty name field");
             valid = false;
         }
 
         if entry.description.is_empty() {
-            println!("- {} has an empty description field", name);
+            println!("- {name} has an empty description field");
             valid = false;
         }
 
@@ -194,20 +193,17 @@ mod registry_compliance {
 
         for config in entry.configs {
             if config.platform.is_empty() {
-                println!(
-                    "- {} has a config which is missing the platform field",
-                    name
-                );
+                println!("- {name} has a config which is missing the platform field",);
                 valid = false;
             }
 
             if is_app && config.app.is_none() {
-                println!("- {} is in the apps/ namespace but has a configuration which is missing an app setting", name);
+                println!("- {name} is in the apps/ namespace but has a configuration which is missing an app setting");
                 valid = false;
             }
 
             if is_service && config.service.is_none() {
-                println!("- {} is in the services/ namespace but has a configuration which is missing a service setting", name);
+                println!("- {name} is in the services/ namespace but has a configuration which is missing a service setting");
                 valid = false;
             }
 

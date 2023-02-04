@@ -243,8 +243,7 @@ impl Config {
 
         match &self.schema {
             Some(schema) => Ok(format!(
-                "# yaml-language-server: $schema={}\n{}",
-                schema, config
+                "# yaml-language-server: $schema={schema}\n{config}",
             )),
             None => Ok(config),
         }

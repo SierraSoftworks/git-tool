@@ -11,10 +11,10 @@ impl Command for NewCommand {
     }
 
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("creates a new repository")
-            .visible_aliases(&["n", "create"])
+            .visible_aliases(["n", "create"])
             .long_about("Creates a new repository with the provided name.")
             .arg(
                 Arg::new("repo")

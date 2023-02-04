@@ -8,7 +8,7 @@ impl GitHubRegistry {
     async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, errors::Error> {
         let uri: reqwest::Url = url.parse().map_err(|e| {
             errors::system_with_internal(
-                &format!("Unable to parse GitHub API URL '{}'.", url),
+                &format!("Unable to parse GitHub API URL '{url}'."),
                 "Please report this error to us by opening a ticket in GitHub.",
                 e,
             )
@@ -39,7 +39,7 @@ impl GitHubRegistry {
             if let Ok(token) = std::env::var("GITHUB_TOKEN") {
                 req.headers_mut().append(
                     "Authorization",
-                    format!("token {}", token).parse().map_err(|e| {
+                    format!("token {token}").parse().map_err(|e| {
                         errors::system_with_internal(
                             "Unable to parse GITHUB_TOKEN authorization header.",
                             "Please report this error to us by opening a ticket in GitHub.",
@@ -94,7 +94,7 @@ impl Registry for GitHubRegistry {
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
-                    &format!("Received an HTTP {} response from GitHub when attempting to list items in the Git-Tool registry.", status),
+                    &format!("Received an HTTP {status} response from GitHub when attempting to list items in the Git-Tool registry."),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
                     inner_error))
             }
@@ -107,8 +107,7 @@ impl Registry for GitHubRegistry {
             .get(
                 core,
                 &format!(
-            "https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{}.yaml",
-            id
+            "https://raw.githubusercontent.com/SierraSoftworks/git-tool/main/registry/{id}.yaml"
         ),
             )
             .await?;
@@ -122,7 +121,7 @@ impl Registry for GitHubRegistry {
             },
             http::StatusCode::NOT_FOUND => {
                 Err(errors::user(
-                    &format!("Could not find {} in the Git-Tool registry.", id),
+                    &format!("Could not find {id} in the Git-Tool registry."),
                     "Please make sure that you've selected a configuration entry which exists in the registry. You can check this with `git-tool config list`."))
             },
             http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
@@ -135,7 +134,7 @@ impl Registry for GitHubRegistry {
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
-                    &format!("Received an HTTP {} response from GitHub when attempting to fetch /registry/{}.yaml.", status, id),
+                    &format!("Received an HTTP {status} response from GitHub when attempting to fetch /registry/{id}.yaml."),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
                     inner_error))
             }

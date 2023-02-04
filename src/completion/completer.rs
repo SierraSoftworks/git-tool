@@ -24,9 +24,9 @@ impl Completer {
         }
         let mut out = self.console.output();
         if has_whitespace(completion) {
-            writeln!(out, "'{}'", completion).unwrap_or_default();
+            writeln!(out, "'{completion}'").unwrap_or_default();
         } else {
-            writeln!(out, "{}", completion).unwrap_or_default();
+            writeln!(out, "{completion}").unwrap_or_default();
         }
     }
 

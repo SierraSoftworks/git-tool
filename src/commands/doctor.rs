@@ -8,7 +8,7 @@ impl Command for DoctorCommand {
     }
 
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("checks that your environment is configured correctly for Git-Tool")
             .long_about("Runs a series of checks to ensure that the environment is ready to run the application")

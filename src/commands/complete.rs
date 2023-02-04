@@ -8,7 +8,7 @@ impl Command for CompleteCommand {
         String::from("complete")
     }
     fn app(&self) -> clap::Command {
-        clap::Command::new(&self.name())
+        clap::Command::new(self.name())
             .version("1.0")
             .about("provides command auto-completion")
             .long_about("Provides realtime command and argument auto-completion for Git-Tool when using `git-tool shell-init`.")

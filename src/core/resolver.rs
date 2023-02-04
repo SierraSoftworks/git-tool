@@ -212,7 +212,7 @@ impl TrueResolver {
                     "Current directory is not a valid repository.",
                     &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
                 let svc_name = svc.as_os_str().to_string_lossy().to_string();
-                repo_from_svc_and_path(&self.config, Some(svc_name), relative_path.strip_prefix(&svc).unwrap_or(relative_path), false)
+                repo_from_svc_and_path(&self.config, Some(svc_name), relative_path.strip_prefix(svc).unwrap_or(relative_path), false)
             },
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.", 
@@ -244,7 +244,7 @@ fn repo_from_svc_and_path(
         Some(svc) => match config.get_service(&svc) {
             Some(svc) => Ok(svc),
             None => Err(errors::user(
-                &format!("The service '{}' does not exist.", svc),
+                &format!("The service '{svc}' does not exist."),
                 "Please check that you have provided the correct service name, and that the service is present in your Git-Tool config."
             ))
         },

@@ -13,7 +13,7 @@ impl Command for RemoveCommand {
     fn app(&self) -> clap::Command {
         clap::Command::new(self.name())
             .version("1.0")
-            .visible_aliases(&["rm"])
+            .visible_aliases(["rm"])
             .about("removes a repository from your local machine")
             .long_about("This command will remove the specified repository from your local machine. It requires that the repository name be provided in fully-qualified form.")
             .arg(Arg::new("repo")
