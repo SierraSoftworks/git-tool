@@ -181,9 +181,23 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        assert!(
-            console.to_string().contains("  v2.2.7\n"),
-            "the output should contain a list of versions"
-        );
+        print!("{}", console.to_string());
+
+        let mut has_version = false;
+        console.to_string().split_terminator('\n').for_each(|line| {
+            assert!(
+                line.starts_with('*') || line.starts_with('!') || line.starts_with(' '),
+                "the output should contain a list of versions prefixed with a status indicator"
+            );
+
+            assert!(
+                line[1..].starts_with(" v"),
+                "the output should contain a list of versions prefixed with 'v...'"
+            );
+
+            has_version = true;
+        });
+
+        assert!(has_version, "the output should contain a list of versions");
     }
 }
