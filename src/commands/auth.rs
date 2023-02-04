@@ -85,9 +85,17 @@ impl CommandRunnable for AuthCommand {
                 }
             }
         } else {
+            let suggestion = if let Some(default_service) = core.config().get_services().next() {
+                format!("Try running `git-tool auth {default_service}` or use one of the services listed in `git-tool services`.")
+            } else {
+                "Make sure that you have registered a service in your configuration file.".into()
+            };
+
             return Err(errors::user(
-                "The service you specified does not exist in your configuration.",
-                "Please run `git-tool services` to see a list of available services.",
+                &format!(
+                    "The service you specified ('{service}') does not exist in your configuration."
+                ),
+                &suggestion,
             ));
         }
 
