@@ -240,7 +240,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "chrono"
 version = "0.5.0-alpha.1"
-source = "git+https://github.com/chronotope/chrono.git#6684a470abcd037aeffcde7177128c40e9740f26"
+source = "git+https://github.com/chronotope/chrono.git#76830ef2b4d740d592791dfec52400dc6a491250"
 dependencies = [
  "iana-time-zone",
  "js-sys",
