@@ -153,10 +153,10 @@ mod tests {
             if let Some(worse_score) = worse_score {
                 assert!(
                     better_score > worse_score,
-                    "the pattern '{}' should score better against '{}' than '{}'",
-                    pattern,
-                    better,
-                    worse
+                    "the pattern '{pattern}' should score better against '{better}' than '{worse}'",
+                    pattern = pattern,
+                    better = better,
+                    worse = worse
                 );
             }
         }

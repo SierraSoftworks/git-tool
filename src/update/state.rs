@@ -16,8 +16,9 @@ pub trait Source: Default + std::fmt::Debug + Send + Sync {
     ) -> Result<(), errors::Error>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Default, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum UpdatePhase {
+    #[default]
     #[serde(rename = "no-update")]
     NoUpdate,
     #[serde(rename = "prepare")]
@@ -26,12 +27,6 @@ pub enum UpdatePhase {
     Replace,
     #[serde(rename = "cleanup")]
     Cleanup,
-}
-
-impl Default for UpdatePhase {
-    fn default() -> Self {
-        UpdatePhase::NoUpdate
-    }
 }
 
 impl ToString for UpdatePhase {
