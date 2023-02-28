@@ -197,9 +197,7 @@ pub mod helpers {
         for item in contains {
             assert!(
                 offers.contains(item),
-                "completion output '{output}' should contain '{item}'",
-                output = output,
-                item = item
+                "completion output '{output}' should contain '{item}'"
             );
         }
     }
@@ -240,9 +238,7 @@ pub mod helpers {
         for item in contains {
             assert!(
                 output.split('\n').any(|x| x == item),
-                "completion output '{output}' should contain '{item}'",
-                output = output,
-                item = item
+                "completion output '{output}' should contain '{item}'"
             );
         }
     }
