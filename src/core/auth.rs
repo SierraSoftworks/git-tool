@@ -28,20 +28,20 @@ struct TrueKeyChain {}
 impl KeyChain for TrueKeyChain {
     #[tracing::instrument(err, skip(self))]
     fn get_token(&self, service: &str) -> Result<String, Error> {
-        let token = keyring::Entry::new("git-tool", service).get_password()?;
+        let token = keyring::Entry::new("git-tool", service)?.get_password()?;
 
         Ok(token)
     }
 
     #[tracing::instrument(err, skip(self, token))]
     fn set_token(&self, service: &str, token: &str) -> Result<(), Error> {
-        keyring::Entry::new("git-tool", service).set_password(token)?;
+        keyring::Entry::new("git-tool", service)?.set_password(token)?;
         Ok(())
     }
 
     #[tracing::instrument(err, skip(self))]
     fn delete_token(&self, service: &str) -> Result<(), Error> {
-        keyring::Entry::new("git-tool", service).delete_password()?;
+        keyring::Entry::new("git-tool", service)?.delete_password()?;
         Ok(())
     }
 }
