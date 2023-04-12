@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SierraSoftworks/git-tool-docs.git"
+    "url": "git+https://github.com/SierraSoftworks/git-tool.git"
   },
   "keywords": [
     "git-tool",
@@ -21,9 +21,9 @@
   "author": "Benjamin Pannell <benjamin@pannell.dev>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/SierraSoftworks/git-tool-docs/issues"
+    "url": "https://github.com/SierraSoftworks/git-tool/issues"
   },
-  "homepage": "https://github.com/SierraSoftworks/git-tool-docs#readme",
+  "homepage": "https://github.com/SierraSoftworks/git-tool#readme",
   "devDependencies": {
     "@vuepress/plugin-google-analytics": "2.0.0-beta.61",
     "@vuepress/plugin-register-components": "2.0.0-beta.61",
