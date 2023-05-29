@@ -24,6 +24,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "android-tzdata"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e999941b234f3131b00bc13c22d06e8c5ff726d1b6318ac7eb276997bbb4fef0"
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -324,8 +330,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "chrono"
 version = "0.5.0-alpha.1"
-source = "git+https://github.com/chronotope/chrono.git#263922244af7ca0029a2ddf5c8e138e3596d7ae9"
+source = "git+https://github.com/chronotope/chrono.git#083d3bf196537dfdbce6c29543734022f68e61a4"
 dependencies = [
+ "android-tzdata",
  "iana-time-zone",
  "js-sys",
  "wasm-bindgen",
