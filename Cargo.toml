@@ -42,7 +42,7 @@ tracing-subscriber = { git="https://github.com/SierraSoftworks/tracing.git" , fe
 
 [dev-dependencies]
 mockall = "0.11.4"
-tempfile = "3.5"
+tempfile = "3.6"
 sentry = { version = "0.31", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 
 [features]
