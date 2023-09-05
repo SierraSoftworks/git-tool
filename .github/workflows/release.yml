@@ -35,7 +35,7 @@ jobs:
           project: git-tool
 
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Sentry Release
         run: |
@@ -161,7 +161,7 @@ jobs:
           project: git-tool
 
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch Versioned Cargo.toml
         uses: actions/download-artifact@v3
