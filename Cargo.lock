@@ -897,7 +897,7 @@ dependencies = [
  "shell-words",
  "tempfile",
  "tokio",
- "tonic",
+ "tonic 0.10.2",
  "tracing",
  "tracing-attributes 0.2.0",
  "tracing-futures",
@@ -1555,10 +1555,10 @@ dependencies = [
  "opentelemetry-semantic-conventions",
  "opentelemetry_api",
  "opentelemetry_sdk",
- "prost",
+ "prost 0.11.9",
  "thiserror",
  "tokio",
- "tonic",
+ "tonic 0.9.2",
 ]
 
 [[package]]
@@ -1569,8 +1569,8 @@ checksum = "b1e3f814aa9f8c905d0ee4bde026afd3b2577a97c10e1699912e3e44f0c4cbeb"
 dependencies = [
  "opentelemetry_api",
  "opentelemetry_sdk",
- "prost",
- "tonic",
+ "prost 0.11.9",
+ "tonic 0.9.2",
 ]
 
 [[package]]
@@ -1803,6 +1803,15 @@ checksum = "0b82eaa1d779e9a4bc1c3217db8ffbeabaae1dca241bf70183242128d48681cd"
 dependencies = [
  "bytes",
  "prost-derive",
+]
+
+[[package]]
+name = "prost"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4fdd22f3b9c31b53c060df4a0613a1c7f062d4115a2b984dd15b1858f7e340d"
+dependencies = [
+ "bytes",
 ]
 
 [[package]]
@@ -2638,7 +2647,38 @@ dependencies = [
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
- "prost",
+ "prost 0.11.9",
+ "rustls-native-certs",
+ "rustls-pemfile",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tower",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "tonic"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d560933a0de61cf715926b9cac824d4c883c2c43142f787595e48280c40a1d0e"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "axum",
+ "base64",
+ "bytes",
+ "h2",
+ "http",
+ "http-body",
+ "hyper",
+ "hyper-timeout",
+ "percent-encoding",
+ "pin-project",
+ "prost 0.12.1",
+ "rustls",
  "rustls-native-certs",
  "rustls-pemfile",
  "tokio",
@@ -2751,12 +2791,14 @@ dependencies = [
 
 [[package]]
 name = "tracing-opentelemetry"
-version = "0.20.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc09e402904a5261e42cf27aea09ccb7d5318c6717a9eec3d8e2e65c56b18f19"
+checksum = "75327c6b667828ddc28f5e3f169036cb793c3f588d83bf0f262a7f062ffed3c8"
 dependencies = [
  "once_cell",
  "opentelemetry",
+ "opentelemetry_sdk",
+ "smallvec",
  "tracing",
  "tracing-core",
  "tracing-log",
