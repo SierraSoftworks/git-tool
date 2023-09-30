@@ -9,8 +9,19 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      opentelemetry:
+        patterns:
+          - "opentelemetry*"
+          - "tracing*"
+          - "tonic"
 
   - package-ecosystem: npm
     directory: "/docs"
     schedule:
       interval: "daily"
+    groups:
+      vuepress:
+        patterns:
+          - "vuepress*"
+          - "@vuepress/*"
