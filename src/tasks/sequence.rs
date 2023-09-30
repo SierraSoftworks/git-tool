@@ -68,7 +68,7 @@ mod tests {
 
         seq.apply_repo(&core, &repo).await.unwrap();
 
-        for task in vec![task1.clone(), task2.clone()] {
+        for task in [task1.clone(), task2.clone()] {
             let r = task.ran_repo.lock().await;
             let ran_repo = r.clone().unwrap();
             assert_eq!(ran_repo.get_name(), "git-tool");
@@ -88,7 +88,7 @@ mod tests {
 
         seq.apply_scratchpad(&core, &scratch).await.unwrap();
 
-        for task in vec![task1.clone(), task2.clone()] {
+        for task in [task1.clone(), task2.clone()] {
             let s = task.ran_scratchpad.lock().await;
             let ran_scratch = s.clone().unwrap();
             assert_eq!(ran_scratch.get_name(), "2020w07");

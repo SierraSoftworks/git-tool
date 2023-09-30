@@ -144,7 +144,7 @@ impl GitHubService {
         let token = core.keychain().get_token(&service.name)?;
 
         let mut remaining_attempts = 3;
-        let retryable = vec![
+        let retryable = [
             StatusCode::TOO_MANY_REQUESTS,
             StatusCode::INTERNAL_SERVER_ERROR,
             StatusCode::BAD_GATEWAY,

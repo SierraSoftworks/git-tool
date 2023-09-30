@@ -1,5 +1,5 @@
-pub(self) mod cmd;
-pub(self) mod fs;
+mod cmd;
+mod fs;
 mod github;
 mod manager;
 mod release;

@@ -46,7 +46,7 @@ pub struct Core {
 
 impl Core {
     pub fn builder() -> builder::CoreBuilderWithoutConfig {
-        builder::CoreBuilderWithoutConfig::default()
+        builder::CoreBuilderWithoutConfig
     }
 
     pub fn config(&self) -> &Config {
