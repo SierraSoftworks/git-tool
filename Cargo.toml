@@ -39,7 +39,7 @@ tracing-attributes = { git="https://github.com/SierraSoftworks/tracing.git" }
 tracing-futures = { version = "0.2.5", features = ["futures-03"] }
 tracing-opentelemetry = "0.20"
 tracing-subscriber = { version = "0.3.17", features = ["tracing-log"] }
-trust-dns-resolver = { version = "0.22", features = ["tokio-runtime"] }
+trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
 mockall = "0.11.4"
