@@ -33,7 +33,7 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 shell-words = "1.1"
 tokio = { version = "1.31", features = ["rt", "time", "fs", "process", "macros", "signal"] }
-tonic = { version = "0.9.2", features = ["tls-roots"] }
+tonic = { version = "0.10.2", features = ["tls-roots"] }
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-attributes = { git="https://github.com/SierraSoftworks/tracing.git" }
 tracing-futures = { version = "0.2.5", features = ["futures-03"] }
