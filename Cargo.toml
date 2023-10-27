@@ -43,7 +43,7 @@ trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
 mockall = "0.11.4"
-tempfile = "3.7"
+tempfile = "3.8"
 sentry = { version = "0.31", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 
 [features]
