@@ -66,15 +66,15 @@ impl Session {
                     .with_endpoint("https://api.honeycomb.io:443")
                     .with_metadata(tracing_metadata),
             )
-            .with_trace_config(opentelemetry::sdk::trace::config().with_resource(
-                opentelemetry::sdk::Resource::new(vec![
+            .with_trace_config(opentelemetry_sdk::trace::config().with_resource(
+                opentelemetry_sdk::Resource::new(vec![
                     opentelemetry::KeyValue::new("service.name", "git-tool"),
                     opentelemetry::KeyValue::new("service.version", version!("v")),
                     opentelemetry::KeyValue::new("host.os", std::env::consts::OS),
                     opentelemetry::KeyValue::new("host.architecture", std::env::consts::ARCH),
                 ]),
             ))
-            .install_batch(opentelemetry::runtime::Tokio)
+            .install_batch(opentelemetry_sdk::runtime::Tokio)
             .unwrap();
 
         tracing_subscriber::registry()

@@ -29,7 +29,7 @@ pub trait Launcher {
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
         let trace_context = {
             let mut context = std::collections::HashMap::new();
-            let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+            let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
             propagator.inject_context(&tracing::Span::current().context(), &mut context);
 
             serde_json::to_string(&context)

@@ -292,7 +292,7 @@ async fn run(matches: clap::ArgMatches) -> Result<i32, errors::Error> {
 fn load_trace_context(span: &tracing::Span, context: &str) {
     let carrier: std::collections::HashMap<String, String> =
         serde_json::from_str(context).unwrap_or_default();
-    let propagator = opentelemetry::sdk::propagation::TraceContextPropagator::new();
+    let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
     let parent_context = propagator.extract(&carrier);
     span.set_parent(parent_context);
 }
