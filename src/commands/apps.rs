@@ -1,8 +1,11 @@
 use super::*;
 
-pub struct AppsCommand {}
+pub struct AppsCommand;
 
-impl Command for AppsCommand {
+crate::command!(AppsCommand);
+
+#[async_trait]
+impl CommandRunnable for AppsCommand {
     fn name(&self) -> String {
         String::from("apps")
     }
@@ -12,10 +15,7 @@ impl Command for AppsCommand {
             .about("list applications which can be run through Git-Tool")
             .long_about("Gets the list of applications that you have added to your configuration file. These applications can be run through the `open` and `scratch` commands.")
     }
-}
 
-#[async_trait]
-impl CommandRunnable for AppsCommand {
     #[tracing::instrument(name = "gt apps", err, skip(self, core, _matches))]
     async fn run(
         &self,

@@ -3,9 +3,11 @@ use super::*;
 use crate::{core::features, tasks::*};
 use clap::{Arg, ArgMatches};
 
-pub struct NewCommand {}
+pub struct NewCommand;
+crate::command!(NewCommand);
 
-impl Command for NewCommand {
+#[async_trait]
+impl CommandRunnable for NewCommand {
     fn name(&self) -> String {
         "new".into()
     }
@@ -43,10 +45,7 @@ impl Command for NewCommand {
                     .action(clap::ArgAction::SetTrue),
             )
     }
-}
 
-#[async_trait]
-impl CommandRunnable for NewCommand {
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = match matches.get_one::<String>("repo") {

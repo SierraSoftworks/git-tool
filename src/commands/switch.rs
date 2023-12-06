@@ -6,9 +6,11 @@ use crate::tasks::*;
 use clap::Arg;
 use itertools::Itertools;
 
-pub struct SwitchCommand {}
+pub struct SwitchCommand;
+crate::command!(SwitchCommand);
 
-impl Command for SwitchCommand {
+#[async_trait]
+impl CommandRunnable for SwitchCommand {
     fn name(&self) -> String {
         String::from("switch")
     }
@@ -34,10 +36,7 @@ impl Command for SwitchCommand {
                     .action(clap::ArgAction::SetTrue),
             )
     }
-}
 
-#[async_trait]
-impl CommandRunnable for SwitchCommand {
     #[tracing::instrument(name = "gt switch", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;

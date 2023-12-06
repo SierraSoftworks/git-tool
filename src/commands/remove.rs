@@ -1,11 +1,13 @@
-use super::Command;
+use super::CommandRunnable;
 use super::*;
 use crate::core::Target;
 use clap::{Arg, ArgMatches};
 
-pub struct RemoveCommand {}
+pub struct RemoveCommand;
+crate::command!(RemoveCommand);
 
-impl Command for RemoveCommand {
+#[async_trait]
+impl CommandRunnable for RemoveCommand {
     fn name(&self) -> String {
         String::from("remove")
     }
@@ -21,10 +23,7 @@ impl Command for RemoveCommand {
                     .index(1)
                 .required(true))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for RemoveCommand {
     #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {

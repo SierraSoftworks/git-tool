@@ -1,9 +1,12 @@
 use super::*;
 use clap::Arg;
 
-pub struct AuthCommand {}
+pub struct AuthCommand;
 
-impl Command for AuthCommand {
+crate::command!(AuthCommand);
+
+#[async_trait]
+impl CommandRunnable for AuthCommand {
     fn name(&self) -> String {
         String::from("auth")
     }
@@ -26,10 +29,7 @@ impl Command for AuthCommand {
                 .help("specifies the token to be set (don't use this unless you have to)")
                 .action(clap::ArgAction::Set))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for AuthCommand {
     #[tracing::instrument(name = "gt auth", err, skip(self, core, matches))]
     async fn run(
         &self,

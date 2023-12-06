@@ -15,7 +15,6 @@ use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg};
 use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
-use std::sync::Arc;
 use telemetry::Session;
 use tracing::field;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
@@ -24,6 +23,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 mod macros;
 #[macro_use]
 mod tasks;
+#[macro_use]
 mod commands;
 mod completion;
 mod console;
@@ -44,11 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     std::process::exit({
         let session = Session::new();
 
-        let commands = commands::default_commands();
+        let app = build_app();
 
-        let app = build_app(&commands);
-
-        match host(app, commands).await {
+        match host(app).await {
             Result::Ok(status) => {
                 session.complete();
                 status
@@ -61,7 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 }
 
-fn build_app(commands: &[Arc<dyn CommandRunnable>]) -> clap::Command {
+#[allow(non_upper_case_globals)]
+fn build_app() -> clap::Command {
     clap::Command::new("Git-Tool")
             .version(version!("v"))
             .author(crate_authors!("\n"))
@@ -86,14 +85,11 @@ fn build_app(commands: &[Arc<dyn CommandRunnable>]) -> clap::Command {
                 .long("trace-context")
                 .help("Configures the trace context used by this Git-Tool execution.")
                 .action(clap::ArgAction::Set))
-            .subcommands(commands.iter().map(|x| x.app()))
+            .subcommands(inventory::iter::<commands::Command>().map(|x| x.app()))
 }
 
-#[tracing::instrument(err, skip(app, commands), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status_code=0, exception=field::Empty))]
-async fn host(
-    app: clap::Command,
-    commands: Vec<Arc<dyn CommandRunnable>>,
-) -> Result<i32, errors::Error> {
+#[tracing::instrument(err, skip(app), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status_code=0, exception=field::Empty))]
+async fn host(app: clap::Command) -> Result<i32, errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
@@ -163,7 +159,7 @@ async fn host(
         .record("command", command_name.as_str())
         .record("otel.name", command_name.as_str());
 
-    match run(commands, matches).await {
+    match run(matches).await {
         Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
@@ -209,11 +205,8 @@ async fn host(
     }
 }
 
-#[tracing::instrument(err, skip(commands, matches), fields(command=matches.subcommand_name().unwrap_or("")))]
-async fn run(
-    commands: Vec<Arc<dyn CommandRunnable>>,
-    matches: clap::ArgMatches,
-) -> Result<i32, errors::Error> {
+#[tracing::instrument(err, skip(matches), fields(command=matches.subcommand_name().unwrap_or("")))]
+async fn run(matches: clap::ArgMatches) -> Result<i32, errors::Error> {
     let core_builder = core::Core::builder();
 
     let core_builder = if let Some(cfg_file) = matches.get_one::<String>("config") {
@@ -255,7 +248,7 @@ async fn run(
         matches.subcommand_name(),
     ) {
         info!("Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command.");
-        if let Some(cmd) = commands.iter().find(|c| c.name() == "update") {
+        if let Some(cmd) = inventory::iter::<commands::Command>().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
                 .try_get_matches_from(vec!["gt", "update", "--state", state])
@@ -271,7 +264,7 @@ async fn run(
     }
 
     debug!("Looking for an appropriate matching command implementation.");
-    for cmd in commands.iter() {
+    for cmd in inventory::iter::<commands::Command> {
         if let Some(cmd_matches) = matches.subcommand_matches(&cmd.name()) {
             debug!("Found a command implementation for '{}'", cmd.name());
 
@@ -310,8 +303,7 @@ mod tests {
 
     #[test]
     fn validate_command() {
-        let commands = commands::default_commands();
-        let app = build_app(&commands);
+        let app = build_app();
         app.debug_assert();
     }
 }
