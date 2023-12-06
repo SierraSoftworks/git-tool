@@ -1,4 +1,4 @@
-use super::Command;
+use super::CommandRunnable;
 use super::*;
 use crate::core::features;
 use crate::tasks::*;
@@ -6,9 +6,11 @@ use crate::update::{GitHubSource, Release, ReleaseVariant};
 use crate::{core::Target, update::UpdateManager};
 use clap::{Arg, ArgMatches};
 
-pub struct OpenCommand {}
+pub struct OpenCommand;
+crate::command!(OpenCommand);
 
-impl Command for OpenCommand {
+#[async_trait]
+impl CommandRunnable for OpenCommand {
     fn name(&self) -> String {
         String::from("open")
     }
@@ -38,10 +40,7 @@ New applications can be configured either by making changes to your configuratio
                     .help("prevent the creation of a remote repository (on supported services)")
                     .action(clap::ArgAction::SetTrue))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for OpenCommand {
     #[tracing::instrument(name = "gt open", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         if core.config().get_config_file().is_none() {

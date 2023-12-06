@@ -1,12 +1,14 @@
 use super::async_trait;
 use super::online::gitignore;
-use super::Command;
+use super::CommandRunnable;
 use super::*;
 use clap::{value_parser, Arg, ArgMatches};
 
-pub struct IgnoreCommand {}
+pub struct IgnoreCommand;
+crate::command!(IgnoreCommand);
 
-impl Command for IgnoreCommand {
+#[async_trait]
+impl CommandRunnable for IgnoreCommand {
     fn name(&self) -> String {
         String::from("ignore")
     }
@@ -29,10 +31,7 @@ impl Command for IgnoreCommand {
                     .action(clap::ArgAction::Append)
                     .index(1))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for IgnoreCommand {
     #[tracing::instrument(name = "gt ignore", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         match matches.get_many::<String>("language") {

@@ -1,14 +1,17 @@
 use crate::core::features;
 
 use super::async_trait;
-use super::Command;
+use super::CommandRunnable;
 use super::*;
 use clap::{Arg, ArgMatches};
 use online::registry::Registry;
 
-pub struct ConfigCommand {}
+pub struct ConfigCommand;
 
-impl Command for ConfigCommand {
+crate::command!(ConfigCommand);
+
+#[async_trait]
+impl CommandRunnable for ConfigCommand {
     fn name(&self) -> String {
         String::from("config")
     }
@@ -84,10 +87,7 @@ impl Command for ConfigCommand {
                     .help("configure the scratchpads path instead of the repositories path")
                     .action(clap::ArgAction::SetTrue)))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for ConfigCommand {
     #[tracing::instrument(name = "gt config", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         match matches.subcommand() {

@@ -4,9 +4,12 @@ use crate::core::Target;
 use crate::tasks::*;
 use clap::{Arg, ArgMatches};
 
-pub struct CloneCommand {}
+pub struct CloneCommand;
 
-impl Command for CloneCommand {
+crate::command!(CloneCommand);
+
+#[async_trait]
+impl CommandRunnable for CloneCommand {
     fn name(&self) -> String {
         String::from("clone")
     }
@@ -21,10 +24,7 @@ impl Command for CloneCommand {
                     .required(true)
                     .index(1))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for CloneCommand {
     #[tracing::instrument(name = "gt clone", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo_name = matches.get_one::<String>("repo").ok_or_else(|| errors::user(

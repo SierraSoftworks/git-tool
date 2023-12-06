@@ -3,9 +3,11 @@ use super::*;
 use crate::{search, tasks::*};
 use clap::{Arg, ArgMatches};
 
-pub struct FixCommand {}
+pub struct FixCommand;
+crate::command!(FixCommand);
 
-impl Command for FixCommand {
+#[async_trait]
+impl CommandRunnable for FixCommand {
     fn name(&self) -> String {
         String::from("fix")
     }
@@ -29,10 +31,7 @@ impl Command for FixCommand {
                 .help("prevent the creation of a remote repository (on supported services)")
                 .action(clap::ArgAction::SetTrue))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for FixCommand {
     #[tracing::instrument(name = "gt fix", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let tasks = sequence![

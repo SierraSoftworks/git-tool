@@ -879,6 +879,7 @@ dependencies = [
  "gtmpl",
  "http",
  "human-errors",
+ "inventory",
  "itertools 0.12.0",
  "keyring",
  "lazy_static",
@@ -1158,6 +1159,12 @@ checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "inventory"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0508c56cfe9bfd5dfeb0c22ab9a6abfda2f27bdca422132e494266351ed8d83c"
 
 [[package]]
 name = "io-lifetimes"

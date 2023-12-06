@@ -1,8 +1,10 @@
 use super::*;
 
-pub struct DoctorCommand {}
+pub struct DoctorCommand;
+crate::command!(DoctorCommand);
 
-impl Command for DoctorCommand {
+#[async_trait]
+impl CommandRunnable for DoctorCommand {
     fn name(&self) -> String {
         String::from("doctor")
     }
@@ -13,10 +15,7 @@ impl Command for DoctorCommand {
             .about("checks that your environment is configured correctly for Git-Tool")
             .long_about("Runs a series of checks to ensure that the environment is ready to run the application")
     }
-}
 
-#[async_trait]
-impl CommandRunnable for DoctorCommand {
     #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
     async fn run(
         &self,

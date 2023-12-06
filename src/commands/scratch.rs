@@ -1,11 +1,13 @@
 use super::async_trait;
 use super::*;
-use super::{core::Target, tasks, tasks::Task, Command};
+use super::{core::Target, tasks, tasks::Task, CommandRunnable};
 use clap::{Arg, ArgMatches};
 
-pub struct ScratchCommand {}
+pub struct ScratchCommand;
+crate::command!(ScratchCommand);
 
-impl Command for ScratchCommand {
+#[async_trait]
+impl CommandRunnable for ScratchCommand {
     fn name(&self) -> String {
         String::from("scratch")
     }
@@ -26,10 +28,7 @@ impl Command for ScratchCommand {
                     .index(2),
             )
     }
-}
 
-#[async_trait]
-impl CommandRunnable for ScratchCommand {
     #[tracing::instrument(name = "gt scratch", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(

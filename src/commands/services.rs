@@ -1,8 +1,10 @@
 use super::*;
 
-pub struct ServicesCommand {}
+pub struct ServicesCommand;
+crate::command!(ServicesCommand);
 
-impl Command for ServicesCommand {
+#[async_trait]
+impl CommandRunnable for ServicesCommand {
     fn name(&self) -> String {
         String::from("services")
     }
@@ -12,10 +14,7 @@ impl Command for ServicesCommand {
             .about("list services which can be used with Git-Tool")
             .long_about("Gets the list of services that you have added to your configuration file. These services are responsible for hosting your Git repositories.")
     }
-}
 
-#[async_trait]
-impl CommandRunnable for ServicesCommand {
     #[tracing::instrument(name = "gt services", err, skip(self, core, _matches))]
     async fn run(
         &self,
@@ -42,6 +41,7 @@ impl CommandRunnable for ServicesCommand {
 mod tests {
     use super::*;
     use crate::console::MockConsoleProvider;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run() {

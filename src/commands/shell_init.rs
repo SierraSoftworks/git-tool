@@ -2,9 +2,11 @@ use super::*;
 use crate::completion::get_shells;
 use clap::Arg;
 
-pub struct ShellInitCommand {}
+pub struct ShellInitCommand;
+crate::command!(ShellInitCommand);
 
-impl Command for ShellInitCommand {
+#[async_trait]
+impl CommandRunnable for ShellInitCommand {
     fn name(&self) -> String {
         String::from("shell-init")
     }
@@ -32,10 +34,7 @@ impl Command for ShellInitCommand {
 
         cmd
     }
-}
 
-#[async_trait]
-impl CommandRunnable for ShellInitCommand {
     #[tracing::instrument(name = "gt shell-init", err, skip(self, core, matches))]
     async fn run(
         &self,
@@ -82,6 +81,7 @@ where {
 mod tests {
     use super::*;
     use crate::console::MockConsoleProvider;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run() {

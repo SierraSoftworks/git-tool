@@ -11,9 +11,11 @@ use itertools::Itertools;
 
 use super::*;
 
-pub struct SetupCommand {}
+pub struct SetupCommand;
+crate::command!(SetupCommand);
 
-impl Command for SetupCommand {
+#[async_trait]
+impl CommandRunnable for SetupCommand {
     fn name(&self) -> String {
         String::from("setup")
     }
@@ -28,10 +30,7 @@ impl Command for SetupCommand {
                 .help("Run the setup wizard even if you already have a config file.")
                 .action(clap::ArgAction::SetTrue))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for SetupCommand {
     #[tracing::instrument(name = "gt setup", err, skip(self, core, matches))]
     async fn run(
         &self,

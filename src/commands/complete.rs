@@ -1,9 +1,12 @@
 use super::*;
 use clap::Arg;
 
-pub struct CompleteCommand {}
+pub struct CompleteCommand;
 
-impl Command for CompleteCommand {
+crate::command!(CompleteCommand);
+
+#[async_trait]
+impl CommandRunnable for CompleteCommand {
     fn name(&self) -> String {
         String::from("complete")
     }
@@ -21,10 +24,7 @@ impl Command for CompleteCommand {
                 .help("The parameters being passed to Git-Tool for auto-completion.")
                 .index(1))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for CompleteCommand {
     #[tracing::instrument(name = "gt complete", err, skip(self, core, matches))]
     async fn run(
         &self,
@@ -39,14 +39,12 @@ where {
             .map(|s| s.as_str())
             .unwrap_or_default();
 
-        let commands = super::commands();
         let (cmd, filter) = self
             .extract_command_and_filter(args, position)
             .unwrap_or_default();
 
         let completer = Completer::new(core, &filter);
-        self.offer_completions(core, &commands, &cmd, &completer)
-            .await;
+        self.offer_completions(core, &cmd, &completer).await;
 
         Ok(0)
     }
@@ -91,13 +89,9 @@ impl CompleteCommand {
         Some((cmd, filter))
     }
 
-    fn get_responsible_command(
-        &self,
-        commands: &[Arc<dyn CommandRunnable>],
-        args: &str,
-    ) -> Option<(Arc<dyn CommandRunnable>, ArgMatches)> {
-        if let Ok(complete_matches) = self.get_completion_matches(commands, args) {
-            for cmd in commands.iter() {
+    fn get_responsible_command(&self, args: &str) -> Option<(Command, ArgMatches)> {
+        if let Ok(complete_matches) = self.get_completion_matches(args) {
+            for cmd in inventory::iter::<Command> {
                 if let Some(cmd_matches) = complete_matches.subcommand_matches(&cmd.name()) {
                     return Some((cmd.clone(), cmd_matches.clone()));
                 }
@@ -107,38 +101,28 @@ impl CompleteCommand {
         None
     }
 
-    async fn offer_completions(
-        &self,
-        core: &Core,
-        commands: &[Arc<dyn CommandRunnable>],
-        args: &str,
-        completer: &Completer,
-    ) {
-        match self.get_responsible_command(commands, args) {
+    async fn offer_completions(&self, core: &Core, args: &str, completer: &Completer) {
+        match self.get_responsible_command(args) {
             Some((cmd, matches)) => {
                 cmd.complete(core, completer, &matches).await;
             }
             None => {
-                for cmd in commands.iter() {
+                for cmd in inventory::iter::<Command> {
                     completer.offer(&cmd.name());
                 }
             }
         }
     }
 
-    fn get_completion_matches(
-        &self,
-        commands: &[Arc<dyn CommandRunnable>],
-        args: &str,
-    ) -> Result<ArgMatches, errors::Error> {
+    fn get_completion_matches(&self, args: &str) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)
             .map_err(|e| errors::user_with_internal(
                 "Could not parse the arguments you provided.",
                 "Please make sure that you are using auto-complete with a valid set of command line arguments.",
                 e))?;
 
-        let complete_app =
-            clap::Command::new("Git-Tool").subcommands(commands.iter().map(|x| x.app()));
+        let complete_app = clap::Command::new("Git-Tool")
+            .subcommands(inventory::iter::<Command>().map(|x| x.app()));
 
         complete_app.try_get_matches_from(true_args).map_err(|err| {
             errors::user_with_internal(
@@ -158,11 +142,8 @@ pub mod helpers {
 
     pub fn test_responsible_command(args: &str, expected: Option<&str>) {
         let cmd = CompleteCommand {};
-        let cmds = default_commands();
 
-        let responsible = cmd
-            .get_responsible_command(&cmds, args)
-            .map(|(c, _)| c.name());
+        let responsible = cmd.get_responsible_command(args).map(|(c, _)| c.name());
 
         assert_eq!(
             responsible.clone(),
@@ -180,11 +161,10 @@ pub mod helpers {
         contains: Vec<&str>,
     ) {
         let cmd = CompleteCommand {};
-        let cmds = default_commands();
 
         let console = crate::console::mock();
         let completer = Completer::new_for(filter, console.clone());
-        cmd.offer_completions(core, &cmds, args, &completer).await;
+        cmd.offer_completions(core, args, &completer).await;
 
         let output = console.to_string();
 
@@ -303,10 +283,8 @@ mod tests {
     fn get_completion_matches() {
         let cmd = CompleteCommand {};
 
-        let cmds = default_commands();
-
         assert_eq!(
-            cmd.get_completion_matches(&cmds, "git-tool new")
+            cmd.get_completion_matches("git-tool new")
                 .unwrap()
                 .subcommand_name(),
             Some("new")

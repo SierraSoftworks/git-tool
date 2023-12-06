@@ -2,9 +2,11 @@ use super::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant, UpdateManager};
 use clap::Arg;
 
-pub struct UpdateCommand {}
+pub struct UpdateCommand;
+crate::command!(UpdateCommand);
 
-impl Command for UpdateCommand {
+#[async_trait]
+impl CommandRunnable for UpdateCommand {
     fn name(&self) -> String {
         String::from("update")
     }
@@ -30,10 +32,7 @@ impl Command for UpdateCommand {
                 .long("prerelease")
                 .action(clap::ArgAction::SetTrue))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for UpdateCommand {
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
     async fn run(
         &self,
@@ -161,6 +160,7 @@ where {
 #[cfg(test)]
 mod tests {
     use crate::console::MockConsoleProvider;
+    use std::sync::Arc;
 
     use super::*;
 

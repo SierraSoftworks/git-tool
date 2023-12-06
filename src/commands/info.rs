@@ -3,9 +3,11 @@ use super::core::Target;
 use super::*;
 use clap::{Arg, ArgMatches};
 
-pub struct InfoCommand {}
+pub struct InfoCommand;
+crate::command!(InfoCommand);
 
-impl Command for InfoCommand {
+#[async_trait]
+impl CommandRunnable for InfoCommand {
     fn name(&self) -> String {
         String::from("info")
     }
@@ -20,10 +22,7 @@ impl Command for InfoCommand {
                     .help("The name of the repository to get information about.")
                     .index(1))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for InfoCommand {
     #[tracing::instrument(name = "gt info", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
@@ -75,6 +74,8 @@ impl CommandRunnable for InfoCommand {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use mockall::predicate::eq;
 
     use super::*;

@@ -5,9 +5,11 @@ use crate::git;
 use clap::Arg;
 use itertools::Itertools;
 
-pub struct PruneCommand {}
+pub struct PruneCommand;
+crate::command!(PruneCommand);
 
-impl Command for PruneCommand {
+#[async_trait]
+impl CommandRunnable for PruneCommand {
     fn name(&self) -> String {
         String::from("prune")
     }
@@ -32,10 +34,7 @@ impl Command for PruneCommand {
                 .help("The branch patterns which should be pruned")
                 .action(clap::ArgAction::Append))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for PruneCommand {
     #[tracing::instrument(name = "gt prune", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let repo = core.resolver().get_current_repo()?;

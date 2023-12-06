@@ -3,9 +3,11 @@ use crate::core::Target;
 use crate::search;
 use clap::Arg;
 
-pub struct ListCommand {}
+pub struct ListCommand;
+crate::command!(ListCommand);
 
-impl Command for ListCommand {
+#[async_trait]
+impl CommandRunnable for ListCommand {
     fn name(&self) -> String {
         String::from("list")
     }
@@ -29,10 +31,7 @@ impl Command for ListCommand {
                 .conflicts_with("quiet")
                 .action(clap::ArgAction::SetTrue))
     }
-}
 
-#[async_trait]
-impl CommandRunnable for ListCommand {
     #[tracing::instrument(name = "gt list", err, skip(self, core, matches))]
     async fn run(
         &self,
@@ -122,6 +121,7 @@ mod tests {
     use crate::console::MockConsoleProvider;
     use crate::test::get_dev_dir;
     use std::path::PathBuf;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn run_normal() {
