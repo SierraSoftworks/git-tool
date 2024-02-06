@@ -45,7 +45,7 @@ trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
 mockall = "0.12.1"
-tempfile = "3.9"
+tempfile = "3.10"
 sentry = { version = "0.32", default-features = false, features = ["reqwest", "rustls", "log", "test"] }
 
 [features]
