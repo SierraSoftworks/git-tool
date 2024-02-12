@@ -1,4 +1,6 @@
-import { defineUserConfig, PageHeader, defaultTheme } from 'vuepress-vite'
+import { defineUserConfig, PageHeader } from 'vuepress'
+import { viteBundler } from '@vuepress/bundler-vite'
+import { defaultTheme } from '@vuepress/theme-default'
 import { path } from '@vuepress/utils'
 
 import { googleAnalyticsPlugin } from '@vuepress/plugin-google-analytics'
@@ -22,6 +24,8 @@ export default defineUserConfig({
     ['meta', { name: "description", content: "Documentation for Git-Tool, a powerful command-line helper which keeps your Git repositories organized automatically." }],
     ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
+
+  bundler: viteBundler(),
 
   extendsPage(page, app) {
     const fixedHeaders = page.headers || []
