@@ -132,8 +132,7 @@ impl GitHubSource {
         &self,
         releases: Vec<GitHubRelease>,
     ) -> Result<Vec<Release>, errors::Error> {
-        let mut output: Vec<Release> = Vec::new();
-        output.reserve(releases.len());
+        let mut output: Vec<Release> = Vec::with_capacity(releases.len());
 
         for r in releases {
             if !r.tag_name.starts_with(&self.release_tag_prefix) {

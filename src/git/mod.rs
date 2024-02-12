@@ -15,6 +15,7 @@ mod config;
 mod refs;
 
 pub use add::git_add;
+#[allow(unused_imports)]
 pub use branch::{
     git_branch_delete, git_branches, git_current_branch, git_default_branch, git_merged_branches,
 };
@@ -22,6 +23,7 @@ pub use checkout::git_checkout;
 pub use clone::git_clone;
 pub use cmd::git_cmd;
 pub use commit::git_commit;
+#[allow(unused_imports)]
 pub use fetch::git_fetch;
 pub use init::git_init;
 pub use remote::{git_remote_add, git_remote_list, git_remote_set_url};

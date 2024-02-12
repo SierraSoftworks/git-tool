@@ -26,8 +26,7 @@ pub fn render_list<S: AsRef<str>>(
     items: Vec<S>,
     context: Value,
 ) -> Result<Vec<String>, errors::Error> {
-    let mut out = Vec::new();
-    out.reserve(items.len());
+    let mut out = Vec::with_capacity(items.len());
 
     for item in items {
         let rendered = render(item.as_ref(), context.clone())?;

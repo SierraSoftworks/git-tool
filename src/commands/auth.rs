@@ -59,8 +59,8 @@ impl CommandRunnable for AuthCommand {
                     None => {
                         if let Some(online_service) = crate::online::service::services()
                             .iter()
-                            .cloned()
                             .find(|s| s.handles(svc))
+                            .cloned()
                         {
                             writeln!(core.output(), "{}", online_service.auth_instructions())?;
                         }

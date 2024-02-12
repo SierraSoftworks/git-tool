@@ -32,15 +32,18 @@ mod write_file;
 
 pub use create_remote::CreateRemote;
 pub use ensure_no_remote::EnsureNoRemote;
+#[allow(unused_imports)]
 pub use git_add::GitAdd;
 pub use git_checkout::GitCheckout;
 pub use git_clone::GitClone;
+#[allow(unused_imports)]
 pub use git_commit::GitCommit;
 pub use git_init::GitInit;
 pub use git_remote::GitRemote;
 pub use git_switch::GitSwitch;
 pub use new_folder::NewFolder;
 pub use sequence::Sequence;
+#[allow(unused_imports)]
 pub use write_file::WriteFile;
 
 #[async_trait]

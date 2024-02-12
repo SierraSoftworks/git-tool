@@ -202,7 +202,7 @@ pub mod helpers {
     pub async fn test_completions2(args: Vec<&str>, contains: Vec<&str>) {
         let console = crate::console::mock();
         let core = Core::builder()
-            .with_config_for_dev_directory(&get_dev_dir())
+            .with_config_for_dev_directory(get_dev_dir())
             .with_console(console.clone())
             .build();
 

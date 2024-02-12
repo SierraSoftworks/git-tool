@@ -5,6 +5,7 @@ use std::env::consts::OS;
 mod file_registry;
 mod github_registry;
 
+#[allow(unused_imports)]
 pub use file_registry::FileRegistry;
 pub use github_registry::GitHubRegistry;
 
