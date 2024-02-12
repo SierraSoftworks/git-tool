@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::io::Write;
 use std::{
     io::ErrorKind,
@@ -27,12 +28,12 @@ impl Default for MockOutput {
     }
 }
 
-impl ToString for MockOutput {
-    fn to_string(&self) -> String {
+impl Display for MockOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.written_data
             .lock()
-            .map(|m| m.to_string())
-            .unwrap_or_default()
+            .map(|m| write!(f, "{}", m.as_str()))
+            .unwrap_or_else(|_| write!(f, ""))
     }
 }
 

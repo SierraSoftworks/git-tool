@@ -1,3 +1,5 @@
+#[cfg(test)]
+use std::fmt::Display;
 use std::io::{stdin, stdout, Read, Write};
 use std::sync::Arc;
 
@@ -104,8 +106,8 @@ impl From<String> for MockConsoleProvider {
 }
 
 #[cfg(test)]
-impl ToString for MockConsoleProvider {
-    fn to_string(&self) -> String {
-        self.output.to_string()
+impl Display for MockConsoleProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.output)
     }
 }

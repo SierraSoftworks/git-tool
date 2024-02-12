@@ -1,3 +1,5 @@
+#![allow(clippy::blocks_in_conditions)]
+
 extern crate base64;
 extern crate chrono;
 extern crate clap;

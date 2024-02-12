@@ -59,10 +59,10 @@ where {
                     e))?;
                 sentry::configure_scope(|scope| {
                     scope.set_extra("state", serde_json::to_value(&state).unwrap_or_default());
-                    scope.set_transaction(Some(&format!("update/{}", state.phase.to_string())));
+                    scope.set_transaction(Some(&format!("update/{}", state.phase)));
                 });
 
-                info!("Resuming update in phase {}", state.phase.to_string());
+                info!("Resuming update in phase {}", state.phase);
                 manager.resume(&state).await.map_err(|e| {
                     sentry::capture_error(&e);
 

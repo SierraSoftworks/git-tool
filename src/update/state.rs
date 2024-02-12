@@ -1,6 +1,7 @@
 use super::release::*;
 use crate::{core::Core, errors};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::io;
 use std::path::PathBuf;
 
@@ -29,15 +30,14 @@ pub enum UpdatePhase {
     Cleanup,
 }
 
-impl ToString for UpdatePhase {
-    fn to_string(&self) -> String {
+impl Display for UpdatePhase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UpdatePhase::NoUpdate => "no-update",
-            UpdatePhase::Prepare => "prepare",
-            UpdatePhase::Replace => "replace",
-            UpdatePhase::Cleanup => "cleanup",
+            UpdatePhase::NoUpdate => write!(f, "no-update"),
+            UpdatePhase::Prepare => write!(f, "prepare"),
+            UpdatePhase::Replace => write!(f, "replace"),
+            UpdatePhase::Cleanup => write!(f, "cleanup"),
         }
-        .to_string()
     }
 }
 
