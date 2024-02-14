@@ -181,7 +181,7 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        print!("{}", console.to_string());
+        print!("{}", console);
 
         let mut has_version = false;
         console.to_string().split_terminator('\n').for_each(|line| {
