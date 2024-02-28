@@ -217,7 +217,7 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", console.to_string());
+        println!("{}", console);
 
         assert!(
             console
