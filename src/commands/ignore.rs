@@ -1,8 +1,7 @@
 use super::async_trait;
 use super::online::gitignore;
-use super::CommandRunnable;
 use super::*;
-use clap::{value_parser, Arg, ArgMatches};
+use clap::{value_parser, Arg};
 
 pub struct IgnoreCommand;
 crate::command!(IgnoreCommand);

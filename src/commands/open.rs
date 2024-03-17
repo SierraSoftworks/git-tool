@@ -1,10 +1,9 @@
-use super::CommandRunnable;
 use super::*;
 use crate::core::features;
 use crate::tasks::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant};
 use crate::{core::Target, update::UpdateManager};
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct OpenCommand;
 crate::command!(OpenCommand);

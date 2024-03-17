@@ -1,8 +1,7 @@
-use super::Command;
 use super::*;
 use crate::core::Target;
 use crate::tasks::*;
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct CloneCommand;
 

@@ -1,7 +1,7 @@
 use super::async_trait;
 use super::*;
-use super::{core::Target, tasks, tasks::Task, CommandRunnable};
-use clap::{Arg, ArgMatches};
+use super::{core::Target, tasks::Task};
+use clap::Arg;
 
 pub struct ScratchCommand;
 crate::command!(ScratchCommand);

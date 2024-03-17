@@ -23,7 +23,6 @@ pub fn to_native_path<T: Into<PathBuf>>(path: T) -> std::path::PathBuf {
 mod tests {
     use super::*;
     use crate::test::get_dev_dir;
-    use std::path::PathBuf;
 
     #[test]
     fn test_to_native_path() {

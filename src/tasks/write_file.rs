@@ -59,7 +59,6 @@ impl<'a> Task for WriteFile<'a> {
 mod tests {
     use super::*;
     use crate::core::*;
-    use std::path::PathBuf;
     use tempfile::tempdir;
 
     #[tokio::test]

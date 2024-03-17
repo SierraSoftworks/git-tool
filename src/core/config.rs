@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::env::consts::OS;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
-use std::{env::consts::OS, vec::Vec};
 use std::{path, sync::Arc};
 
 use super::super::errors;
@@ -78,16 +78,16 @@ impl Config {
             into.config_file = Some(path)
         }
         if from.dev_directory.components().count() > 0 {
-            into.dev_directory = from.dev_directory.clone();
+            into.dev_directory.clone_from(&from.dev_directory);
         }
         if let Some(path) = from.scratch_directory {
             into.scratch_directory = Some(path)
         }
         if !from.services.is_empty() {
-            into.services = from.services.clone();
+            into.services.clone_from(&from.services);
         }
         if !from.apps.is_empty() {
-            into.apps = from.apps.clone();
+            into.apps.clone_from(&from.apps);
         }
 
         into.features = features::Features::builder()

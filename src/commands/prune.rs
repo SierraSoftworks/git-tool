@@ -1,4 +1,3 @@
-use super::super::errors;
 use super::*;
 use crate::core::Target;
 use crate::git;
@@ -114,7 +113,7 @@ mod tests {
     use super::*;
     use crate::core::builder::CoreBuilderWithConfig;
     use crate::core::*;
-    use crate::tasks::{self, Task};
+    use crate::tasks::Task;
     use complete::helpers::test_completions_with_core;
     use tempfile::tempdir;
 

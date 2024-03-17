@@ -1,7 +1,6 @@
-use super::super::errors;
 use super::core::Target;
 use super::*;
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct InfoCommand;
 crate::command!(InfoCommand);

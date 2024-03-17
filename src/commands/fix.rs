@@ -1,7 +1,6 @@
-use super::super::errors;
 use super::*;
 use crate::{search, tasks::*};
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct FixCommand;
 crate::command!(FixCommand);

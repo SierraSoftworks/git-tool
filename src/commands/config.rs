@@ -1,9 +1,8 @@
 use crate::core::features;
 
 use super::async_trait;
-use super::CommandRunnable;
 use super::*;
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 use online::registry::Registry;
 
 pub struct ConfigCommand;
@@ -331,7 +330,6 @@ mod tests {
     use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
-    use clap::ArgMatches;
     use complete::helpers::test_completions_with_config;
 
     #[tokio::test]

@@ -31,7 +31,6 @@ impl Task for GitInit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core;
     use crate::core::*;
     use tempfile::tempdir;
 

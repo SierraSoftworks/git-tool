@@ -38,7 +38,6 @@ impl Task for Sequence {
 
 #[cfg(test)]
 mod tests {
-    use super::super::TestTask;
     use super::*;
     use crate::core::*;
 
