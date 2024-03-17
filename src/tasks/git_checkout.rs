@@ -26,7 +26,6 @@ impl<'a> Task for GitCheckout<'a> {
 mod tests {
     use super::*;
     use crate::core::*;
-    use crate::tasks::GitInit;
     use tempfile::tempdir;
 
     #[tokio::test]

@@ -14,9 +14,6 @@ use mockall::automock;
 use std::sync::Arc;
 use tokio::process::Command;
 
-#[cfg(unix)]
-use std::convert::TryInto;
-
 #[async_trait::async_trait]
 #[cfg_attr(test, automock)]
 pub trait Launcher: Send + Sync {

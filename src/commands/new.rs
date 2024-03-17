@@ -1,7 +1,6 @@
-use super::super::errors;
 use super::*;
 use crate::{core::features, tasks::*};
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct NewCommand;
 crate::command!(NewCommand);

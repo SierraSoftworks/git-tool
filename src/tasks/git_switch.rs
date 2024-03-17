@@ -37,7 +37,6 @@ impl Task for GitSwitch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tasks::GitInit;
     use tempfile::tempdir;
 
     #[tokio::test]

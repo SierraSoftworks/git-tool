@@ -151,7 +151,6 @@ impl GitIgnoreFileSection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Core;
 
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]

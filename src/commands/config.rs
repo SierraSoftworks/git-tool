@@ -1,9 +1,8 @@
 use crate::core::features;
 
 use super::async_trait;
-use super::CommandRunnable;
 use super::*;
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 use online::registry::Registry;
 
 pub struct ConfigCommand;
@@ -331,7 +330,6 @@ mod tests {
     use super::core::Config;
     use super::*;
     use crate::test::get_dev_dir;
-    use clap::ArgMatches;
     use complete::helpers::test_completions_with_config;
 
     #[tokio::test]
@@ -377,7 +375,7 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", console.to_string());
+        println!("{}", console);
         assert!(
             console.to_string().contains("apps/bash\n"),
             "the output should contain some apps"
@@ -408,7 +406,7 @@ mod tests {
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", console.to_string());
+        println!("{}", console);
         assert!(
             console.to_string().contains("Applying Bash\n"),
             "the output should explain which config is being applied"
@@ -482,7 +480,7 @@ aliases:
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", console.to_string());
+        println!("{}", console);
         assert!(
             console
                 .to_string()
@@ -524,7 +522,7 @@ aliases:
             Err(err) => panic!("{}", err.message()),
         }
 
-        println!("{}", console.to_string());
+        println!("{}", console);
         assert!(
             console
                 .to_string()

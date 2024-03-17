@@ -1,4 +1,3 @@
-use super::super::errors;
 use super::*;
 use crate::core::Target;
 use crate::git;

@@ -1,7 +1,6 @@
-use super::CommandRunnable;
 use super::*;
 use crate::core::Target;
-use clap::{Arg, ArgMatches};
+use clap::Arg;
 
 pub struct RemoveCommand;
 crate::command!(RemoveCommand);
