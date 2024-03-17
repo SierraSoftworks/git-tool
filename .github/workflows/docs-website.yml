@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 'lts/*'
       - name: Install Dependencies
-        run: cd docs && npm install
+        run: cd docs && npm ci
       - name: Build
         run: cd docs && npm run build
       - name: Upload Artifacts
