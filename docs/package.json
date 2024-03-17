@@ -30,5 +30,8 @@
     "@vuepress/plugin-register-components": "2.0.0-rc.15",
     "@vuepress/theme-default": "2.0.0-rc.20",
     "vuepress": "2.0.0-rc.8"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.13.0"
   }
 }
