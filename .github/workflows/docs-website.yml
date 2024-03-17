@@ -12,14 +12,39 @@ on:
       - docs/**/*
 
 jobs:
+  build:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build (Docs)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - name: Install Dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/.vuepress/dist
+
   deploy:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
+    needs: build
     name: Build and Deploy
     steps:
-      - uses: actions/checkout@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
         with:
-          submodules: true
+          name: docs
+          path: dist
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -27,12 +52,10 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_WEBSITES_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/docs" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: ".vuepress/dist" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          app_location: "/"
+          api_location: ""
+          output_location: "dist"
+          skip_app_build: true
 
   cleanup:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
