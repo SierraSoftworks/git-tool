@@ -24,9 +24,9 @@ jobs:
         with:
           node-version: 'lts/*'
       - name: Install Dependencies
-        run: npm install
+        run: cd docs && npm install
       - name: Build
-        run: npm run build
+        run: cd docs && npm run build
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
