@@ -27,7 +27,7 @@ opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.15", features = ["tls-roots"] }
 once_cell = "1.19"
 rpassword = { version = "7.3", optional = true }
-reqwest = { version = "0.11.27", default-features = false, features = ["rustls-tls", "json", "stream"] }
+reqwest = { version = "0.12.2", default-features = false, features = ["rustls-tls", "json", "stream"] }
 semver = "1.0"
 sentry = { version = "0.32", default-features = false, features = ["reqwest", "log", "rustls"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
