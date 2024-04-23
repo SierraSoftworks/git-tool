@@ -44,11 +44,10 @@ jobs:
           sentry-cli releases set-commits "$VERSION" --auto
 
       - name: Generate Package Version
-        id: version
         shell: pwsh
         run: |
           $VERSION="$('${{ github.event.release.tag_name }}'.substring(1))"
-          Add-Content -Path $env:GITHUB_ENV -Value "version=$VERSION"
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
           Write-Host $VERSION
 
       - name: Set Package Version
@@ -56,7 +55,7 @@ jobs:
         with:
           file: Cargo.toml
           key: package.version
-          value: ${{ steps.version.outputs.version }}
+          value: ${{ env.VERSION }}
 
       - name: Stash Versioned Cargo.toml
         uses: actions/upload-artifact@v4
