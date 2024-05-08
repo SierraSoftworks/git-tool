@@ -211,16 +211,7 @@ jobs:
           file: "target/${{ matrix.target }}/debug/git-tool${{ matrix.extension }}"
           format: 'spdx-json'
           output-file: 'sbom.spdx.json'
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
-          path: "target/${{ matrix.target }}/debug/git-tool${{ matrix.extension }}"
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: sbom
-          path: sbom.spdx.json
+          upload-artifact: false
 
   test-done:
     name: Tests Complete

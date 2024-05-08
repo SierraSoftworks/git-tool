@@ -214,6 +214,8 @@ jobs:
           file: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
           format: 'spdx-json'
           output-file: 'sbom.spdx.json'
+          upload-artifact: false
+          artifact-name: "sbom-${{ matrix.os }}-${{ matrix.arch}}.spdx.json"
 
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@v1.1.0
