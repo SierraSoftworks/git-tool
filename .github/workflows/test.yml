@@ -57,6 +57,7 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-msvc
+            extension: .exe
 
           - arch: amd64
             run_on: ubuntu-latest
@@ -151,7 +152,7 @@ jobs:
 
       - name: cargo test
         uses: actions-rs/cargo@v1.0.3
-        if: "!matrix.skiptests"
+        if: !matrix.skiptests
         with:
           command: test
           args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
@@ -204,6 +205,22 @@ jobs:
         if: matrix.coverage || false
         with:
           token: ${{ env.CODECOV_TOKEN }}
+      
+      - uses: anchore/sbom-action@v0
+        with:
+          file: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
+          format: 'spdx-json'
+          output-file: 'sbom.spdx.json'
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+          path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sbom
+          path: sbom.spdx.json
 
   test-done:
     name: Tests Complete

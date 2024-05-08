@@ -75,6 +75,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
+      attestations: write
 
     needs:
       - version
@@ -207,6 +208,24 @@ jobs:
           files: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }} | git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: "true"
+      
+      - uses: anchore/sbom-action@v0
+        with:
+          file: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
+          format: 'spdx-json'
+          output-file: 'sbom.spdx.json'
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1.1.0
+        with:
+          subject-name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+          subject-path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
+
+      - uses: actions/attest-sbom@v1
+        with:
+          subject-name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+          subject-path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
+          sbom-path: 'sbom.spdx.json'
 
   sentry:
     name: Finalize Release
