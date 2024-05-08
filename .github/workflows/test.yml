@@ -152,7 +152,7 @@ jobs:
 
       - name: cargo test
         uses: actions-rs/cargo@v1.0.3
-        if: !(matrix.skiptests)
+        if: "!matrix.skiptests"
         with:
           command: test
           args: --no-fail-fast --target ${{ matrix.target }} ${{ matrix.flags }}
