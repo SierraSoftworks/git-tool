@@ -57,6 +57,7 @@ jobs:
             os: windows
             run_on: windows-latest
             target: x86_64-pc-windows-msvc
+            extension: .exe
 
           - arch: amd64
             run_on: ubuntu-latest
@@ -204,6 +205,13 @@ jobs:
         if: matrix.coverage || false
         with:
           token: ${{ env.CODECOV_TOKEN }}
+      
+      - uses: anchore/sbom-action@v0
+        with:
+          file: "target/${{ matrix.target }}/debug/git-tool${{ matrix.extension }}"
+          format: 'spdx-json'
+          output-file: 'sbom.spdx.json'
+          upload-artifact: false
 
   test-done:
     name: Tests Complete
