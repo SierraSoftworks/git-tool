@@ -476,7 +476,7 @@ checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 [[package]]
 name = "chrono"
 version = "0.4.38"
-source = "git+https://github.com/chronotope/chrono.git#7e25ffb373e6d2744beb8190df1ee5c075ec926d"
+source = "git+https://github.com/chronotope/chrono.git#f129a8ba35411fa79f15f9bf291552839ed2c333"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
