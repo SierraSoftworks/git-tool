@@ -22,9 +22,9 @@ itertools = "0.13"
 keyring = { version = "2.3", optional = true }
 lazy_static = "1.4"
 nix = { version = "0.29.0", features = ["process", "signal"] }
-opentelemetry = { version = "0.22" }
-opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.15", features = ["tls-roots"] }
+opentelemetry = { version = "0.23" }
+opentelemetry_sdk = { version = "0.23", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.16", features = ["tls-roots"] }
 once_cell = "1.19"
 rpassword = { version = "7.3", optional = true }
 reqwest = { version = "0.11.27", default-features = false, features = ["rustls-tls", "json", "stream"] }
@@ -39,7 +39,7 @@ tonic = { version = "0.11.0", features = ["tls-roots"] }
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-attributes = { git="https://github.com/SierraSoftworks/tracing.git" }
 tracing-futures = { version = "0.2.5", features = ["futures-03"] }
-tracing-opentelemetry = "0.23"
+tracing-opentelemetry = "0.24"
 tracing-subscriber = { version = "0.3.18", features = ["tracing-log"] }
 trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
