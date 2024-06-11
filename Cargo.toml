@@ -11,7 +11,7 @@ name = "git-tool"
 async-trait = "0.1"
 base64 = "0.22"
 chrono = { git="https://github.com/chronotope/chrono.git" }
-clap = { version = "4.5.4", features = ["cargo", "env", "string"] }
+clap = { version = "4.5.7", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
