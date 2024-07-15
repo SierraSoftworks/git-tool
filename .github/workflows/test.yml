@@ -64,6 +64,7 @@ jobs:
             os: linux
             target: x86_64-unknown-linux-gnu
             coverage: true
+            sbom: true
             setup: |
               sudo apt-get update
               sudo apt-get install -y libdbus-1-3 libdbus-1-dev
@@ -94,6 +95,7 @@ jobs:
             run_on: macos-latest
             os: darwin
             target: x86_64-apple-darwin
+            sbom: true
           - arch: arm64
             run_on: macos-latest
             os: darwin
@@ -207,6 +209,7 @@ jobs:
           token: ${{ env.CODECOV_TOKEN }}
       
       - uses: anchore/sbom-action@v0
+        if: matrix.sbom || false
         with:
           file: "target/${{ matrix.target }}/debug/git-tool${{ matrix.extension }}"
           format: 'spdx-json'
