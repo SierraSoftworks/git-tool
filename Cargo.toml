@@ -11,7 +11,7 @@ name = "git-tool"
 async-trait = "0.1"
 base64 = "0.22"
 chrono = { git="https://github.com/chronotope/chrono.git" }
-clap = { version = "4.5.7", features = ["cargo", "env", "string"] }
+clap = { version = "4.5.9", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
@@ -20,7 +20,7 @@ http = "0.2"
 inventory = "0.3.15"
 itertools = "0.13"
 keyring = { version = "2.3", optional = true }
-lazy_static = "1.4"
+lazy_static = "1.5"
 nix = { version = "0.29.0", features = ["process", "signal"] }
 opentelemetry = { version = "0.23" }
 opentelemetry_sdk = { version = "0.23", features = ["rt-tokio"] }
