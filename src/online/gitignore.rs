@@ -51,7 +51,7 @@ pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
 
     let content = response.text().await?;
     Ok(content
-        .split(|c: char| c == ',' || c == '\n')
+        .split([',', '\n'])
         .map(|slice| String::from_utf8(Vec::from(slice)).unwrap_or_default())
         .collect())
 }
@@ -195,7 +195,7 @@ mod tests {
                 assert_eq!(section.prologue, "");
                 assert_eq!(section.content, "*.exe");
             }
-            None => panic!("We should have parsed the section correctly"),
+            _ => panic!("We should have parsed the section correctly"),
         }
     }
 
@@ -218,7 +218,7 @@ bin/
                 assert_eq!(section.prologue, "junit.xml\nbin/");
                 assert_eq!(section.content, "*.exe\n*.obj");
             }
-            None => panic!("We should have parsed the section correctly"),
+            _ => panic!("We should have parsed the section correctly"),
         }
     }
 

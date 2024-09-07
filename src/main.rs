@@ -114,7 +114,7 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
             tracing::Span::current()
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32)
-                .record("exception", &field::display(&error));
+                .record("exception", field::display(&error));
 
             if telemetry::is_enabled() {
                 println!(
@@ -186,9 +186,9 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
                 .record("exit_code", 1_u32);
 
             if error.is_system() {
-                tracing::Span::current().record("exception", &field::display(&error));
+                tracing::Span::current().record("exception", field::display(&error));
             } else {
-                tracing::Span::current().record("exception", &error.description());
+                tracing::Span::current().record("exception", error.description());
             }
 
             if telemetry::is_enabled() {

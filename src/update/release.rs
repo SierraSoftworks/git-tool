@@ -2,6 +2,7 @@ use semver::Version;
 use std::env::consts::{ARCH, OS};
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Release {
     pub id: String,
     pub changelog: String,

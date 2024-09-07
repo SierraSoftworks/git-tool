@@ -63,10 +63,8 @@ where {
                 });
 
                 info!("Resuming update in phase {}", state.phase);
-                manager.resume(&state).await.map_err(|e| {
+                manager.resume(&state).await.inspect_err(|e| {
                     sentry::capture_error(&e);
-
-                    e
                 })?
             }
             None => false,

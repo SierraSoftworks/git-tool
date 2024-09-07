@@ -130,7 +130,7 @@ mod tests {
     ///  - `origin/feature/test`
     ///  - `origin/main`
     ///  - `main`
-    ///  ` `feature/test2`
+    ///  - `feature/test2`
     async fn setup_test_repo_with_remote(
         core: CoreBuilderWithConfig,
         temp: &tempfile::TempDir,
@@ -245,7 +245,7 @@ mod tests {
 
         crate::git::git_cmd(
             tokio::process::Command::new("git")
-                .current_dir(&repo.get_path())
+                .current_dir(repo.get_path())
                 .arg("merge")
                 .arg("feature/test2"),
         )
@@ -272,7 +272,7 @@ mod tests {
 
         crate::git::git_cmd(
             tokio::process::Command::new("git")
-                .current_dir(&repo.get_path())
+                .current_dir(repo.get_path())
                 .arg("merge")
                 .arg("feature/test2"),
         )
