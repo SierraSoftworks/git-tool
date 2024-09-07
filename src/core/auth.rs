@@ -40,7 +40,7 @@ impl KeyChain for TrueKeyChain {
 
     #[tracing::instrument(err, skip(self))]
     fn delete_token(&self, service: &str) -> Result<(), Error> {
-        keyring::Entry::new("git-tool", service)?.delete_password()?;
+        keyring::Entry::new("git-tool", service)?.delete_credential()?;
         Ok(())
     }
 }
