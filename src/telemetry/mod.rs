@@ -1,3 +1,5 @@
+#[allow(unused_imports)]
+use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use sentry::ClientInitGuard;
 use std::sync::{Arc, RwLock};
@@ -58,7 +60,7 @@ impl Session {
             "vdf1xcENEju8V0d8ffQq2Y".parse().unwrap(),
         );
 
-        let tracer = opentelemetry_otlp::new_pipeline()
+        let provider = opentelemetry_otlp::new_pipeline()
             .tracing()
             .with_exporter(
                 opentelemetry_otlp::new_exporter()
@@ -66,7 +68,7 @@ impl Session {
                     .with_endpoint("https://api.honeycomb.io:443")
                     .with_metadata(tracing_metadata),
             )
-            .with_trace_config(opentelemetry_sdk::trace::config().with_resource(
+            .with_trace_config(opentelemetry_sdk::trace::Config::default().with_resource(
                 opentelemetry_sdk::Resource::new(vec![
                     opentelemetry::KeyValue::new("service.name", "git-tool"),
                     opentelemetry::KeyValue::new("service.version", version!("v")),
@@ -76,6 +78,8 @@ impl Session {
             ))
             .install_batch(opentelemetry_sdk::runtime::Tokio)
             .unwrap();
+
+        opentelemetry::global::set_tracer_provider(provider.clone());
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::filter::LevelFilter::DEBUG)
@@ -89,7 +93,9 @@ impl Session {
                             .unwrap_or_default()
                 },
             ))
-            .with(tracing_opentelemetry::layer().with_tracer(tracer))
+            .with(tracing_opentelemetry::OpenTelemetryLayer::new(
+                provider.tracer("git-tool"),
+            ))
             .init();
 
         sentry::start_session();

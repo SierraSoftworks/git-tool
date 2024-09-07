@@ -111,7 +111,7 @@
           nativeBuildInputs = with pkgs; [
             cargo
             rustc
-          ] ++ nativeBuildInputs;
+          ] ++ nativeBuildInputs ++ buildInputs;
         };
       });
 }
