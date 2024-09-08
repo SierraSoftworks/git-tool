@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use opentelemetry::trace::SpanKind;
 use reqwest::{Client, Request, Response};
-use tracing::field;
+use tracing_batteries::prelude::*;
 
 use super::{Config, Error};
 
@@ -46,14 +46,14 @@ impl HttpClient for TrueHttpClient {
         fields(
             otel.kind = ?SpanKind::Client,
             otel.status_code = 0,
-            otel.status_message = field::Empty,
+            otel.status_message = EmptyField,
             http.method = %req.method(),
             http.url = %req.url(),
             http.target = req.url().path(),
             http.host = req.url().host_str().unwrap_or("<none>"),
             http.scheme = req.url().scheme(),
-            http.status_code = field::Empty,
-            http.response_content_length = field::Empty,
+            http.status_code = EmptyField,
+            http.response_content_length = EmptyField,
         )
     )]
     async fn request(&self, req: Request) -> Result<Response, Error> {
@@ -62,15 +62,13 @@ impl HttpClient for TrueHttpClient {
         let response = client.execute(req).await?;
 
         if !response.status().is_success() {
-            tracing::span::Span::current()
-                .record("otel.status_code", 2_u32)
-                .record(
-                    "otel.status_message",
-                    response.status().canonical_reason().unwrap_or("<none>"),
-                );
+            Span::current().record("otel.status_code", 2_u32).record(
+                "otel.status_message",
+                response.status().canonical_reason().unwrap_or("<none>"),
+            );
         }
 
-        tracing::span::Span::current()
+        Span::current()
             .record("http.status_code", response.status().as_u16())
             .record(
                 "http.response_content_length",

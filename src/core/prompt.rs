@@ -2,6 +2,7 @@ use std::{
     io::{Read, Write},
     sync::Arc,
 };
+use tracing_batteries::prelude::*;
 
 use crate::console::ConsoleProvider;
 

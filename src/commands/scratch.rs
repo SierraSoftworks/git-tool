@@ -2,6 +2,7 @@ use super::async_trait;
 use super::*;
 use super::{core::Target, tasks::Task};
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct ScratchCommand;
 crate::command!(ScratchCommand);

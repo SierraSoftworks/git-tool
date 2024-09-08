@@ -2,6 +2,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use tracing_batteries::prelude::*;
 
 #[cfg(test)]
 use mockall::automock;

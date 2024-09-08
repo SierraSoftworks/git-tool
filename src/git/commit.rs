@@ -2,6 +2,7 @@ use super::git_cmd;
 use crate::errors;
 use std::path;
 use tokio::process::Command;
+use tracing_batteries::prelude::*;
 
 pub async fn git_commit(
     repo: &path::Path,

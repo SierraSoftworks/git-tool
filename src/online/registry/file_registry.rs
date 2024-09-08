@@ -1,6 +1,7 @@
 use super::*;
 use crate::{errors, fs::to_native_path};
 use std::{fs::read_dir, fs::read_to_string, path::PathBuf};
+use tracing_batteries::prelude::*;
 
 pub struct FileRegistry {
     path: PathBuf,

@@ -4,6 +4,7 @@ use crate::{
     fs::to_native_path,
 };
 use std::{io::ErrorKind, path::PathBuf, writeln};
+use tracing_batteries::prelude::*;
 
 use clap::Arg;
 use directories_next::UserDirs;

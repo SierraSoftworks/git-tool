@@ -6,9 +6,7 @@ extern crate clap;
 extern crate gtmpl;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate tracing;
-extern crate sentry;
+extern crate tracing_batteries;
 #[macro_use]
 extern crate serde_json;
 extern crate tokio;
@@ -16,10 +14,8 @@ extern crate tokio;
 use crate::commands::CommandRunnable;
 use crate::core::features;
 use clap::{crate_authors, Arg};
-use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
-use telemetry::Session;
-use tracing::field;
-use tracing_opentelemetry::OpenTelemetrySpanExt;
+use std::sync::{atomic::AtomicBool, Arc};
+use tracing_batteries::prelude::*;
 
 #[macro_use]
 mod macros;
@@ -44,17 +40,21 @@ mod test;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     std::process::exit({
-        let session = Session::new();
+        let session = telemetry::setup();
 
         let app = build_app();
 
-        match host(app).await {
+        match host(app, session.enable()).await {
             Result::Ok(status) => {
-                session.complete();
+                session.shutdown();
                 status
             }
             Result::Err(err) => {
-                session.crash(err);
+                if err.is_system() {
+                    session.record_error(&err);
+                }
+
+                session.shutdown();
                 1
             }
         }
@@ -90,12 +90,15 @@ fn build_app() -> clap::Command {
             .subcommands(inventory::iter::<commands::Command>().map(|x| x.app()))
 }
 
-#[tracing::instrument(err, skip(app), fields(otel.name=field::Empty, command=field::Empty, exit_code=field::Empty, otel.status_code=0, exception=field::Empty))]
-async fn host(app: clap::Command) -> Result<i32, errors::Error> {
+#[tracing::instrument(err, skip(app), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
+async fn host(
+    app: clap::Command,
+    telemetry_enabled: Arc<AtomicBool>,
+) -> Result<i32, errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
-                load_trace_context(&tracing::Span::current(), context);
+                load_trace_context(&Span::current(), context);
                 info!("Loaded trace context from command line parameters.");
             }
 
@@ -103,7 +106,7 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
                 .trim()
                 .to_string();
 
-            tracing::Span::current().record("otel.name", command_name.as_str());
+            Span::current().record("otel.name", command_name.as_str());
 
             matches
         }
@@ -111,19 +114,15 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
             if error.kind() != clap::error::ErrorKind::DisplayVersion
                 && error.kind() != clap::error::ErrorKind::DisplayHelp =>
         {
-            tracing::Span::current()
+            Span::current()
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32)
-                .record("exception", field::display(&error));
+                .record("exception", display(&error));
 
-            if telemetry::is_enabled() {
+            if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
-                    tracing::Span::current()
-                        .context()
-                        .span()
-                        .span_context()
-                        .trace_id()
+                    Span::current().context().span().span_context().trace_id()
                 );
             }
 
@@ -138,7 +137,7 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
         Err(error) => {
             error.print().unwrap_or_default();
 
-            tracing::Span::current()
+            Span::current()
                 .record(
                     "otel.name",
                     if error.kind() == clap::error::ErrorKind::DisplayVersion {
@@ -157,15 +156,15 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
         .trim()
         .to_string();
 
-    tracing::Span::current()
+    Span::current()
         .record("command", command_name.as_str())
         .record("otel.name", command_name.as_str());
 
-    match run(matches).await {
+    match run(matches, telemetry_enabled.clone()).await {
         Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
-            tracing::Span::current()
+            Span::current()
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 2_u32);
 
@@ -174,31 +173,27 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
         }
         Ok(status) => {
             info!("Exiting with status code {}", status);
-            tracing::Span::current().record("exit_code", status);
+            Span::current().record("exit_code", status);
             Ok(status)
         }
         Err(error) => {
             println!("{error}");
 
             error!("Exiting with status code {}", 1);
-            tracing::Span::current()
+            Span::current()
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32);
 
             if error.is_system() {
-                tracing::Span::current().record("exception", field::display(&error));
+                Span::current().record("exception", display(&error));
             } else {
-                tracing::Span::current().record("exception", error.description());
+                Span::current().record("exception", error.description());
             }
 
-            if telemetry::is_enabled() {
+            if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
-                    tracing::Span::current()
-                        .context()
-                        .span()
-                        .span_context()
-                        .trace_id()
+                    Span::current().context().span().span_context().trace_id()
                 );
             }
 
@@ -208,7 +203,10 @@ async fn host(app: clap::Command) -> Result<i32, errors::Error> {
 }
 
 #[tracing::instrument(err, skip(matches), fields(command=matches.subcommand_name().unwrap_or("")))]
-async fn run(matches: clap::ArgMatches) -> Result<i32, errors::Error> {
+async fn run(
+    matches: clap::ArgMatches,
+    telemetry_enabled: Arc<AtomicBool>,
+) -> Result<i32, errors::Error> {
     let core_builder = core::Core::builder();
 
     let core_builder = if let Some(cfg_file) = matches.get_one::<String>("config") {
@@ -226,21 +224,17 @@ async fn run(matches: clap::ArgMatches) -> Result<i32, errors::Error> {
 
     // If telemetry is enabled in the config file, then turn it on here.
     if !core.config().get_features().has(features::TELEMETRY) {
-        telemetry::set_enabled(false);
+        telemetry_enabled.store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     // If the user explicitly enables tracing, then turn it on and print your trace ID
     if matches.contains_id("trace") {
         debug!("Tracing enabled by command line flag.");
-        telemetry::set_enabled(true);
+        telemetry_enabled.store(true, std::sync::atomic::Ordering::Relaxed);
         writeln!(
             core.output(),
             "Tracing enabled, your trace ID is: {:032x}",
-            tracing::Span::current()
-                .context()
-                .span()
-                .span_context()
-                .trace_id()
+            Span::current().context().span().span_context().trace_id()
         )?;
     }
 
@@ -291,11 +285,10 @@ async fn run(matches: clap::ArgMatches) -> Result<i32, errors::Error> {
     Ok(-2)
 }
 
-fn load_trace_context(span: &tracing::Span, context: &str) {
+fn load_trace_context(span: &Span, context: &str) {
     let carrier: std::collections::HashMap<String, String> =
         serde_json::from_str(context).unwrap_or_default();
-    let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
-    let parent_context = propagator.extract(&carrier);
+    let parent_context = opentelemetry::global::get_text_map_propagator(|p| p.extract(&carrier));
     span.set_parent(parent_context);
 }
 

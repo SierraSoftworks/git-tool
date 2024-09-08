@@ -1,6 +1,7 @@
 use super::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant, UpdateManager};
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct UpdateCommand;
 crate::command!(UpdateCommand);

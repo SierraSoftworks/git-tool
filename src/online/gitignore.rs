@@ -1,5 +1,6 @@
 use super::{errors, Error};
 use crate::core::Core;
+use tracing_batteries::prelude::*;
 
 #[tracing::instrument(err, skip(core, content))]
 pub async fn add_or_update(

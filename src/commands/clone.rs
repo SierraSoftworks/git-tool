@@ -2,6 +2,7 @@ use super::*;
 use crate::core::Target;
 use crate::tasks::*;
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct CloneCommand;
 

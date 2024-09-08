@@ -1,6 +1,7 @@
 use super::*;
 use crate::{core::features, tasks::*};
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct NewCommand;
 crate::command!(NewCommand);

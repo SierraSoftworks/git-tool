@@ -1,4 +1,5 @@
 use super::*;
+use tracing_batteries::prelude::*;
 
 pub struct AppsCommand;
 

@@ -2,6 +2,7 @@ use super::async_trait;
 use super::online::gitignore;
 use super::*;
 use clap::{value_parser, Arg};
+use tracing_batteries::prelude::*;
 
 pub struct IgnoreCommand;
 crate::command!(IgnoreCommand);

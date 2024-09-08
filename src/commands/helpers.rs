@@ -1,5 +1,6 @@
 use crate::core::*;
 use crate::errors;
+use tracing_batteries::prelude::*;
 
 pub enum LaunchTarget<'a> {
     AppAndTarget(&'a App, &'a str),

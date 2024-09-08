@@ -1,6 +1,7 @@
 use std::path;
 
 use tokio::process::Command;
+use tracing_batteries::prelude::*;
 
 use crate::{errors, git::git_cmd};
 

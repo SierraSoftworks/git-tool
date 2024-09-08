@@ -1,6 +1,7 @@
 use super::*;
 use crate::errors;
 use serde::Deserialize;
+use tracing_batteries::prelude::*;
 
 pub struct GitHubRegistry;
 

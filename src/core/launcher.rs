@@ -7,6 +7,7 @@ use super::{
     Config, Target,
 };
 use futures::{pin_mut, FutureExt};
+use tracing_batteries::prelude::*;
 
 #[cfg(test)]
 use mockall::automock;

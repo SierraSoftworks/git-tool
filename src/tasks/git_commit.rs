@@ -1,5 +1,6 @@
 use super::*;
 use crate::{core::Target, git};
+use tracing_batteries::prelude::*;
 
 pub struct GitCommit<'a> {
     pub message: &'a str,

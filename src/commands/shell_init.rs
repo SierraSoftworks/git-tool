@@ -1,6 +1,7 @@
 use super::*;
 use crate::completion::get_shells;
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct ShellInitCommand;
 crate::command!(ShellInitCommand);

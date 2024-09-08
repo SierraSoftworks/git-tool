@@ -1,6 +1,7 @@
 use super::*;
 use crate::core::Target;
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct RemoveCommand;
 crate::command!(RemoveCommand);

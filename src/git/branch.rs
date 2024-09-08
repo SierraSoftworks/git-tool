@@ -3,6 +3,7 @@ use crate::errors;
 use itertools::intersperse;
 use std::{collections::HashSet, path};
 use tokio::process::Command;
+use tracing_batteries::prelude::*;
 
 #[allow(dead_code)]
 pub async fn git_current_branch(repo: &path::Path) -> Result<String, errors::Error> {

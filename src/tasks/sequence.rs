@@ -1,5 +1,6 @@
 use super::*;
 use std::sync::Arc;
+use tracing_batteries::prelude::*;
 
 pub struct Sequence {
     tasks: Vec<Arc<dyn Task + Send + Sync>>,

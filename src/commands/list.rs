@@ -2,6 +2,7 @@ use super::*;
 use crate::core::Target;
 use crate::search;
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct ListCommand;
 crate::command!(ListCommand);

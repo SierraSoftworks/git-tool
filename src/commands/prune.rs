@@ -3,6 +3,7 @@ use crate::core::Target;
 use crate::git;
 use clap::Arg;
 use itertools::Itertools;
+use tracing_batteries::prelude::*;
 
 pub struct PruneCommand;
 crate::command!(PruneCommand);

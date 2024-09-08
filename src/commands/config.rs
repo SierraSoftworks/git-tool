@@ -4,6 +4,7 @@ use super::async_trait;
 use super::*;
 use clap::Arg;
 use online::registry::Registry;
+use tracing_batteries::prelude::*;
 
 pub struct ConfigCommand;
 

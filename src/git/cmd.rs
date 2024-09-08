@@ -1,10 +1,9 @@
 use crate::errors;
-use opentelemetry::trace::SpanKind;
 use std::process::Stdio;
 use tokio::process::Command;
-use tracing::{field, Span};
+use tracing_batteries::prelude::*;
 
-#[tracing::instrument(err, skip(cmd), fields(otel.kind = ?SpanKind::Client, command=?cmd, otel.status_code = 0, status_code = field::Empty))]
+#[tracing::instrument(err, skip(cmd), fields(otel.kind = ?opentelemetry::trace::SpanKind::Client, command=?cmd, otel.status_code = 0, status_code = EmptyField))]
 pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
     // NOTE: We disable logging to stdout to avoid breaking the test output
     #[cfg(test)]

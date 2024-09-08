@@ -2,6 +2,7 @@ use super::git_cmd;
 use crate::errors;
 use std::path;
 use tokio::process::Command;
+use tracing_batteries::prelude::*;
 
 pub async fn git_rev_parse(repo: &path::Path, ref_name: &str) -> Result<String, errors::Error> {
     info!("Running `git rev-parse --verify` to get the SHA of a specific reference");

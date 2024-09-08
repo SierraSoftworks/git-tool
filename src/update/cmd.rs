@@ -1,6 +1,5 @@
-use opentelemetry::propagation::TextMapPropagator;
 use std::{path::Path, process::Command};
-use tracing_opentelemetry::OpenTelemetrySpanExt;
+use tracing_batteries::prelude::*;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -29,8 +28,9 @@ pub trait Launcher {
     fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
         let trace_context = {
             let mut context = std::collections::HashMap::new();
-            let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
-            propagator.inject_context(&tracing::Span::current().context(), &mut context);
+            opentelemetry::global::get_text_map_propagator(|p| {
+                p.inject_context(&Span::current().context(), &mut context)
+            });
 
             serde_json::to_string(&context)
         }?;
