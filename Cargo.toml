@@ -62,7 +62,7 @@ tracing-subscriber = { version = "0.3.18", features = ["tracing-log"] }
 trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
-mockall = "0.12.1"
+mockall = "0.13.0"
 tempfile = "3.10"
 sentry = { version = "0.34", default-features = false, features = [
   "reqwest",
