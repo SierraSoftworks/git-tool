@@ -4,6 +4,7 @@ use crate::git;
 use crate::tasks::*;
 use clap::Arg;
 use itertools::Itertools;
+use tracing_batteries::prelude::*;
 
 pub struct SwitchCommand;
 crate::command!(SwitchCommand);

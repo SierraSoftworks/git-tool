@@ -1,6 +1,7 @@
 use super::core::Target;
 use super::*;
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct InfoCommand;
 crate::command!(InfoCommand);

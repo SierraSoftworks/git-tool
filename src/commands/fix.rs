@@ -1,6 +1,7 @@
 use super::*;
 use crate::{search, tasks::*};
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct FixCommand;
 crate::command!(FixCommand);

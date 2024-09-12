@@ -2,6 +2,7 @@ use super::*;
 use crate::{core::Core, errors};
 use itertools::Itertools;
 use std::path::{Path, PathBuf};
+use tracing_batteries::prelude::*;
 
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;

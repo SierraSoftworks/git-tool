@@ -4,6 +4,7 @@ use crate::tasks::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant};
 use crate::{core::Target, update::UpdateManager};
 use clap::Arg;
+use tracing_batteries::prelude::*;
 
 pub struct OpenCommand;
 crate::command!(OpenCommand);

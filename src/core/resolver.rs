@@ -4,6 +4,7 @@ use crate::{fs::to_native_path, search};
 use chrono::prelude::*;
 use std::env;
 use std::sync::Arc;
+use tracing_batteries::prelude::*;
 
 #[cfg(test)]
 use mockall::automock;

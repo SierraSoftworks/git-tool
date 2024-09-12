@@ -2,6 +2,7 @@ use crate::errors;
 
 use super::{core::Target, *};
 use std::path::PathBuf;
+use tracing_batteries::prelude::*;
 
 pub struct WriteFile<'a> {
     pub path: PathBuf,

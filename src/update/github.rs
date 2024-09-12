@@ -3,6 +3,7 @@ use crate::{core::Core, errors};
 use futures::StreamExt;
 use serde::Deserialize;
 use std::env::consts::{ARCH, OS};
+use tracing_batteries::prelude::*;
 
 pub struct GitHubSource {
     pub repo: String,

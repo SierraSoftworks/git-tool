@@ -3,6 +3,7 @@ use std::env::consts::OS;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
 use std::{path, sync::Arc};
+use tracing_batteries::prelude::*;
 
 use super::super::errors;
 use super::features;

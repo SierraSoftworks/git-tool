@@ -5,6 +5,7 @@ use crate::errors;
 use reqwest::{Method, Request, StatusCode, Url};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use tracing_batteries::prelude::*;
 
 #[derive(Default)]
 pub struct GitHubService {}

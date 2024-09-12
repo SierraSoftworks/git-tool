@@ -1,5 +1,6 @@
 use super::*;
 use crate::{core::Target, errors, git};
+use tracing_batteries::prelude::*;
 
 pub struct GitRemote<'a> {
     pub name: &'a str,

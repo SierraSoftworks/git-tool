@@ -1,5 +1,6 @@
 use super::{errors, Config, Repo, Scratchpad, Service, Target};
 use gtmpl::{template, Value};
+use tracing_batteries::prelude::*;
 
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {

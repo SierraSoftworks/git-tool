@@ -1,4 +1,5 @@
 use super::*;
+use tracing_batteries::prelude::*;
 
 #[cfg(feature = "auth")]
 #[cfg(test)]
