@@ -201,7 +201,7 @@ jobs:
             secrets/data/repos/SierraSoftworks/git-tool/public/codecov token | CODECOV_TOKEN;
 
       - name: codecov upload
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: matrix.coverage || false
         with:
           token: ${{ env.CODECOV_TOKEN }}
