@@ -49,7 +49,7 @@ tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batterie
 trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
-mockall = "0.13.0"
+mockall = "0.13.1"
 tempfile = "3.14"
 sentry = { version = "0.34", default-features = false, features = [
   "reqwest",
