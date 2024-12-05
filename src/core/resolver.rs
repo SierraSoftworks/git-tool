@@ -422,6 +422,9 @@ mod tests {
                     .to_string()
             )
         );
+
+        assert!(resolver.get_scratchpad("^not-a-number").is_err());
+        assert!(resolver.get_scratchpad("^-1").is_err());
     }
 
     #[test]
