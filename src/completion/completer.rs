@@ -18,7 +18,8 @@ impl Completer {
         }
     }
 
-    pub fn offer(&self, completion: &str) {
+    pub fn offer<S: AsRef<str>>(&self, completion: S) {
+        let completion = completion.as_ref();
         if !matches(completion, &self.filter) {
             return;
         }
