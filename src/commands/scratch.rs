@@ -72,6 +72,9 @@ impl CommandRunnable for ScratchCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        let time = chrono::Local::now();
+        completer.offer(&time.format("%Yw%V").to_string());
+
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         if let Ok(pads) = core.resolver().get_scratchpads() {
