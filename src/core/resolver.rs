@@ -68,6 +68,22 @@ impl Resolver for TrueResolver {
 
     #[tracing::instrument(err, skip(self, name))]
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
+        if name.starts_with('^') || name.starts_with('~') {
+            let delta = name[1..].parse::<u64>().map_err(|err| {
+                errors::user(
+                    &format!(
+                        "Could not parse the offset expression '{}' into a valid week offset: {}.",
+                        &name, err,
+                    ),
+                    "Please provide a valid number of weeks to go back in time.",
+                )
+            })?;
+
+            let time = Local::now() - chrono::Duration::days(delta as i64 * 7);
+
+            return self.get_scratchpad(&time.format("%Yw%V").to_string());
+        }
+
         Ok(Scratchpad::new(
             name,
             self.config.get_scratch_directory().join(name),
@@ -216,7 +232,7 @@ impl TrueResolver {
                 repo_from_svc_and_path(&self.config, Some(svc_name), relative_path.strip_prefix(svc).unwrap_or(relative_path), false)
             },
             Err(e) => Err(errors::system_with_internal(
-                "We were unable to determine the repository's fully qualified name.", 
+                "We were unable to determine the repository's fully qualified name.",
                 &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display()),
                 e))
         }
@@ -372,6 +388,39 @@ mod tests {
         assert_eq!(
             example.get_path(),
             get_dev_dir().join("scratch").join("2019w10")
+        );
+    }
+
+    #[test]
+    fn get_scratchpad_offset() {
+        let resolver = get_resolver();
+
+        let example = resolver.get_scratchpad("^0").unwrap();
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir()
+                .join("scratch")
+                .join(Local::now().format("%Yw%V").to_string())
+        );
+
+        let example = resolver.get_scratchpad("^1").unwrap();
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir().join("scratch").join(
+                (Local::now() - chrono::Duration::days(7))
+                    .format("%Yw%V")
+                    .to_string()
+            )
+        );
+
+        let example = resolver.get_scratchpad("^5").unwrap();
+        assert_eq!(
+            example.get_path(),
+            get_dev_dir().join("scratch").join(
+                (Local::now() - chrono::Duration::days(7 * 5))
+                    .format("%Yw%V")
+                    .to_string()
+            )
         );
     }
 
