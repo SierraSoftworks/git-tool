@@ -20,7 +20,7 @@ futures = "0.3"
 gtmpl = "0.7"
 human-errors = "0.1.5"
 http = "0.2"
-inventory = "0.3.18"
+inventory = "0.3.19"
 itertools = "0.14"
 keyring = { version = "3.6.1", optional = true }
 lazy_static = "1.5"
