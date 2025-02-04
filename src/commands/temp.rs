@@ -1,5 +1,6 @@
 use super::async_trait;
 use super::*;
+use crate::core::Target;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -43,9 +44,13 @@ impl CommandRunnable for TempCommand {
               "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?
         };
 
-        let temp = core
-            .resolver()
-            .get_temp(matches.get_one::<bool>("keep").copied().unwrap_or_default())?;
+        let keep = matches.get_one::<bool>("keep").copied().unwrap_or_default();
+
+        let temp = core.resolver().get_temp(keep)?;
+
+        if keep {
+            writeln!(core.output(), "temp path: {}", temp.get_path().display())?;
+        }
 
         let status = core.launcher().run(app, &temp).await?;
         temp.close()?;
