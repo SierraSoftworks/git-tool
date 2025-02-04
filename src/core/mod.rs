@@ -33,7 +33,7 @@ pub use repo::Repo;
 pub use resolver::Resolver;
 pub use scratchpad::Scratchpad;
 pub use service::{Service, ServiceAPI};
-pub use target::Target;
+pub use target::{Target, TempTarget};
 
 pub struct Core {
     config: Arc<Config>,

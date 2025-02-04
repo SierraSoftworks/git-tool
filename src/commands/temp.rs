@@ -1,0 +1,203 @@
+use super::async_trait;
+use super::*;
+use clap::Arg;
+use tracing_batteries::prelude::*;
+
+pub struct TempCommand;
+crate::command!(TempCommand);
+
+#[async_trait]
+impl CommandRunnable for TempCommand {
+    fn name(&self) -> String {
+        String::from("temp")
+    }
+
+    fn app(&self) -> clap::Command {
+        clap::Command::new(self.name())
+            .version("1.0")
+            .visible_alias("s")
+            .about("opens a temporary folder which will be removed when the shell is closed")
+            .arg(
+                Arg::new("app")
+                    .help("The name of the application to launch.")
+                    .index(1),
+            )
+    }
+
+    #[tracing::instrument(name = "gt temp", err, skip(self, core, matches))]
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+        let app = if let Some(app) = matches.get_one::<String>("app") {
+            core.config().get_app(app).ok_or_else(|| errors::user(
+            "The specified application does not exist.",
+            "Make sure you have added the application to your config file using 'git-tool config add apps/bash' or similar."))?
+        } else {
+            core.config().get_default_app().ok_or_else(|| errors::user(
+              "No default application available.",
+              "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?
+        };
+
+        let temp = core.resolver().get_temp()?;
+
+        let status = core.launcher().run(app, &temp).await?;
+        return Ok(status);
+    }
+
+    #[tracing::instrument(name = "gt complete -- gt temp", skip(self, core, completer, _matches))]
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::*;
+    use std::sync::{Arc, RwLock};
+
+    #[tokio::test]
+    async fn run_no_args() {
+        let cmd = TempCommand {};
+
+        let args = cmd.app().get_matches_from(vec!["temp"]);
+
+        let temp = tempfile::tempdir().unwrap();
+        let cfg = Config::from_str(&format!(
+            "
+directory: {}=
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+",
+            temp.path().display(),
+        ))
+        .unwrap();
+
+        let temp_path = Arc::new(RwLock::new(None));
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_temp().returning(move || {
+                    let temp = TempTarget::new().unwrap();
+                    *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
+                    Ok(temp)
+                });
+            })
+            .with_mock_launcher(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_run()
+                    .once()
+                    .withf(move |app, target| {
+                        app.get_name() == "test-app"
+                            && target.get_path() == *temp_path.read().unwrap().as_ref().unwrap()
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(5) }));
+            })
+            .build();
+
+        match cmd.run(&core, &args).await {
+            Ok(status) => {
+                assert_eq!(status, 5, "it should forward the status code from the app");
+            }
+            Err(err) => panic!("{}", err.message()),
+        }
+
+        assert!(
+            !temp_path.read().unwrap().as_ref().unwrap().exists(),
+            "the temp dir should be removed when the app exits"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_only_app() {
+        let cmd = TempCommand {};
+
+        let args = cmd.app().get_matches_from(vec!["temp", "test-app"]);
+
+        let temp = tempfile::tempdir().unwrap();
+        let cfg = Config::from_str(&format!(
+            "
+directory: {}
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+",
+            temp.path().display(),
+        ))
+        .unwrap();
+
+        let temp_path = Arc::new(RwLock::new(None));
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_temp().returning(move || {
+                    let temp = TempTarget::new().unwrap();
+                    *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
+                    Ok(temp)
+                });
+            })
+            .with_mock_launcher(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_run()
+                    .once()
+                    .withf(move |app, target| {
+                        app.get_name() == "test-app"
+                            && target.get_path() == *temp_path.read().unwrap().as_ref().unwrap()
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        match cmd.run(&core, &args).await {
+            Ok(_) => {}
+            Err(err) => panic!("{}", err.message()),
+        }
+
+        assert!(
+            !temp_path.read().unwrap().as_ref().unwrap().exists(),
+            "the temp dir should be removed when the app exits"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_unknown_app() {
+        let cmd = TempCommand {};
+
+        let args = cmd.app().get_matches_from(vec!["temp", "unknown-app"]);
+
+        let temp = tempfile::tempdir().unwrap();
+        let cfg = Config::from_str(&format!(
+            "
+directory: {}
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+",
+            temp.path().display(),
+        ))
+        .unwrap();
+
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                mock.expect_get_temp()
+                    .returning(|| Ok(TempTarget::new().unwrap()));
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run().never();
+            })
+            .build();
+
+        cmd.run(&core, &args).await.unwrap_or_default();
+    }
+}
