@@ -22,6 +22,13 @@ impl CommandRunnable for TempCommand {
                     .help("The name of the application to launch.")
                     .index(1),
             )
+            .arg(
+                Arg::new("keep")
+                    .long("keep")
+                    .short('k')
+                    .help("do not remove the temp directory when the app exits.")
+                    .action(clap::ArgAction::SetTrue),
+            )
     }
 
     #[tracing::instrument(name = "gt temp", err, skip(self, core, matches))]
@@ -36,15 +43,20 @@ impl CommandRunnable for TempCommand {
               "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?
         };
 
-        let temp = core.resolver().get_temp()?;
+        let temp = core
+            .resolver()
+            .get_temp(matches.get_one::<bool>("keep").copied().unwrap_or_default())?;
 
         let status = core.launcher().run(app, &temp).await?;
+        temp.close()?;
+
         return Ok(status);
     }
 
     #[tracing::instrument(name = "gt complete -- gt temp", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
+        completer.offer("--keep");
     }
 }
 
@@ -80,8 +92,8 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
-                mock.expect_get_temp().returning(move || {
-                    let temp = TempTarget::new().unwrap();
+                mock.expect_get_temp().returning(move |keep| {
+                    let temp = TempTarget::new(keep).unwrap();
                     *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
                     Ok(temp)
                 });
@@ -137,8 +149,8 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
-                mock.expect_get_temp().returning(move || {
-                    let temp = TempTarget::new().unwrap();
+                mock.expect_get_temp().returning(move |keep| {
+                    let temp = TempTarget::new(keep).unwrap();
                     *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
                     Ok(temp)
                 });
@@ -191,7 +203,7 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 mock.expect_get_temp()
-                    .returning(|| Ok(TempTarget::new().unwrap()));
+                    .returning(|keep| Ok(TempTarget::new(keep).unwrap()));
             })
             .with_mock_launcher(|mock| {
                 mock.expect_run().never();

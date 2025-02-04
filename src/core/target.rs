@@ -15,10 +15,20 @@ pub struct TempTarget {
 }
 
 impl TempTarget {
-    pub fn new() -> Result<Self, crate::errors::Error> {
+    pub fn new(keep: bool) -> Result<Self, crate::errors::Error> {
         Ok(Self {
-            dir: tempfile::tempdir()?,
+            dir: tempfile::Builder::new().keep(keep).tempdir()?,
         })
+    }
+
+    pub fn close(self) -> Result<(), crate::errors::Error> {
+        let temp_path = self.dir.path().to_owned();
+
+        self.dir.close().map_err(|e| crate::errors::user_with_internal(
+          "Unable to remove the temporary directory, it is likely still in use by another application.",
+          &format!("Make sure that you close any open files and then delete '{}'", temp_path.display()),
+          e))?;
+        Ok(())
     }
 
     #[cfg(test)]

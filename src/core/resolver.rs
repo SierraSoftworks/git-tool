@@ -11,7 +11,7 @@ use mockall::automock;
 
 #[cfg_attr(test, automock)]
 pub trait Resolver: Send + Sync {
-    fn get_temp(&self) -> Result<TempTarget, Error>;
+    fn get_temp(&self, keep: bool) -> Result<TempTarget, Error>;
 
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
@@ -39,8 +39,8 @@ impl From<Arc<Config>> for TrueResolver {
 
 impl Resolver for TrueResolver {
     #[tracing::instrument(err, skip(self))]
-    fn get_temp(&self) -> Result<TempTarget, Error> {
-        TempTarget::new()
+    fn get_temp(&self, keep: bool) -> Result<TempTarget, Error> {
+        TempTarget::new(keep)
     }
 
     #[tracing::instrument(err, skip(self))]
