@@ -71,7 +71,7 @@ will be automatically deleted.
 #### Example
 ```powershell
 # Open a temporary scratchpad in your default app
-gt temp
+gt t
 
 # Open a temporary scratchpad in PowerShell
 gt temp pwsh
