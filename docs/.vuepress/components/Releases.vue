@@ -4,32 +4,17 @@
 
     <div class="release-platforms">
       <div>Select your Platform:</div>
-      <button
-        class="release-button release-platform"
-        :class="{ active: platform === selectedPlatform }"
-        v-for="(name, platform) in platforms"
-        :key="platform"
-        v-on:click="selectedPlatform = platform"
-      >
+      <button class="release-button release-platform" :class="{ active: platform === selectedPlatform }"
+        v-for="(name, platform) in platforms" :key="platform" v-on:click="selectedPlatform = platform">
         {{ name }}
       </button>
     </div>
 
     <div class="release-list" v-if="selectedPlatform">
-      <div
-        class="release"
-        v-for="release in applicableReleases"
-        :key="release.id"
-      >
+      <div class="release" v-for="release in applicableReleases" :key="release.id">
         <h4 class="release__name">
-          <a
-            class="release-button"
-            :href="
-              getReleaseAsset(release, selectedPlatform).browser_download_url
-            "
-            target="_blank"
-            >Download</a
-          >
+          <a class="release-button no-external-link-icon" :href="getReleaseAsset(release, selectedPlatform).browser_download_url
+            " target="_blank">Download</a>
 
           {{ release.name }}
           <Badge v-if="release.prerelease" text="Early Access" type="warning" />
@@ -137,6 +122,11 @@ export default defineComponent({
   margin: 20px;
 }
 
+.release__name {
+  margin-top: 1em;
+  padding-top: 0;
+}
+
 .release__notes {
   white-space: pre-wrap;
   word-break: break-word;
@@ -152,8 +142,8 @@ export default defineComponent({
 }
 
 .release-platform.active {
-  background: var(--c-brand);
-  color: var(--c-bg);
+  background: var(--vp-c-accent-bg);
+  color: var(--vp-c-accent-text);
 }
 
 .release-assets {
@@ -173,17 +163,22 @@ export default defineComponent({
 .release-button {
   background: none;
   border-radius: 5px;
-  color: var(--c-brand);
-  border: 1px solid var(--c-brand);
+  background: var();
+  color: var(--vp-c-accent-bg);
+  border: 1px solid var(--vp-c-accent-bg);
   font-size: 80%;
   padding: 7px;
   margin: 5px;
   cursor: pointer;
 }
 
+a.release-button {
+  text-decoration: none;
+}
+
 .release-button:hover,
 .release-button:focus {
-  background: var(--c-brand-light);
-  color: var(--c-bg);
+  background: var(--vp-c-accent-hover);
+  color: var(--vp-c-accent-text);
 }
 </style>

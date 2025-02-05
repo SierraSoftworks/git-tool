@@ -30,6 +30,7 @@ mod services;
 mod setup;
 mod shell_init;
 mod switch;
+mod temp;
 mod update;
 
 inventory::collect!(Command);

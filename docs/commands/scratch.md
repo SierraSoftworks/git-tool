@@ -50,9 +50,39 @@ gt s code
 # Open a specially named scratchpad folder
 gt s 2021w10-super-important
 ```
- 
+
 ::: tip
 You don't need to use our naming scheme if you don't want to, just run `gt s something` and
 we'll create a `something` folder for you with no complaints. *This can be useful if you
 have an important project which you don't want to lose track of.*
+:::
+
+## temp <Badge text="v3.6.0+" />
+The `gt temp` command is a shortcut for opening a temporary scratchpad which is automatically
+deleted when you close the launched application. This is useful when you want to quickly test
+something without leaving a mess behind.
+
+::: tip
+The `gt temp` command creates a temporary folder in your current user's temporary directory
+and launches the specified application in that folder. When the application exits, the folder
+will be automatically deleted.
+:::
+
+#### Example
+```powershell
+# Open a temporary scratchpad in your default app
+gt t
+
+# Open a temporary scratchpad in PowerShell
+gt temp pwsh
+
+# Open a temporary scratchpad and don't delete it when you're done
+gt temp --keep
+```
+
+::: warning
+Applications which exit immediately after launching (like VSCode's `code` command) will cause
+the temporary folder to be deleted immediately after the application is launched. You can prevent
+this by using the `--keep` flag to prevent the folder from being deleted - however you will need
+to manually clean it up when you're done (in this case it works much the same as a standard scratchpad).
 :::

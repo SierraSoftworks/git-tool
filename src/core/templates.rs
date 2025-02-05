@@ -1,4 +1,4 @@
-use super::{errors, Config, Repo, Scratchpad, Service, Target};
+use super::{errors, target::TempTarget, Config, Repo, Scratchpad, Service, Target};
 use gtmpl::{template, Value};
 use tracing_batteries::prelude::*;
 
@@ -125,6 +125,21 @@ impl std::convert::Into<Value> for &Repo {
 
 #[allow(clippy::from_over_into)]
 impl std::convert::Into<Value> for &Scratchpad {
+    fn into(self) -> Value {
+        Value::Object(map! {
+            "Target" => Value::Object(map!{
+                "Name" => Value::String(self.get_name()),
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
+                "Exists" => Value::Bool(self.exists())
+            }),
+            "Repo" => Value::NoValue,
+            "Service" => Value::NoValue
+        })
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl std::convert::Into<Value> for &TempTarget {
     fn into(self) -> Value {
         Value::Object(map! {
             "Target" => Value::Object(map!{

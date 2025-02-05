@@ -1,5 +1,5 @@
 use super::features::ALWAYS_OPEN_BEST_MATCH;
-use super::{errors, Config, Error, Repo, Scratchpad, Service};
+use super::{errors, Config, Error, Repo, Scratchpad, Service, TempTarget};
 use crate::{fs::to_native_path, search};
 use chrono::prelude::*;
 use std::env;
@@ -11,6 +11,8 @@ use mockall::automock;
 
 #[cfg_attr(test, automock)]
 pub trait Resolver: Send + Sync {
+    fn get_temp(&self, keep: bool) -> Result<TempTarget, Error>;
+
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error>;
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error>;
     fn get_current_scratchpad(&self) -> Result<Scratchpad, Error>;
@@ -36,6 +38,11 @@ impl From<Arc<Config>> for TrueResolver {
 }
 
 impl Resolver for TrueResolver {
+    #[tracing::instrument(err, skip(self))]
+    fn get_temp(&self, keep: bool) -> Result<TempTarget, Error> {
+        TempTarget::new(keep)
+    }
+
     #[tracing::instrument(err, skip(self))]
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
         let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
