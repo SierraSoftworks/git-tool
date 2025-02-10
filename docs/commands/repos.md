@@ -59,7 +59,7 @@ gt o vs
 # Open a repository in VS Code
 gt o gh:SierraSoftworks/git-tool code
 ```
- 
+
 ::: tip
 If you are already inside a repository, you can specify only an app and it will launch in the
 context of the current repo, like `gt o vs` in the example above. *This can be very useful if
@@ -161,7 +161,22 @@ new dev-box, this is the command for you.
 ```powershell
 # Clone a repository into the appropriate folder
 gt clone gh:SierraSoftworks/git-tool
+
+# Clone a series of repositories into the appropriate folders
+# The repositories.txt file should contain a list of repositories, one per line
+# e.g.
+#   gh:SierraSoftworks/git-tool
+#   gh:SierraSoftworks/tailscale-udm
+#   gh:SierraSoftworks/vue-template
+gt clone @repositories.txt
 ```
+
+::: tip
+As of <Badge text="v3.7.0+"/>, you can use the `@` symbol to specify a file
+containing a list of repositories to clone. This can be paired with
+[`gt list -q`](#list) to quickly backup and restore your list of local repositories,
+or setup a new machine.
+:::
 
 ## fix <Badge text="v2.1.4+"/>
 Git-Tool usually takes care of setting up your git `origin` remote, however sometimes you

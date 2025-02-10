@@ -2,6 +2,7 @@ use super::*;
 use crate::core::Target;
 use crate::tasks::*;
 use clap::Arg;
+use std::path::PathBuf;
 use tracing_batteries::prelude::*;
 
 pub struct CloneCommand;
@@ -31,12 +32,46 @@ impl CommandRunnable for CloneCommand {
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
 
-        let repo = core.resolver().get_best_repo(repo_name)?;
+        if repo_name.starts_with('@') {
+            // Load the list of repos to clone from a file
+            let file_path: PathBuf = repo_name[1..].parse().map_err(|e| {
+                errors::user_with_internal(
+                    "The specified file path is not valid.",
+                    "Please make sure you are specifying a valid file path for your import file.",
+                    e,
+                )
+            })?;
 
-        if !repo.exists() {
-            match sequence![GitClone {}].apply_repo(core, &repo).await {
-                Ok(()) => {}
-                Err(e) => return Err(e),
+            let file = std::fs::read_to_string(&file_path).map_err(|e| {
+                errors::user_with_internal(
+                    "Could not read the specified clone file.",
+                    "Please make sure the file exists and is readable.",
+                    e,
+                )
+            })?;
+
+            let operation = sequence![GitClone {}];
+
+            for line in file.lines() {
+                if line.trim_start().is_empty() || line.trim_start().starts_with('#') {
+                    continue;
+                }
+
+                let repo = core.resolver().get_best_repo(line.trim())?;
+                writeln!(core.output(), "{}", repo)?;
+                match operation.apply_repo(core, &repo).await {
+                    Ok(()) => {}
+                    Err(e) => return Err(e),
+                }
+            }
+        } else {
+            let repo = core.resolver().get_best_repo(repo_name)?;
+
+            if !repo.exists() {
+                match sequence![GitClone {}].apply_repo(core, &repo).await {
+                    Ok(()) => {}
+                    Err(e) => return Err(e),
+                }
             }
         }
 
@@ -114,6 +149,63 @@ features:
                 mock.expect_get_best_repo()
                     .once()
                     .with(mockall::predicate::eq("repo"))
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
+                    });
+            })
+            .build();
+
+        match cmd.run(&core, &args).await {
+            Ok(status) => {
+                assert_eq!(status, 0);
+            }
+            Err(err) => panic!("{}", err.message()),
+        }
+    }
+
+    #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
+    async fn run_batch() {
+        let cmd = CloneCommand {};
+
+        let temp = tempdir().unwrap();
+
+        let args = cmd.app().get_matches_from(vec![
+            "clone",
+            format!("@{}", temp.path().join("import.txt").display()).as_str(),
+        ]);
+
+        let cfg = Config::from_str(
+            "
+    directory: /dev
+
+    apps:
+      - name: test-app
+        command: test
+        args:
+            - '{{ .Target.Name }}'
+
+    features:
+      http_transport: true
+    ",
+        )
+        .unwrap();
+
+        let temp_path = temp.path().to_path_buf();
+
+        std::fs::write(temp.path().join("import.txt"), "gh:git-fixtures/basic")
+            .expect("writing should succeed");
+
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_launcher(|mock| {
+                mock.expect_run().never();
+            })
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                mock.expect_get_best_repo()
+                    .once()
+                    .with(mockall::predicate::eq("gh:git-fixtures/basic"))
                     .returning(move |_| {
                         Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
                     });
