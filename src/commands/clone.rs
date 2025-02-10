@@ -32,9 +32,9 @@ impl CommandRunnable for CloneCommand {
             "You didn't specify the repository you wanted to clone.",
             "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
 
-        if repo_name.starts_with('@') {
+        if let Some(file_path) = repo_name.strip_prefix('@') {
             // Load the list of repos to clone from a file
-            let file_path: PathBuf = repo_name[1..].parse().map_err(|e| {
+            let file_path: PathBuf = file_path.parse().map_err(|e| {
                 errors::user_with_internal(
                     "The specified file path is not valid.",
                     "Please make sure you are specifying a valid file path for your import file.",
