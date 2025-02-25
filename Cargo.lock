@@ -644,7 +644,7 @@ dependencies = [
  "directories-next",
  "futures",
  "gtmpl",
- "http 0.2.12",
+ "http 1.2.0",
  "human-errors",
  "inventory",
  "itertools 0.14.0",
