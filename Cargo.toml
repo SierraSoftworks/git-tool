@@ -37,7 +37,7 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
 shell-words = "1.1"
-tempfile = "3.18"
+tempfile = "3.19"
 tokio = { version = "1.44", features = [
   "rt",
   "time",
