@@ -78,7 +78,7 @@ mod tests {
             temp.path().join("repo"),
         );
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_mock_http_client(crate::online::service::github::mocks::get_repo_exists(
                 "sierrasoftworks/test-git-remote",
@@ -105,7 +105,7 @@ mod tests {
             temp.path().join("repo"),
         );
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_mock_http_client(crate::online::service::github::mocks::get_repo_not_exists(
                 "sierrasoftworks/test-git-remote",
@@ -128,7 +128,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .build();
 

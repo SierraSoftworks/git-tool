@@ -32,11 +32,7 @@ impl CommandRunnable for AuthCommand {
     }
 
     #[tracing::instrument(name = "gt auth", err, skip(self, core, matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error> {
         let service = matches.get_one::<String>("service").ok_or_else(|| {
             errors::user(
             "You have not provided the name of the service you wish to authenticate.",
@@ -58,7 +54,7 @@ impl CommandRunnable for AuthCommand {
                 let token = match matches.get_one::<String>("token") {
                     Some(token) => token.to_string(),
                     None => {
-                        if let Some(online_service) = crate::online::service::services()
+                        if let Some(online_service) = online::service::services()
                             .iter()
                             .find(|s| s.handles(svc))
                             .cloned()
@@ -77,9 +73,7 @@ impl CommandRunnable for AuthCommand {
                 core.keychain().set_token(service, &token)?;
 
                 writeln!(core.output(), "Access Token set for service '{service}'")?;
-                if let Some(online_service) =
-                    crate::online::services().iter().find(|s| s.handles(svc))
-                {
+                if let Some(online_service) = online::services().iter().find(|s| s.handles(svc)) {
                     writeln!(core.output(), "Testing authentication token...")?;
                     online_service.test(core, svc).await?;
                     writeln!(core.output(), "Authentication token is valid.")?;

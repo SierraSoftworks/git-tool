@@ -64,7 +64,7 @@ impl CommandRunnable for ScratchCommand {
         }
 
         let status = core.launcher().run(app, &scratchpad).await?;
-        return Ok(status);
+        Ok(status)
     }
 
     #[tracing::instrument(

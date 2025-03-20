@@ -17,11 +17,7 @@ impl CommandRunnable for ServicesCommand {
     }
 
     #[tracing::instrument(name = "gt services", err, skip(self, core, _matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        _matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, core::Error> {
         let mut output = core.output();
 
         for svc in core.config().get_services() {

@@ -35,9 +35,9 @@ mod tests {
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn test_repo_basic() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new("gh:git-fixtures/basic", temp.path().into());
+        let repo = Repo::new("gh:git-fixtures/basic", temp.path().into());
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .build();
 
@@ -64,9 +64,9 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let scratch = Scratchpad::new("2019w15", temp.path().join("scratch"));
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .build();
 

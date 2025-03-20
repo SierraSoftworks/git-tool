@@ -27,11 +27,7 @@ impl CommandRunnable for CompleteCommand {
     }
 
     #[tracing::instrument(name = "gt complete", err, skip(self, core, matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
 where {
         let position: Option<usize> = matches.get_one::<usize>("position").copied();
 

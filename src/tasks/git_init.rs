@@ -38,9 +38,9 @@ mod tests {
     #[tokio::test]
     async fn test_repo() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new("gh:sierrasoftworks/test-git-init", temp.path().join("repo"));
+        let repo = Repo::new("gh:sierrasoftworks/test-git-init", temp.path().join("repo"));
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .build();
         let task = GitInit {};
@@ -52,9 +52,9 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let scratch = Scratchpad::new("2019w15", temp.path().join("scratch"));
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .build();
         let task = GitInit {};

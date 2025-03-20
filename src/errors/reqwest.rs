@@ -1,8 +1,8 @@
 use super::{system_with_internal, user, user_with_internal, Error};
 use http::{uri::InvalidUri, StatusCode};
-use std::{convert, fmt::Debug};
+use std::fmt::Debug;
 
-impl convert::From<InvalidUri> for Error {
+impl From<InvalidUri> for Error {
     fn from(err: InvalidUri) -> Self {
         user_with_internal(
             "We could not parse the URL.",
@@ -12,7 +12,7 @@ impl convert::From<InvalidUri> for Error {
     }
 }
 
-impl convert::From<reqwest::Error> for Error {
+impl From<reqwest::Error> for Error {
     fn from(err: reqwest::Error) -> Self {
         if err.is_redirect() {
             user_with_internal(
@@ -33,7 +33,7 @@ impl convert::From<reqwest::Error> for Error {
     }
 }
 
-impl convert::From<reqwest::Response> for Error {
+impl From<reqwest::Response> for Error {
     fn from(resp: reqwest::Response) -> Self {
         match resp.status() {
             StatusCode::NOT_FOUND => user(
@@ -53,7 +53,7 @@ impl convert::From<reqwest::Response> for Error {
     }
 }
 
-impl convert::From<http::header::InvalidHeaderValue> for Error {
+impl From<http::header::InvalidHeaderValue> for Error {
     fn from(err: http::header::InvalidHeaderValue) -> Self {
         system_with_internal(
             "Could not parse header value due to an internal error.",

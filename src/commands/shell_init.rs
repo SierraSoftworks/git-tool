@@ -37,11 +37,7 @@ impl CommandRunnable for ShellInitCommand {
     }
 
     #[tracing::instrument(name = "gt shell-init", err, skip(self, core, matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
 where {
         let mut output = core.output();
 

@@ -1,6 +1,6 @@
 use super::{user_with_internal, Error};
 
-impl std::convert::From<serde_yaml::Error> for Error {
+impl From<serde_yaml::Error> for Error {
     fn from(err: serde_yaml::Error) -> Self {
         user_with_internal(
             "We could not decode the YAML response correctly.",
@@ -10,7 +10,7 @@ impl std::convert::From<serde_yaml::Error> for Error {
     }
 }
 
-impl std::convert::From<serde_json::Error> for Error {
+impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
         user_with_internal(
             "We could not decode the JSON response correctly.",

@@ -89,12 +89,12 @@ impl TrueLauncher {
 
     #[cfg(unix)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
-        let child_id = child.id().ok_or_else(|| crate::errors::user(
+        let child_id = child.id().ok_or_else(|| errors::user(
             "Unable to determine the child process's PID because the child process has already exited.",
             "This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."
         ))?;
 
-        let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| crate::errors::system_with_internal(
+        let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| errors::system_with_internal(
             "Unable to convert child process ID to a valid PID. This may impact Git-Tool's ability to forward signals to a child application.",
             "Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further.",
             err))?);

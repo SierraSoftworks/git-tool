@@ -55,7 +55,7 @@ impl CommandRunnable for TempCommand {
         let status = core.launcher().run(app, &temp).await?;
         temp.close()?;
 
-        return Ok(status);
+        Ok(status)
     }
 
     #[tracing::instrument(name = "gt complete -- gt temp", skip(self, core, completer, _matches))]

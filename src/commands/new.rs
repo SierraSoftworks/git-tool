@@ -134,7 +134,7 @@ mod tests {
                     .with(eq("gh"))
                     .returning(|_| Ok("test_token".into()));
             })
-            .with_mock_http_client(crate::online::service::github::mocks::get_repo_not_exists(
+            .with_mock_http_client(online::service::github::mocks::get_repo_not_exists(
                 "test/new-repo-partial",
             ))
             .build();
@@ -167,7 +167,7 @@ mod tests {
                     .with(eq("gh"))
                     .returning(|_| Ok("test_token".into()));
             })
-            .with_mock_http_client(crate::online::service::github::mocks::get_repo_not_exists(
+            .with_mock_http_client(online::service::github::mocks::get_repo_not_exists(
                 "test/new-repo-full",
             ))
             .build();

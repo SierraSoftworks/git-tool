@@ -47,7 +47,7 @@ mod tests {
         let seq = Sequence::new(vec![]);
         let repo = get_repo();
         let scratch = get_scratch();
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
@@ -62,7 +62,7 @@ mod tests {
         let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let repo = get_repo();
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
@@ -82,7 +82,7 @@ mod tests {
         let seq = Sequence::new(vec![task1.clone(), task2.clone()]);
 
         let scratch = get_scratch();
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config(Config::from_str("directory: /dev").unwrap())
             .build();
 
@@ -95,14 +95,14 @@ mod tests {
         }
     }
 
-    fn get_repo() -> core::Repo {
-        core::Repo::new(
+    fn get_repo() -> Repo {
+        Repo::new(
             "gh:sierrasoftworks/git-tool",
             std::path::PathBuf::from("/test/github.com/sierrasoftworks/git-tool"),
         )
     }
 
-    fn get_scratch() -> core::Scratchpad {
-        core::Scratchpad::new("2020w07", std::path::PathBuf::from("/test/scratch/2020w07"))
+    fn get_scratch() -> Scratchpad {
+        Scratchpad::new("2020w07", std::path::PathBuf::from("/test/scratch/2020w07"))
     }
 }

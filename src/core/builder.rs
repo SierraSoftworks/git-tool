@@ -56,14 +56,14 @@ impl CoreBuilderWithoutConfig {
 
 pub struct CoreBuilderWithConfig {
     pub(super) config: Arc<Config>,
-    pub(super) console: Arc<dyn console::ConsoleProvider + Send + Sync>,
+    pub(super) console: Arc<dyn ConsoleProvider + Send + Sync>,
     pub(super) launcher: Arc<dyn Launcher + Send + Sync>,
     pub(super) resolver: Arc<dyn Resolver + Send + Sync>,
     pub(super) keychain: Arc<dyn KeyChain + Send + Sync>,
     pub(super) http_client: Arc<dyn HttpClient + Send + Sync>,
 }
 
-impl std::convert::From<CoreBuilderWithConfig> for Core {
+impl From<CoreBuilderWithConfig> for Core {
     fn from(builder: CoreBuilderWithConfig) -> Core {
         builder.build()
     }
@@ -88,7 +88,7 @@ impl CoreBuilderWithConfig {
 
     #[cfg(test)]
     pub fn with_null_console(self) -> Self {
-        self.with_console(crate::console::null())
+        self.with_console(console::null())
     }
 
     pub fn with_launcher(self, launcher: Arc<dyn Launcher + Send + Sync>) -> Self {

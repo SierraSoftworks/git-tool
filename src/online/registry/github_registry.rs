@@ -6,7 +6,7 @@ use tracing_batteries::prelude::*;
 pub struct GitHubRegistry;
 
 impl GitHubRegistry {
-    async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, errors::Error> {
+    async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, Error> {
         let uri: reqwest::Url = url.parse().map_err(|e| {
             errors::system_with_internal(
                 &format!("Unable to parse GitHub API URL '{url}'."),

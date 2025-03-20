@@ -14,15 +14,15 @@ use crate::online::registry::EntryConfig;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(skip)]
-    config_file: Option<path::PathBuf>,
+    config_file: Option<PathBuf>,
 
     #[serde(rename = "$schema")]
     schema: Option<String>,
 
     #[serde(rename = "directory")]
-    dev_directory: path::PathBuf,
+    dev_directory: PathBuf,
     #[serde(default, rename = "scratchpads")]
-    scratch_directory: Option<path::PathBuf>,
+    scratch_directory: Option<PathBuf>,
 
     #[serde(default)]
     services: Vec<Arc<service::Service>>,
@@ -40,7 +40,7 @@ impl Config {
         match directories_next::ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
             Some(dir) => Some(dir.config_dir().join("config.yml")),
             None => {
-                tracing::warn!("Could not find a config directory for your OS. Using the current directory instead.");
+                warn!("Could not find a config directory for your OS. Using the current directory instead.");
                 None
             }
         }
@@ -115,7 +115,7 @@ impl Config {
         &self,
         template: EntryConfig,
         replace_existing: bool,
-    ) -> Result<Self, errors::Error> {
+    ) -> Result<Self, Error> {
         let mut into = self.clone();
 
         if let Some(app) = template.app {
@@ -151,7 +151,7 @@ impl Config {
     }
 
     #[cfg(test)]
-    pub fn for_dev_directory(dir: &path::Path) -> Self {
+    pub fn for_dev_directory(dir: &Path) -> Self {
         Self {
             config_file: None,
             dev_directory: dir.to_path_buf(),
@@ -162,7 +162,7 @@ impl Config {
     }
 
     #[cfg(test)]
-    pub fn from_str(yaml: &str) -> Result<Self, errors::Error> {
+    pub fn from_str(yaml: &str) -> Result<Self, Error> {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
@@ -175,7 +175,7 @@ impl Config {
     }
 
     #[tracing::instrument(name = "config:from_file" err, skip(path))]
-    pub fn from_file(path: &path::Path) -> Result<Self, errors::Error> {
+    pub fn from_file(path: &Path) -> Result<Self, Error> {
         let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
             &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
             "Check that your config file exists and is readable by the user running git-tool before trying again.",
@@ -188,17 +188,17 @@ impl Config {
         Ok(cfg)
     }
 
-    pub fn from_file_or_default(path: &path::Path) -> Self {
+    pub fn from_file_or_default(path: &Path) -> Self {
         match Self::from_file(path) {
             Ok(cfg) => cfg,
             Err(err) => {
-                tracing::warn!("Failed to load config file: {}", err);
+                warn!("Failed to load config file: {}", err);
                 Self::default().with_config_file(path)
             }
         }
     }
 
-    pub fn from_reader<R>(rdr: R) -> Result<Self, errors::Error>
+    pub fn from_reader<R>(rdr: R) -> Result<Self, Error>
     where
         R: std::io::Read,
     {
@@ -233,7 +233,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn to_string(&self) -> Result<String, errors::Error> {
+    pub fn to_string(&self) -> Result<String, Error> {
         let config = serde_yaml::to_string(self).map_err(|e| {
             errors::system_with_internal(
                 "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
@@ -250,15 +250,15 @@ impl Config {
         }
     }
 
-    pub fn get_config_file(&self) -> Option<path::PathBuf> {
+    pub fn get_config_file(&self) -> Option<PathBuf> {
         self.config_file.clone()
     }
 
-    pub fn get_dev_directory(&self) -> &path::Path {
+    pub fn get_dev_directory(&self) -> &Path {
         &self.dev_directory
     }
 
-    pub fn get_scratch_directory(&self) -> path::PathBuf {
+    pub fn get_scratch_directory(&self) -> PathBuf {
         match self.scratch_directory.clone() {
             Some(dir) => dir,
             None => self.get_dev_directory().join("scratch"),

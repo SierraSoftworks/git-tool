@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use opentelemetry::trace::SpanKind;
 use reqwest::{Client, Request, Response};
 use tracing_batteries::prelude::*;
 
@@ -44,7 +43,7 @@ impl HttpClient for TrueHttpClient {
         err,
         skip(self, req),
         fields(
-            otel.kind = ?SpanKind::Client,
+            otel.kind = ?OpenTelemetrySpanKind::Client,
             otel.status_code = 0,
             otel.status_message = EmptyField,
             http.method = %req.method(),

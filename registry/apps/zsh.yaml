@@ -3,7 +3,7 @@ name: zsh
 description: Launches the zsh shell within a project directory.
 version: 1.0.0
 configs:
-  - platform: all
+  - platform: any
     app:
       name: zsh
       command: zsh

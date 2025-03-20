@@ -6,10 +6,10 @@ extern crate clap;
 extern crate gtmpl;
 #[macro_use]
 extern crate lazy_static;
-extern crate tracing_batteries;
 #[macro_use]
 extern crate serde_json;
 extern crate tokio;
+extern crate tracing_batteries;
 
 use crate::commands::CommandRunnable;
 use crate::core::features;
@@ -45,11 +45,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let app = build_app();
 
         match host(app, session.enable()).await {
-            Result::Ok(status) => {
+            Ok(status) => {
                 session.shutdown();
                 status
             }
-            Result::Err(err) => {
+            Err(err) => {
                 if err.is_system() {
                     session.record_error(&err);
                 }

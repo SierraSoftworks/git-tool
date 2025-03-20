@@ -33,11 +33,7 @@ impl CommandRunnable for SetupCommand {
     }
 
     #[tracing::instrument(name = "gt setup", err, skip(self, core, matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, Error> {
         if core.config().file_exists() && !matches.get_flag("force") {
             Err(errors::user(
                 &format!("You already have a Git-Tool config file ({}) which will not be modified.", core.config().get_config_file().unwrap().display()),

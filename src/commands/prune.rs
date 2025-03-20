@@ -110,7 +110,6 @@ impl CommandRunnable for PruneCommand {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::core::builder::CoreBuilderWithConfig;
     use crate::core::*;
@@ -136,7 +135,7 @@ mod tests {
         core: CoreBuilderWithConfig,
         temp: &tempfile::TempDir,
     ) -> (Core, Repo) {
-        let repo: Repo = core::Repo::new(
+        let repo: Repo = Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo"),
         );
@@ -146,7 +145,7 @@ mod tests {
             .with_mock_resolver(|mock| {
                 let repo_path = repo_path.clone();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(core::Repo::new(
+                    Ok(Repo::new(
                         "gh:sierrasoftworks/test-git-switch-command",
                         repo_path.clone(),
                     ))
@@ -154,7 +153,7 @@ mod tests {
             })
             .build();
 
-        let origin_repo = core::Repo::new(
+        let origin_repo = Repo::new(
             "gh:sierrasoftworks/test-git-switch-command2",
             temp.path().join("repo2"),
         );
@@ -240,11 +239,11 @@ mod tests {
     async fn prune_completions() {
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
-        crate::git::git_cmd(
+        git::git_cmd(
             tokio::process::Command::new("git")
                 .current_dir(repo.get_path())
                 .arg("merge")
@@ -271,7 +270,7 @@ mod tests {
         )
         .await;
 
-        crate::git::git_cmd(
+        git::git_cmd(
             tokio::process::Command::new("git")
                 .current_dir(repo.get_path())
                 .arg("merge")
@@ -308,17 +307,17 @@ mod tests {
         let cmd: PruneCommand = PruneCommand {};
 
         let temp = tempdir().unwrap();
-        let repo: Repo = core::Repo::new(
+        let repo: Repo = Repo::new(
             "gh:sierrasoftworks/test-git-prune-command",
             temp.path().join("repo"),
         );
 
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_mock_resolver(|mock| {
                 let temp_path = temp.path().to_path_buf();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(core::Repo::new(
+                    Ok(Repo::new(
                         "gh:sierrasoftworks/test-git-prune-command",
                         temp_path.join("repo"),
                     ))

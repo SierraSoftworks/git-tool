@@ -1,6 +1,6 @@
 use super::{system_with_internal, Error};
 
-impl std::convert::From<base64::DecodeError> for Error {
+impl From<base64::DecodeError> for Error {
     fn from(err: base64::DecodeError) -> Self {
         system_with_internal(
             "We could not decode a base64 response correctly.",

@@ -18,11 +18,7 @@ impl CommandRunnable for AppsCommand {
     }
 
     #[tracing::instrument(name = "gt apps", err, skip(self, core, _matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        _matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, core::Error> {
         for app in core.config().get_apps() {
             writeln!(core.output(), "{}", app.get_name())?;
         }
