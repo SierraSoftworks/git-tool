@@ -1,8 +1,7 @@
 use super::{system_with_internal, user_with_internal, Error};
-use std::convert;
 use std::io;
 
-impl convert::From<io::Error> for Error {
+impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         match err.kind() {
             io::ErrorKind::NotFound => user_with_internal(

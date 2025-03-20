@@ -18,11 +18,7 @@ impl CommandRunnable for DoctorCommand {
     }
 
     #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        _matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error> {
+    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, core::Error> {
         writeln!(core.output(), "Checking environment...")?;
 
         if core.config().file_exists() {
@@ -51,8 +47,7 @@ impl CommandRunnable for DoctorCommand {
         }
 
         for svc in core.config().get_services() {
-            if let Some(online_service) = crate::online::services().iter().find(|s| s.handles(svc))
-            {
+            if let Some(online_service) = online::services().iter().find(|s| s.handles(svc)) {
                 match online_service.test(core, svc).await {
                     Ok(_) => {
                         writeln!(core.output(), "[OK] Access to '{}' is working", &svc.name)?;
@@ -77,7 +72,7 @@ impl CommandRunnable for DoctorCommand {
         name = "gt complete -- gt doctor",
         skip(self, _core, _completer, _matches)
     )]
-    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &clap::ArgMatches) {}
+    async fn complete(&self, _core: &Core, _completer: &Completer, _matches: &ArgMatches) {}
 }
 
 #[cfg(test)]

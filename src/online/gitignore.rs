@@ -97,7 +97,7 @@ struct GitIgnoreFileSection {
 }
 
 #[allow(clippy::from_over_into)]
-impl std::convert::Into<String> for GitIgnoreFileSection {
+impl Into<String> for GitIgnoreFileSection {
     fn into(self) -> String {
         if self.languages.is_empty() {
             return self.prologue;

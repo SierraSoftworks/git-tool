@@ -2,8 +2,8 @@
 name = "git-tool"
 version = "3.7.0"
 authors = [
-  "Benjamin Pannell <benjamin@pannell.dev>",
-  "Aideen Fay <me@aideen.dev>",
+    "Benjamin Pannell <benjamin@pannell.dev>",
+    "Aideen Fay <me@aideen.dev>",
 ]
 edition = "2021"
 
@@ -18,19 +18,18 @@ clap = { version = "4.5.32", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
-human-errors = "0.1.5"
 http = "0.2"
+human-errors = "0.1.5"
 inventory = "0.3.20"
 itertools = "0.14"
 keyring = { version = "3.6.2", optional = true }
 lazy_static = "1.5"
 nix = { version = "0.29.0", features = ["process", "signal"] }
-once_cell = "1.21"
 rpassword = { version = "7.3", optional = true }
 reqwest = { version = "0.11.27", default-features = false, features = [
-  "rustls-tls",
-  "json",
-  "stream",
+    "rustls-tls",
+    "json",
+    "stream",
 ] }
 semver = "1.0"
 serde = { version = "1.0", features = ["derive", "rc"] }
@@ -39,23 +38,23 @@ serde_yaml = "0.9"
 shell-words = "1.1"
 tempfile = "3.19"
 tokio = { version = "1.44", features = [
-  "rt",
-  "time",
-  "fs",
-  "process",
-  "macros",
-  "signal",
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "fs",
+    "process",
+    "macros",
+    "signal",
 ] }
 tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git" }
-trust-dns-resolver = { version = "0.23", features = ["tokio-runtime"] }
 
 [dev-dependencies]
 mockall = "0.13.1"
 sentry = { version = "0.36", default-features = false, features = [
-  "reqwest",
-  "rustls",
-  "log",
-  "test",
+    "reqwest",
+    "rustls",
+    "log",
+    "test",
 ] }
 
 [features]

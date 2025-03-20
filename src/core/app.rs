@@ -86,7 +86,7 @@ impl AppBuilder {
     }
 }
 
-impl std::convert::From<&mut AppBuilder> for App {
+impl From<&mut AppBuilder> for App {
     fn from(builder: &mut AppBuilder) -> Self {
         if builder.name.is_empty() {
             panic!("cannot construct an app with an empty name")

@@ -6,7 +6,7 @@ pub enum LaunchTarget<'a> {
     AppAndTarget(&'a App, &'a str),
     App(&'a App),
     Target(&'a str),
-    Err(errors::Error),
+    Err(Error),
     None,
 }
 

@@ -6,9 +6,9 @@ use std::env;
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
+use crate::fs::get_child_directories;
 #[cfg(test)]
 use mockall::automock;
-use crate::fs::get_child_directories;
 
 #[cfg_attr(test, automock)]
 pub trait Resolver: Send + Sync {
@@ -106,20 +106,53 @@ impl Resolver for TrueResolver {
     }
 
     #[tracing::instrument(err, skip(self))]
-    fn get_current_repo(&self) -> Result<Repo, Error> {
-        let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
-            "Could not determine your current working directory due to an OS-level error.",
-            "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
-            err
-        ))?;
+    fn get_repos(&self) -> Result<Vec<Repo>, Error> {
+        let mut repos = vec![];
 
-        match self.get_repo_from_path(&cwd) {
-            Ok(repo) => Ok(repo),
-            Err(e) => Err(errors::user_with_cause(
-                &format!("Current directory ('{}') is not a valid repository.", cwd.display()),
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().display()),
-                e))
+        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
+            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
+            "Check that Git-Tool has permission to access this directory and try again.",
+            err
+        ))? {
+            match svc_dir {
+                Ok(dir) => {
+                    if dir.file_type().map_err(|err| errors::user_with_internal(
+                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
+                        "Check that Git-Tool has permission to access this directory and try again.",
+                        err
+                    ))?.is_dir() {
+                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
+                            repos.extend(self.get_repos_for(svc)?);
+                        }
+                    }
+                },
+                Err(e) => return Err(errors::system_with_internal(
+                    "We were unable to access your development directory.",
+                    "Please make sure that your development directory exists and that git-tool has permission to access it.",
+                    e))
+            }
         }
+
+        Ok(repos)
+    }
+
+    #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
+    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
+        if !&svc.pattern.split('/').all(|p| p == "*") {
+            return Err(errors::user(
+                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
+                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
+        }
+
+        let path = self.config.get_dev_directory().join(&svc.name);
+
+        let repos = get_child_directories(&path, &svc.pattern)
+            .iter()
+            .map(|p| self.get_repo_from_path(p))
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(repos)
     }
 
     #[tracing::instrument(err, skip(self, name))]
@@ -156,54 +189,21 @@ impl Resolver for TrueResolver {
         }
     }
 
-    #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
-    fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
-        if !&svc.pattern.split('/').all(|p| p == "*") {
-            return Err(errors::user(
-                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
-                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
-        }
-
-        let path = self.config.get_dev_directory().join(&svc.name);
-
-        let repos = get_child_directories(&path, &svc.pattern)
-            .iter()
-            .map(|p| self.get_repo_from_path(p))
-            .filter_map(|r| r.ok())
-            .collect();
-
-        Ok(repos)
-    }
-
     #[tracing::instrument(err, skip(self))]
-    fn get_repos(&self) -> Result<Vec<Repo>, Error> {
-        let mut repos = vec![];
-
-        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
-            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
-            "Check that Git-Tool has permission to access this directory and try again.",
+    fn get_current_repo(&self) -> Result<Repo, Error> {
+        let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
+            "Could not determine your current working directory due to an OS-level error.",
+            "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
             err
-        ))? {
-            match svc_dir {
-                Ok(dir) => {
-                    if dir.file_type().map_err(|err| errors::user_with_internal(
-                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
-                        "Check that Git-Tool has permission to access this directory and try again.",
-                        err
-                    ))?.is_dir() {
-                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
-                            repos.extend(self.get_repos_for(svc)?);
-                        }
-                    }
-                },
-                Err(e) => return Err(errors::system_with_internal(
-                    "We were unable to access your development directory.",
-                    "Please make sure that your development directory exists and that git-tool has permission to access it.",
-                    e))
-            }
-        }
+        ))?;
 
-        Ok(repos)
+        match self.get_repo_from_path(&cwd) {
+            Ok(repo) => Ok(repo),
+            Err(e) => Err(errors::user_with_cause(
+                &format!("Current directory ('{}') is not a valid repository.", cwd.display()),
+                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().display()),
+                e))
+        }
     }
 }
 

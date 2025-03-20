@@ -20,13 +20,11 @@
   outputs = { self, nixpkgs, crane, flake-utils, advisory-db, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
+        pkgs = nixpkgs.legacyPackages.${system};
 
         inherit (pkgs) lib stdenv;
 
-        craneLib = crane.lib.${system};
+        craneLib = crane.mkLib pkgs;
         src = let
           # Only keeps markdown files
           testDataFilter = path: _type: builtins.match ".*/src/test/.*$" path != null;

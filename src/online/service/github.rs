@@ -175,7 +175,7 @@ impl GitHubService {
                     return Ok(Ok(result));
                 }
                 Ok(resp) if remaining_attempts > 0 && retryable.contains(&resp.status()) => {
-                    tracing::warn!(
+                    warn!(
                         "GitHub API request failed with status code {}. Retrying...",
                         resp.status()
                     );
@@ -202,7 +202,7 @@ impl GitHubService {
                     return Ok(Err(result));
                 }
                 Err(error) if remaining_attempts > 0 => {
-                    tracing::warn!(
+                    warn!(
                         "GitHub API request failed with error {}. Retrying...",
                         error
                     );
@@ -249,29 +249,29 @@ struct GitHubErrorResponse {
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<errors::Error> for GitHubErrorResponse {
-    fn into(self) -> errors::Error {
+impl Into<Error> for GitHubErrorResponse {
+    fn into(self) -> Error {
         match self.http_status_code {
-            http::StatusCode::UNAUTHORIZED => {
+            StatusCode::UNAUTHORIZED => {
                 errors::user(
                     "You have not provided a valid authentication token for github.com.",
                     "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.")
             },
-            http::StatusCode::FORBIDDEN => {
+            StatusCode::FORBIDDEN => {
                 errors::user_with_internal(
                     &format!("You do not have permission to perform this action on GitHub: {}", self.message),
                     "Check your GitHub account permissions for this organization or repository and try again.",
                     errors::detailed_message(&format!("{self:?}")),
                 )
             },
-            http::StatusCode::NOT_FOUND => {
+            StatusCode::NOT_FOUND => {
                 errors::user_with_internal(
                     "We could not create the GitHub repo because the organization or user you specified could not be found.",
                     "Check that you have specified the correct organization or user in the repository name and try again.",
                     errors::detailed_message(&format!("{self:?}"))
                 )
             },
-            http::StatusCode::TOO_MANY_REQUESTS => {
+            StatusCode::TOO_MANY_REQUESTS => {
                 errors::user(
                     "GitHub has rate limited requests from your IP address.",
                     "Please wait until GitHub removes this rate limit before trying again.")

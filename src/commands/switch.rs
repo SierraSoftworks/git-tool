@@ -43,7 +43,7 @@ impl CommandRunnable for SwitchCommand {
 
         match matches.get_one::<String>("branch") {
             Some(branch) => {
-                let task = tasks::GitSwitch {
+                let task = GitSwitch {
                     branch: branch.to_string(),
                     create_if_missing: !matches.get_flag("no-create"),
                 };
@@ -54,7 +54,7 @@ impl CommandRunnable for SwitchCommand {
                 let branches = git::git_branches(&repo.get_path()).await?;
                 for branch in branches
                     .iter()
-                    .map(|v| Self::to_local_branch_name(v))
+                    .map(|v| Self::local_branch_name(v))
                     .unique()
                     .sorted()
                 {
@@ -76,7 +76,7 @@ impl CommandRunnable for SwitchCommand {
                 completer.offer_many(
                     branches
                         .iter()
-                        .map(|v| Self::to_local_branch_name(v))
+                        .map(|v| Self::local_branch_name(v))
                         .unique()
                         .sorted(),
                 );
@@ -86,7 +86,7 @@ impl CommandRunnable for SwitchCommand {
 }
 
 impl SwitchCommand {
-    fn to_local_branch_name(branch: &str) -> String {
+    fn local_branch_name(branch: &str) -> String {
         if let Some(short_branch) = branch.strip_prefix("origin/") {
             short_branch.to_owned()
         } else {
@@ -97,7 +97,6 @@ impl SwitchCommand {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::core::{builder::CoreBuilderWithConfig, *};
     use complete::helpers::test_completions_with_core;
@@ -120,7 +119,7 @@ mod tests {
         core: CoreBuilderWithConfig,
         temp: &tempfile::TempDir,
     ) -> (Core, Repo) {
-        let repo: Repo = core::Repo::new(
+        let repo: Repo = Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo"),
         );
@@ -130,7 +129,7 @@ mod tests {
             .with_mock_resolver(|mock| {
                 let repo_path = repo_path.clone();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(core::Repo::new(
+                    Ok(Repo::new(
                         "gh:sierrasoftworks/test-git-switch-command",
                         repo_path.clone(),
                     ))
@@ -138,37 +137,37 @@ mod tests {
             })
             .build();
 
-        let origin_repo = core::Repo::new(
+        let origin_repo = Repo::new(
             "gh:sierrasoftworks/test-git-switch-command2",
             temp.path().join("repo2"),
         );
 
         sequence!(
             // Run a `git init` to setup the repo
-            tasks::GitInit {},
-            tasks::GitRemote { name: "origin" },
+            GitInit {},
+            GitRemote { name: "origin" },
             // Create the branch we want to switch to
-            tasks::GitCheckout {
+            GitCheckout {
                 branch: "feature/test",
             },
-            tasks::WriteFile {
+            WriteFile {
                 path: "README.md".into(),
                 content: "This is an example README file.",
             },
-            tasks::GitAdd {
+            GitAdd {
                 paths: vec!["README.md"],
             },
-            tasks::GitCommit {
+            GitCommit {
                 message: "Add README.md",
                 paths: vec!["README.md"],
             },
-            tasks::GitCheckout { branch: "main" }
+            GitCheckout { branch: "main" }
         )
         .apply_repo(&core, &origin_repo)
         .await
         .unwrap();
 
-        sequence!(tasks::GitInit {}, tasks::GitRemote { name: "origin" })
+        sequence!(GitInit {}, GitRemote { name: "origin" })
             .apply_repo(&core, &repo)
             .await
             .unwrap();
@@ -184,15 +183,15 @@ mod tests {
         git::git_fetch(&repo.get_path(), "origin").await.unwrap();
 
         sequence!(
-            tasks::GitCheckout { branch: "main" },
-            tasks::WriteFile {
+            GitCheckout { branch: "main" },
+            WriteFile {
                 path: "README.md".into(),
                 content: "This is an example README file with some changes.",
             },
-            tasks::GitAdd {
+            GitAdd {
                 paths: vec!["README.md"],
             },
-            tasks::GitCommit {
+            GitCommit {
                 message: "Update README.md",
                 paths: vec!["README.md"],
             }
@@ -209,7 +208,7 @@ mod tests {
     async fn switch_completions() {
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, _repo) = setup_test_repo_with_remote(core, &temp).await;
 
@@ -222,15 +221,15 @@ mod tests {
 
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
         sequence!(
-            tasks::GitCheckout {
+            GitCheckout {
                 branch: "feature/test"
             },
-            tasks::GitCheckout { branch: "main" }
+            GitCheckout { branch: "main" }
         )
         .apply_repo(&core, &repo)
         .await
@@ -252,7 +251,7 @@ mod tests {
 
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
@@ -285,7 +284,7 @@ mod tests {
 
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
@@ -307,7 +306,7 @@ mod tests {
         let cmd: SwitchCommand = SwitchCommand {};
 
         let temp = tempdir().unwrap();
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, _repo) = setup_test_repo_with_remote(core, &temp).await;
 
@@ -325,7 +324,7 @@ mod tests {
 
         let temp = tempdir().unwrap();
 
-        let core = core::Core::builder().with_config_for_dev_directory(temp.path());
+        let core = Core::builder().with_config_for_dev_directory(temp.path());
 
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
@@ -345,18 +344,18 @@ mod tests {
         let cmd: SwitchCommand = SwitchCommand {};
 
         let temp = tempdir().unwrap();
-        let repo: Repo = core::Repo::new(
+        let repo: Repo = Repo::new(
             "gh:sierrasoftworks/test-git-switch-command",
             temp.path().join("repo"),
         );
 
         let repo_path = repo.get_path();
-        let core = core::Core::builder()
+        let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_mock_resolver(|mock| {
                 let repo_path = repo_path.clone();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(core::Repo::new(
+                    Ok(Repo::new(
                         "gh:sierrasoftworks/test-git-switch-command",
                         repo_path.clone(),
                     ))
@@ -365,7 +364,7 @@ mod tests {
             .build();
 
         // Run a `git init` to setup the repo
-        tasks::GitInit {}.apply_repo(&core, &repo).await.unwrap();
+        GitInit {}.apply_repo(&core, &repo).await.unwrap();
 
         assert!(repo.valid(), "the repository should exist and be valid");
 

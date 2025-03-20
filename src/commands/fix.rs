@@ -121,9 +121,7 @@ mod tests {
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_null_console()
-            .with_mock_http_client(crate::online::service::github::mocks::repo_created(
-                "exampleB",
-            ))
+            .with_mock_http_client(online::service::github::mocks::repo_created("exampleB"))
             .with_mock_keychain(|mock| {
                 mock.expect_get_token()
                     .with(eq("gh"))

@@ -50,7 +50,7 @@ struct RepoWithService<'a> {
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
+impl<'a> Into<Value> for RepoWithService<'a> {
     fn into(self) -> Value {
         let service: Value = self.service.into();
 
@@ -79,7 +79,7 @@ impl<'a> std::convert::Into<Value> for RepoWithService<'a> {
 }
 
 #[allow(clippy::from_over_into)]
-impl std::convert::Into<Value> for &Service {
+impl Into<Value> for &Service {
     fn into(self) -> Value {
         Value::Object(map! {
             "Name" => Value::String(self.name.clone()),
@@ -91,7 +91,7 @@ impl std::convert::Into<Value> for &Service {
 }
 
 #[allow(clippy::from_over_into)]
-impl std::convert::Into<Value> for &Repo {
+impl Into<Value> for &Repo {
     fn into(self) -> Value {
         let service = Value::Object(map! {
             "Domain" => Value::String(self.service.clone()),
@@ -124,7 +124,7 @@ impl std::convert::Into<Value> for &Repo {
 }
 
 #[allow(clippy::from_over_into)]
-impl std::convert::Into<Value> for &Scratchpad {
+impl Into<Value> for &Scratchpad {
     fn into(self) -> Value {
         Value::Object(map! {
             "Target" => Value::Object(map!{
@@ -139,7 +139,7 @@ impl std::convert::Into<Value> for &Scratchpad {
 }
 
 #[allow(clippy::from_over_into)]
-impl std::convert::Into<Value> for &TempTarget {
+impl Into<Value> for &TempTarget {
     fn into(self) -> Value {
         Value::Object(map! {
             "Target" => Value::Object(map!{

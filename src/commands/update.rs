@@ -35,11 +35,7 @@ impl CommandRunnable for UpdateCommand {
     }
 
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
-    async fn run(
-        &self,
-        core: &Core,
-        matches: &clap::ArgMatches,
-    ) -> Result<i32, crate::core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
 where {
         let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
             "Could not parse the current application version into a SemVer version number.",

@@ -7,7 +7,7 @@ use tracing_batteries::prelude::*;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-pub struct UpdateManager<S = super::github::GitHubSource>
+pub struct UpdateManager<S = GitHubSource>
 where
     S: Source,
 {
@@ -181,7 +181,7 @@ where
 
     #[cfg(unix)]
     #[tracing::instrument(err, skip(self, file))]
-    fn prepare_app_file(&self, file: &std::path::Path) -> Result<(), errors::Error> {
+    fn prepare_app_file(&self, file: &Path) -> Result<(), errors::Error> {
         let mut perms = std::fs::metadata(file).map_err(|err| {
             errors::user_with_internal(
                 &format!(

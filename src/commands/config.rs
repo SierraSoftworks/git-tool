@@ -92,7 +92,7 @@ impl CommandRunnable for ConfigCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         match matches.subcommand() {
             Some(("list", _args)) => {
-                let registry = crate::online::GitHubRegistry;
+                let registry = online::GitHubRegistry;
 
                 let entries = registry.get_entries(core).await?;
                 let mut output = core.output();
@@ -108,7 +108,7 @@ impl CommandRunnable for ConfigCommand {
                     )
                 })?;
 
-                let registry = crate::online::GitHubRegistry;
+                let registry = online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
 
                 writeln!(core.output(), "Applying {}", entry.name)?;
