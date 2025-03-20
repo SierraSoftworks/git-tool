@@ -8,6 +8,7 @@ use tracing_batteries::prelude::*;
 
 #[cfg(test)]
 use mockall::automock;
+use crate::fs::get_child_directories;
 
 #[cfg_attr(test, automock)]
 pub trait Resolver: Send + Sync {
@@ -312,44 +313,6 @@ fn repo_from_svc_and_path(
     }
 }
 
-fn get_child_directories(from: &std::path::PathBuf, pattern: &str) -> Vec<std::path::PathBuf> {
-    let depth = pattern.split('/').count();
-
-    get_directory_tree_to_depth(from, depth)
-}
-
-fn get_directory_tree_to_depth(from: &std::path::PathBuf, depth: usize) -> Vec<std::path::PathBuf> {
-    if depth == 0 {
-        return vec![from.to_owned()];
-    }
-
-    debug!(
-        "Enumerating child directories of '{}' to depth {}",
-        from.display(),
-        depth
-    );
-
-    from.read_dir()
-        .map(|dirs| {
-            dirs.filter_map(|dir| match dir {
-                Ok(d) => match d.file_type() {
-                    Ok(ft) => {
-                        if ft.is_dir() {
-                            Some(d.path())
-                        } else {
-                            None
-                        }
-                    }
-                    Err(_) => None,
-                },
-                Err(_) => None,
-            })
-            .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
-            .collect()
-        })
-        .unwrap()
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::Target;
@@ -581,30 +544,6 @@ mod tests {
                 .join("sierrasoftworks")
                 .join("test1")
         );
-    }
-
-    #[test]
-    fn get_child_directories() {
-        let children = super::get_child_directories(&get_dev_dir().join("gh"), "*/*");
-
-        assert_eq!(children.len(), 5);
-
-        assert!(children.iter().any(|p| p
-            == &get_dev_dir()
-                .join("gh")
-                .join("sierrasoftworks")
-                .join("test1")));
-        assert!(children.iter().any(|p| p
-            == &get_dev_dir()
-                .join("gh")
-                .join("sierrasoftworks")
-                .join("test2")));
-        assert!(children
-            .iter()
-            .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test1")));
-        assert!(children
-            .iter()
-            .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
     }
 
     fn get_resolver() -> Arc<dyn Resolver + Send + Sync> {
