@@ -70,8 +70,8 @@ pub fn get_directory_tree_to_depth(from: &Path, depth: usize) -> Vec<PathBuf> {
                 },
                 Err(_) => None,
             })
-                .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
-                .collect()
+            .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
+            .collect()
         })
         .unwrap()
 }
@@ -102,14 +102,14 @@ mod tests {
 
         assert!(children.iter().any(|p| p
             == &get_dev_dir()
-            .join("gh")
-            .join("sierrasoftworks")
-            .join("test1")));
+                .join("gh")
+                .join("sierrasoftworks")
+                .join("test1")));
         assert!(children.iter().any(|p| p
             == &get_dev_dir()
-            .join("gh")
-            .join("sierrasoftworks")
-            .join("test2")));
+                .join("gh")
+                .join("sierrasoftworks")
+                .join("test2")));
         assert!(children
             .iter()
             .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test1")));
