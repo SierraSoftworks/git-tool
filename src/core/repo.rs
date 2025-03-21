@@ -1,6 +1,8 @@
 pub use super::{templates::repo_context, Config, Target};
 use gtmpl::Value;
 use std::path;
+use std::io;
+use std::fs;
 
 #[derive(Debug, Clone)]
 pub struct Repo {
@@ -25,6 +27,20 @@ impl Target for Repo {
 
     fn template_context(&self, config: &Config) -> Value {
         repo_context(config, self)
+    }
+
+    fn rename(&mut self, new_name: &str) -> std::io::Result<()> {
+        let parent = self.path.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("Cannot determine parent of path: {}", self.path.display()),
+            )
+        })?;
+
+        let old_path = &self.path.clone();
+        self.path = parent.join(new_name);
+
+        fs::rename(old_path, &self.path)
     }
 }
 

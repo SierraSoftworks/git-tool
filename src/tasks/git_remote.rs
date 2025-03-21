@@ -4,13 +4,88 @@ use tracing_batteries::prelude::*;
 
 pub struct GitRemote<'a> {
     pub name: &'a str,
+    pub host: String,
+    pub namespace: String,
+    pub is_ssh: bool,
+    pub has_dot_git: bool,
 }
 
 impl Default for GitRemote<'static> {
     fn default() -> Self {
-        Self { name: "origin" }
+        Self { name: "origin", host: "".to_string(), namespace: "".to_string(), is_ssh: false, has_dot_git: false }
     }
 }
+
+impl GitRemote<'static> {
+    pub fn parse(url: &str) -> Option<Self> {
+        if url.starts_with("https://") {
+            // Example: https://github.com/org/repo or /org/repo.git
+            let url = url.strip_prefix("https://")?;
+            let mut parts = url.splitn(2, '/');
+            let host = parts.next()?.to_string();
+            let path = parts.next()?;
+
+            let path_parts = path.split('/').collect::<Vec<_>>();
+            if path_parts.len() != 2 {
+                return None;
+            }
+
+            let namespace = path_parts[0].to_string();
+            let repo = path_parts[1].to_string();
+
+            let has_dot_git = repo.ends_with(".git");
+
+            Some(Self {
+                name: "origin",
+                host,
+                namespace,
+                is_ssh: false,
+                has_dot_git,
+            })
+        } else if url.starts_with("git@") {
+            // Example: git@github.com:org/repo or org/repo.git
+            let url = url.strip_prefix("git@")?;
+            let mut parts = url.splitn(2, ':');
+            let host = parts.next()?.to_string();
+            let path = parts.next()?;
+
+            let path_parts = path.split('/').collect::<Vec<_>>();
+            if path_parts.len() != 2 {
+                return None;
+            }
+
+            let namespace = path_parts[0].to_string();
+            let repo = path_parts[1].to_string();
+
+            let has_dot_git = repo.ends_with(".git");
+
+            Some(Self {
+                name: "origin",
+                host,
+                namespace,
+                is_ssh: true,
+                has_dot_git,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn with_repo_name(&self, new_name: &str) -> String {
+        let repo = if self.has_dot_git {
+            format!("{}.git", new_name)
+        } else {
+            new_name.to_string()
+        };
+
+        if self.is_ssh {
+            format!("git@{}:{}/{}", self.host, self.namespace, repo)
+        } else {
+            format!("https://{}/{}/{}", self.host, self.namespace, repo)
+        }
+    }
+}
+
 
 #[async_trait::async_trait]
 impl<'a> Task for GitRemote<'a> {

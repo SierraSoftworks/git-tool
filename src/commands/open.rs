@@ -78,7 +78,7 @@ New applications can be configured either by making changes to your configuratio
                 Err(_) if matches.get_flag("create") => {
                     sequence![
                         GitInit {},
-                        GitRemote { name: "origin" },
+                        GitRemote { name: "origin", host: "".to_string(),namespace: "".to_string(),is_ssh: false,has_dot_git: false},
                         GitCheckout { branch: "main" },
                         CreateRemote {
                             enabled: !matches.get_flag("no-create-remote")

@@ -65,7 +65,7 @@ impl CommandRunnable for NewCommand {
                 enabled: !matches.get_flag("no-check-exists")
             },
             GitInit {},
-            GitRemote { name: "origin" },
+            GitRemote { name: "origin", host: "".to_string(),namespace: "".to_string(),is_ssh: false,has_dot_git: false},
             GitCheckout { branch: "main" },
             CreateRemote {
                 enabled: !matches.get_flag("no-create-remote")
