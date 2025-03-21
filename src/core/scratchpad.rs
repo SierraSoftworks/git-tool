@@ -1,6 +1,6 @@
 use super::{Config, Target};
 use gtmpl::Value;
-use std::path;
+use std::{fs, io, path};
 
 #[derive(Debug, Clone)]
 pub struct Scratchpad {
@@ -23,6 +23,20 @@ impl Target for Scratchpad {
 
     fn template_context(&self, _config: &Config) -> Value {
         self.into()
+    }
+
+    fn rename(&mut self, new_name: &str) -> std::io::Result<()> {
+        let parent = self.path.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("Cannot determine parent of path: {}", self.path.display()),
+            )
+        })?;
+
+        let old_path = &self.path.clone();
+        self.path = parent.join(new_name);
+
+        fs::rename(old_path, &self.path)
     }
 }
 

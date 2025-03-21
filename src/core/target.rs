@@ -1,5 +1,4 @@
 use std::fmt::Display;
-
 use super::Config;
 use gtmpl::Value;
 
@@ -8,6 +7,7 @@ pub trait Target: Display {
     fn get_path(&self) -> std::path::PathBuf;
     fn exists(&self) -> bool;
     fn template_context(&self, config: &Config) -> Value;
+    fn rename(&mut self, new_name: &str) -> std::io::Result<()>;
 }
 
 pub struct TempTarget {
@@ -52,6 +52,10 @@ impl Target for TempTarget {
 
     fn template_context(&self, _config: &Config) -> Value {
         self.into()
+    }
+
+    fn rename(&mut self, _: &str) -> std::io::Result<()> {
+        todo!()
     }
 }
 
