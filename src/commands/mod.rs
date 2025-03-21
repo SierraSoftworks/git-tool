@@ -25,6 +25,7 @@ mod new;
 mod open;
 mod prune;
 mod remove;
+mod rename;
 mod scratch;
 mod services;
 mod setup;
@@ -32,7 +33,6 @@ mod shell_init;
 mod switch;
 mod temp;
 mod update;
-
 inventory::collect!(Command);
 
 #[macro_export]

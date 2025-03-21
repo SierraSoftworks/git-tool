@@ -11,15 +11,18 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
     let cmd = cmd.stderr(Stdio::piped());
 
     let child = cmd.stdout(Stdio::piped()).spawn().map_err(|err| errors::user_with_internal(
-        "Could not run git, which is a dependency of Git-Tool.",
-        "Please ensure that git is installed, present on your $PATH and executable before running Git-Tool again.",
+        "Failed to run git, which is a dependency of Git-Tool.",
+        "Please ensure that git is installed, available in your $PATH, and that Git-Tool has permission to execute it. Also check that the folder you are running git in exists, and that git has permission to access it.",
         err
     ))?;
-    let output = child.wait_with_output().await.map_err(|err| errors::user_with_internal(
-        "Could not run git, which is a dependency of Git-Tool.",
-        "Please ensure that git is installed, present on your $PATH and executable before running Git-Tool again.",
-        err
-    ))?;
+
+    let output = child.wait_with_output().await.map_err(|err| {
+        errors::user_with_internal(
+            "Git was started, but Git-Tool failed to retrieve its output.",
+            "This may indicate an issue with system resources or git crashing during execution.",
+            err,
+        )
+    })?;
 
     let output_text = String::from_utf8(output.stdout)?;
 
