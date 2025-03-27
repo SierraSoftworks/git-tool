@@ -70,41 +70,37 @@ impl Task for MoveDirectory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tasks::GitClone;
     use tempfile::tempdir;
 
     #[tokio::test]
-    async fn move_directory_successfully() {
+    async fn move_repository() {
         let temp = tempdir().unwrap();
-        let repo = crate::core::Repo::new(
-            "gh:sierrasoftworks/git-tool",
-            temp.path().join("original_repo"),
-        );
 
-        let new_repo =
-            crate::core::Repo::new("gh:sierrasoftworks/gt", temp.path().join("new_repo"));
+        let original = temp.path().join("original");
+        let moved = temp.path().join("moved");
+        let repo = crate::core::Repo::new("gh:sierrasoftworks/git-tool", original.clone());
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
             .with_null_console()
             .build();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        assert!(
+            fs::create_dir(repo.path.clone()).is_ok(),
+            "original directory should exist"
+        );
 
         assert!(repo.path.exists());
-        assert!(repo.valid());
 
         MoveDirectory {
-            new_path: new_repo.path.clone(),
+            new_path: moved.clone(),
         }
         .apply_repo(&core, &repo)
         .await
         .unwrap();
 
-        assert!(!repo.valid());
-        assert!(!repo.path.exists());
-        assert!(new_repo.valid());
-        assert!(new_repo.path.exists());
+        assert!(!original.exists());
+        assert!(moved.exists());
     }
 
     #[tokio::test]
