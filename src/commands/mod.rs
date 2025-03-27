@@ -82,7 +82,7 @@ pub trait CommandRunnable: Send + Sync {
 
     #[cfg(test)]
     async fn assert_run_successful(&self, core: &Core, matches: &ArgMatches) {
-        match self.run(&core, &matches).await {
+        match self.run(core, matches).await {
             Ok(status) => {
                 assert_eq!(status, 0);
             }
