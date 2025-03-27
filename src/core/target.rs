@@ -1,7 +1,6 @@
-use std::fmt::Display;
-
 use super::Config;
 use gtmpl::Value;
+use std::fmt::Display;
 
 pub trait Target: Display {
     fn get_name(&self) -> String;
