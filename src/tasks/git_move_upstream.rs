@@ -60,7 +60,7 @@ mod tests {
     use super::*;
     use crate::core::Core;
     use crate::git::{git_remote_add, git_remote_rename};
-    use crate::tasks::GitClone;
+    use crate::tasks::{GitInit, GitRemote};
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -112,7 +112,10 @@ mod tests {
             .get_best_repo("gh:git-fixtures/renamed")
             .unwrap();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        sequence!(GitInit {}, GitRemote { name: "origin" })
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
 
         let task = GitMoveUpstream {
             new_repo: new_repo.clone(),
@@ -152,7 +155,10 @@ mod tests {
             .get_best_repo("gh:git-fixtures/renamed")
             .unwrap();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        sequence!(GitInit {}, GitRemote { name: "origin" })
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
 
         // Simulate having a (forked) repository where the origin is our fork, and the original remote
         // is in upstream
