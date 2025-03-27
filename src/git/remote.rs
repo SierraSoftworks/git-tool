@@ -74,6 +74,7 @@ pub async fn git_remote_set_url(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn git_remote_rename(
     repo: &path::Path,
     name: &str,

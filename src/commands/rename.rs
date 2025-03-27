@@ -66,7 +66,7 @@ impl CommandRunnable for RenameCommand {
             GitMoveUpstream {
                 new_repo: new_repo.clone(),
             }
-            .apply_repo(&core, &repo.clone())
+            .apply_repo(core, &repo.clone())
             .await?;
         }
 
@@ -75,12 +75,11 @@ impl CommandRunnable for RenameCommand {
         };
 
         // Move the directory
-        if let Err(err) = move_task.apply_repo(&core, &repo).await {
+        if let Err(err) = move_task.apply_repo(core, &repo).await {
             // Roll back the Git-remote change if needed
             if !no_update_remote {
-                if let Err(rollback_err) = (GitRemote { name: "origin" })
-                    .apply_repo(&core, &repo)
-                    .await
+                if let Err(rollback_err) =
+                    (GitRemote { name: "origin" }).apply_repo(core, &repo).await
                 {
                     tracing::warn!(
                         error = ?rollback_err,

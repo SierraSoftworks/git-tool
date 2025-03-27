@@ -26,6 +26,7 @@ pub use commit::git_commit;
 #[allow(unused_imports)]
 pub use fetch::git_fetch;
 pub use init::git_init;
+#[allow(unused_imports)]
 pub use remote::{
     git_remote_add, git_remote_get_url, git_remote_list, git_remote_rename, git_remote_set_url,
 };
