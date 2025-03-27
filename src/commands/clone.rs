@@ -137,6 +137,7 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
+        std::fs::create_dir(temp.path().join("repo")).expect("create test repo dir");
 
         let temp_path = temp.path().to_path_buf();
         let core = Core::builder()
@@ -169,6 +170,7 @@ features:
         let cmd = CloneCommand {};
 
         let temp = tempdir().unwrap();
+        std::fs::create_dir(temp.path().join("repo")).expect("create test repo dir");
 
         let args = cmd.app().get_matches_from(vec![
             "clone",

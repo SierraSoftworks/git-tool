@@ -105,7 +105,7 @@ impl CompleteCommand {
             }
             None => {
                 for cmd in inventory::iter::<Command> {
-                    completer.offer(&cmd.name());
+                    completer.offer(cmd.name());
                 }
             }
         }

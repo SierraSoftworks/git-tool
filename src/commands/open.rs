@@ -197,6 +197,7 @@ features:
         .unwrap();
 
         let temp = tempdir().unwrap();
+        std::fs::create_dir(temp.path().join("repo")).expect("create test repo dir");
         let temp_path = temp.path().to_owned();
         let core = Core::builder()
             .with_config(cfg)

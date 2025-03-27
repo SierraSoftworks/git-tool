@@ -126,6 +126,8 @@ mod tests {
             .get_matches_from(vec!["new", "test/new-repo-partial"]);
 
         let temp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(temp.path().join("gh").join("test").join("new-repo-partial"))
+            .expect("create test repo dir");
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
@@ -159,6 +161,8 @@ mod tests {
             .get_matches_from(vec!["new", "gh:test/new-repo-full"]);
 
         let temp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(temp.path().join("gh").join("test").join("new-repo-full"))
+            .expect("create test repo dir");
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
