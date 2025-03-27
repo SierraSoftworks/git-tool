@@ -67,7 +67,7 @@ mod tests {
 
         let remotes = git_remote_list(temp_dir.path())
             .await
-            .expect("git init to succeed");
+            .expect("git remote list to succeed");
         assert_eq!(remotes.len(), 0, "git remote list should be empty");
 
         git_remote_add(temp_dir.path(), "origin", "https://example.com/test.git")
