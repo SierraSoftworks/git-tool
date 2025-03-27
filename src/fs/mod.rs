@@ -90,6 +90,16 @@ pub fn get_directory_tree_to_depth(
             }
         }
         Err(e) if e.kind() == ErrorKind::NotFound => {}
+        Err(e) if e.kind() == ErrorKind::NotADirectory => {
+            return Err(crate::errors::user_with_internal(
+                &format!(
+                    "The path '{}' is not a directory and cannot be enumerated.",
+                    from.display()
+                ),
+                "Me sure that this path is a directory and that you have not accidentally created a file here instead.",
+                e,
+            ));
+        }
         Err(e) => {
             return Err(crate::errors::user_with_internal(
                 &format!(
@@ -146,5 +156,15 @@ mod tests {
         assert!(children
             .iter()
             .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
+
+        assert!(super::get_child_directories(
+            &get_dev_dir()
+                .join("gh")
+                .join("sierrasoftworks")
+                .join("test1")
+                .join(".gitkeep"),
+            "*"
+        )
+        .is_err());
     }
 }
