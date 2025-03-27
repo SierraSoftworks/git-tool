@@ -80,18 +80,12 @@ pub fn get_directory_tree_to_depth(
 
     match from.read_dir() {
         Ok(dirs) => {
-            for dir in dirs {
-                match dir {
-                    Ok(d) => match d.file_type() {
-                        Ok(ft) => {
-                            if ft.is_dir() {
-                                let children = get_directory_tree_to_depth(&d.path(), depth - 1)?;
-                                directories.extend(children);
-                            }
-                        }
-                        Err(_) => {}
-                    },
-                    Err(_) => {}
+            for dir in dirs.flatten() {
+                if let Ok(ft) = dir.file_type() {
+                    if ft.is_dir() {
+                        let children = get_directory_tree_to_depth(&dir.path(), depth - 1)?;
+                        directories.extend(children);
+                    }
                 }
             }
         }

@@ -50,11 +50,9 @@ impl Resolver for TrueResolver {
             get_directory_tree_to_depth(&self.config.get_scratch_directory(), 1)?
                 .into_iter()
                 .filter_map(|p| {
-                    if let Some(name) = p.file_name().and_then(|f| f.to_str()) {
-                        Some(Scratchpad::new(name, p.to_path_buf()))
-                    } else {
-                        None
-                    }
+                    p.file_name()
+                        .and_then(|f| f.to_str())
+                        .map(|name| Scratchpad::new(name, p.to_path_buf()))
                 })
                 .collect(),
         )
