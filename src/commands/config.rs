@@ -118,7 +118,6 @@ impl CommandRunnable for ConfigCommand {
                 writeln!(core.output(), "Applying {}", entry.name)?;
                 writeln!(core.output(), "> {}", entry.description)?;
 
-                let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
                         let ec = if let Some(name) = args.get_one::<String>("as") {
@@ -422,10 +421,7 @@ mod tests {
             .app()
             .get_matches_from(vec!["config", "add", "apps/bash"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Applying Bash\n> "),
