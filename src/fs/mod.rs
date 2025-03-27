@@ -77,7 +77,7 @@ pub fn get_directory_tree_to_depth(
     );
 
     let mut directories = Vec::new();
-    
+
     match from.read_dir() {
         Ok(dirs) => {
             for dir in dirs {
@@ -95,9 +95,7 @@ pub fn get_directory_tree_to_depth(
                 }
             }
         }
-        Err(e) if e.kind() == ErrorKind::NotFound => {
-            
-        }
+        Err(e) if e.kind() == ErrorKind::NotFound => {}
         Err(e) => {
             return Err(crate::errors::user_with_internal(
                 &format!(
