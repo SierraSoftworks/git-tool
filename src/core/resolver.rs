@@ -6,7 +6,7 @@ use std::env;
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
-use crate::fs::get_child_directories;
+use crate::fs::{get_child_directories, get_directory_tree_to_depth};
 #[cfg(test)]
 use mockall::automock;
 
@@ -46,32 +46,16 @@ impl Resolver for TrueResolver {
 
     #[tracing::instrument(err, skip(self))]
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-        let dirs = self.config.get_scratch_directory().read_dir().map_err(|err| errors::user_with_internal(
-            &format!("Could not retrieve the list of directories within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
-            "Check that Git-Tool has permission to access this directory and try again.",
-            err
-        ))?;
-
-        let mut scratchpads = vec![];
-        for dir in dirs {
-            let dir_info = dir.map_err(|err| errors::user_with_internal(
-                &format!("Could not retrieve information about a directory within your scratchpad directory '{}' due to an OS-level error.", self.config.get_scratch_directory().display()),
-                "Check that Git-Tool has permission to access this directory and try again.",
-                err
-            ))?;
-
-            if dir_info.file_type().map_err(|err| errors::user_with_internal(
-                &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir_info.path().display()),
-                "Check that Git-Tool has permission to access this directory and try again.",
-                err
-            ))?.is_dir() {
-                if let Some(name) = dir_info.file_name().to_str() {
-                    scratchpads.push(Scratchpad::new(name, dir_info.path().to_path_buf()));
-                }
-            }
-        }
-
-        Ok(scratchpads)
+        Ok(
+            get_directory_tree_to_depth(&self.config.get_scratch_directory(), 1)?
+                .into_iter()
+                .filter_map(|p| {
+                    p.file_name()
+                        .and_then(|f| f.to_str())
+                        .map(|name| Scratchpad::new(name, p.to_path_buf()))
+                })
+                .collect(),
+        )
     }
 
     #[tracing::instrument(err, skip(self, name))]
@@ -109,28 +93,8 @@ impl Resolver for TrueResolver {
     fn get_repos(&self) -> Result<Vec<Repo>, Error> {
         let mut repos = vec![];
 
-        for svc_dir in self.config.get_dev_directory().read_dir().map_err(|err| errors::user_with_internal(
-            &format!("Could not retrieve the list of directories within your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
-            "Check that Git-Tool has permission to access this directory and try again.",
-            err
-        ))? {
-            match svc_dir {
-                Ok(dir) => {
-                    if dir.file_type().map_err(|err| errors::user_with_internal(
-                        &format!("Could not retrieve information about the directory '{}' due to an OS-level error.", dir.path().display()),
-                        "Check that Git-Tool has permission to access this directory and try again.",
-                        err
-                    ))?.is_dir() {
-                        if let Some(svc) = self.config.get_service(dir.file_name().to_str().unwrap()) {
-                            repos.extend(self.get_repos_for(svc)?);
-                        }
-                    }
-                },
-                Err(e) => return Err(errors::system_with_internal(
-                    "We were unable to access your development directory.",
-                    "Please make sure that your development directory exists and that git-tool has permission to access it.",
-                    e))
-            }
+        for svc in self.config.get_services() {
+            repos.extend(self.get_repos_for(svc)?);
         }
 
         Ok(repos)
@@ -146,7 +110,7 @@ impl Resolver for TrueResolver {
 
         let path = self.config.get_dev_directory().join(&svc.name);
 
-        let repos = get_child_directories(&path, &svc.pattern)
+        let repos = get_child_directories(&path, &svc.pattern)?
             .iter()
             .map(|p| self.get_repo_from_path(p))
             .filter_map(|r| r.ok())
