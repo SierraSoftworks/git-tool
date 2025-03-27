@@ -42,8 +42,27 @@ impl Task for MoveDirectory {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        _scratch: &crate::core::Scratchpad,
+        scratch: &crate::core::Scratchpad,
     ) -> Result<(), crate::core::Error> {
+        if !scratch.exists() {
+            return Err(errors::user(
+                format!("The scratchpad {} does not exist on your machine and cannot be moved as a result.", scratch.get_name()).as_str(),
+                "Make sure the name is correct and that the scratchpad exists first."
+            ));
+        }
+
+        fs::rename(scratch.get_path(), self.new_path.clone()).map_err(|err| {
+            errors::user_with_internal(
+                &format!(
+                    "Could not rename the scratchpad directory '{}' to '{}' due to an OS-level error.",
+                    scratch.get_path().display(),
+                    self.new_path.display()
+                ),
+                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                err,
+            )
+        })?;
+
         Ok(())
     }
 }
