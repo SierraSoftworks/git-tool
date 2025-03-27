@@ -48,12 +48,16 @@ pub use write_file::WriteFile;
 
 #[async_trait]
 pub trait Task {
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error>;
+    async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
+        Ok(())
+    }
     async fn apply_scratchpad(
         &self,
-        core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error>;
+        _core: &Core,
+        _scratch: &core::Scratchpad,
+    ) -> Result<(), core::Error> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

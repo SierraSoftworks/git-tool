@@ -12,15 +12,6 @@ impl Task for GitAdd<'_> {
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_add(&repo.get_path(), &self.paths).await
     }
-
-    #[tracing::instrument(name = "task:git_add(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
-        Ok(())
-    }
 }
 
 #[cfg(test)]

@@ -156,12 +156,7 @@ features:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0);
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -214,11 +209,6 @@ features:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0);
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 }

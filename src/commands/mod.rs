@@ -79,4 +79,14 @@ pub trait CommandRunnable: Send + Sync {
     fn app(&self) -> clap::Command;
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error>;
     async fn complete(&self, core: &Core, completer: &Completer, matches: &ArgMatches);
+
+    #[cfg(test)]
+    async fn assert_run_successful(&self, core: &Core, matches: &ArgMatches) {
+        match self.run(&core, &matches).await {
+            Ok(status) => {
+                assert_eq!(status, 0);
+            }
+            Err(err) => panic!("{}", err.message()),
+        }
+    }
 }

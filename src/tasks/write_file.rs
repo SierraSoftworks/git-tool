@@ -1,7 +1,7 @@
 use crate::errors;
 
 use super::{core::Target, *};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
 pub struct WriteFile<'a> {
@@ -15,20 +15,7 @@ impl Task for WriteFile<'_> {
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path().join(&self.path);
 
-        if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await?
-        };
-
-        tokio::fs::write(&path, self.content).await.map_err(|err| {
-            errors::user_with_internal(
-                &format!(
-                    "Could not write data to the repository file '{}' due to an OS-level error.",
-                    path.display()
-                ),
-                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
-                err,
-            )
-        })?;
+        self.write_file(&path).await?;
 
         Ok(())
     }
@@ -41,18 +28,28 @@ impl Task for WriteFile<'_> {
     ) -> Result<(), core::Error> {
         let path = scratch.get_path().join(&self.path);
 
+        self.write_file(&path).await?;
+
+        Ok(())
+    }
+}
+
+impl WriteFile<'_> {
+    async fn write_file(&self, path: &Path) -> Result<(), errors::Error> {
+        if let Some(parent) = path.parent() {
+            tokio::fs::create_dir_all(parent).await?
+        };
+        
         tokio::fs::write(&path, self.content).await.map_err(|err| {
             errors::user_with_internal(
                 &format!(
-                    "Could not write data to the scratchpad file '{}' due to an OS-level error.",
+                    "Could not write data to the file '{}' due to an OS-level error.",
                     path.display()
                 ),
                 "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
                 err,
             )
-        })?;
-
-        Ok(())
+        })
     }
 }
 

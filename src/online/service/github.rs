@@ -306,8 +306,7 @@ mod tests {
     use super::*;
     use mockall::predicate::eq;
 
-    #[tokio::test]
-    async fn test_happy_path_user_repo() {
+    async fn run_test_create(mocks: Vec<MockHttpRoute>) {
         let core = Core::builder()
             .with_default_config()
             .with_mock_keychain(|mock| {
@@ -315,7 +314,7 @@ mod tests {
                     .with(eq("gh"))
                     .returning(|_| Ok("test_token".into()));
             })
-            .with_mock_http_client(mocks::repo_created("test"))
+            .with_mock_http_client(mocks)
             .build();
 
         let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
@@ -337,105 +336,58 @@ mod tests {
             )
             .await
             .expect("No error should have been generated");
+    }
+
+    async fn run_test_is_created(mocks: Vec<MockHttpRoute>) -> bool {
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks)
+            .build();
+
+        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
+        let service = GitHubService::default();
+        service
+            .is_created(
+                &core,
+                &Service {
+                    name: "gh".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
+                    pattern: "*/*".into(),
+                    api: Some(ServiceAPI {
+                        kind: "github".into(),
+                        url: "https://api.github.com".into(),
+                    }),
+                },
+                &repo,
+            )
+            .await
+            .expect("No error should have been generated")
+    }
+
+    #[tokio::test]
+    async fn test_happy_path_user_repo() {
+        run_test_create(mocks::repo_created("test")).await;
     }
 
     #[tokio::test]
     async fn test_happy_path_user_repo_exists() {
-        let core = Core::builder()
-            .with_default_config()
-            .with_mock_keychain(|mock| {
-                mock.expect_get_token()
-                    .with(eq("gh"))
-                    .returning(|_| Ok("test_token".into()));
-            })
-            .with_mock_http_client(mocks::repo_exists("test/user-repo"))
-            .build();
-
-        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
-        let service = GitHubService::default();
-        service
-            .ensure_created(
-                &core,
-                &Service {
-                    name: "gh".into(),
-                    website: "https://github.com/{{ .Repo.FullName }}".into(),
-                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
-                    pattern: "*/*".into(),
-                    api: Some(ServiceAPI {
-                        kind: "github".into(),
-                        url: "https://api.github.com".into(),
-                    }),
-                },
-                &repo,
-            )
-            .await
-            .expect("No error should have been generated");
+        run_test_create(mocks::repo_exists("test/user-repo")).await;
     }
 
     #[tokio::test]
     async fn test_is_exists_yes() {
-        let core = Core::builder()
-            .with_default_config()
-            .with_mock_keychain(|mock| {
-                mock.expect_get_token()
-                    .with(eq("gh"))
-                    .returning(|_| Ok("test_token".into()));
-            })
-            .with_mock_http_client(mocks::get_repo_exists("test/user-repo"))
-            .build();
-
-        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
-        let service = GitHubService::default();
-        assert!(service
-            .is_created(
-                &core,
-                &Service {
-                    name: "gh".into(),
-                    website: "https://github.com/{{ .Repo.FullName }}".into(),
-                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
-                    pattern: "*/*".into(),
-                    api: Some(ServiceAPI {
-                        kind: "github".into(),
-                        url: "https://api.github.com".into(),
-                    }),
-                },
-                &repo,
-            )
-            .await
-            .expect("No error should have been generated"));
+        assert!(run_test_is_created(mocks::get_repo_exists("test/user-repo")).await);
     }
 
     #[tokio::test]
     async fn test_is_exists_no() {
-        let core = Core::builder()
-            .with_default_config()
-            .with_mock_keychain(|mock| {
-                mock.expect_get_token()
-                    .with(eq("gh"))
-                    .returning(|_| Ok("test_token".into()));
-            })
-            .with_mock_http_client(mocks::get_repo_not_exists("test/user-repo"))
-            .build();
-
-        let repo = Repo::new("gh:test/user-repo", std::path::PathBuf::from("/"));
-        let service = GitHubService::default();
-        assert!(!service
-            .is_created(
-                &core,
-                &Service {
-                    name: "gh".into(),
-                    website: "https://github.com/{{ .Repo.FullName }}".into(),
-                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
-                    pattern: "*/*".into(),
-                    api: Some(ServiceAPI {
-                        kind: "github".into(),
-                        url: "https://api.github.com".into(),
-                    }),
-                },
-                &repo,
-            )
-            .await
-            .expect("No error should have been generated"));
+        assert!(!run_test_is_created(mocks::get_repo_not_exists("test/user-repo")).await);
     }
 }
 

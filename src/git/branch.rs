@@ -113,15 +113,12 @@ mod tests {
     use crate::git::*;
     use crate::tasks::*;
     use path::PathBuf;
+    use std::path::Path;
     use tempfile::tempdir;
 
-    #[tokio::test]
-    async fn test_get_current_branch() {
-        let temp = tempdir().unwrap();
-        let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .build();
+    async fn setup_test_repo(path: &Path) -> (Core, Repo) {
+        let repo = Repo::new("gh:sierrasoftworks/test1", path.into());
+        let core = Core::builder().with_config_for_dev_directory(path).build();
 
         sequence![
             GitInit {},
@@ -141,6 +138,14 @@ mod tests {
         .apply_repo(&core, &repo)
         .await
         .expect("the repo should have been prepared properly");
+
+        (core, repo)
+    }
+
+    #[tokio::test]
+    async fn test_get_current_branch() {
+        let temp = tempdir().unwrap();
+        let (_core, repo) = setup_test_repo(temp.path()).await;
 
         let branch = git_current_branch(&repo.get_path())
             .await
@@ -151,30 +156,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_branches() {
         let temp = tempdir().unwrap();
-        let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .build();
-
-        sequence![
-            GitInit {},
-            GitRemote { name: "origin" },
-            GitCheckout { branch: "main" },
-            WriteFile {
-                path: PathBuf::from("README.md"),
-                content: "This is a test file",
-            },
-            GitAdd {
-                paths: vec!["README.md"]
-            },
-            GitCommit {
-                message: "Test",
-                paths: vec!["README.md"],
-            }
-        ]
-        .apply_repo(&core, &repo)
-        .await
-        .expect("the repo should have been prepared properly");
+        let (_core, repo) = setup_test_repo(temp.path()).await;
 
         let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
             .await
@@ -215,30 +197,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_default_branch() {
         let temp = tempdir().unwrap();
-        let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .build();
-
-        sequence![
-            GitInit {},
-            GitRemote { name: "origin" },
-            GitCheckout { branch: "main" },
-            WriteFile {
-                path: PathBuf::from("README.md"),
-                content: "This is a test file",
-            },
-            GitAdd {
-                paths: vec!["README.md"]
-            },
-            GitCommit {
-                message: "Test",
-                paths: vec!["README.md"],
-            }
-        ]
-        .apply_repo(&core, &repo)
-        .await
-        .expect("the repo should have been prepared properly");
+        let (core, repo) = setup_test_repo(temp.path()).await;
 
         let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
             .await
@@ -277,30 +236,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_merged_branches() {
         let temp = tempdir().unwrap();
-        let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .build();
-
-        sequence![
-            GitInit {},
-            GitRemote { name: "origin" },
-            GitCheckout { branch: "main" },
-            WriteFile {
-                path: PathBuf::from("README.md"),
-                content: "This is a test file",
-            },
-            GitAdd {
-                paths: vec!["README.md"]
-            },
-            GitCommit {
-                message: "Test",
-                paths: vec!["README.md"],
-            }
-        ]
-        .apply_repo(&core, &repo)
-        .await
-        .expect("the repo should have been prepared properly");
+        let (_core, repo) = setup_test_repo(temp.path()).await;
 
         let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
             .await
@@ -344,30 +280,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_branch() {
         let temp = tempdir().unwrap();
-        let repo = Repo::new("gh:sierrasoftworks/test1", temp.path().into());
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .build();
-
-        sequence![
-            GitInit {},
-            GitRemote { name: "origin" },
-            GitCheckout { branch: "main" },
-            WriteFile {
-                path: PathBuf::from("README.md"),
-                content: "This is a test file",
-            },
-            GitAdd {
-                paths: vec!["README.md"]
-            },
-            GitCommit {
-                message: "Test",
-                paths: vec!["README.md"],
-            }
-        ]
-        .apply_repo(&core, &repo)
-        .await
-        .expect("the repo should have been prepared properly");
+        let (_core, repo) = setup_test_repo(temp.path()).await;
 
         let current_sha = git_rev_parse(&repo.get_path(), "HEAD")
             .await

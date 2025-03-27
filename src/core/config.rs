@@ -291,14 +291,16 @@ impl Config {
         self.services.first().map(|f| f.as_ref())
     }
 
-    pub fn get_service(&self, domain: &str) -> Option<&service::Service> {
+    pub fn get_service(&self, domain: &str) -> Result<&service::Service, Error> {
         for svc in self.services.iter() {
             if svc.name == domain {
-                return Some(svc.as_ref());
+                return Ok(svc.as_ref());
             }
         }
 
-        None
+        Err(errors::user(
+            &format!("Could not find a service entry in your config file for {}", domain),
+            &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", domain)))
     }
 
     pub fn get_alias(&self, name: &str) -> Option<String> {
@@ -461,8 +463,8 @@ mod tests {
                 assert_eq!(cfg.get_scratch_directory(), PathBuf::from("/test/scratch"));
 
                 match cfg.get_service("gh") {
-                    Some(_) => {}
-                    None => panic!("The default services should be present."),
+                    Ok(_) => {}
+                    Err(_) => panic!("The default services should be present."),
                 }
 
                 match cfg.get_app("shell") {
@@ -489,8 +491,8 @@ apps:
                 assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
 
                 match cfg.get_service("gh") {
-                    Some(_) => {}
-                    None => panic!("The default services should be present."),
+                    Ok(_) => {}
+                    Err(_) => panic!("The default services should be present."),
                 }
 
                 match cfg.get_app("test-app") {
@@ -532,7 +534,7 @@ apps:
             "the test-app should have been added"
         );
         assert!(
-            new_cfg.get_service("example.com").is_some(),
+            new_cfg.get_service("example.com").is_ok(),
             "the example service should have been registered"
         );
 

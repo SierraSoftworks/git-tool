@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, errors, git};
+use crate::{core::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitClone {}
@@ -12,9 +12,7 @@ impl Task for GitClone {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.service).ok_or_else(|| errors::user(
-                &format!("Could not find a service entry in your config file for {}", repo.service), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service)))?;
+        let service = core.config().get_service(&repo.service)?;
 
         let url = service.get_git_url(repo)?;
 
@@ -26,15 +24,6 @@ impl Task for GitClone {
             git::git_config_set(&repo.get_path(), "user.email", "user@example.com").await?;
         }
 
-        Ok(())
-    }
-
-    #[tracing::instrument(name = "task:git_clone(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
         Ok(())
     }
 }

@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, errors, git};
+use crate::{core::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitRemote<'a> {
@@ -16,9 +16,7 @@ impl Default for GitRemote<'static> {
 impl Task for GitRemote<'_> {
     #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
-        let service = core.config().get_service(&repo.service).ok_or_else(|| errors::user(
-                &format!("Could not find a service entry in your config file for {}", &repo.service), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service)))?;
+        let service = core.config().get_service(&repo.service)?;
 
         let url = service.get_git_url(repo)?;
 
@@ -31,15 +29,6 @@ impl Task for GitRemote<'_> {
         } else {
             git::git_remote_add(&repo.get_path(), self.name, &url).await
         }
-    }
-
-    #[tracing::instrument(name = "task:git_remote(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
-        Ok(())
     }
 }
 
