@@ -24,12 +24,7 @@ impl Task for GitMoveUpstream {
         }
 
         let config = core.config();
-        let service = config.get_service(&repo.service).ok_or_else(|| {
-                errors::user(
-                    &format!("Could not find a service entry in your config file for '{}'", repo.service),
-                    &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service),
-                )
-            })?;
+        let service = config.get_service(&repo.service)?;
 
         let expected_url = service.get_git_url(repo)?;
         let new_url = service.get_git_url(&self.new_repo)?;
