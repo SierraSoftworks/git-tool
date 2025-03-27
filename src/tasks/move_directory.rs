@@ -139,4 +139,39 @@ mod tests {
             "Unexpected error message: {msg}"
         );
     }
+
+    #[tokio::test]
+    async fn test_scratch() {
+        let temp = tempdir().unwrap();
+        let scratch = crate::core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let new_scratch = temp.path().join("new_scratch");
+
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .build();
+
+        assert!(
+            fs::create_dir(scratch.get_path()).is_ok(),
+            "scratchpad directory should be created"
+        );
+
+        assert!(scratch.exists());
+        assert!(!new_scratch.clone().exists());
+
+        MoveDirectory {
+            new_path: new_scratch.clone(),
+        }
+        .apply_scratchpad(&core, &scratch)
+        .await
+        .unwrap();
+
+        assert!(
+            !scratch.get_path().exists(),
+            "old scratchpad should no longer exist."
+        );
+        assert!(
+            new_scratch.exists(),
+            "scratchpad should be moved to new directory"
+        );
+    }
 }

@@ -134,6 +134,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn rename_repo_update_upstream() {
         let cmd = RenameCommand {};
 
@@ -205,6 +206,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn rename_repo_no_update_upstream() {
         let cmd = RenameCommand {};
 
@@ -282,6 +284,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
     async fn rename_folder_should_not_work() {
         let cmd = RenameCommand {};
 
