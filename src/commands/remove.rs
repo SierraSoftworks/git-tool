@@ -53,30 +53,11 @@ impl CommandRunnable for RemoveCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        completer.offer_aliases(core);
         completer.offer("--create");
         completer.offer("--no-create-remote");
-        completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
-        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
-
-        let default_svc = core
-            .config()
-            .get_default_service()
-            .map(|s| s.name.clone())
-            .unwrap_or_default();
-
-        if let Ok(repos) = core.resolver().get_repos() {
-            completer.offer_many(
-                repos
-                    .iter()
-                    .filter(|r| r.service == default_svc)
-                    .map(|r| r.get_full_name()),
-            );
-            completer.offer_many(
-                repos
-                    .iter()
-                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-            );
-        }
+        completer.offer_apps(core);
+        completer.offer_repos(core);
     }
 }
 
