@@ -105,7 +105,6 @@ impl CommandRunnable for RenameCommand {
         completer.offer("--update-git-remote");
 
         completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
-        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
 
         let default_svc = core
             .config()
