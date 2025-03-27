@@ -7,7 +7,6 @@ use tracing_batteries::prelude::*;
 
 pub async fn git_init(path: &path::Path) -> Result<(), errors::Error> {
     info!("Running `git init` to prepare repository");
-    validate_repo_path_exists(path)?;
     git_cmd(Command::new("git").arg("init").arg(path)).await?;
 
     Ok(())

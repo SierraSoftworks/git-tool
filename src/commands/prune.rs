@@ -141,6 +141,7 @@ mod tests {
         );
 
         let repo_path = repo.get_path();
+        std::fs::create_dir_all(&repo_path).expect("create test repo dir");
         let core = core
             .with_mock_resolver(|mock| {
                 let repo_path = repo_path.clone();
