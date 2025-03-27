@@ -1,6 +1,20 @@
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::debug;
 
+/// Converts a path into an appropriate native path by handling the
+/// conversion of `/` into path segments.
+///
+/// This method is useful for converting paths which are provided
+/// as strings or other formats into a native path format. It's
+/// primarily useful on Windows where the path separator is `\`
+/// but `/` is commonly used in other contexts.
+///
+/// ## Example
+/// ```
+/// use crate::fs::to_native_path;
+///
+/// to_native_path("a/b/c");
+/// ```
 pub fn to_native_path<T: Into<PathBuf>>(path: T) -> PathBuf {
     let mut output = PathBuf::new();
     let input: PathBuf = path.into();
@@ -34,7 +48,10 @@ pub fn to_native_path<T: Into<PathBuf>>(path: T) -> PathBuf {
 ///
 /// get_child_directories("/".into(), "*");
 /// ```
-pub fn get_child_directories(from: &Path, pattern: &str) -> Vec<PathBuf> {
+pub fn get_child_directories(
+    from: &Path,
+    pattern: &str,
+) -> Result<Vec<PathBuf>, crate::errors::Error> {
     let depth = pattern.split('/').count();
 
     get_directory_tree_to_depth(from, depth)
@@ -44,9 +61,12 @@ pub fn get_child_directories(from: &Path, pattern: &str) -> Vec<PathBuf> {
 ///
 /// This method recursively enumerates child directories, returning the list of directory paths
 /// which appear a given depth below a provided root path.
-pub fn get_directory_tree_to_depth(from: &Path, depth: usize) -> Vec<PathBuf> {
+pub fn get_directory_tree_to_depth(
+    from: &Path,
+    depth: usize,
+) -> Result<Vec<PathBuf>, crate::errors::Error> {
     if depth == 0 {
-        return vec![from.to_owned()];
+        return Ok(vec![from.to_owned()]);
     }
 
     debug!(
@@ -55,25 +75,33 @@ pub fn get_directory_tree_to_depth(from: &Path, depth: usize) -> Vec<PathBuf> {
         depth
     );
 
-    from.read_dir()
-        .map(|dirs| {
-            dirs.filter_map(|dir| match dir {
-                Ok(d) => match d.file_type() {
-                    Ok(ft) => {
-                        if ft.is_dir() {
-                            Some(d.path())
-                        } else {
-                            None
-                        }
+    let mut directories = Vec::new();
+
+    for dir in from.read_dir().map_err(|e| {
+        crate::errors::user_with_internal(
+            &format!(
+                "Could not enumerate directories in '{}' due to an OS-level error.",
+                from.display()
+            ),
+            "Check that Git-Tool has permission to read this directory.",
+            e,
+        )
+    })? {
+        match dir {
+            Ok(d) => match d.file_type() {
+                Ok(ft) => {
+                    if ft.is_dir() {
+                        let children = get_directory_tree_to_depth(&d.path(), depth - 1)?;
+                        directories.extend(children);
                     }
-                    Err(_) => None,
-                },
-                Err(_) => None,
-            })
-            .flat_map(|d| get_directory_tree_to_depth(&d, depth - 1))
-            .collect()
-        })
-        .unwrap()
+                }
+                Err(_) => {}
+            },
+            Err(_) => {}
+        }
+    }
+
+    Ok(directories)
 }
 
 #[cfg(test)]
@@ -96,7 +124,8 @@ mod tests {
 
     #[test]
     fn get_child_directories() {
-        let children = super::get_child_directories(&get_dev_dir().join("gh"), "*/*");
+        let children = super::get_child_directories(&get_dev_dir().join("gh"), "*/*")
+            .expect("to get child directories");
 
         assert_eq!(children.len(), 5);
 
