@@ -89,7 +89,7 @@ pub async fn git_remote_rename(
             .arg(name)
             .arg(new_name),
     )
-        .await?;
+    .await?;
 
     Ok(())
 }
