@@ -1,3 +1,4 @@
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::debug;
 
@@ -76,28 +77,36 @@ pub fn get_directory_tree_to_depth(
     );
 
     let mut directories = Vec::new();
-
-    for dir in from.read_dir().map_err(|e| {
-        crate::errors::user_with_internal(
-            &format!(
-                "Could not enumerate directories in '{}' due to an OS-level error.",
-                from.display()
-            ),
-            "Check that Git-Tool has permission to read this directory.",
-            e,
-        )
-    })? {
-        match dir {
-            Ok(d) => match d.file_type() {
-                Ok(ft) => {
-                    if ft.is_dir() {
-                        let children = get_directory_tree_to_depth(&d.path(), depth - 1)?;
-                        directories.extend(children);
-                    }
+    
+    match from.read_dir() {
+        Ok(dirs) => {
+            for dir in dirs {
+                match dir {
+                    Ok(d) => match d.file_type() {
+                        Ok(ft) => {
+                            if ft.is_dir() {
+                                let children = get_directory_tree_to_depth(&d.path(), depth - 1)?;
+                                directories.extend(children);
+                            }
+                        }
+                        Err(_) => {}
+                    },
+                    Err(_) => {}
                 }
-                Err(_) => {}
-            },
-            Err(_) => {}
+            }
+        }
+        Err(e) if e.kind() == ErrorKind::NotFound => {
+            
+        }
+        Err(e) => {
+            return Err(crate::errors::user_with_internal(
+                &format!(
+                    "Could not enumerate directories in '{}' due to an OS-level error.",
+                    from.display()
+                ),
+                "Check that Git-Tool has permission to read this directory.",
+                e,
+            ));
         }
     }
 
