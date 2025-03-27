@@ -39,7 +39,7 @@ impl WriteFile<'_> {
         if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent).await?
         };
-        
+
         tokio::fs::write(&path, self.content).await.map_err(|err| {
             errors::user_with_internal(
                 &format!(
