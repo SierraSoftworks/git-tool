@@ -10,7 +10,7 @@ pub struct WriteFile<'a> {
 }
 
 #[async_trait::async_trait]
-impl<'a> Task for WriteFile<'a> {
+impl Task for WriteFile<'_> {
     #[tracing::instrument(name = "task:write_file(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         let path = repo.get_path().join(&self.path);

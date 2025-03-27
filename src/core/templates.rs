@@ -50,7 +50,7 @@ struct RepoWithService<'a> {
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> Into<Value> for RepoWithService<'a> {
+impl Into<Value> for RepoWithService<'_> {
     fn into(self) -> Value {
         let service: Value = self.service.into();
 
