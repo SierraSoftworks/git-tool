@@ -1,4 +1,5 @@
 use crate::errors;
+use std::path::Path;
 use std::process::Stdio;
 use tokio::process::Command;
 use tracing_batteries::prelude::*;
@@ -45,5 +46,16 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
         }
     } else {
         Ok(output_text)
+    }
+}
+
+pub fn validate_repo_path_exists(repo: &Path) -> Result<(), errors::Error> {
+    if !repo.exists() {
+        Err(errors::user(
+            &format!("The repository path '{}' does not exist.", repo.display()),
+            "Please check that the path is correct and that you have permission to access it.",
+        ))
+    } else {
+        Ok(())
     }
 }

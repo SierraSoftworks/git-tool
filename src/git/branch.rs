@@ -1,5 +1,6 @@
 use super::git_cmd;
 use crate::errors;
+use crate::git::cmd::validate_repo_path_exists;
 use itertools::intersperse;
 use std::{collections::HashSet, path};
 use tokio::process::Command;
@@ -8,6 +9,7 @@ use tracing_batteries::prelude::*;
 #[allow(dead_code)]
 pub async fn git_current_branch(repo: &path::Path) -> Result<String, errors::Error> {
     info!("Running `git symbolic-ref --short -q HEAD` to get the current branch name");
+    validate_repo_path_exists(repo)?;
     Ok(git_cmd(
         Command::new("git")
             .current_dir(repo)
@@ -23,6 +25,7 @@ pub async fn git_current_branch(repo: &path::Path) -> Result<String, errors::Err
 
 pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Error> {
     info!("Running `git for-each-ref --format=%(refname:lstrip=2) refs/heads/` to get the list of branches");
+    validate_repo_path_exists(repo)?;
     let output = git_cmd(
         Command::new("git")
             .current_dir(repo)
@@ -53,6 +56,7 @@ pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Erro
 
 pub async fn git_branch_delete(repo: &path::Path, name: &str) -> Result<(), errors::Error> {
     info!("Running `git branch -D $NAME` to delete branch");
+    validate_repo_path_exists(repo)?;
     git_cmd(
         Command::new("git")
             .current_dir(repo)
@@ -67,6 +71,7 @@ pub async fn git_branch_delete(repo: &path::Path, name: &str) -> Result<(), erro
 
 pub async fn git_default_branch(repo: &path::Path) -> Result<String, errors::Error> {
     info!("Running `git symbolic-ref refs/remotes/origin/HEAD` to get the default branch");
+    validate_repo_path_exists(repo)?;
     Ok(intersperse(
         git_cmd(
             Command::new("git")
@@ -85,6 +90,7 @@ pub async fn git_default_branch(repo: &path::Path) -> Result<String, errors::Err
 
 pub async fn git_merged_branches(repo: &path::Path) -> Result<Vec<String>, errors::Error> {
     info!("Running `git branch --merged` to get the list of merged branches");
+    validate_repo_path_exists(repo)?;
     let output = git_cmd(
         Command::new("git")
             .current_dir(repo)
