@@ -230,13 +230,7 @@ fn repo_from_svc_and_path(
     fallback_to_default: bool,
 ) -> Result<Repo, Error> {
     let svc = match svc {
-        Some(svc) => match config.get_service(&svc) {
-            Some(svc) => Ok(svc),
-            None => Err(errors::user(
-                &format!("The service '{svc}' does not exist."),
-                "Please check that you have provided the correct service name, and that the service is present in your Git-Tool config."
-            ))
-        },
+        Some(svc) => config.get_service(&svc),
         None if fallback_to_default => config.get_default_service().ok_or_else(|| errors::user(
             "No services configured for use with Git Tool.",
             "Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."

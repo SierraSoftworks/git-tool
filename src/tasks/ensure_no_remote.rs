@@ -28,9 +28,7 @@ impl Task for EnsureNoRemote {
             return Ok(());
         }
 
-        let service = core.config().get_service(&repo.service).ok_or_else(|| crate::errors::user(
-                &format!("Could not find a service entry in your config file for {}", repo.service), 
-                &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", repo.service)))?;
+        let service = core.config().get_service(&repo.service)?;
 
         if let Some(online_service) = crate::online::services()
             .iter()
@@ -44,21 +42,6 @@ impl Task for EnsureNoRemote {
             }
         }
 
-        Ok(())
-    }
-
-    #[cfg(not(feature = "auth"))]
-    #[tracing::instrument(name = "task:create_remote(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
-        Ok(())
-    }
-
-    #[tracing::instrument(name = "task:create_remote(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
         Ok(())
     }
 }

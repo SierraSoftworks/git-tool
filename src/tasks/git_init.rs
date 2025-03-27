@@ -18,15 +18,6 @@ impl Task for GitInit {
 
         Ok(())
     }
-
-    #[tracing::instrument(name = "task:git_init(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
-        Ok(())
-    }
 }
 
 #[cfg(test)]

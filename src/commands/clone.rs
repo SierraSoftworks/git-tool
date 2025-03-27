@@ -83,27 +83,8 @@ impl CommandRunnable for CloneCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        completer.offer_many(core.config().get_apps().map(|a| a.get_name()));
-
-        let default_svc = core
-            .config()
-            .get_default_service()
-            .map(|s| s.name.clone())
-            .unwrap_or_default();
-
-        if let Ok(repos) = core.resolver().get_repos() {
-            completer.offer_many(
-                repos
-                    .iter()
-                    .filter(|r| r.service == default_svc)
-                    .map(|r| r.get_full_name()),
-            );
-            completer.offer_many(
-                repos
-                    .iter()
-                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-            );
-        }
+        completer.offer_apps(core);
+        completer.offer_namespaces(core);
     }
 }
 
@@ -156,12 +137,7 @@ features:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0);
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -214,11 +190,6 @@ features:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0);
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 }

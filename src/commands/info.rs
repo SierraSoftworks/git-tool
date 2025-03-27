@@ -36,7 +36,7 @@ impl CommandRunnable for InfoCommand {
         writeln!(output, "Service:   {}", &repo.service)?;
         writeln!(output, "Path:      {}", repo.path.display())?;
 
-        if let Some(svc) = core.config().get_service(&repo.service) {
+        if let Ok(svc) = core.config().get_service(&repo.service) {
             writeln!(output)?;
             writeln!(output, "URLs:")?;
             writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
@@ -48,27 +48,8 @@ impl CommandRunnable for InfoCommand {
 
     #[tracing::instrument(name = "gt complete -- gt info", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
-
-        let default_svc = core
-            .config()
-            .get_default_service()
-            .map(|s| s.name.clone())
-            .unwrap_or_default();
-
-        if let Ok(repos) = core.resolver().get_repos() {
-            completer.offer_many(
-                repos
-                    .iter()
-                    .filter(|r| r.service == default_svc)
-                    .map(|r| r.get_full_name()),
-            );
-            completer.offer_many(
-                repos
-                    .iter()
-                    .map(|r| format!("{}:{}", &r.service, r.get_full_name())),
-            );
-        }
+        completer.offer_aliases(core);
+        completer.offer_repos(core);
     }
 }
 

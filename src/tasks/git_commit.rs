@@ -13,15 +13,6 @@ impl Task for GitCommit<'_> {
     async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
         git::git_commit(&repo.get_path(), self.message, &self.paths).await
     }
-
-    #[tracing::instrument(name = "task:git_commit(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
-        Ok(())
-    }
 }
 
 #[cfg(test)]

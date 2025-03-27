@@ -39,8 +39,8 @@ pub fn render_list<S: AsRef<str>>(
 
 pub fn repo_context<'a>(config: &'a Config, repo: &'a Repo) -> Value {
     match config.get_service(&repo.service) {
-        Some(service) => RepoWithService { repo, service }.into(),
-        None => repo.into(),
+        Ok(service) => RepoWithService { repo, service }.into(),
+        Err(_) => repo.into(),
     }
 }
 

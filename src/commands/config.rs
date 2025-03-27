@@ -90,7 +90,9 @@ impl CommandRunnable for ConfigCommand {
 
     #[tracing::instrument(name = "gt config", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        match matches.subcommand() {
+        let mut cfg = core.config().clone();
+
+        let save_config = match matches.subcommand() {
             Some(("list", _args)) => {
                 let registry = online::GitHubRegistry;
 
@@ -99,6 +101,8 @@ impl CommandRunnable for ConfigCommand {
                 for entry in entries {
                     writeln!(output, "{entry}")?;
                 }
+
+                false
             }
             Some(("add", args)) => {
                 let id = args.get_one::<String>("id").ok_or_else(|| {
@@ -114,7 +118,6 @@ impl CommandRunnable for ConfigCommand {
                 writeln!(core.output(), "Applying {}", entry.name)?;
                 writeln!(core.output(), "> {}", entry.description)?;
 
-                let mut cfg = core.config().clone();
                 for ec in entry.configs {
                     if ec.is_compatible() {
                         let ec = if let Some(name) = args.get_one::<String>("as") {
@@ -127,55 +130,35 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
 
-                match cfg.get_config_file() {
-                    Some(path) => {
-                        cfg.save(&path).await?;
-                    }
-                    None => {
-                        writeln!(core.output(), "{}", cfg.to_string()?)?;
-                    }
-                }
+                true
             }
             Some(("alias", args)) => match args.get_one::<String>("alias") {
                 Some(alias) => {
                     if args.get_flag("delete") {
-                        let mut cfg = core.config().clone();
                         cfg.remove_alias(alias);
 
-                        match cfg.get_config_file() {
-                            Some(path) => {
-                                cfg.save(&path).await?;
+                        true
+                    } else {
+                        match args.get_one::<String>("repo") {
+                            Some(repo) => {
+                                cfg.add_alias(alias, repo);
+
+                                true
                             }
-                            None => {
-                                writeln!(core.output(), "{}", cfg.to_string()?)?;
-                            }
-                        }
-
-                        return Ok(0);
-                    }
-
-                    match args.get_one::<String>("repo") {
-                        Some(repo) => {
-                            let mut cfg = core.config().clone();
-                            cfg.add_alias(alias, repo);
-
-                            match cfg.get_config_file() {
-                                Some(path) => {
-                                    cfg.save(&path).await?;
+                            None => match core.config().get_alias(alias) {
+                                Some(repo) => {
+                                    writeln!(core.output(), "{alias} = {repo}")?;
+                                    false
                                 }
                                 None => {
-                                    writeln!(core.output(), "{}", cfg.to_string()?)?;
+                                    writeln!(
+                                        core.output(),
+                                        "No alias exists with the name '{alias}'"
+                                    )?;
+                                    false
                                 }
-                            }
+                            },
                         }
-                        None => match core.config().get_alias(alias) {
-                            Some(repo) => {
-                                writeln!(core.output(), "{alias} = {repo}")?;
-                            }
-                            None => {
-                                writeln!(core.output(), "No alias exists with the name '{alias}'")?;
-                            }
-                        },
                     }
                 }
                 None => {
@@ -183,21 +166,15 @@ impl CommandRunnable for ConfigCommand {
                     for (alias, repo) in core.config().get_aliases() {
                         writeln!(output, "{alias} = {repo}")?;
                     }
+
+                    false
                 }
             },
             Some(("feature", args)) => match args.get_one::<String>("flag") {
                 Some(flag) => match args.get_one::<String>("enable") {
                     Some(value) if value == "true" || value == "false" => {
-                        let cfg = core.config().with_feature_flag(flag, value == "true");
-
-                        match cfg.get_config_file() {
-                            Some(path) => {
-                                cfg.save(&path).await?;
-                            }
-                            None => {
-                                writeln!(core.output(), "{}", cfg.to_string()?)?;
-                            }
-                        }
+                        cfg = core.config().with_feature_flag(flag, value == "true");
+                        true
                     }
                     Some(invalid) => {
                         writeln!(core.output(), "Cannot set the feature flag '{flag}' to '{invalid}' because only 'true' and 'false' are valid settings.")?;
@@ -210,6 +187,8 @@ impl CommandRunnable for ConfigCommand {
                             flag,
                             core.config().get_features().has(flag)
                         )?;
+
+                        false
                     }
                 },
                 None => {
@@ -222,21 +201,16 @@ impl CommandRunnable for ConfigCommand {
                             core.config().get_features().has(feature)
                         )?;
                     }
+
+                    false
                 }
             },
             Some(("path", args)) if args.get_flag("scratch") => {
                 match args.get_one::<String>("path") {
                     Some(path) => {
-                        let cfg = core.config().with_scratch_directory(path);
+                        cfg = core.config().with_scratch_directory(path);
 
-                        match cfg.get_config_file() {
-                            Some(path) => {
-                                cfg.save(&path).await?;
-                            }
-                            None => {
-                                writeln!(core.output(), "{}", cfg.to_string()?)?;
-                            }
-                        }
+                        true
                     }
 
                     None => {
@@ -245,21 +219,16 @@ impl CommandRunnable for ConfigCommand {
                             "{}",
                             core.config().get_scratch_directory().display()
                         )?;
+
+                        false
                     }
                 }
             }
             Some(("path", args)) => match args.get_one::<String>("path") {
                 Some(path) => {
-                    let cfg = core.config().with_dev_directory(path);
+                    cfg = cfg.with_dev_directory(path);
 
-                    match cfg.get_config_file() {
-                        Some(path) => {
-                            cfg.save(&path).await?;
-                        }
-                        None => {
-                            writeln!(core.output(), "{}", cfg.to_string()?)?;
-                        }
-                    }
+                    true
                 }
                 None => {
                     writeln!(
@@ -267,10 +236,25 @@ impl CommandRunnable for ConfigCommand {
                         "{}",
                         core.config().get_dev_directory().display()
                     )?;
+
+                    false
                 }
             },
             _ => {
                 writeln!(core.output(), "{}", core.config().to_string()?)?;
+
+                false
+            }
+        };
+
+        if save_config {
+            match cfg.get_config_file() {
+                Some(path) => {
+                    cfg.save(&path).await?;
+                }
+                None => {
+                    writeln!(core.output(), "{}", cfg.to_string()?)?;
+                }
             }
         }
 
@@ -437,10 +421,7 @@ mod tests {
             .app()
             .get_matches_from(vec!["config", "add", "apps/bash"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Applying Bash\n> "),
