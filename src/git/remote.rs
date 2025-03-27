@@ -48,3 +48,27 @@ pub async fn git_remote_set_url(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::git::*;
+    
+    #[tokio::test]
+    async fn test_git_remote() {
+        let temp_dir = tempfile::tempdir().expect("a temporary directory");
+        
+        git_init(temp_dir.path()).await.expect("git init to succeed");
+        
+        let remotes = git_remote_list(temp_dir.path()).await.expect("git init to succeed");
+        assert_eq!(remotes.len(), 0, "git remote list should be empty");
+        
+        git_remote_add(temp_dir.path(), "origin", "https://example.com/test.git").await.expect("git remote add origin https://example.com/test.git to succeed");
+        let remotes = git_remote_list(temp_dir.path()).await.expect("git remote list to succeed");
+        assert_eq!(remotes, vec!["origin"], "git remote list should have one remote: [origin]");
+        
+        git_remote_set_url(temp_dir.path(), "origin", "https://example.com/test2.git").await.expect("git remote set-url origin https://example.com/test2.git to succeed");
+        let remotes = git_remote_list(temp_dir.path()).await.expect("git remote list to succeed");
+        assert_eq!(remotes, vec!["origin"], "git remote list should have one remote: [origin]");
+    }
+    
+}
