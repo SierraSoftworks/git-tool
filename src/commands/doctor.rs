@@ -106,10 +106,7 @@ mod tests {
             .unwrap();
 
         let cmd = DoctorCommand {};
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Checking environment..."),

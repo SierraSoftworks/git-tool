@@ -146,8 +146,7 @@ mod tests {
             .get_best_repo("gh:test/new-repo-partial")
             .unwrap();
         assert!(!repo.valid());
-
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid());
     }
@@ -182,7 +181,7 @@ mod tests {
             .unwrap();
         assert!(!repo.valid());
 
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid());
     }

@@ -290,7 +290,7 @@ mod tests {
         );
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["prune"]);
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("feature/test2"),

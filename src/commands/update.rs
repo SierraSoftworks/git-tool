@@ -171,10 +171,7 @@ mod tests {
         let cmd = UpdateCommand {};
         let args = cmd.app().get_matches_from(vec!["update", "--list"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         print!("{}", console);
 

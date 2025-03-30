@@ -164,6 +164,7 @@ pub mod helpers {
         cmd.offer_completions(core, args, &completer).await;
 
         let output = console.to_string();
+        println!("{}", output);
 
         let mut offers = std::collections::HashSet::new();
 
