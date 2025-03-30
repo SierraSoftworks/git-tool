@@ -48,9 +48,9 @@ New applications can be configured either by making changes to your configuratio
             writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
         }
 
-        let (app, repo) = match helpers::get_launch_app(core, matches.get_one::<String>("app"), matches.get_one::<String>("repo")) {
+        let (app, repo) = match helpers::get_launch_app(core, matches.get_one::<String>("app"), matches.get_one::<String>("repo"))? {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
-                (app, core.resolver().get_best_repo(target)?)
+                (app, core.resolver().get_best_repo(&target.to_string())?)
             },
             helpers::LaunchTarget::App(app) => {
                 (app, core.resolver().get_current_repo()?)
@@ -60,10 +60,7 @@ New applications can be configured either by making changes to your configuratio
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
-                (app, core.resolver().get_best_repo(target)?)
-            },
-            helpers::LaunchTarget::Err(err) => {
-                return Err(err)
+                (app, core.resolver().get_best_repo(&target.to_string())?)
             },
             helpers::LaunchTarget::None => {
                 return Err(errors::user(
