@@ -6,7 +6,7 @@ use std::env;
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
-use crate::fs::{get_child_directories, get_directory_tree_to_depth};
+use crate::fs::{get_child_directories, resolve_directories};
 #[cfg(test)]
 use mockall::automock;
 
@@ -46,16 +46,14 @@ impl Resolver for TrueResolver {
 
     #[tracing::instrument(err, skip(self))]
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
-        Ok(
-            get_directory_tree_to_depth(&self.config.get_scratch_directory(), 1)?
-                .into_iter()
-                .filter_map(|p| {
-                    p.file_name()
-                        .and_then(|f| f.to_str())
-                        .map(|name| Scratchpad::new(name, p.to_path_buf()))
-                })
-                .collect(),
-        )
+        Ok(get_child_directories(&self.config.get_scratch_directory())?
+            .into_iter()
+            .filter_map(|p| {
+                p.file_name()
+                    .and_then(|f| f.to_str())
+                    .map(|name| Scratchpad::new(name, p.to_path_buf()))
+            })
+            .collect())
     }
 
     #[tracing::instrument(err, skip(self, name))]
@@ -110,7 +108,7 @@ impl Resolver for TrueResolver {
 
         let path = self.config.get_dev_directory().join(&svc.name);
 
-        let repos = get_child_directories(&path, &svc.pattern)?
+        let repos = resolve_directories(&path, &svc.pattern)?
             .iter()
             .map(|p| self.get_repo_from_path(p))
             .filter_map(|r| r.ok())
