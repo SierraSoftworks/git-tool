@@ -243,13 +243,8 @@ mod tests {
             remote_url.contains("git-fixtures/basic"),
             "Unexpected remote url: {remote_url}"
         );
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0, "the command should exit successfully");
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             !repo.path.exists(),

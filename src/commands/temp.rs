@@ -172,10 +172,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             !temp_path.read().unwrap().as_ref().unwrap().exists(),
@@ -215,6 +212,8 @@ apps:
             })
             .build();
 
-        cmd.run(&core, &args).await.unwrap_or_default();
+        cmd.run(&core, &args)
+            .await
+            .expect_err("should fail if an unknown app is specified");
     }
 }

@@ -48,10 +48,7 @@ mod tests {
             .build();
 
         let cmd = AppsCommand {};
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("shell"),

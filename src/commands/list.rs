@@ -132,10 +132,7 @@ mod tests {
 
         let args = cmd.app().get_matches_from(vec!["list"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console
@@ -166,10 +163,7 @@ mod tests {
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns2", "--full"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -192,10 +186,7 @@ mod tests {
         let cmd = ListCommand {};
         let args = cmd.app().get_matches_from(vec!["list", "ns1", "--quiet"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("example.com:ns1/a\n"),

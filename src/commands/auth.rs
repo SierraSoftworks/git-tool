@@ -135,10 +135,7 @@ mod tests {
         let args = cmd
             .app()
             .get_matches_from(vec!["auth", "gh", "--token", "mock-token"]);
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -156,9 +153,6 @@ mod tests {
 
         let cmd = AuthCommand {};
         let args = cmd.app().get_matches_from(vec!["auth", "gh", "--delete"]);
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 }

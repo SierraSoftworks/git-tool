@@ -91,10 +91,7 @@ mod tests {
         let cmd = ShellInitCommand {};
         let args = cmd.app().get_matches_from(vec!["shell-init", "powershell"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Invoke-Expression"),

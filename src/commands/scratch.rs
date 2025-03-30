@@ -191,10 +191,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -238,10 +235,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -287,10 +281,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -334,7 +325,9 @@ apps:
             })
             .build();
 
-        cmd.run(&core, &args).await.unwrap_or_default();
+        cmd.run(&core, &args)
+            .await
+            .expect_err("should fail if an unknown app is specified");
     }
 
     #[tokio::test]
@@ -377,9 +370,6 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 }
