@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::core::{Identifier, Target};
 use crate::tasks::*;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -37,19 +37,22 @@ impl CommandRunnable for RenameCommand {
     #[tracing::instrument(name = "gt rename", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let no_update_remote = matches.get_flag("no-update-remote");
-        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {
-            errors::user(
+        let repo_name: Identifier = matches
+            .get_one::<String>("repo")
+            .ok_or_else(|| {
+                errors::user(
                 "The repository name to be moved was not provided and cannot be moved as a result.",
                 "Make sure to provide the name of the repository you want to rename.",
             )
-        })?;
+            })?
+            .parse()?;
 
-        let new_name = matches.get_one::<String>("new_name").ok_or_else(|| {
+        let new_name = repo_name.resolve(matches.get_one::<String>("new_name").ok_or_else(|| {
             errors::user(
                 format!("The new repository name to rename your repository {} to was not provided and cannot be moved as a result.", repo_name).as_str(),
                 "Make sure to provide the new name of the repository you want to rename."
             )
-        })?;
+        })?)?;
 
         let repo = core.resolver().get_best_repo(repo_name)?;
         if !repo.exists() {
@@ -152,7 +155,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -185,7 +188,7 @@ mod tests {
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         assert!(
@@ -225,7 +228,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -243,7 +246,7 @@ mod tests {
             remote_url.contains("git-fixtures/basic"),
             "Unexpected remote url: {remote_url}"
         );
-        
+
         cmd.assert_run_successful(&core, &args).await;
 
         assert!(
@@ -253,7 +256,7 @@ mod tests {
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         assert!(
@@ -297,7 +300,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -331,7 +334,10 @@ mod tests {
 
         assert!(repo.path.exists(), "the repo should not be moved");
 
-        let new_repo = core.resolver().get_best_repo("gh:fixtures/basic").unwrap();
+        let new_repo = core
+            .resolver()
+            .get_best_repo("gh:fixtures/basic".parse().unwrap())
+            .unwrap();
 
         assert!(
             !new_repo.path.exists(),
