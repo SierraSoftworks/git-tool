@@ -27,7 +27,7 @@ impl CommandRunnable for InfoCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
         let repo = match matches.get_one::<String>("repo") {
-            Some(name) => core.resolver().get_best_repo(name)?,
+            Some(name) => core.resolver().get_best_repo(name.parse()?)?,
             None => core.resolver().get_current_repo()?,
         };
 
@@ -75,12 +75,15 @@ mod tests {
             .with_config(cfg)
             .with_console(console.clone())
             .with_mock_resolver(|mock| {
-                mock.expect_get_best_repo().with(eq("repo")).returning(|_| {
-                    Ok(Repo::new(
-                        "gh:sierrasoftworks/git-tool",
-                        std::path::PathBuf::from("/test"),
-                    ))
-                });
+                let identifier: Identifier = "repo".parse().unwrap();
+                mock.expect_get_best_repo()
+                    .with(eq(identifier))
+                    .returning(|_| {
+                        Ok(Repo::new(
+                            "gh:sierrasoftworks/git-tool",
+                            std::path::PathBuf::from("/test"),
+                        ))
+                    });
             })
             .build();
         cmd.assert_run_successful(&core, &args).await;

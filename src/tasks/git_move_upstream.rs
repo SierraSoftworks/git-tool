@@ -68,12 +68,12 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         let task = GitMoveUpstream {
@@ -99,12 +99,12 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         sequence!(GitInit {}, GitRemote { name: "origin" })
@@ -142,12 +142,12 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         sequence!(GitInit {}, GitRemote { name: "origin" })

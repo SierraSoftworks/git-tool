@@ -50,7 +50,7 @@ New applications can be configured either by making changes to your configuratio
 
         let (app, repo) = match helpers::get_launch_app(core, matches.get_one::<String>("app"), matches.get_one::<String>("repo"))? {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
-                (app, core.resolver().get_best_repo(&target.to_string())?)
+                (app, core.resolver().get_best_repo(target)?)
             },
             helpers::LaunchTarget::App(app) => {
                 (app, core.resolver().get_current_repo()?)
@@ -60,7 +60,7 @@ New applications can be configured either by making changes to your configuratio
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
-                (app, core.resolver().get_best_repo(&target.to_string())?)
+                (app, core.resolver().get_best_repo(target)?)
             },
             helpers::LaunchTarget::None => {
                 return Err(errors::user(
@@ -181,8 +181,9 @@ features:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
+                let identifier: Identifier = "repo".parse().unwrap();
                 mock.expect_get_best_repo()
-                    .with(eq("repo"))
+                    .with(eq(identifier))
                     .returning(move |_| {
                         Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
                     });

@@ -1,5 +1,5 @@
 use super::features::ALWAYS_OPEN_BEST_MATCH;
-use super::{errors, Config, Error, Repo, Scratchpad, Service, TempTarget};
+use super::{errors, Config, Error, Identifier, Repo, Scratchpad, Service, TempTarget};
 use crate::{fs::to_native_path, search};
 use chrono::prelude::*;
 use std::env;
@@ -20,7 +20,7 @@ pub trait Resolver: Send + Sync {
 
     fn get_repos(&self) -> Result<Vec<Repo>, Error>;
     fn get_repos_for(&self, service: &Service) -> Result<Vec<Repo>, Error>;
-    fn get_best_repo(&self, name: &str) -> Result<Repo, Error>;
+    fn get_best_repo(&self, identifier: Identifier) -> Result<Repo, Error>;
     fn get_current_repo(&self) -> Result<Repo, Error>;
 }
 
@@ -117,19 +117,33 @@ impl Resolver for TrueResolver {
         Ok(repos)
     }
 
-    #[tracing::instrument(err, skip(self, name))]
-    fn get_best_repo(&self, name: &str) -> Result<Repo, Error> {
+    #[tracing::instrument(err, skip(self, identifier))]
+    fn get_best_repo(&self, identifier: Identifier) -> Result<Repo, Error> {
         let true_name = self
             .config
-            .get_alias(name)
-            .unwrap_or_else(|| name.to_string());
+            .get_alias(&identifier.path)
+            .unwrap_or_else(|| identifier.to_string());
 
         if let Ok(repo) = repo_from_str(&self.config, &true_name, true) {
             return Ok(repo);
         }
 
-        let all_repos = self.get_repos()?;
-        let repos: Vec<&Repo> = search::best_matches_by(name, all_repos.iter(), |r| {
+        let all_repos = match &identifier.scope {
+            ns if ns.is_empty() => self.get_repos()?,
+            ns => self.get_repos_for(self.config.get_service(&ns).map_err(|_| {
+                errors::user(
+                    &format!(
+                        "The service '{}' used to resolve a repo was not present in your config.",
+                        ns
+                    ),
+                    "Try adding the namespace to your configuration as a supported service.",
+                )
+            })?)?,
+        };
+
+        let full_name = identifier.to_string();
+
+        let repos: Vec<&Repo> = search::best_matches_by(&full_name, all_repos.iter(), |r| {
             format!("{}:{}", &r.service, r.get_full_name())
         });
 
@@ -137,15 +151,19 @@ impl Resolver for TrueResolver {
             0 => {
                 match repo_from_str(&self.config, &true_name, true) {
                     Ok(repo) => Ok(repo),
-                    Err(_) => Err(errors::user("No matching repository found.", "Please check that you have provided the correct name for the repository and try again."))
+                    Err(_) => Err(errors::user(
+                        &format!("None of your local repositories matched '{full_name}'."),
+                        &format!("Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'.")))
                 }
             },
             1 => Ok((*repos.first().unwrap()).clone()),
             _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => Ok((*repos.first().unwrap()).clone()),
             _ => {
-                match repos.iter().find(|r| r.get_full_name() == name) {
+                match repos.iter().find(|r| r.get_full_name() == full_name) {
                     Some(repo) => Ok((*repo).clone()),
-                    None => Err(errors::user("The repository name you provided matched more than one repository.", "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
+                    None => Err(errors::user(
+                        "The repository name you provided matched more than one repository.",
+                        "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
                 }
             }
         }
@@ -412,7 +430,7 @@ mod tests {
     fn get_best_repo() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("gh:spt1").unwrap();
+        let example = resolver.get_best_repo("gh:spt1".parse().unwrap()).unwrap();
         assert_eq!(example.get_full_name(), "spartan563/test1");
     }
 
@@ -420,7 +438,9 @@ mod tests {
     fn get_repo_exists() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("gh:sierrasoftworks/test1").unwrap();
+        let example = resolver
+            .get_best_repo("gh:sierrasoftworks/test1".parse().unwrap())
+            .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(
             example.get_path(),
@@ -459,7 +479,9 @@ mod tests {
     fn get_best_repo_new() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("gh:sierrasoftworks/test3").unwrap();
+        let example = resolver
+            .get_best_repo("gh:sierrasoftworks/test3".parse().unwrap())
+            .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(
             example.get_path(),
@@ -474,7 +496,9 @@ mod tests {
     fn get_best_repo_default_service() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("sierrasoftworks/test3").unwrap();
+        let example = resolver
+            .get_best_repo("sierrasoftworks/test3".parse().unwrap())
+            .unwrap();
         assert_eq!(&example.service, "gh");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(
@@ -490,7 +514,9 @@ mod tests {
     fn get_best_repo_default_service_multiple_matches() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("sierrasoftworks/test1").unwrap();
+        let example = resolver
+            .get_best_repo("sierrasoftworks/test1".parse().unwrap())
+            .unwrap();
         assert_eq!(&example.service, "gh");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(

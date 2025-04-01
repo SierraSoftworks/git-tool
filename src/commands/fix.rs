@@ -63,7 +63,7 @@ impl CommandRunnable for FixCommand {
             }
             false => {
                 let repo = match matches.get_one::<String>("repo") {
-                    Some(name) => core.resolver().get_best_repo(name)?,
+                    Some(name) => core.resolver().get_best_repo(name.parse()?)?,
                     None => core.resolver().get_current_repo()?,
                 };
 
@@ -110,8 +110,9 @@ mod tests {
             })
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
+                let identifier: Identifier = "repo".parse().unwrap();
                 mock.expect_get_best_repo()
-                    .with(eq("repo"))
+                    .with(eq(identifier))
                     .returning(move |_| Ok(Repo::new("gh:exampleB/test", temp_path.clone())));
             })
             .build();
