@@ -11,7 +11,7 @@ pub struct MoveRemote {
 impl Task for MoveRemote {
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:move_remote(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), core::Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -55,8 +55,8 @@ mod tests {
     #[cfg(feature = "auth")]
     async fn test_repo() {
         let temp = tempdir().unwrap();
-        let src_repo = core::Repo::new("gh:test/old-name", temp.path().join("repo"));
-        let dest_repo = core::Repo::new("gh:test/new-name", temp.path().join("repo"));
+        let src_repo = Repo::new("gh:test/old-name", temp.path().join("repo"));
+        let dest_repo = Repo::new("gh:test/new-name", temp.path().join("repo"));
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())

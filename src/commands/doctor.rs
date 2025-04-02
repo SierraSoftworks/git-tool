@@ -94,10 +94,12 @@ mod tests {
 
         std::fs::create_dir_all(core.config().get_scratch_directory()).unwrap();
 
-        std::env::set_var(
-            "GITTOOL_CONFIG",
-            temp.path().join("config.yml").to_str().unwrap(),
-        );
+        unsafe {
+            std::env::set_var(
+                "GITTOOL_CONFIG",
+                temp.path().join("config.yml").to_str().unwrap(),
+            );
+        }
 
         // Ensure that the config file is created
         core.config()

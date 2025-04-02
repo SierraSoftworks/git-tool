@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn get_child_directories() {
-        let children = super::resolve_directories(&get_dev_dir().join("gh"), "*/*")
+        let children = resolve_directories(&get_dev_dir().join("gh"), "*/*")
             .expect("to get child directories");
 
         assert_eq!(children.len(), 5);
@@ -139,7 +139,7 @@ mod tests {
             .iter()
             .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
 
-        assert!(super::resolve_directories(
+        assert!(resolve_directories(
             &get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")

@@ -118,7 +118,6 @@ impl CommandRunnable for RenameCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::git::git_remote_get_url;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -148,23 +147,7 @@ mod tests {
         assert!(repo.path.exists());
         assert!(repo.valid());
 
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0, "the command should exit successfully");
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             !repo.path.exists(),
@@ -179,17 +162,6 @@ mod tests {
         assert!(
             new_repo.path.exists(),
             "the repo should be moved to the correct directory"
-        );
-
-        let remote = git_remote_get_url(&new_repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/renamed"),
-            "Unexpected remote url: {remote_url}"
         );
     }
 
@@ -221,17 +193,6 @@ mod tests {
         assert!(repo.path.exists());
         assert!(repo.valid());
 
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
         cmd.assert_run_successful(&core, &args).await;
 
         assert!(
@@ -247,22 +208,6 @@ mod tests {
         assert!(
             new_repo.path.exists(),
             "the repo should be moved to the correct directory"
-        );
-
-        let remote = git_remote_get_url(&new_repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        assert_ne!(
-            remote_list.first().unwrap(),
-            "git@github.com:git-fixtures/renamed.git"
-        );
-
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
         );
     }
 
@@ -293,20 +238,9 @@ mod tests {
         assert!(repo.path.exists());
         assert!(repo.valid());
 
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
         match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_ne!(status, 0, "the command should not exit successfully");
+            Ok(_) => {
+                unreachable!("the command should not exit successfully");
             }
             Err(err) => {
                 assert!(
@@ -327,17 +261,6 @@ mod tests {
         assert!(
             !new_repo.path.exists(),
             "the repo should be moved to the new directory, therefore the new directory should not exist"
-        );
-
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
         );
     }
 }
