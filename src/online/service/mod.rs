@@ -16,6 +16,14 @@ pub trait OnlineService: Send + Sync {
         service: &Service,
         repo: &Repo,
     ) -> Result<(), Error>;
+
+    async fn move_repo(
+        &self,
+        core: &Core,
+        service: &Service,
+        source: &Repo,
+        destination: &Repo,
+    ) -> Result<(), Error>;
 }
 
 #[allow(dead_code)]

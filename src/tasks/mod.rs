@@ -31,6 +31,7 @@ mod git_switch;
 mod move_directory;
 mod new_folder;
 mod write_file;
+mod move_remote;
 
 pub use create_remote::CreateRemote;
 pub use ensure_no_remote::EnsureNoRemote;
@@ -41,10 +42,11 @@ pub use git_clone::GitClone;
 #[allow(unused_imports)]
 pub use git_commit::GitCommit;
 pub use git_init::GitInit;
-pub use git_move_upstream::GitMoveUpstream;
+pub use git_move_upstream::GitMoveUpstream; // TODO: Decide whether we want to retain this capability
 pub use git_remote::GitRemote;
 pub use git_switch::GitSwitch;
 pub use move_directory::MoveDirectory;
+pub use move_remote::MoveRemote;
 pub use new_folder::NewFolder;
 pub use sequence::Sequence;
 #[allow(unused_imports)]

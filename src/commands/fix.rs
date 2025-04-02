@@ -63,7 +63,7 @@ impl CommandRunnable for FixCommand {
             }
             false => {
                 let repo = match matches.get_one::<String>("repo") {
-                    Some(name) => core.resolver().get_best_repo(name.parse()?)?,
+                    Some(name) => core.resolver().get_best_repo(&name.parse()?)?,
                     None => core.resolver().get_current_repo()?,
                 };
 

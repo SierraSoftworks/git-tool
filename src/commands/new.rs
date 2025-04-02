@@ -58,7 +58,7 @@ impl CommandRunnable for NewCommand {
             })?
             .parse()?;
 
-        let repo = core.resolver().get_best_repo(repo_id)?;
+        let repo = core.resolver().get_best_repo(&repo_id)?;
 
         if repo.valid() {
             return Ok(0);
@@ -147,7 +147,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:test/new-repo-partial".parse().unwrap())
+            .get_best_repo(&"gh:test/new-repo-partial".parse().unwrap())
             .unwrap();
         assert!(!repo.valid());
         cmd.assert_run_successful(&core, &args).await;
@@ -181,7 +181,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:test/new-repo-full".parse().unwrap())
+            .get_best_repo(&"gh:test/new-repo-full".parse().unwrap())
             .unwrap();
         assert!(!repo.valid());
 
