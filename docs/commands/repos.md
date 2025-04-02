@@ -223,8 +223,9 @@ gt fix --all gh:SierraSoftworks/
 ```
 
 ::: tip
-The quickest way to update a repo's `origin` is to `mv $REPO $NEW_REPO` and then run
-`gt fix $NEW_REPO`.
+The quickest way to update a repo's name is to use the [`gt rename`](#rename) command
+which will update the `origin` in addition to renaming/transferring the corresponding
+GitHub repository.
 :::
 
 ## remove <Badge text="v2.2.13+"/>
