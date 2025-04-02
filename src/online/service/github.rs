@@ -120,7 +120,10 @@ Configure it with the following:
         //    the "Transfer Repository" API endpoint to move the repository to the new
         //    organization.
 
-        if source.namespace == destination.namespace {
+        if source
+            .namespace
+            .eq_ignore_ascii_case(&destination.namespace)
+        {
             let uri = format!(
                 "{}/repos/{}/{}",
                 service.api.as_ref().unwrap().url.as_str(),

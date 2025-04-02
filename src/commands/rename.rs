@@ -118,149 +118,72 @@ impl CommandRunnable for RenameCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::MockHttpRoute;
+    use mockall::predicate::eq;
+    use rstest::rstest;
     use tempfile::tempdir;
 
+    #[rstest]
+    #[case::rename(
+        "gh:git-fixtures/basic",
+        "gh:git-fixtures/renamed",
+        online::service::github::mocks::repo_update_name("git-fixtures/basic")
+    )]
+    #[case::transfer(
+        "gh:git-fixtures/basic",
+        "gh:fixtures/basic",
+        online::service::github::mocks::repo_transfer("git-fixtures/basic")
+    )]
+    #[case::different_service("gh:git-fixtures/basic", "ghp:git-fixtures/basic", vec![])]
     #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_repo_update_upstream() {
+    async fn rename_repo(
+        #[case] source_repo: &str,
+        #[case] target_repo: &str,
+        #[case] github_calls: Vec<MockHttpRoute>,
+    ) {
         let cmd = RenameCommand {};
 
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:git-fixtures/renamed",
-        ]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["rename", source_repo, target_repo]);
 
         let temp = tempdir().unwrap();
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
+            .with_mock_http_client(github_calls)
+            .with_mock_keychain(|c| {
+                c.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
             .with_null_console()
             .build();
 
-        let repo = core
+        let src_repo = core
             .resolver()
-            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&source_repo.parse().unwrap())
             .unwrap();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        GitInit {}.apply_repo(&core, &src_repo).await.unwrap();
 
-        assert!(repo.path.exists());
-        assert!(repo.valid());
+        assert!(src_repo.path.exists());
+        assert!(src_repo.valid());
 
         cmd.assert_run_successful(&core, &args).await;
 
         assert!(
-            !repo.path.exists(),
-            "the repo should be moved to the correct directory"
+            !src_repo.path.exists(),
+            "the old repo should not longer exist after being moved"
         );
 
         let new_repo = core
             .resolver()
-            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&target_repo.parse().unwrap())
             .unwrap();
 
         assert!(
             new_repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_repo_no_update_upstream() {
-        let cmd = RenameCommand {};
-
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:git-fixtures/renamed",
-            "--no-update-remote",
-        ]);
-
-        let temp = tempdir().unwrap();
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .with_null_console()
-            .build();
-
-        let repo = core
-            .resolver()
-            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
-            .unwrap();
-
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
-
-        assert!(repo.path.exists());
-        assert!(repo.valid());
-
-        cmd.assert_run_successful(&core, &args).await;
-
-        assert!(
-            !repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-
-        let new_repo = core
-            .resolver()
-            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
-            .unwrap();
-
-        assert!(
-            new_repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_folder_should_not_work() {
-        let cmd = RenameCommand {};
-
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:fixtures/basic",
-        ]);
-
-        let temp = tempdir().unwrap();
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .with_null_console()
-            .build();
-
-        let repo = core
-            .resolver()
-            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
-            .unwrap();
-
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
-
-        assert!(repo.path.exists());
-        assert!(repo.valid());
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {
-                unreachable!("the command should not exit successfully");
-            }
-            Err(err) => {
-                assert!(
-                    err.message()
-                        .contains("Could not rename the repository directory"),
-                    "the command should not allow renaming the directory"
-                )
-            }
-        }
-
-        assert!(repo.path.exists(), "the repo should not be moved");
-
-        let new_repo = core
-            .resolver()
-            .get_best_repo(&"gh:fixtures/basic".parse().unwrap())
-            .unwrap();
-
-        assert!(
-            !new_repo.path.exists(),
-            "the repo should be moved to the new directory, therefore the new directory should not exist"
+            "the repo should now exist at the new path"
         );
     }
 }

@@ -23,6 +23,11 @@ impl Task for MoveDirectory {
             ));
         }
 
+        if let Some(parent) = self.new_path.parent() {
+            // Ensure that the parent directory exists for the target folder
+            fs::create_dir_all(parent)?;
+        }
+
         fs::rename(repo.path.clone(), self.new_path.clone()).map_err(|err| {
             errors::user_with_internal(
                 &format!(
