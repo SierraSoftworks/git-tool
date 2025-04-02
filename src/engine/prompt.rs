@@ -58,7 +58,7 @@ impl Prompter {
 
     // NOTE: We use unbuffered reads here since the prompter is stateless and needs to avoid
     // consuming output from future prompts.
-    #[allow(clippy::unbuffered_bytes)]
+    #[allow(unknown_lints, clippy::unbuffered_bytes)]
     fn read_line<R: Read>(reader: R) -> Result<String, Error> {
         let mut bytes = Vec::with_capacity(128);
 
