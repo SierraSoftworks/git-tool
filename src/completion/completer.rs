@@ -9,7 +9,7 @@ pub struct Completer {
 }
 
 impl Completer {
-    pub fn new(core: &crate::core::Core, filter: &str) -> Self {
+    pub fn new(core: &Core, filter: &str) -> Self {
         Self::new_for(filter, core.console())
     }
 
