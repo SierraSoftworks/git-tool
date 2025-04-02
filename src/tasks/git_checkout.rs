@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitCheckout<'a> {
@@ -9,7 +9,7 @@ pub struct GitCheckout<'a> {
 #[async_trait::async_trait]
 impl Task for GitCheckout<'_> {
     #[tracing::instrument(name = "task:git_checkout(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_checkout(&repo.get_path(), self.branch).await
     }
 }
@@ -17,7 +17,7 @@ impl Task for GitCheckout<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

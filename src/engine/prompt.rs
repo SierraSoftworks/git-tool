@@ -56,6 +56,9 @@ impl Prompter {
         }
     }
 
+    // NOTE: We use unbuffered reads here since the prompter is stateless and needs to avoid
+    // consuming output from future prompts.
+    #[allow(unknown_lints, clippy::unbuffered_bytes)]
     fn read_line<R: Read>(reader: R) -> Result<String, Error> {
         let mut bytes = Vec::with_capacity(128);
 
@@ -78,7 +81,7 @@ impl Prompter {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::Core;
+    use crate::engine::Core;
 
     #[test]
     fn prompt_for_any() {

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub const CREATE_REMOTE: &str = "create_remote";
 pub const CREATE_REMOTE_PRIVATE: &str = "create_remote_private";
 pub const CHECK_EXISTS: &str = "check_exists";
+pub const MOVE_REMOTE: &str = "move_remote";
 
 pub const OPEN_NEW_REPO: &str = "open_new_repo_in_default_app";
 pub const ALWAYS_OPEN_BEST_MATCH: &str = "always_open_best_match";
@@ -16,6 +17,7 @@ lazy_static! {
         CREATE_REMOTE,
         CREATE_REMOTE_PRIVATE,
         CHECK_EXISTS,
+        MOVE_REMOTE,
         OPEN_NEW_REPO,
         ALWAYS_OPEN_BEST_MATCH,
         TELEMETRY,
@@ -68,6 +70,7 @@ impl FeaturesBuilder {
     pub fn with_defaults(self) -> Self {
         self.with(CREATE_REMOTE, true)
             .with(CREATE_REMOTE_PRIVATE, true)
+            .with(MOVE_REMOTE, true)
             .with(TELEMETRY, false)
             .with(CHECK_FOR_UPDATES, true)
             .with(CHECK_EXISTS, true)

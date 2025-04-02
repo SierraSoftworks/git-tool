@@ -24,7 +24,7 @@ impl MockInputReader {
                         }
 
                         let read = data[*pos..end].to_string();
-                        *pos += n;
+                        *pos = end;
 
                         read
                     })
@@ -48,5 +48,58 @@ impl Read for MockInputReader {
         let data = self.read_n(buf.len())?;
         buf[..data.len()].copy_from_slice(data.as_bytes());
         Ok(data.len())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{BufRead, BufReader, Read};
+
+    #[test]
+    fn test_read_n() {
+        let mut reader = MockInputReader::from("Hello, world!");
+        let mut buffer = [0; 5];
+        let bytes_read = reader.read(&mut buffer).unwrap();
+        assert_eq!(bytes_read, 5);
+        assert_eq!(&buffer[..bytes_read], b"Hello");
+    }
+
+    #[test]
+    fn test_read_n_exceeding() {
+        let mut reader = MockInputReader::from("Hello");
+        let mut buffer = [0; 10];
+        let bytes_read = reader.read(&mut buffer).unwrap();
+        assert_eq!(bytes_read, 5);
+        assert_eq!(&buffer[..bytes_read], b"Hello");
+    }
+
+    #[test]
+    fn test_read_n_empty() {
+        let mut reader = MockInputReader::from("");
+        let mut buffer = [0; 5];
+        let bytes_read = reader.read(&mut buffer).unwrap();
+        assert_eq!(bytes_read, 0);
+        assert_eq!(&buffer[..bytes_read], b"");
+    }
+
+    #[test]
+    fn test_read_into_bufreader() {
+        let data = "Hello, world!";
+        let reader = MockInputReader::from(data);
+        let mut bufreader = BufReader::new(reader);
+        let mut output = String::new();
+        bufreader.read_to_string(&mut output).unwrap();
+        assert_eq!(output, data);
+    }
+
+    #[test]
+    fn test_read_line_with_bufreader() {
+        let data = "Hello\nworld!";
+        let reader = MockInputReader::from(data);
+        let mut bufreader = BufReader::new(reader);
+        let mut output = String::new();
+        bufreader.read_line(&mut output).unwrap();
+        assert_eq!(output, "Hello\n");
     }
 }

@@ -17,27 +17,6 @@ pub async fn git_remote_list(repo: &path::Path) -> Result<Vec<String>, errors::E
     Ok(output)
 }
 
-pub async fn git_remote_get_url(
-    repo: &path::Path,
-    name: &str,
-) -> Result<Vec<String>, errors::Error> {
-    info!("Running `git remote get-url` to list configured remote url");
-    validate_repo_path_exists(repo)?;
-    let output = git_cmd(
-        Command::new("git")
-            .current_dir(repo)
-            .arg("remote")
-            .arg("get-url")
-            .arg(name),
-    )
-    .await?
-    .split_terminator('\n')
-    .map(|s| s.trim().to_string())
-    .collect();
-
-    Ok(output)
-}
-
 pub async fn git_remote_add(repo: &path::Path, name: &str, url: &str) -> Result<(), errors::Error> {
     info!("Running `git remote add $NAME $URL` to add new remote");
     validate_repo_path_exists(repo)?;

@@ -1,6 +1,6 @@
 use super::async_trait;
 use super::*;
-use super::{core::Target, tasks::Task};
+use super::{engine::Target, tasks::Task};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -36,9 +36,9 @@ impl CommandRunnable for ScratchCommand {
             core,
             matches.get_one::<String>("app"),
             matches.get_one::<String>("scratchpad"),
-        ) {
+        )? {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
-                (app, core.resolver().get_scratchpad(target)?)
+                (app, core.resolver().get_scratchpad(&target.to_string())?)
             }
             helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_scratchpad()?),
             helpers::LaunchTarget::Target(target) => {
@@ -46,9 +46,8 @@ impl CommandRunnable for ScratchCommand {
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
-                (app, core.resolver().get_scratchpad(target)?)
+                (app, core.resolver().get_scratchpad(&target.to_string())?)
             }
-            helpers::LaunchTarget::Err(err) => return Err(err),
             helpers::LaunchTarget::None => {
                 let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
@@ -86,7 +85,7 @@ impl CommandRunnable for ScratchCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use mockall::predicate::eq;
 
     #[tokio::test]
@@ -191,10 +190,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -238,10 +234,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -287,10 +280,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[tokio::test]
@@ -334,7 +324,9 @@ apps:
             })
             .build();
 
-        cmd.run(&core, &args).await.unwrap_or_default();
+        cmd.run(&core, &args)
+            .await
+            .expect_err("should fail if an unknown app is specified");
     }
 
     #[tokio::test]
@@ -377,9 +369,6 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
     }
 }

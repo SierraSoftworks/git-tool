@@ -18,7 +18,7 @@ impl CommandRunnable for DoctorCommand {
     }
 
     #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
-    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, core::Error> {
+    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, engine::Error> {
         writeln!(core.output(), "Checking environment...")?;
 
         if core.config().file_exists() {
@@ -94,10 +94,12 @@ mod tests {
 
         std::fs::create_dir_all(core.config().get_scratch_directory()).unwrap();
 
-        std::env::set_var(
-            "GITTOOL_CONFIG",
-            temp.path().join("config.yml").to_str().unwrap(),
-        );
+        unsafe {
+            std::env::set_var(
+                "GITTOOL_CONFIG",
+                temp.path().join("config.yml").to_str().unwrap(),
+            );
+        }
 
         // Ensure that the config file is created
         core.config()
@@ -106,10 +108,7 @@ mod tests {
             .unwrap();
 
         let cmd = DoctorCommand {};
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Checking environment..."),

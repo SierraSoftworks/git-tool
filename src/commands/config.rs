@@ -1,4 +1,4 @@
-use crate::core::features;
+use crate::engine::features;
 
 use super::async_trait;
 use super::*;
@@ -312,7 +312,7 @@ impl CommandRunnable for ConfigCommand {
 mod tests {
     use std::path::PathBuf;
 
-    use super::core::Config;
+    use super::engine::Config;
     use super::*;
     use crate::test::get_dev_dir;
     use complete::helpers::test_completions_with_config;
@@ -328,11 +328,7 @@ mod tests {
             .build();
 
         let cmd = ConfigCommand {};
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console
@@ -354,11 +350,7 @@ mod tests {
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "list"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         println!("{}", console);
         assert!(
@@ -385,11 +377,7 @@ mod tests {
         let args = cmd
             .app()
             .get_matches_from(vec!["config", "add", "apps/bash"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         println!("{}", console);
         assert!(
@@ -456,11 +444,7 @@ aliases:
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         println!("{}", console);
         assert!(
@@ -498,11 +482,7 @@ aliases:
 
         let cmd = ConfigCommand {};
         let args = cmd.app().get_matches_from(vec!["config", "alias", "test1"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         println!("{}", console);
         assert!(
@@ -533,11 +513,7 @@ aliases:
         let args =
             cmd.app()
                 .get_matches_from(vec!["config", "alias", "test", "example.com/tests/test"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         assert_eq!(
@@ -577,11 +553,7 @@ aliases:
         let args = cmd
             .app()
             .get_matches_from(vec!["config", "alias", "-d", "test"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         assert!(
@@ -644,11 +616,7 @@ features:
         let args = cmd
             .app()
             .get_matches_from(vec!["config", "feature", "http_transport", "false"]);
-
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         assert!(
@@ -709,10 +677,7 @@ scratchpads: /scratch
 
         // Update the dev path
         let args = cmd.app().get_matches_from(vec!["config", "path", "/devel"]);
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         assert_eq!(new_cfg.get_dev_directory(), PathBuf::from("/devel"));
@@ -722,10 +687,7 @@ scratchpads: /scratch
         let args =
             cmd.app()
                 .get_matches_from(vec!["config", "path", "--scratch", "/devel/scratch"]);
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         let new_cfg = Config::from_file(&temp.path().join("config.yml")).unwrap();
         assert_eq!(new_cfg.get_dev_directory(), PathBuf::from("/dev"));

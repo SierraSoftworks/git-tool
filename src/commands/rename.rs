@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::{Identifier, Target};
 use crate::tasks::*;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -28,30 +28,33 @@ impl CommandRunnable for RenameCommand {
                 .long_help("The new name of the repository must not be in fully-qualified form.")
                 .index(2)
                 .required(true))
-            .arg(Arg::new("no-update-remote")
-                .long("no-update-remote")
-                .help("Also update the git remote URL after renaming.")
+            .arg(Arg::new("no-move-remote")
+                .long("no-move-remote")
+                .help("Do not rename the remote repository (on supported services).")
                 .action(clap::ArgAction::SetTrue))
     }
 
     #[tracing::instrument(name = "gt rename", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let no_update_remote = matches.get_flag("no-update-remote");
-        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {
-            errors::user(
+        let no_move_remote = matches.get_flag("no-move-remote");
+        let repo_name: Identifier = matches
+            .get_one::<String>("repo")
+            .ok_or_else(|| {
+                errors::user(
                 "The repository name to be moved was not provided and cannot be moved as a result.",
                 "Make sure to provide the name of the repository you want to rename.",
             )
-        })?;
+            })?
+            .parse()?;
 
-        let new_name = matches.get_one::<String>("new_name").ok_or_else(|| {
+        let new_name = repo_name.resolve(matches.get_one::<String>("new_name").ok_or_else(|| {
             errors::user(
                 format!("The new repository name to rename your repository {} to was not provided and cannot be moved as a result.", repo_name).as_str(),
                 "Make sure to provide the new name of the repository you want to rename."
             )
-        })?;
+        })?)?;
 
-        let repo = core.resolver().get_best_repo(repo_name)?;
+        let repo = core.resolver().get_best_repo(&repo_name)?;
         if !repo.exists() {
             return Err(errors::user(
                 "Could not find the repository directory due to an error.",
@@ -59,39 +62,24 @@ impl CommandRunnable for RenameCommand {
             );
         }
 
-        let new_repo = core.resolver().get_best_repo(new_name)?;
+        let new_repo = core.resolver().get_best_repo(&new_name)?;
 
-        // Update the Git-Remote
-        if !no_update_remote {
-            GitMoveUpstream {
-                new_repo: new_repo.clone(),
+        sequence![
+            MoveDirectory {
+                new_path: new_repo.path.clone(),
+            },
+            MoveRemote {
+                enabled: !no_move_remote,
+                target: new_repo.clone()
             }
-            .apply_repo(core, &repo.clone())
+        ]
+        .apply_repo(core, &repo.clone())
+        .await?;
+
+        // Don't forget to update the remote URL to match the new repository name
+        GitRemote { name: "origin" }
+            .apply_repo(core, &new_repo)
             .await?;
-        }
-
-        let move_task = MoveDirectory {
-            new_path: new_repo.path.clone(),
-        };
-
-        // Move the directory
-        if let Err(err) = move_task.apply_repo(core, &repo).await {
-            // Roll back the Git-remote change if needed
-            if !no_update_remote {
-                if let Err(rollback_err) =
-                    (GitRemote { name: "origin" }).apply_repo(core, &repo).await
-                {
-                    tracing::warn!(
-                        error = ?rollback_err,
-                        "Failed to roll back Git remote change after move failure"
-                    );
-                }
-            }
-
-            return Err(err);
-        }
-
-        assert!(new_repo.valid());
 
         Ok(0)
     }
@@ -130,228 +118,71 @@ impl CommandRunnable for RenameCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::git::git_remote_get_url;
+    use crate::engine::MockHttpRoute;
+    use mockall::predicate;
     use tempfile::tempdir;
 
+    #[rstest::rstest]
+    #[case::rename(
+        "gh:git-fixtures/basic",
+        "gh:git-fixtures/renamed",
+        online::service::github::mocks::repo_update_name("git-fixtures/basic")
+    )]
+    #[case::transfer(
+        "gh:git-fixtures/basic",
+        "gh:fixtures/basic",
+        online::service::github::mocks::repo_transfer("git-fixtures/basic")
+    )]
+    #[case::different_service("gh:git-fixtures/basic", "ghp:git-fixtures/basic", vec![])]
     #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_repo_update_upstream() {
+    async fn rename_repo(
+        #[case] source_repo: &str,
+        #[case] target_repo: &str,
+        #[case] github_calls: Vec<MockHttpRoute>,
+    ) {
         let cmd = RenameCommand {};
 
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:git-fixtures/renamed",
-        ]);
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["rename", source_repo, target_repo]);
 
         let temp = tempdir().unwrap();
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
+            .with_mock_http_client(github_calls)
+            .with_mock_keychain(|c| {
+                c.expect_get_token()
+                    .with(predicate::eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
             .with_null_console()
             .build();
 
-        let repo = core
+        let src_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
+            .get_best_repo(&source_repo.parse().unwrap())
             .unwrap();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        GitInit {}.apply_repo(&core, &src_repo).await.unwrap();
 
-        assert!(repo.path.exists());
-        assert!(repo.valid());
+        assert!(src_repo.path.exists());
+        assert!(src_repo.valid());
 
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0, "the command should exit successfully");
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
-            !repo.path.exists(),
-            "the repo should be moved to the correct directory"
+            !src_repo.path.exists(),
+            "the old repo should not longer exist after being moved"
         );
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
+            .get_best_repo(&target_repo.parse().unwrap())
             .unwrap();
 
         assert!(
             new_repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-
-        let remote = git_remote_get_url(&new_repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/renamed"),
-            "Unexpected remote url: {remote_url}"
-        );
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_repo_no_update_upstream() {
-        let cmd = RenameCommand {};
-
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:git-fixtures/renamed",
-            "--no-update-remote",
-        ]);
-
-        let temp = tempdir().unwrap();
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .with_null_console()
-            .build();
-
-        let repo = core
-            .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
-            .unwrap();
-
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
-
-        assert!(repo.path.exists());
-        assert!(repo.valid());
-
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0, "the command should exit successfully");
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
-
-        assert!(
-            !repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-
-        let new_repo = core
-            .resolver()
-            .get_best_repo("gh:git-fixtures/renamed")
-            .unwrap();
-
-        assert!(
-            new_repo.path.exists(),
-            "the repo should be moved to the correct directory"
-        );
-
-        let remote = git_remote_get_url(&new_repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        assert_ne!(
-            remote_list.first().unwrap(),
-            "git@github.com:git-fixtures/renamed.git"
-        );
-
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn rename_folder_should_not_work() {
-        let cmd = RenameCommand {};
-
-        let args = cmd.app().get_matches_from(vec![
-            "rename",
-            "gh:git-fixtures/basic",
-            "gh:fixtures/basic",
-        ]);
-
-        let temp = tempdir().unwrap();
-        let core = Core::builder()
-            .with_config_for_dev_directory(temp.path())
-            .with_null_console()
-            .build();
-
-        let repo = core
-            .resolver()
-            .get_best_repo("gh:git-fixtures/basic")
-            .unwrap();
-
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
-
-        assert!(repo.path.exists());
-        assert!(repo.valid());
-
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
-        );
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_ne!(status, 0, "the command should not exit successfully");
-            }
-            Err(err) => {
-                assert!(
-                    err.message()
-                        .contains("Could not rename the repository directory"),
-                    "the command should not allow renaming the directory"
-                )
-            }
-        }
-
-        assert!(repo.path.exists(), "the repo should not be moved");
-
-        let new_repo = core.resolver().get_best_repo("gh:fixtures/basic").unwrap();
-
-        assert!(
-            !new_repo.path.exists(),
-            "the repo should be moved to the new directory, therefore the new directory should not exist"
-        );
-
-        let remote = git_remote_get_url(&repo.path, "origin").await;
-        assert!(remote.is_ok());
-
-        let remote_list = remote.unwrap();
-        assert_eq!(remote_list.len(), 1);
-        let remote_url = remote_list.first().unwrap();
-        assert!(
-            remote_url.contains("git-fixtures/basic"),
-            "Unexpected remote url: {remote_url}"
+            "the repo should now exist at the new path"
         );
     }
 }

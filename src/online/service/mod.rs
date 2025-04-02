@@ -1,4 +1,4 @@
-use crate::core::*;
+use crate::engine::*;
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -15,6 +15,14 @@ pub trait OnlineService: Send + Sync {
         core: &Core,
         service: &Service,
         repo: &Repo,
+    ) -> Result<(), Error>;
+
+    async fn move_repo(
+        &self,
+        core: &Core,
+        service: &Service,
+        source: &Repo,
+        destination: &Repo,
     ) -> Result<(), Error>;
 }
 

@@ -1,4 +1,4 @@
-use super::core;
+use super::engine;
 use super::errors;
 use super::online;
 use super::tasks;
@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use clap::ArgMatches;
 use std::{io::Write, vec::Vec};
 
-use crate::{completion::Completer, core::Core};
+use crate::{completion::Completer, engine::Core};
 
 mod apps;
 

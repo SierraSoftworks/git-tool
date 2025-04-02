@@ -1,4 +1,4 @@
-use crate::core::Core;
+use crate::engine::Core;
 use crate::{console::ConsoleProvider, search::matches};
 use itertools::Itertools;
 use std::{fmt::Display, sync::Arc};
@@ -9,7 +9,7 @@ pub struct Completer {
 }
 
 impl Completer {
-    pub fn new(core: &crate::core::Core, filter: &str) -> Self {
+    pub fn new(core: &Core, filter: &str) -> Self {
         Self::new_for(filter, core.console())
     }
 

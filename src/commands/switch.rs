@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::git;
 use crate::tasks::*;
 use clap::Arg;
@@ -98,7 +98,7 @@ impl SwitchCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{builder::CoreBuilderWithConfig, *};
+    use crate::engine::{builder::CoreBuilderWithConfig, *};
     use complete::helpers::test_completions_with_core;
     use tempfile::tempdir;
 
@@ -329,9 +329,7 @@ mod tests {
         let (core, repo) = setup_test_repo_with_remote(core, &temp).await;
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["switch", "feature/test2"]);
-        cmd.run(&core, &args)
-            .await
-            .expect("this command should have succeeded");
+        cmd.assert_run_successful(&core, &args).await;
 
         assert_eq!(
             git::git_current_branch(&repo.get_path()).await.unwrap(),
@@ -369,7 +367,7 @@ mod tests {
         assert!(repo.valid(), "the repository should exist and be valid");
 
         let args: ArgMatches = cmd.app().get_matches_from(vec!["switch", "feature/test"]);
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid(), "the repository should still be valid");
         assert_eq!(

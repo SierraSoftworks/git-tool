@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -26,14 +26,17 @@ impl CommandRunnable for RemoveCommand {
 
     #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {
-            errors::user(
-                "No repository name was provided.",
-                "Provide the name of the repository you wish to remove.",
-            )
-        })?;
+        let repo_name = matches
+            .get_one::<String>("repo")
+            .ok_or_else(|| {
+                errors::user(
+                    "No repository name was provided.",
+                    "Provide the name of the repository you wish to remove.",
+                )
+            })?
+            .parse()?;
 
-        let repo = core.resolver().get_best_repo(repo_name)?;
+        let repo = core.resolver().get_best_repo(&repo_name)?;
 
         if repo.exists() {
             if let Err(err) = std::fs::remove_dir_all(repo.get_path()) {
@@ -64,7 +67,7 @@ impl CommandRunnable for RemoveCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use mockall::predicate::eq;
 
     #[tokio::test]
@@ -81,21 +84,16 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
+                let identifier: Identifier = "repo".parse().unwrap();
                 mock.expect_get_best_repo()
-                    .with(eq("repo"))
+                    .with(eq(identifier))
                     .times(1)
                     .returning(move |_| {
                         Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
                     });
             })
             .build();
-
-        match cmd.run(&core, &args).await {
-            Ok(status) => {
-                assert_eq!(status, 0, "the command should exit successfully");
-            }
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             !temp.path().join("repo").exists(),

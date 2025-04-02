@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Core, errors};
+use crate::{engine::Core, errors};
 use futures::StreamExt;
 use serde::Deserialize;
 use std::env::consts::{ARCH, OS};
@@ -24,7 +24,7 @@ impl Default for GitHubSource {
 #[async_trait::async_trait]
 impl Source for GitHubSource {
     #[tracing::instrument(err, skip(self, core))]
-    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::core::Error> {
+    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, crate::engine::Error> {
         let uri = format!("https://api.github.com/repos/{}/releases", self.repo);
         info!("Making GET request to {} to check for new releases.", uri);
 
@@ -64,7 +64,7 @@ impl Source for GitHubSource {
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,
-    ) -> Result<(), crate::core::Error> {
+    ) -> Result<(), crate::engine::Error> {
         let uri = format!(
             "https://github.com/{}/releases/download/{}/{}",
             self.repo, release.id, variant.id
@@ -246,7 +246,7 @@ struct GitHubAsset {
 
 #[cfg(test)]
 pub mod mocks {
-    use crate::core::MockHttpRoute;
+    use crate::engine::MockHttpRoute;
 
     pub fn mock_get_releases() -> Vec<MockHttpRoute> {
         vec![

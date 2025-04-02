@@ -12,7 +12,7 @@ extern crate tokio;
 extern crate tracing_batteries;
 
 use crate::commands::CommandRunnable;
-use crate::core::features;
+use crate::engine::features;
 use clap::{crate_authors, Arg};
 use std::sync::{atomic::AtomicBool, Arc};
 use tracing_batteries::prelude::*;
@@ -25,7 +25,7 @@ mod tasks;
 mod commands;
 mod completion;
 mod console;
-mod core;
+mod engine;
 mod errors;
 mod fs;
 mod git;
@@ -207,12 +207,12 @@ async fn run(
     matches: clap::ArgMatches,
     telemetry_enabled: Arc<AtomicBool>,
 ) -> Result<i32, errors::Error> {
-    let core_builder = core::Core::builder();
+    let core_builder = engine::Core::builder();
 
     let core_builder = if let Some(cfg_file) = matches.get_one::<String>("config") {
         debug!("Loading configuration file...");
         core_builder.with_config_file(cfg_file)?
-    } else if let Some(dirs) = core::Config::default_path() {
+    } else if let Some(dirs) = engine::Config::default_path() {
         debug!("Loading configuration from default config file...");
         core_builder.with_config_file_or_default(dirs)
     } else {

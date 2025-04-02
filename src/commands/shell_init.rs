@@ -37,7 +37,7 @@ impl CommandRunnable for ShellInitCommand {
     }
 
     #[tracing::instrument(name = "gt shell-init", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
 where {
         let mut output = core.output();
 
@@ -91,10 +91,7 @@ mod tests {
         let cmd = ShellInitCommand {};
         let args = cmd.app().get_matches_from(vec!["shell-init", "powershell"]);
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             console.to_string().contains("Invoke-Expression"),

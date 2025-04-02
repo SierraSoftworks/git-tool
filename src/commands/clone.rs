@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::tasks::*;
 use clap::Arg;
 use std::path::PathBuf;
@@ -57,7 +57,7 @@ impl CommandRunnable for CloneCommand {
                     continue;
                 }
 
-                let repo = core.resolver().get_best_repo(line.trim())?;
+                let repo = core.resolver().get_best_repo(&line.trim().parse()?)?;
                 writeln!(core.output(), "{}", repo)?;
                 match operation.apply_repo(core, &repo).await {
                     Ok(()) => {}
@@ -65,7 +65,8 @@ impl CommandRunnable for CloneCommand {
                 }
             }
         } else {
-            let repo = core.resolver().get_best_repo(repo_name)?;
+            let identifier = repo_name.parse()?;
+            let repo = core.resolver().get_best_repo(&identifier)?;
 
             if !repo.exists() {
                 match sequence![GitClone {}].apply_repo(core, &repo).await {
@@ -91,7 +92,7 @@ impl CommandRunnable for CloneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -128,9 +129,10 @@ features:
             })
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
+                let identifier: Identifier = "repo".parse().unwrap();
                 mock.expect_get_best_repo()
                     .once()
-                    .with(mockall::predicate::eq("repo"))
+                    .with(mockall::predicate::eq(identifier))
                     .returning(move |_| {
                         Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
                     });
@@ -181,9 +183,10 @@ features:
             })
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
+                let identifier: Identifier = "gh:git-fixtures/basic".parse().unwrap();
                 mock.expect_get_best_repo()
                     .once()
-                    .with(mockall::predicate::eq("gh:git-fixtures/basic"))
+                    .with(mockall::predicate::eq(identifier))
                     .returning(move |_| {
                         Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
                     });

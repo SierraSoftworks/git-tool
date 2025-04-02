@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::features, tasks::*};
+use crate::{engine::features, tasks::*};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -48,13 +48,17 @@ impl CommandRunnable for NewCommand {
 
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo = match matches.get_one::<String>("repo") {
-            Some(name) => core.resolver().get_best_repo(name)?,
-            None => Err(errors::user(
-                "No repository name provided for creation.",
-                "Please provide a repository name when calling this method: git-tool new my/repo",
-            ))?,
-        };
+        let repo_id = matches
+            .get_one::<String>("repo")
+            .ok_or_else(|| {
+                errors::user(
+                    "No repository name provided for creation.",
+                    "Please provide a repository name when calling this method: git-tool new my/repo",
+                )
+            })?
+            .parse()?;
+
+        let repo = core.resolver().get_best_repo(&repo_id)?;
 
         if repo.valid() {
             return Ok(0);
@@ -143,11 +147,10 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:test/new-repo-partial")
+            .get_best_repo(&"gh:test/new-repo-partial".parse().unwrap())
             .unwrap();
         assert!(!repo.valid());
-
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid());
     }
@@ -178,11 +181,11 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:test/new-repo-full")
+            .get_best_repo(&"gh:test/new-repo-full".parse().unwrap())
             .unwrap();
         assert!(!repo.valid());
 
-        cmd.run(&core, &args).await.unwrap();
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid());
     }

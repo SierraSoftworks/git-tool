@@ -1,6 +1,6 @@
 use super::async_trait;
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -68,7 +68,7 @@ impl CommandRunnable for TempCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use std::sync::{Arc, RwLock};
 
     #[tokio::test]
@@ -172,10 +172,7 @@ apps:
             })
             .build();
 
-        match cmd.run(&core, &args).await {
-            Ok(_) => {}
-            Err(err) => panic!("{}", err.message()),
-        }
+        cmd.assert_run_successful(&core, &args).await;
 
         assert!(
             !temp_path.read().unwrap().as_ref().unwrap().exists(),
@@ -215,6 +212,8 @@ apps:
             })
             .build();
 
-        cmd.run(&core, &args).await.unwrap_or_default();
+        cmd.run(&core, &args)
+            .await
+            .expect_err("should fail if an unknown app is specified");
     }
 }

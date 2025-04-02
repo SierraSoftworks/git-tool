@@ -15,7 +15,7 @@ impl Sequence {
 #[async_trait]
 impl Task for Sequence {
     #[tracing::instrument(name = "task:sequence(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         for task in self.tasks.iter() {
             task.apply_repo(core, repo).await?;
         }
@@ -27,8 +27,8 @@ impl Task for Sequence {
     async fn apply_scratchpad(
         &self,
         core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         for task in self.tasks.iter() {
             task.apply_scratchpad(core, scratch).await?;
         }
@@ -40,7 +40,7 @@ impl Task for Sequence {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
 
     #[tokio::test]
     async fn test_empty_sequence() {

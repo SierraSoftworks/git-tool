@@ -109,7 +109,7 @@ pub async fn git_merged_branches(repo: &path::Path) -> Result<Vec<String>, error
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use crate::git::*;
     use crate::tasks::*;
     use path::PathBuf;

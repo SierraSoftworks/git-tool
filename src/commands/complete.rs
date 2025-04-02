@@ -27,7 +27,7 @@ impl CommandRunnable for CompleteCommand {
     }
 
     #[tracing::instrument(name = "gt complete", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
 where {
         let position: Option<usize> = matches.get_one::<usize>("position").copied();
 
@@ -69,7 +69,7 @@ impl CompleteCommand {
 
         match position {
             Some(position) if position >= cmd.len() => {
-                cmd.extend(std::iter::repeat(' ').take(position - cmd.len()));
+                cmd.extend(std::iter::repeat_n(' ', position - cmd.len()));
             }
             Some(position) if position < cmd.len() => {
                 cmd = cmd[..position].into();
@@ -78,7 +78,7 @@ impl CompleteCommand {
         }
 
         let mut filter = "".to_string();
-        if let Some((last_space_index, _)) = cmd.match_indices(' ').last() {
+        if let Some((last_space_index, _)) = cmd.match_indices(' ').next_back() {
             filter = cmd[last_space_index + 1..].to_string();
             cmd = cmd[..last_space_index].to_string();
         }
@@ -133,7 +133,7 @@ impl CompleteCommand {
 
 #[cfg(test)]
 pub mod helpers {
-    use super::core::Config;
+    use super::engine::Config;
     use super::*;
     use crate::test::get_dev_dir;
 
@@ -164,6 +164,7 @@ pub mod helpers {
         cmd.offer_completions(core, args, &completer).await;
 
         let output = console.to_string();
+        println!("{}", output);
 
         let mut offers = std::collections::HashSet::new();
 

@@ -1,6 +1,6 @@
 use crate::errors;
 
-use super::{core::Target, *};
+use super::{engine::Target, *};
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
@@ -12,7 +12,7 @@ pub struct WriteFile<'a> {
 #[async_trait::async_trait]
 impl Task for WriteFile<'_> {
     #[tracing::instrument(name = "task:write_file(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let path = repo.get_path().join(&self.path);
 
         self.write_file(&path).await?;
@@ -24,8 +24,8 @@ impl Task for WriteFile<'_> {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         let path = scratch.get_path().join(&self.path);
 
         self.write_file(&path).await?;
@@ -56,7 +56,7 @@ impl WriteFile<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

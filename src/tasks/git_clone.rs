@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitClone {}
@@ -7,7 +7,7 @@ pub struct GitClone {}
 #[async_trait::async_trait]
 impl Task for GitClone {
     #[tracing::instrument(name = "task:git_clone(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         if repo.exists() {
             return Ok(());
         }
@@ -31,7 +31,7 @@ impl Task for GitClone {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

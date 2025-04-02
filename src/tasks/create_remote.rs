@@ -15,7 +15,7 @@ impl Default for CreateRemote {
 impl Task for CreateRemote {
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:create_remote(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -23,7 +23,7 @@ impl Task for CreateRemote {
         if !core
             .config()
             .get_features()
-            .has(core::features::CREATE_REMOTE)
+            .has(engine::features::CREATE_REMOTE)
         {
             return Ok(());
         }
@@ -44,14 +44,14 @@ impl Task for CreateRemote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Target;
+    use crate::engine::Target;
     use tempfile::tempdir;
 
     #[tokio::test]
     #[cfg(feature = "auth")]
     async fn test_repo() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new(
+        let repo = engine::Repo::new(
             "gh:sierrasoftworks/test-git-remote",
             temp.path().join("repo"),
         );
@@ -76,7 +76,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let scratch = engine::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())

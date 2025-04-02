@@ -1,6 +1,4 @@
-use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use tracing_batteries::prelude::debug;
 
 /// Converts a path into an appropriate native path by handling the
 /// conversion of `/` into path segments.
@@ -35,90 +33,72 @@ pub fn to_native_path<T: Into<PathBuf>>(path: T) -> PathBuf {
     output
 }
 
-/// Gets the list of child directories which match a given pattern such as "*/*".
+/// Resolves a path pattern (which may include non-wildcard segments) into a list of matching
+/// directories.
 ///
-/// This method enumerates directories which match a representative glob pattern
-/// consisting of wildcards separated by slashes. Unlike a full glob, this internally
-/// is treated as a depth marker (with "*/*" corresponding to a depth of 2).
-///
-/// Internally, this method dispatches to [`get_directory_tree_to_depth`].
-///
-/// ## Example
-/// ```
-/// use crate::fs::get_child_directories;
-///
-/// get_child_directories("/".into(), "*");
-/// ```
-pub fn get_child_directories(
+/// This method is useful for resolving a path pattern which may include wildcards such as
+/// 'myorg/*/myrepo' into a list of directories which match that pattern. It represents a
+/// capability enhancement over the functionality provided by [`get_child_directories`].
+pub fn resolve_directories(
     from: &Path,
     pattern: &str,
 ) -> Result<Vec<PathBuf>, crate::errors::Error> {
-    let depth = pattern.split('/').count();
-
-    get_directory_tree_to_depth(from, depth)
+    if !from.exists() {
+        Ok(Vec::new())
+    } else if let Some((first_segment, rest)) = pattern.split_once('/') {
+        if first_segment == "*" {
+            Ok(get_child_directories(from)?
+                .map(|dir| resolve_directories(&dir, rest))
+                .collect::<Result<Vec<Vec<PathBuf>>, crate::errors::Error>>()?
+                .into_iter()
+                .flatten()
+                .collect())
+        } else {
+            resolve_directories(&from.join(first_segment), rest)
+        }
+    } else if pattern == "*" {
+        get_child_directories(from).map(|dirs| dirs.collect())
+    } else {
+        Ok(vec![from.join(pattern)])
+    }
 }
 
-/// Gets the list of child directories which appear at a given depth relative to a root path.
-///
-/// This method recursively enumerates child directories, returning the list of directory paths
-/// which appear a given depth below a provided root path.
-pub fn get_directory_tree_to_depth(
+pub fn get_child_directories(
     from: &Path,
-    depth: usize,
-) -> Result<Vec<PathBuf>, crate::errors::Error> {
-    if depth == 0 {
-        return Ok(vec![from.to_owned()]);
-    }
-
-    debug!(
-        "Enumerating child directories of '{}' to depth {}",
-        from.display(),
-        depth
-    );
-
-    let mut directories = Vec::new();
-
-    match from.read_dir() {
-        Ok(dirs) => {
-            for dir in dirs.flatten() {
-                if let Ok(ft) = dir.file_type() {
-                    if ft.is_dir() {
-                        let children = get_directory_tree_to_depth(&dir.path(), depth - 1)?;
-                        directories.extend(children);
-                    }
-                }
+) -> Result<impl Iterator<Item = PathBuf>, crate::errors::Error> {
+    Ok(from.read_dir().map_err(|e| match e.kind() {
+        std::io::ErrorKind::NotFound => crate::errors::user(
+            &format!("The path '{}' does not exist.", from.display()),
+            "Please check that the path is correct and that you have permission to access it.",
+        ),
+        std::io::ErrorKind::NotADirectory => crate::errors::user(
+            &format!("The path '{}' is not a directory.", from.display()),
+            "Please check that this path is a directory and that you have not accidentally created a file here instead.",
+        ),
+        _ => crate::errors::system_with_internal(
+            &format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
+            "Check that Git-Tool has permission to read this directory.",
+            e,
+        ),
+    })?.filter_map(|entry| {
+        if let Ok(entry) = entry {
+            if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
+                Some(entry.path())
+            } else {
+                None
             }
+        } else {
+            None
         }
-        Err(e) if e.kind() == ErrorKind::NotFound => {}
-        Err(e) if e.kind() == ErrorKind::NotADirectory => {
-            return Err(crate::errors::user_with_internal(
-                &format!(
-                    "The path '{}' is not a directory and cannot be enumerated.",
-                    from.display()
-                ),
-                "Me sure that this path is a directory and that you have not accidentally created a file here instead.",
-                e,
-            ));
-        }
-        Err(e) => {
-            return Err(crate::errors::user_with_internal(
-                &format!(
-                    "Could not enumerate directories in '{}' due to an OS-level error.",
-                    from.display()
-                ),
-                "Check that Git-Tool has permission to read this directory.",
-                e,
-            ));
-        }
-    }
-
-    Ok(directories)
+    }))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test::get_dev_dir;
+    use itertools::Itertools;
+    use rstest::rstest;
 
     #[test]
     fn test_to_native_path() {
@@ -135,7 +115,7 @@ mod tests {
 
     #[test]
     fn get_child_directories() {
-        let children = super::get_child_directories(&get_dev_dir().join("gh"), "*/*")
+        let children = resolve_directories(&get_dev_dir().join("gh"), "*/*")
             .expect("to get child directories");
 
         assert_eq!(children.len(), 5);
@@ -157,7 +137,7 @@ mod tests {
             .iter()
             .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
 
-        assert!(super::get_child_directories(
+        assert!(resolve_directories(
             &get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")
@@ -166,5 +146,32 @@ mod tests {
             "*"
         )
         .is_err());
+    }
+
+    #[rstest]
+    #[case("gh/sierrasoftworks/*", &["gh/sierrasoftworks/test1", "gh/sierrasoftworks/test12", "gh/sierrasoftworks/test2"])]
+    #[case("gh/*/test1", &["gh/sierrasoftworks/test1", "gh/spartan563/test1"])]
+    fn test_resolve_directories(#[case] pattern: &str, #[case] expected: &[&str]) {
+        let directories = resolve_directories(&get_dev_dir(), pattern).expect("to get directories");
+
+        let prefix = get_dev_dir();
+        let result = directories
+            .iter()
+            .map(|p| {
+                assert!(p.starts_with(&prefix));
+                assert!(p.is_dir());
+                p.components()
+                    .skip(prefix.components().count())
+                    .map(|c| c.as_os_str().to_string_lossy())
+                    .join("/")
+            })
+            .sorted()
+            .collect::<Vec<_>>();
+        let expected = expected
+            .iter()
+            .map(|s| s.to_string())
+            .sorted()
+            .collect::<Vec<_>>();
+        assert_eq!(result, expected);
     }
 }

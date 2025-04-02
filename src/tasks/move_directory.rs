@@ -1,4 +1,4 @@
-use crate::core::{Core, Target};
+use crate::engine::{Core, Target};
 use crate::errors;
 use crate::tasks::Task;
 use std::{fs, path};
@@ -14,13 +14,18 @@ impl Task for MoveDirectory {
     async fn apply_repo(
         &self,
         _core: &Core,
-        repo: &crate::core::Repo,
-    ) -> Result<(), crate::core::Error> {
+        repo: &crate::engine::Repo,
+    ) -> Result<(), crate::engine::Error> {
         if !repo.exists() {
             return Err(errors::user(
                 format!("The repository {} does not exist on your machine and cannot be moved as a result.", repo.name).as_str(),
                 format!("Make sure the name is correct and that the repository exists by running `git-tool clone {}` first.", repo.name).as_str()
             ));
+        }
+
+        if let Some(parent) = self.new_path.parent() {
+            // Ensure that the parent directory exists for the target folder
+            fs::create_dir_all(parent)?;
         }
 
         fs::rename(repo.path.clone(), self.new_path.clone()).map_err(|err| {
@@ -42,8 +47,8 @@ impl Task for MoveDirectory {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        scratch: &crate::core::Scratchpad,
-    ) -> Result<(), crate::core::Error> {
+        scratch: &crate::engine::Scratchpad,
+    ) -> Result<(), crate::engine::Error> {
         if !scratch.exists() {
             return Err(errors::user(
                 format!("The scratchpad {} does not exist on your machine and cannot be moved as a result.", scratch.get_name()).as_str(),
@@ -78,7 +83,7 @@ mod tests {
 
         let original = temp.path().join("original");
         let moved = temp.path().join("moved");
-        let repo = crate::core::Repo::new("gh:sierrasoftworks/git-tool", original.clone());
+        let repo = crate::engine::Repo::new("gh:sierrasoftworks/git-tool", original.clone());
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
@@ -107,13 +112,13 @@ mod tests {
     async fn move_directory_no_repository_to_rename() {
         let temp = tempdir().unwrap();
 
-        let repo = crate::core::Repo::new(
+        let repo = crate::engine::Repo::new(
             "gh:sierrasoftworks/git-tool",
             temp.path().join("non_existent_repo"),
         );
 
         let new_repo =
-            crate::core::Repo::new("gh:sierrasoftworks/gt", temp.path().join("new_repo"));
+            crate::engine::Repo::new("gh:sierrasoftworks/gt", temp.path().join("new_repo"));
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())
@@ -139,7 +144,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = crate::core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let scratch = crate::engine::Scratchpad::new("2019w15", temp.path().join("scratch"));
         let new_scratch = temp.path().join("new_scratch");
 
         let core = Core::builder()

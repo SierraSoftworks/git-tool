@@ -1,5 +1,5 @@
-use super::core;
-use super::core::Core;
+use super::engine;
+use super::engine::Core;
 use async_trait::async_trait;
 
 #[cfg(test)]
@@ -25,10 +25,10 @@ mod git_checkout;
 mod git_clone;
 mod git_commit;
 mod git_init;
-mod git_move_upstream;
 mod git_remote;
 mod git_switch;
 mod move_directory;
+mod move_remote;
 mod new_folder;
 mod write_file;
 
@@ -41,10 +41,10 @@ pub use git_clone::GitClone;
 #[allow(unused_imports)]
 pub use git_commit::GitCommit;
 pub use git_init::GitInit;
-pub use git_move_upstream::GitMoveUpstream;
 pub use git_remote::GitRemote;
 pub use git_switch::GitSwitch;
 pub use move_directory::MoveDirectory;
+pub use move_remote::MoveRemote;
 pub use new_folder::NewFolder;
 pub use sequence::Sequence;
 #[allow(unused_imports)]
@@ -52,22 +52,22 @@ pub use write_file::WriteFile;
 
 #[async_trait]
 pub trait Task {
-    async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, _repo: &engine::Repo) -> Result<(), engine::Error> {
         Ok(())
     }
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        _scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         Ok(())
     }
 }
 
 #[cfg(test)]
 pub struct TestTask {
-    ran_repo: Mutex<Option<core::Repo>>,
-    ran_scratchpad: Mutex<Option<core::Scratchpad>>,
+    ran_repo: Mutex<Option<engine::Repo>>,
+    ran_scratchpad: Mutex<Option<engine::Scratchpad>>,
     error: bool,
 }
 
@@ -85,7 +85,7 @@ impl Default for TestTask {
 #[cfg(test)]
 #[async_trait]
 impl Task for TestTask {
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let mut r = self.ran_repo.lock().await;
 
         *r = Some(repo.clone());
@@ -105,8 +105,8 @@ impl Task for TestTask {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         let mut s = self.ran_scratchpad.lock().await;
 
         *s = Some(scratch.clone());
