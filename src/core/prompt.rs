@@ -1,3 +1,4 @@
+use std::io::BufReader;
 use std::{
     io::{Read, Write},
     sync::Arc,
@@ -58,8 +59,9 @@ impl Prompter {
 
     fn read_line<R: Read>(reader: R) -> Result<String, Error> {
         let mut bytes = Vec::with_capacity(128);
+        let buf_reader = BufReader::new(reader);
 
-        for byte in reader.bytes() {
+        for byte in buf_reader.bytes() {
             match byte {
                 Err(e) => return Err(e.into()),
                 Ok(char) => {

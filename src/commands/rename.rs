@@ -119,11 +119,10 @@ impl CommandRunnable for RenameCommand {
 mod tests {
     use super::*;
     use crate::core::MockHttpRoute;
-    use mockall::predicate::eq;
-    use rstest::rstest;
+    use mockall::predicate;
     use tempfile::tempdir;
 
-    #[rstest]
+    #[rstest::rstest]
     #[case::rename(
         "gh:git-fixtures/basic",
         "gh:git-fixtures/renamed",
@@ -153,7 +152,7 @@ mod tests {
             .with_mock_http_client(github_calls)
             .with_mock_keychain(|c| {
                 c.expect_get_token()
-                    .with(eq("gh"))
+                    .with(predicate::eq("gh"))
                     .returning(|_| Ok("test_token".into()));
             })
             .with_null_console()

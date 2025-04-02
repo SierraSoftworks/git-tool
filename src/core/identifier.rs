@@ -57,13 +57,13 @@ impl Identifier {
 impl Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match (self.scope.as_str(), self.path.as_str()) {
-            (scope, path) if scope.is_empty() => write!(f, "{}", path),
+            ("", path) => write!(f, "{}", path),
             (scope, path) => write!(f, "{}:{}", scope, path),
         }
     }
 }
 
-impl<'a> FromStr for Identifier {
+impl FromStr for Identifier {
     type Err = errors::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

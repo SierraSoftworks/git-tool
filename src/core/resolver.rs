@@ -47,7 +47,6 @@ impl Resolver for TrueResolver {
     #[tracing::instrument(err, skip(self))]
     fn get_scratchpads(&self) -> Result<Vec<Scratchpad>, Error> {
         Ok(get_child_directories(&self.config.get_scratch_directory())?
-            .into_iter()
             .filter_map(|p| {
                 p.file_name()
                     .and_then(|f| f.to_str())
@@ -130,7 +129,7 @@ impl Resolver for TrueResolver {
 
         let all_repos = match &identifier.scope {
             ns if ns.is_empty() => self.get_repos()?,
-            ns => self.get_repos_for(self.config.get_service(&ns).map_err(|_| {
+            ns => self.get_repos_for(self.config.get_service(ns).map_err(|_| {
                 errors::user(
                     &format!(
                         "The service '{}' used to resolve a repo was not present in your config.",

@@ -69,7 +69,7 @@ impl CompleteCommand {
 
         match position {
             Some(position) if position >= cmd.len() => {
-                cmd.extend(std::iter::repeat(' ').take(position - cmd.len()));
+                cmd.extend(std::iter::repeat_n(' ', position - cmd.len()));
             }
             Some(position) if position < cmd.len() => {
                 cmd = cmd[..position].into();
@@ -78,7 +78,7 @@ impl CompleteCommand {
         }
 
         let mut filter = "".to_string();
-        if let Some((last_space_index, _)) = cmd.match_indices(' ').last() {
+        if let Some((last_space_index, _)) = cmd.match_indices(' ').next_back() {
             filter = cmd[last_space_index + 1..].to_string();
             cmd = cmd[..last_space_index].to_string();
         }

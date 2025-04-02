@@ -56,12 +56,10 @@ pub fn resolve_directories(
         } else {
             resolve_directories(&from.join(first_segment), rest)
         }
+    } else if pattern == "*" {
+        get_child_directories(from).map(|dirs| dirs.collect())
     } else {
-        if pattern == "*" {
-            get_child_directories(from).map(|dirs| dirs.collect())
-        } else {
-            Ok(vec![from.join(pattern)])
-        }
+        Ok(vec![from.join(pattern)])
     }
 }
 
@@ -84,7 +82,7 @@ pub fn get_child_directories(
         ),
     })?.filter_map(|entry| {
         if let Ok(entry) = entry {
-            if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+            if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
                 Some(entry.path())
             } else {
                 None
