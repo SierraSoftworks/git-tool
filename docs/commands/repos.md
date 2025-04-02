@@ -242,8 +242,30 @@ gt remove gh:SierraSoftworks/git-tool
 
 ## rename <Badge text="v3.8.0+"/>
 
-The `gt rename` command will rename a repository on your local machine and updates the
-origin URL to match the new name.
+The `gt rename` command will rename a repository, including moving of the local directory and
+updating the repository name (or transferring it to a different organization) on GitHub in cases
+where both the source and target repository name are hosted on the same `GitHub/v3` service entry.
+
+#### Aliases
+
+- `gt mv`
+
+#### Options
+
+- `--no-move-remote` will cause the command to skip renaming/transferring the GitHub repository.
+
+#### Example
+
+```powershell
+# Rename a repository in the same organization
+gt rename gh:SierraSoftworks/git-tool gh:SierraSoftworks/gt
+
+# Transfer a repository to a different organization
+gt rename gh:SierraSoftworks/git-tool gh:SpechtLabs/git-tool
+
+# Perform a local-only move from one service to another
+gt rename gh:SierraSoftworks/git-tool ghp:SierraSoftworks/git-tool
+```
 
 ::: note
 
@@ -253,7 +275,7 @@ In case you have a directory layout like this:
 
 - dev
     - github.com
-        - sierrasoftworks
+        - SpechtLabs
             - git-tool
 
 </FileTree>
@@ -263,30 +285,11 @@ but multiple remotes configured in the `git-tool` repository:
 - `origin git@github.com:SpechtLabs/git-tool.git`
 - `upstream git@github.com:SierraSoftworks/git-tool.git`
 
-the `gt rename` command will only update the remote who's URL matches the expected git-remote based on the directory
-structure.
-In this example, `gt rename gh:SierraSoftworks/git-tool gh:SierraSoftworks/gt` will result in the following remote
+the `gt rename` command will only update the `origin` remote's URL to match the new repository name.
+In this example, `gt rename gh:SpechtLabs/git-tool gh:SpechtLabs/gt` will result in the following remote
 configuration:
 
-- `origin git@github.com:SpechtLabs/git-tool.git`
-- `upstream git@github.com:SierraSoftworks/gt.git`
+- `origin git@github.com:SpechtLabs/gt.git`
+- `upstream git@github.com:SierraSoftworks/git-tool.git`
 
 :::
-
-#### Aliases
-
-- `gt mv`
-
-#### Options
-
-- `--no-update-remote` will cause the command to not update the remote URL.
-
-#### Example
-
-```powershell
-# Rename a repository locally and not update the remote URL
-gt mv gh:SierraSoftworks/git-tool gh:SierraSoftworks/gt --no-update-remote
-
-# Rename a repository and update the remote URL
-gt mv gh:SierraSoftworks/gt gh:SierraSoftworks/git-tool
-```
