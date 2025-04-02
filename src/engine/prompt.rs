@@ -1,4 +1,3 @@
-use std::io::BufReader;
 use std::{
     io::{Read, Write},
     sync::Arc,
@@ -57,11 +56,13 @@ impl Prompter {
         }
     }
 
+    // NOTE: We use unbuffered reads here since the prompter is stateless and needs to avoid
+    // consuming output from future prompts.
+    #[allow(clippy::unbuffered_bytes)]
     fn read_line<R: Read>(reader: R) -> Result<String, Error> {
         let mut bytes = Vec::with_capacity(128);
-        let buf_reader = BufReader::new(reader);
 
-        for byte in buf_reader.bytes() {
+        for byte in reader.bytes() {
             match byte {
                 Err(e) => return Err(e.into()),
                 Ok(char) => {
@@ -80,7 +81,7 @@ impl Prompter {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::Core;
+    use crate::engine::Core;
 
     #[test]
     fn prompt_for_any() {

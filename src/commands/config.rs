@@ -1,4 +1,4 @@
-use crate::core::features;
+use crate::engine::features;
 
 use super::async_trait;
 use super::*;
@@ -312,7 +312,7 @@ impl CommandRunnable for ConfigCommand {
 mod tests {
     use std::path::PathBuf;
 
-    use super::core::Config;
+    use super::engine::Config;
     use super::*;
     use crate::test::get_dev_dir;
     use complete::helpers::test_completions_with_config;

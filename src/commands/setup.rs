@@ -1,6 +1,6 @@
 use crate::{
     completion::get_shells,
-    core::{Error, Prompter},
+    engine::{Error, Prompter},
     fs::to_native_path,
 };
 use std::{io::ErrorKind, path::PathBuf, writeln};
@@ -68,7 +68,7 @@ impl CommandRunnable for SetupCommand {
             .save(
                 &new_config
                     .get_config_file()
-                    .or_else(core::Config::default_path)
+                    .or_else(engine::Config::default_path)
                     .ok_or_else(|| errors::system(
                         "Could not determine a default configuration file path for your system.",
                         "Set the GITTOOL_CONFIG environment variable to a valid configuration file path and try again."))?,

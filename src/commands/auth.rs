@@ -32,7 +32,7 @@ impl CommandRunnable for AuthCommand {
     }
 
     #[tracing::instrument(name = "gt auth", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error> {
         let service = matches.get_one::<String>("service").ok_or_else(|| {
             errors::user(
             "You have not provided the name of the service you wish to authenticate.",
@@ -123,7 +123,7 @@ mod tests {
                     .returning(|_| Ok("mock-token".to_string()));
             })
             .with_null_console()
-            .with_mock_http_client(vec![core::MockHttpRoute::new(
+            .with_mock_http_client(vec![engine::MockHttpRoute::new(
                 "GET",
                 "https://api.github.com/user",
                 200,

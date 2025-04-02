@@ -1,4 +1,4 @@
-use crate::core::Core;
+use crate::engine::Core;
 use crate::{console::ConsoleProvider, search::matches};
 use itertools::Itertools;
 use std::{fmt::Display, sync::Arc};

@@ -27,7 +27,7 @@ impl CommandRunnable for CompleteCommand {
     }
 
     #[tracing::instrument(name = "gt complete", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
 where {
         let position: Option<usize> = matches.get_one::<usize>("position").copied();
 
@@ -133,7 +133,7 @@ impl CompleteCommand {
 
 #[cfg(test)]
 pub mod helpers {
-    use super::core::Config;
+    use super::engine::Config;
     use super::*;
     use crate::test::get_dev_dir;
 

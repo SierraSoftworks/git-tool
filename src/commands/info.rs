@@ -1,4 +1,4 @@
-use super::core::Target;
+use super::engine::Target;
 use super::*;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -60,7 +60,7 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::*;
-    use crate::{console::MockConsoleProvider, core::*};
+    use crate::{console::MockConsoleProvider, engine::*};
 
     #[tokio::test]
     async fn run() {

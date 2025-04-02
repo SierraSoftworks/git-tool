@@ -18,7 +18,7 @@ impl CommandRunnable for DoctorCommand {
     }
 
     #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
-    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, core::Error> {
+    async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, engine::Error> {
         writeln!(core.output(), "Checking environment...")?;
 
         if core.config().file_exists() {

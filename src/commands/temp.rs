@@ -1,6 +1,6 @@
 use super::async_trait;
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -68,7 +68,7 @@ impl CommandRunnable for TempCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use std::sync::{Arc, RwLock};
 
     #[tokio::test]

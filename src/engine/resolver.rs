@@ -290,7 +290,7 @@ fn repo_from_svc_and_path(
 mod tests {
     use super::super::Target;
     use super::{resolver, Config, Resolver};
-    use crate::core::resolver::TrueResolver;
+    use crate::engine::resolver::TrueResolver;
     use crate::test::get_dev_dir;
     use chrono::prelude::*;
     use std::sync::Arc;

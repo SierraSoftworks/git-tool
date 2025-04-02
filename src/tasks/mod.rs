@@ -1,5 +1,5 @@
-use super::core;
-use super::core::Core;
+use super::engine;
+use super::engine::Core;
 use async_trait::async_trait;
 
 #[cfg(test)]
@@ -52,22 +52,22 @@ pub use write_file::WriteFile;
 
 #[async_trait]
 pub trait Task {
-    async fn apply_repo(&self, _core: &Core, _repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, _repo: &engine::Repo) -> Result<(), engine::Error> {
         Ok(())
     }
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        _scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        _scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         Ok(())
     }
 }
 
 #[cfg(test)]
 pub struct TestTask {
-    ran_repo: Mutex<Option<core::Repo>>,
-    ran_scratchpad: Mutex<Option<core::Scratchpad>>,
+    ran_repo: Mutex<Option<engine::Repo>>,
+    ran_scratchpad: Mutex<Option<engine::Scratchpad>>,
     error: bool,
 }
 
@@ -85,7 +85,7 @@ impl Default for TestTask {
 #[cfg(test)]
 #[async_trait]
 impl Task for TestTask {
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let mut r = self.ran_repo.lock().await;
 
         *r = Some(repo.clone());
@@ -105,8 +105,8 @@ impl Task for TestTask {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         let mut s = self.ran_scratchpad.lock().await;
 
         *s = Some(scratch.clone());

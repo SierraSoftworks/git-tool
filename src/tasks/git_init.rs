@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitInit {}
@@ -7,7 +7,7 @@ pub struct GitInit {}
 #[async_trait::async_trait]
 impl Task for GitInit {
     #[tracing::instrument(name = "task:git_init(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_init(&repo.get_path()).await?;
 
         #[cfg(test)]
@@ -23,7 +23,7 @@ impl Task for GitInit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

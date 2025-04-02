@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitAdd<'a> {
@@ -9,7 +9,7 @@ pub struct GitAdd<'a> {
 #[async_trait::async_trait]
 impl Task for GitAdd<'_> {
     #[tracing::instrument(name = "task:git_add(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_add(&repo.get_path(), &self.paths).await
     }
 }
@@ -17,7 +17,7 @@ impl Task for GitAdd<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use std::path::PathBuf;
     use tempfile::tempdir;
 

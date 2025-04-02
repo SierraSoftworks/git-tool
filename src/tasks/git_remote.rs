@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitRemote<'a> {
@@ -15,7 +15,7 @@ impl Default for GitRemote<'static> {
 #[async_trait::async_trait]
 impl Task for GitRemote<'_> {
     #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let service = core.config().get_service(&repo.service)?;
 
         let url = service.get_git_url(repo)?;
@@ -35,7 +35,7 @@ impl Task for GitRemote<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

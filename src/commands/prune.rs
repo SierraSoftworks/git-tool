@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::git;
 use clap::Arg;
 use itertools::Itertools;
@@ -111,8 +111,8 @@ impl CommandRunnable for PruneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::builder::CoreBuilderWithConfig;
-    use crate::core::*;
+    use crate::engine::builder::CoreBuilderWithConfig;
+    use crate::engine::*;
     use crate::tasks::Task;
     use complete::helpers::test_completions_with_core;
     use tempfile::tempdir;

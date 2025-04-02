@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::{Identifier, Target};
+use crate::engine::{Identifier, Target};
 use crate::tasks::*;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -118,7 +118,7 @@ impl CommandRunnable for RenameCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::MockHttpRoute;
+    use crate::engine::MockHttpRoute;
     use mockall::predicate;
     use tempfile::tempdir;
 

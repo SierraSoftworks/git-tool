@@ -88,7 +88,7 @@ mod tests {
     use mockall::predicate::eq;
 
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
 
     #[tokio::test]
     async fn run() {

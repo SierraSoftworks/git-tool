@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::git;
 use crate::tasks::*;
 use clap::Arg;
@@ -98,7 +98,7 @@ impl SwitchCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{builder::CoreBuilderWithConfig, *};
+    use crate::engine::{builder::CoreBuilderWithConfig, *};
     use complete::helpers::test_completions_with_core;
     use tempfile::tempdir;
 

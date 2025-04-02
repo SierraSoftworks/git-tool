@@ -1,8 +1,8 @@
 use super::*;
-use crate::core::features;
+use crate::engine::features;
 use crate::tasks::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant};
-use crate::{core::Target, update::UpdateManager};
+use crate::{engine::Target, update::UpdateManager};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -147,7 +147,7 @@ impl OpenCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use mockall::predicate::eq;
     use tempfile::tempdir;
 

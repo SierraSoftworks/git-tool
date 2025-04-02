@@ -36,7 +36,7 @@ impl std::fmt::Display for Service {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ServiceAPI;
+    use crate::engine::ServiceAPI;
 
     use super::{Repo, Service};
     use std::path::PathBuf;

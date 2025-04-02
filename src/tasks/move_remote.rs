@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Repo;
+use crate::engine::Repo;
 use tracing_batteries::prelude::*;
 
 pub struct MoveRemote {
@@ -11,7 +11,7 @@ pub struct MoveRemote {
 impl Task for MoveRemote {
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:move_remote(repo)", err, skip(self, core))]
-    async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), engine::Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -19,7 +19,7 @@ impl Task for MoveRemote {
         if !core
             .config()
             .get_features()
-            .has(core::features::MOVE_REMOTE)
+            .has(engine::features::MOVE_REMOTE)
         {
             return Ok(());
         }

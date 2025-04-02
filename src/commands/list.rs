@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::search;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -34,7 +34,7 @@ impl CommandRunnable for ListCommand {
     }
 
     #[tracing::instrument(name = "gt list", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, core::Error>
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
 where {
         let mut output = core.output();
 
@@ -113,7 +113,7 @@ URLs:
 
 #[cfg(test)]
 mod tests {
-    use super::core::*;
+    use super::engine::*;
     use super::*;
     use crate::console::MockConsoleProvider;
     use crate::test::get_dev_dir;

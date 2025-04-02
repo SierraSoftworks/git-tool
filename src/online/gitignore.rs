@@ -1,5 +1,5 @@
 use super::{errors, Error};
-use crate::core::Core;
+use crate::engine::Core;
 use tracing_batteries::prelude::*;
 
 #[tracing::instrument(err, skip(core, content))]

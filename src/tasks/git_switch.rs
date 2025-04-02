@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::Target, git};
+use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
 pub struct GitSwitch {
@@ -10,7 +10,7 @@ pub struct GitSwitch {
 #[async_trait::async_trait]
 impl Task for GitSwitch {
     #[tracing::instrument(name = "task:git_switch(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let mut create = self.create_if_missing;
 
         if create
@@ -34,7 +34,7 @@ mod tests {
     #[tokio::test]
     async fn test_repo() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new(
+        let repo = engine::Repo::new(
             "gh:sierrasoftworks/test-git-switch",
             temp.path().join("repo"),
         );
@@ -66,7 +66,7 @@ mod tests {
     #[tokio::test]
     async fn test_repo_no_create() {
         let temp = tempdir().unwrap();
-        let repo = core::Repo::new(
+        let repo = engine::Repo::new(
             "gh:sierrasoftworks/test-git-switch",
             temp.path().join("repo"),
         );
@@ -98,7 +98,7 @@ mod tests {
     #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
-        let scratch = core::Scratchpad::new("2019w15", temp.path().join("scratch"));
+        let scratch = engine::Scratchpad::new("2019w15", temp.path().join("scratch"));
 
         let core = Core::builder()
             .with_config_for_dev_directory(temp.path())

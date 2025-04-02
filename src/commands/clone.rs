@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::Target;
+use crate::engine::Target;
 use crate::tasks::*;
 use clap::Arg;
 use std::path::PathBuf;
@@ -92,7 +92,7 @@ impl CommandRunnable for CloneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]

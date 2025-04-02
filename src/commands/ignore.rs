@@ -85,7 +85,7 @@ impl CommandRunnable for IgnoreCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::core::Config;
+    use super::engine::Config;
     use super::*;
 
     #[tokio::test]

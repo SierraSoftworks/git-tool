@@ -1,6 +1,6 @@
 use crate::errors;
 
-use super::{core::Target, *};
+use super::{engine::Target, *};
 use tracing_batteries::prelude::*;
 
 pub struct NewFolder {}
@@ -8,7 +8,7 @@ pub struct NewFolder {}
 #[async_trait::async_trait]
 impl Task for NewFolder {
     #[tracing::instrument(name = "task:new_folder(repo)", err, skip(self, _core))]
-    async fn apply_repo(&self, _core: &Core, repo: &core::Repo) -> Result<(), core::Error> {
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let path = repo.get_path();
 
         std::fs::create_dir_all(&path).map_err(|err| {
@@ -29,8 +29,8 @@ impl Task for NewFolder {
     async fn apply_scratchpad(
         &self,
         _core: &Core,
-        scratch: &core::Scratchpad,
-    ) -> Result<(), core::Error> {
+        scratch: &engine::Scratchpad,
+    ) -> Result<(), engine::Error> {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(&path).map_err(|err| {
@@ -51,7 +51,7 @@ impl Task for NewFolder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::*;
+    use crate::engine::*;
     use tempfile::tempdir;
 
     #[tokio::test]
