@@ -36,7 +36,7 @@ impl CommandRunnable for RemoveCommand {
             })?
             .parse()?;
 
-        let repo = core.resolver().get_best_repo(repo_name)?;
+        let repo = core.resolver().get_best_repo(&repo_name)?;
 
         if repo.exists() {
             if let Err(err) = std::fs::remove_dir_all(repo.get_path()) {

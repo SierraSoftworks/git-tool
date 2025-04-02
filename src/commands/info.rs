@@ -27,7 +27,7 @@ impl CommandRunnable for InfoCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let mut output = core.output();
         let repo = match matches.get_one::<String>("repo") {
-            Some(name) => core.resolver().get_best_repo(name.parse()?)?,
+            Some(name) => core.resolver().get_best_repo(&name.parse()?)?,
             None => core.resolver().get_current_repo()?,
         };
 

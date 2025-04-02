@@ -8,6 +8,7 @@ pub struct Identifier {
     pub path: String,
 }
 
+#[allow(dead_code)]
 impl Identifier {
     pub fn namespace(&self) -> &str {
         self.path

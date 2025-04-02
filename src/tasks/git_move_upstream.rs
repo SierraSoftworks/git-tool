@@ -5,6 +5,7 @@ use crate::tasks::Task;
 use tracing_batteries::prelude::tracing;
 
 pub struct GitMoveUpstream {
+    pub enabled: bool,
     pub new_repo: Repo,
 }
 
@@ -16,6 +17,10 @@ impl Task for GitMoveUpstream {
         core: &Core,
         repo: &crate::core::Repo,
     ) -> Result<(), crate::core::Error> {
+        if !self.enabled {
+            return Ok(());
+        }
+
         if !repo.exists() {
             return Err(errors::user(
                     &format!("The repository '{}' does not exist on your machine and cannot be moved as a result.", repo.name),
@@ -39,15 +44,6 @@ impl Task for GitMoveUpstream {
 
         Ok(())
     }
-
-    #[tracing::instrument(name = "task:git_rename(scratchpad)", err, skip(self, _core))]
-    async fn apply_scratchpad(
-        &self,
-        _core: &Core,
-        _scratch: &crate::core::Scratchpad,
-    ) -> Result<(), crate::core::Error> {
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -68,15 +64,16 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         let task = GitMoveUpstream {
+            enabled: true,
             new_repo: new_repo.clone(),
         };
 
@@ -99,12 +96,12 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         sequence!(GitInit {}, GitRemote { name: "origin" })
@@ -113,6 +110,7 @@ mod tests {
             .unwrap();
 
         let task = GitMoveUpstream {
+            enabled: true,
             new_repo: new_repo.clone(),
         };
 
@@ -142,12 +140,12 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         sequence!(GitInit {}, GitRemote { name: "origin" })
@@ -169,6 +167,7 @@ mod tests {
         .is_ok());
 
         let task = GitMoveUpstream {
+            enabled: true,
             new_repo: new_repo.clone(),
         };
 

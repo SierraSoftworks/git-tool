@@ -20,7 +20,7 @@ pub trait Resolver: Send + Sync {
 
     fn get_repos(&self) -> Result<Vec<Repo>, Error>;
     fn get_repos_for(&self, service: &Service) -> Result<Vec<Repo>, Error>;
-    fn get_best_repo(&self, identifier: Identifier) -> Result<Repo, Error>;
+    fn get_best_repo(&self, identifier: &Identifier) -> Result<Repo, Error>;
     fn get_current_repo(&self) -> Result<Repo, Error>;
 }
 
@@ -118,7 +118,7 @@ impl Resolver for TrueResolver {
     }
 
     #[tracing::instrument(err, skip(self, identifier))]
-    fn get_best_repo(&self, identifier: Identifier) -> Result<Repo, Error> {
+    fn get_best_repo(&self, identifier: &Identifier) -> Result<Repo, Error> {
         let true_name = self
             .config
             .get_alias(&identifier.path)
@@ -430,7 +430,7 @@ mod tests {
     fn get_best_repo() {
         let resolver = get_resolver();
 
-        let example = resolver.get_best_repo("gh:spt1".parse().unwrap()).unwrap();
+        let example = resolver.get_best_repo(&"gh:spt1".parse().unwrap()).unwrap();
         assert_eq!(example.get_full_name(), "spartan563/test1");
     }
 
@@ -439,7 +439,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver
-            .get_best_repo("gh:sierrasoftworks/test1".parse().unwrap())
+            .get_best_repo(&"gh:sierrasoftworks/test1".parse().unwrap())
             .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");
         assert_eq!(
@@ -480,7 +480,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver
-            .get_best_repo("gh:sierrasoftworks/test3".parse().unwrap())
+            .get_best_repo(&"gh:sierrasoftworks/test3".parse().unwrap())
             .unwrap();
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
         assert_eq!(
@@ -497,7 +497,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver
-            .get_best_repo("sierrasoftworks/test3".parse().unwrap())
+            .get_best_repo(&"sierrasoftworks/test3".parse().unwrap())
             .unwrap();
         assert_eq!(&example.service, "gh");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test3");
@@ -515,7 +515,7 @@ mod tests {
         let resolver = get_resolver();
 
         let example = resolver
-            .get_best_repo("sierrasoftworks/test1".parse().unwrap())
+            .get_best_repo(&"sierrasoftworks/test1".parse().unwrap())
             .unwrap();
         assert_eq!(&example.service, "gh");
         assert_eq!(example.get_full_name(), "sierrasoftworks/test1");

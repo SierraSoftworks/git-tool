@@ -28,15 +28,15 @@ impl CommandRunnable for RenameCommand {
                 .long_help("The new name of the repository must not be in fully-qualified form.")
                 .index(2)
                 .required(true))
-            .arg(Arg::new("no-update-remote")
-                .long("no-update-remote")
-                .help("Also update the git remote URL after renaming.")
+            .arg(Arg::new("no-move-remote")
+                .long("no-move-remote")
+                .help("Do not rename the remote repository (on supported services).")
                 .action(clap::ArgAction::SetTrue))
     }
 
     #[tracing::instrument(name = "gt rename", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let no_update_remote = matches.get_flag("no-update-remote");
+        let no_move_remote = matches.get_flag("no-move-remote");
         let repo_name: Identifier = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {
@@ -54,7 +54,7 @@ impl CommandRunnable for RenameCommand {
             )
         })?)?;
 
-        let repo = core.resolver().get_best_repo(repo_name)?;
+        let repo = core.resolver().get_best_repo(&repo_name)?;
         if !repo.exists() {
             return Err(errors::user(
                 "Could not find the repository directory due to an error.",
@@ -62,39 +62,24 @@ impl CommandRunnable for RenameCommand {
             );
         }
 
-        let new_repo = core.resolver().get_best_repo(new_name)?;
+        let new_repo = core.resolver().get_best_repo(&new_name)?;
 
-        // Update the Git-Remote
-        if !no_update_remote {
-            GitMoveUpstream {
-                new_repo: new_repo.clone(),
+        sequence![
+            MoveDirectory {
+                new_path: new_repo.path.clone(),
+            },
+            MoveRemote {
+                enabled: !no_move_remote,
+                target: new_repo.clone()
             }
-            .apply_repo(core, &repo.clone())
+        ]
+        .apply_repo(core, &repo.clone())
+        .await?;
+
+        // Don't forget to update the remote URL to match the new repository name
+        GitRemote { name: "origin" }
+            .apply_repo(core, &new_repo)
             .await?;
-        }
-
-        let move_task = MoveDirectory {
-            new_path: new_repo.path.clone(),
-        };
-
-        // Move the directory
-        if let Err(err) = move_task.apply_repo(core, &repo).await {
-            // Roll back the Git-remote change if needed
-            if !no_update_remote {
-                if let Err(rollback_err) =
-                    (GitRemote { name: "origin" }).apply_repo(core, &repo).await
-                {
-                    tracing::warn!(
-                        error = ?rollback_err,
-                        "Failed to roll back Git remote change after move failure"
-                    );
-                }
-            }
-
-            return Err(err);
-        }
-
-        assert!(new_repo.valid());
 
         Ok(0)
     }
@@ -155,7 +140,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -188,7 +173,7 @@ mod tests {
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         assert!(
@@ -228,7 +213,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -256,7 +241,7 @@ mod tests {
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/renamed".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/renamed".parse().unwrap())
             .unwrap();
 
         assert!(
@@ -300,7 +285,7 @@ mod tests {
 
         let repo = core
             .resolver()
-            .get_best_repo("gh:git-fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:git-fixtures/basic".parse().unwrap())
             .unwrap();
 
         GitClone {}.apply_repo(&core, &repo).await.unwrap();
@@ -336,7 +321,7 @@ mod tests {
 
         let new_repo = core
             .resolver()
-            .get_best_repo("gh:fixtures/basic".parse().unwrap())
+            .get_best_repo(&"gh:fixtures/basic".parse().unwrap())
             .unwrap();
 
         assert!(

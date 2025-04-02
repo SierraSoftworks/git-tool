@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Test Pure" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="buildProfileId" value="test" />
     <option name="command" value="test --package git-tool --bin git-tool --features pure-tests" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />

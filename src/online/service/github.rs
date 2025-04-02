@@ -104,6 +104,72 @@ Configure it with the following:
             Err(e) => Err(e.into()),
         }
     }
+
+    #[tracing::instrument(err, skip(self, core))]
+    async fn move_repo(
+        &self,
+        core: &Core,
+        service: &Service,
+        source: &Repo,
+        destination: &Repo,
+    ) -> Result<(), Error> {
+        // When updating a repository name on GitHub, we have two different approaches:
+        // 1. If the source and destination are in the same organization, we can use the
+        //    "Update Repository" API endpoint to rename the repository.
+        // 2. If the source and destination are in different organizations, we need to use
+        //    the "Transfer Repository" API endpoint to move the repository to the new
+        //    organization.
+
+        if source.namespace == destination.namespace {
+            let uri = format!(
+                "{}/repos/{}/{}",
+                service.api.as_ref().unwrap().url.as_str(),
+                source.namespace,
+                source.name
+            );
+
+            let body = serde_json::to_vec(&serde_json::json!({
+                "name": destination.name,
+            }))?;
+
+            let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
+                .make_request(
+                    core,
+                    service,
+                    Method::PATCH,
+                    &uri,
+                    body,
+                    vec![StatusCode::OK],
+                )
+                .await?;
+            Ok(())
+        } else {
+            let uri = format!(
+                "{}/repos/{}/{}/transfer",
+                service.api.as_ref().unwrap().url.as_str(),
+                source.namespace,
+                source.name
+            );
+
+            let body = serde_json::to_vec(&serde_json::json!({
+                "new_owner": destination.namespace,
+                "new_name": destination.name,
+            }))?;
+
+            let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
+                .make_request(
+                    core,
+                    service,
+                    Method::POST,
+                    &uri,
+                    body,
+                    vec![StatusCode::ACCEPTED],
+                )
+                .await?;
+
+            Ok(())
+        }
+    }
 }
 
 impl GitHubService {
@@ -370,6 +436,40 @@ mod tests {
             .expect("No error should have been generated")
     }
 
+    async fn run_test_move_repo(src: &str, dest: &str, mocks: Vec<MockHttpRoute>) {
+        let core = Core::builder()
+            .with_default_config()
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_http_client(mocks)
+            .build();
+
+        let src_repo = Repo::new(src, std::path::PathBuf::from("/"));
+        let dest_repo = Repo::new(dest, std::path::PathBuf::from("/"));
+        let service = GitHubService::default();
+        service
+            .move_repo(
+                &core,
+                &Service {
+                    name: "gh".into(),
+                    website: "https://github.com/{{ .Repo.FullName }}".into(),
+                    git_url: "git@github.com/{{ .Repo.FullName }}.git".into(),
+                    pattern: "*/*".into(),
+                    api: Some(ServiceAPI {
+                        kind: "github".into(),
+                        url: "https://api.github.com".into(),
+                    }),
+                },
+                &src_repo,
+                &dest_repo,
+            )
+            .await
+            .expect("No error should have been generated");
+    }
+
     #[tokio::test]
     async fn test_happy_path_user_repo() {
         run_test_create(mocks::repo_created("test")).await;
@@ -388,6 +488,26 @@ mod tests {
     #[tokio::test]
     async fn test_is_exists_no() {
         assert!(!run_test_is_created(mocks::get_repo_not_exists("test/user-repo")).await);
+    }
+
+    #[tokio::test]
+    async fn test_move_repo_same_org() {
+        run_test_move_repo(
+            "gh:test/user-repo",
+            "gh:test/new-name",
+            mocks::repo_update_name("test/user-repo"),
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_move_repo_different_org() {
+        run_test_move_repo(
+            "gh:test/user-repo",
+            "gh:other/new-name",
+            mocks::repo_transfer("test/user-repo"),
+        )
+        .await;
     }
 }
 
@@ -501,6 +621,40 @@ pub mod mocks {
                 format!("https://api.github.com/repos/{repo}").as_str(),
                 404,
                 r#"{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}"#,
+            ),
+        ]
+    }
+
+    pub fn repo_update_name(repo: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::MockHttpRoute::new(
+                "PATCH",
+                format!("https://api.github.com/repos/{repo}").as_str(),
+                200,
+                r#"{ "id": 1234 }"#,
+            ),
+        ]
+    }
+
+    pub fn repo_transfer(repo: &str) -> Vec<super::MockHttpRoute> {
+        vec![
+            super::MockHttpRoute::new(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::MockHttpRoute::new(
+                "POST",
+                format!("https://api.github.com/repos/{repo}/transfer").as_str(),
+                202,
+                r#"{ "id": 1234 }"#,
             ),
         ]
     }
