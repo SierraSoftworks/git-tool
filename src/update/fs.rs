@@ -23,13 +23,8 @@ pub trait FileSystem {
     fn get_temp_app_path(&self, release: &Release) -> PathBuf;
 }
 
+#[derive(Debug)]
 struct DefaultFileSystem {}
-
-impl std::fmt::Debug for DefaultFileSystem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DefaultFileSystem").finish()
-    }
-}
 
 #[async_trait::async_trait]
 impl FileSystem for DefaultFileSystem {
@@ -42,6 +37,7 @@ impl FileSystem for DefaultFileSystem {
             retries -= 1;
 
             match tokio::fs::remove_file(path).await {
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
                 Err(e) if retries < 0 => return Err(errors::user_with_internal(
                     &format!("Could not remove the old application file '{}' after {} retries.", path.display(), max_retries),
                     "This probably means that Git-Tool is still running in another terminal. Please exit any running Git-Tool processes (including shells launched by it) before trying again.",
@@ -84,5 +80,63 @@ impl FileSystem for DefaultFileSystem {
             if cfg!(windows) { ".exe" } else { "" }
         );
         std::env::temp_dir().join(file_name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use semver::Version;
+
+    #[tokio::test]
+    async fn test_delete_file() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("test.txt");
+        tokio::fs::write(&path, "test").await.unwrap();
+
+        let fs = DefaultFileSystem {};
+        fs.delete_file(&path).await.unwrap();
+
+        assert!(!path.exists());
+    }
+
+    #[tokio::test]
+    async fn test_copy_file() {
+        let temp = tempfile::tempdir().unwrap();
+        let from = temp.path().join("from.txt");
+        let to = temp.path().join("to.txt");
+        tokio::fs::write(&from, "test").await.unwrap();
+
+        let fs = DefaultFileSystem {};
+        fs.copy_file(&from, &to).await.unwrap();
+
+        assert!(to.exists());
+        let content = tokio::fs::read_to_string(&to).await.unwrap();
+        assert_eq!(content, "test");
+    }
+
+    #[test]
+    fn test_get_temp_app_path() {
+        let release = Release {
+            id: "1.0.0".to_string(),
+            changelog: "".to_string(),
+            version: Version {
+                major: 1,
+                minor: 0,
+                patch: 0,
+                pre: Default::default(),
+                build: Default::default(),
+            },
+            prerelease: false,
+            variants: vec![],
+        };
+        let fs = DefaultFileSystem {};
+        let path = fs.get_temp_app_path(&release);
+
+        #[cfg(target_os = "windows")]
+        assert_eq!(path.file_name().unwrap(), "git-tool-update-1.0.0.exe");
+
+        #[cfg(not(target_os = "windows"))]
+        assert_eq!(path.file_name().unwrap(), "git-tool-update-1.0.0");
     }
 }
