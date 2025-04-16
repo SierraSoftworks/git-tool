@@ -50,7 +50,7 @@ impl CommandRunnable for CloneCommand {
                 )
             })?;
 
-            let operation = sequence![GitClone {}];
+            let operation = sequence![GitClone::default()];
 
             for line in file.lines() {
                 if line.trim_start().is_empty() || line.trim_start().starts_with('#') {
@@ -69,7 +69,7 @@ impl CommandRunnable for CloneCommand {
             let repo = core.resolver().get_best_repo(&identifier)?;
 
             if !repo.exists() {
-                match sequence![GitClone {}].apply_repo(core, &repo).await {
+                match sequence![GitClone::default()].apply_repo(core, &repo).await {
                     Ok(()) => {}
                     Err(e) => return Err(e),
                 }

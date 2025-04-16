@@ -1,8 +1,12 @@
 use super::*;
 use crate::{engine::Target, git};
+use std::path::PathBuf;
 use tracing_batteries::prelude::*;
 
-pub struct GitClone {}
+#[derive(Default)]
+pub struct GitClone {
+    pub path: String,
+}
 
 #[async_trait::async_trait]
 impl Task for GitClone {
@@ -16,7 +20,13 @@ impl Task for GitClone {
 
         let url = service.get_git_url(repo)?;
 
-        git::git_clone(&repo.get_path(), &url).await?;
+        let path = if !self.path.is_empty() {
+            PathBuf::from(&self.path)
+        } else {
+            repo.get_path()
+        };
+
+        git::git_clone(&path, &url).await?;
 
         #[cfg(test)]
         {
@@ -44,7 +54,7 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        GitClone::default().apply_repo(&core, &repo).await.unwrap();
         assert!(repo.valid());
     }
 
@@ -57,7 +67,7 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        let task = GitClone {};
+        let task = GitClone::default();
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert!(!scratch.exists());

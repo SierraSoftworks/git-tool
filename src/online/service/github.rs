@@ -173,6 +173,40 @@ Configure it with the following:
             Ok(())
         }
     }
+
+    #[tracing::instrument(err, skip(self, core))]
+    async fn fork_repo(
+        &self,
+        core: &Core,
+        service: &Service,
+        source: &Repo,
+        destination: &Repo,
+    ) -> Result<(), Error> {
+        let uri = format!(
+            "{}/repos/{}/{}/forks",
+            service.api.as_ref().unwrap().url.as_str(),
+            source.namespace,
+            source.name
+        );
+
+        let body = serde_json::to_vec(&serde_json::json!({
+            "organization": destination.namespace,
+            "name": destination.name,
+            "default_branch_only": true,
+        }))?;
+
+        let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
+            .make_request(
+                core,
+                service,
+                Method::POST,
+                &uri,
+                body,
+                vec![StatusCode::OK, StatusCode::ACCEPTED],
+            )
+            .await?;
+        Ok(())
+    }
 }
 
 impl GitHubService {
@@ -660,5 +694,14 @@ pub mod mocks {
                 r#"{ "id": 1234 }"#,
             ),
         ]
+    }
+
+    pub fn repo_fork(repo: &str) -> Vec<super::MockHttpRoute> {
+        vec![super::MockHttpRoute::new(
+            "POST",
+            format!("https://api.github.com/repos/{repo}/forks").as_str(),
+            202,
+            r#"{ "id": 1234 }"#,
+        )]
     }
 }

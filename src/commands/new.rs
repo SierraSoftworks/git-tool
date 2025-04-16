@@ -1,4 +1,5 @@
 use super::*;
+use crate::engine::Identifier;
 use crate::{engine::features, tasks::*};
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -44,6 +45,13 @@ impl CommandRunnable for NewCommand {
                     .help("don't check whether the repository already exists on the remote service before creating a new local repository")
                     .action(clap::ArgAction::SetTrue),
             )
+            .arg(
+                Arg::new("from")
+                    .long("from")
+                    .alias("fork")
+                    .short('f')
+                    .help("create a fork of an existing remote (on supported services) or a copy of an existing remote repository (on unsupported services)"),
+            )
     }
 
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
@@ -64,7 +72,7 @@ impl CommandRunnable for NewCommand {
             return Ok(0);
         }
 
-        let tasks = sequence![
+        let mut tasks = sequence![
             EnsureNoRemote {
                 enabled: !matches.get_flag("no-check-exists")
             },
@@ -75,6 +83,16 @@ impl CommandRunnable for NewCommand {
                 enabled: !matches.get_flag("no-create-remote")
             }
         ];
+
+        if let Some(from_repo) = matches.get_one::<String>("from") {
+            let from_repo_id: Identifier = from_repo.as_str().parse()?;
+            let from_repo = core.resolver().get_best_repo(&from_repo_id)?;
+
+            tasks = sequence![ForkRepository {
+                from_repo,
+                no_create_remote: matches.get_flag("no-create-remote"),
+            }];
+        }
 
         tasks.apply_repo(core, &repo).await?;
 
@@ -94,6 +112,8 @@ impl CommandRunnable for NewCommand {
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--open");
         completer.offer("--no-create-remote");
+        completer.offer("--from");
+
         if let Ok(repos) = core.resolver().get_repos() {
             let mut namespaces = std::collections::HashSet::new();
             let default_svc = core

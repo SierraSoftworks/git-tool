@@ -32,6 +32,27 @@ impl Task for GitRemote<'_> {
     }
 }
 
+pub struct GitAddRemote {
+    pub name: String,
+    pub url: String,
+}
+
+#[async_trait::async_trait]
+impl Task for GitAddRemote {
+    #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, _core))]
+    async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
+        if git::git_remote_list(&repo.get_path())
+            .await?
+            .iter()
+            .any(|r| r == self.name.as_str())
+        {
+            git::git_remote_set_url(&repo.get_path(), self.name.as_str(), &self.url).await
+        } else {
+            git::git_remote_add(&repo.get_path(), self.name.as_str(), &self.url).await
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,6 +76,39 @@ mod tests {
             .await
             .unwrap();
         assert!(repo.valid());
+
+        let remotes = git::git_remote_list(&repo.get_path()).await.unwrap();
+        assert!(remotes.iter().any(|r| r == "origin"))
+    }
+
+    #[tokio::test]
+    async fn test_add_remote() {
+        let temp = tempdir().unwrap();
+        let repo = Repo::new(
+            "gh:sierrasoftworks/test-git-remote",
+            temp.path().join("repo"),
+        );
+
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .build();
+
+        sequence![
+            GitInit {},
+            GitRemote { name: "origin" },
+            GitAddRemote {
+                name: "upstream".to_string(),
+                url: "https://github.com/git-fixtures/basic.git".to_string()
+            }
+        ]
+        .apply_repo(&core, &repo)
+        .await
+        .unwrap();
+        assert!(repo.valid());
+
+        let remotes = git::git_remote_list(&repo.get_path()).await.unwrap();
+        assert!(remotes.iter().any(|r| r == "origin"));
+        assert!(remotes.iter().any(|r| r == "upstream"));
     }
 
     #[tokio::test]
