@@ -167,7 +167,7 @@ mod tests {
     fn test_offer_apps() {
         let console = console::mock();
         let core = Core::builder()
-            .with_config_for_dev_directory(&get_dev_dir())
+            .with_config_for_dev_directory(get_dev_dir())
             .with_console(console.clone())
             .build();
 
@@ -188,7 +188,7 @@ mod tests {
     fn test_offer_namespaces() {
         let console = console::mock();
         let core = Core::builder()
-            .with_config_for_dev_directory(&get_dev_dir())
+            .with_config_for_dev_directory(get_dev_dir())
             .with_console(console.clone())
             .build();
 
@@ -209,7 +209,7 @@ mod tests {
     fn test_offer_repos() {
         let console = console::mock();
         let core = Core::builder()
-            .with_config_for_dev_directory(&get_dev_dir())
+            .with_config_for_dev_directory(get_dev_dir())
             .with_console(console.clone())
             .build();
 
