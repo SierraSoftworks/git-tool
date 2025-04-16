@@ -38,6 +38,14 @@ impl Task for GitClone {
     }
 }
 
+impl GitClone {
+    pub fn with_path(path: Option<String>) -> Self {
+        Self {
+            path: path.unwrap_or_default(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,9 +76,9 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        GitClone {
-            path: temp.path().join("repo2").to_str().unwrap().to_string(),
-        }
+        GitClone::with_path(Some(
+            temp.path().join("repo2").to_str().unwrap().to_string(),
+        ))
         .apply_repo(&core, &repo)
         .await
         .unwrap();

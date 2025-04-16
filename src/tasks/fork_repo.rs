@@ -26,8 +26,6 @@ impl Task for ForkRepository {
             .get_features()
             .has(engine::features::MOVE_REMOTE)
         {
-            let service = core.config().get_service(&repo.service)?;
-
             if let Some(online_service) = crate::online::services()
                 .iter()
                 .find(|s| s.handles(service))
@@ -39,20 +37,20 @@ impl Task for ForkRepository {
             }
         }
 
+        let clone_path = if supported_service {
+            None
+        } else {
+            Some(repo.path.to_str().unwrap().to_string())
+        };
+
         let tasks = sequence![
-            GitClone {
-                path: if supported_service {
-                    "".to_string()
-                } else {
-                    repo.path.to_str().unwrap().to_string()
-                }
-            },
+            GitClone::with_path(clone_path),
             GitAddRemote {
-                name: "origin".to_string(),
+                name: "origin".into(),
                 url,
             },
             GitAddRemote {
-                name: "upstream".to_string(),
+                name: "upstream".into(),
                 url: from_url,
             },
             CreateRemote {
@@ -60,16 +58,12 @@ impl Task for ForkRepository {
             }
         ];
 
-        tasks
-            .apply_repo(
-                core,
-                if supported_service {
-                    repo
-                } else {
-                    &self.from_repo
-                },
-            )
-            .await?;
+        let task_target_repo = if supported_service {
+            repo
+        } else {
+            &self.from_repo
+        };
+        tasks.apply_repo(core, task_target_repo).await?;
 
         Ok(())
     }
