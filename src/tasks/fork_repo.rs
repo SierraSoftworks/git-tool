@@ -9,7 +9,7 @@ use tracing_batteries::prelude::*;
 
 const MAX_WAIT: Duration = Duration::from_secs(300); // 5 minutes
 const POLL_INTERVAL: Duration = Duration::from_secs(2); // 2 seconds
-const SPINNER_FRAMES: &[&str] = &["|", "/", "-", "\\"];
+const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 pub struct ForkRepository {
     pub from_repo: Repo,
