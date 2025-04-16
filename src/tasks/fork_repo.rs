@@ -80,9 +80,19 @@ mod tests {
     #[rstest]
     #[tokio::test]
     #[cfg(feature = "auth")]
-    #[case("gh:git-fixtures/basic", "git-fixtures/basic", "gh:cedi/basic")]
+    #[case(
+        "gh:git-fixtures/basic",
+        "git-fixtures/basic",
+        "gh:cedi/basic",
+        "cedi/basic"
+    )]
     #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn fork_repo(#[case] source_repo: &str, #[case] source: &str, #[case] target_repo: &str) {
+    async fn fork_repo(
+        #[case] source_repo: &str,
+        #[case] source: &str,
+        #[case] target_repo: &str,
+        #[case] target: &str,
+    ) {
         let temp = tempdir().unwrap();
         let temp_path = temp.path().to_path_buf();
 
@@ -96,29 +106,29 @@ mod tests {
             })
             .with_mock_resolver(|mock| {
                 let source_temp_path = temp_path.clone();
-                let source = source_repo.to_owned();
-                let source_identifier: Identifier = source.parse().unwrap();
+                let source = source.to_owned();
+                let source_segments = source.split('/');
+                let full_source_path = source_segments
+                    .fold(source_temp_path.clone(), |path, segment| path.join(segment));
+                let source_identifier: Identifier = source_repo.parse().unwrap();
                 mock.expect_get_best_repo()
                     .with(eq(source_identifier))
                     .times(1)
                     .returning(move |_| {
-                        Ok(Repo::new(
-                            "gh:git-fixtures/basic",
-                            source_temp_path.join(&source),
-                        ))
+                        Ok(Repo::new("gh:git-fixtures/basic", full_source_path.clone()))
                     });
 
                 let target_temp_path = temp_path.clone();
-                let target = target_repo.to_owned();
-                let target_identifier: Identifier = target.parse().unwrap();
+                let target = target.to_owned();
+                let target_segments = target.split('/');
+                let full_target_path = target_segments
+                    .fold(target_temp_path.clone(), |path, segment| path.join(segment));
+                let target_identifier: Identifier = target_repo.parse().unwrap();
                 mock.expect_get_best_repo()
                     .with(eq(target_identifier))
                     .times(1)
                     .returning(move |_| {
-                        Ok(Repo::new(
-                            "gh:git-fixtures/empty",
-                            target_temp_path.join(&target),
-                        ))
+                        Ok(Repo::new("gh:git-fixtures/empty", full_target_path.clone()))
                     });
             })
             .build();
