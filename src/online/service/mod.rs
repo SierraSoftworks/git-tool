@@ -24,6 +24,15 @@ pub trait OnlineService: Send + Sync {
         source: &Repo,
         destination: &Repo,
     ) -> Result<(), Error>;
+
+    async fn fork_repo(
+        &self,
+        core: &Core,
+        service: &Service,
+        source: &Repo,
+        destination: &Repo,
+        default_branch_only: bool,
+    ) -> Result<(), Error>;
 }
 
 #[allow(dead_code)]

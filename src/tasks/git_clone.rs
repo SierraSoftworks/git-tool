@@ -2,7 +2,10 @@ use super::*;
 use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
-pub struct GitClone {}
+#[derive(Default)]
+pub struct GitClone {
+    pub url: Option<String>,
+}
 
 #[async_trait::async_trait]
 impl Task for GitClone {
@@ -14,9 +17,10 @@ impl Task for GitClone {
 
         let service = core.config().get_service(&repo.service)?;
 
-        let url = service.get_git_url(repo)?;
+        let default_url = service.get_git_url(repo)?;
+        let url = self.url.as_deref().unwrap_or(default_url.as_str());
 
-        git::git_clone(&repo.get_path(), &url).await?;
+        git::git_clone(&repo.get_path(), url).await?;
 
         #[cfg(test)]
         {
@@ -25,6 +29,14 @@ impl Task for GitClone {
         }
 
         Ok(())
+    }
+}
+
+impl GitClone {
+    pub fn with_url<S: ToString>(url: S) -> Self {
+        Self {
+            url: Some(url.to_string()),
+        }
     }
 }
 
@@ -44,7 +56,24 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        GitClone {}.apply_repo(&core, &repo).await.unwrap();
+        GitClone::default().apply_repo(&core, &repo).await.unwrap();
+        assert!(repo.valid());
+    }
+
+    #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
+    async fn test_repo_custom_url() {
+        let temp = tempdir().unwrap();
+        let repo = Repo::new("gh:git-fixtures/basic", temp.path().join("repo2"));
+
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .build();
+
+        GitClone::with_url("https://github.com/git-fixtures/basic.git")
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
         assert!(repo.valid());
     }
 
@@ -57,7 +86,7 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        let task = GitClone {};
+        let task = GitClone::default();
 
         task.apply_scratchpad(&core, &scratch).await.unwrap();
         assert!(!scratch.exists());

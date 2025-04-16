@@ -70,7 +70,7 @@ New applications can be configured either by making changes to your configuratio
         };
 
         if !repo.exists() {
-            match sequence![GitClone {}].apply_repo(core, &repo).await {
+            match sequence![GitClone::default()].apply_repo(core, &repo).await {
                 Ok(()) => {}
                 Err(_) if matches.get_flag("create") => {
                     sequence![
