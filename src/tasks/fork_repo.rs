@@ -40,7 +40,7 @@ impl Task for ForkRepository {
         let clone_path = if supported_service {
             None
         } else {
-            Some(repo.path.to_str().unwrap().to_string())
+            Some(repo.path.clone())
         };
 
         let tasks = sequence![

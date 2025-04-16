@@ -5,7 +5,7 @@ use tracing_batteries::prelude::*;
 
 #[derive(Default)]
 pub struct GitClone {
-    pub path: String,
+    pub into: Option<PathBuf>,
 }
 
 #[async_trait::async_trait]
@@ -20,10 +20,9 @@ impl Task for GitClone {
 
         let url = service.get_git_url(repo)?;
 
-        let path = if !self.path.is_empty() {
-            PathBuf::from(&self.path)
-        } else {
-            repo.get_path()
+        let path = match self.into {
+            Some(ref into) => into,
+            None => &repo.get_path(),
         };
 
         git::git_clone(&path, &url).await?;
@@ -39,10 +38,8 @@ impl Task for GitClone {
 }
 
 impl GitClone {
-    pub fn with_path(path: Option<String>) -> Self {
-        Self {
-            path: path.unwrap_or_default(),
-        }
+    pub fn with_path(path: Option<PathBuf>) -> Self {
+        Self { into: path }
     }
 }
 
@@ -76,12 +73,10 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        GitClone::with_path(Some(
-            temp.path().join("repo2").to_str().unwrap().to_string(),
-        ))
-        .apply_repo(&core, &repo)
-        .await
-        .unwrap();
+        GitClone::with_path(Some(temp.path().join("repo2")))
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
         assert!(repo.valid());
     }
 

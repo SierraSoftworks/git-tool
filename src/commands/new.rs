@@ -72,27 +72,27 @@ impl CommandRunnable for NewCommand {
             return Ok(0);
         }
 
-        let mut tasks = sequence![
-            EnsureNoRemote {
-                enabled: !matches.get_flag("no-check-exists")
-            },
-            GitInit {},
-            GitRemote { name: "origin" },
-            GitCheckout { branch: "main" },
-            CreateRemote {
-                enabled: !matches.get_flag("no-create-remote")
-            }
-        ];
-
-        if let Some(from_repo) = matches.get_one::<String>("from") {
+        let tasks = if let Some(from_repo) = matches.get_one::<String>("from") {
             let from_repo_id: Identifier = from_repo.as_str().parse()?;
             let from_repo = core.resolver().get_best_repo(&from_repo_id)?;
 
-            tasks = sequence![ForkRepository {
+            sequence![ForkRepository {
                 from_repo,
                 no_create_remote: matches.get_flag("no-create-remote"),
-            }];
-        }
+            }]
+        } else {
+            sequence![
+                EnsureNoRemote {
+                    enabled: !matches.get_flag("no-check-exists")
+                },
+                GitInit {},
+                GitRemote { name: "origin" },
+                GitCheckout { branch: "main" },
+                CreateRemote {
+                    enabled: !matches.get_flag("no-create-remote")
+                }
+            ]
+        };
 
         tasks.apply_repo(core, &repo).await?;
 
