@@ -98,6 +98,8 @@ helping you quickly figure out where your repo should be created.
 - `-o`/`--open` <Badge text="v2.1+"/> will open this repository in your default application once it has been created.
   You can make this behaviour the default with the [
   `open_new_repo_in_default_app`](../config/features.md#open-new-repo-in-default-app) feature flag.
+- `-f`/`--fork`/`--from` <Badge text="v3.9+"/> create a fork of an existing remote (on supported services) or a copy of
+  an existing remote repository (on unsupported services)
 
 #### Example
 
@@ -110,6 +112,9 @@ gt n --open gh:notheotherben/demo
 
 # Create a new repository but don't create it remotely
 gt n --no-create-remote gh:notheotherben/demo
+
+# Fork a repository
+gt n gh:notheotherben/demo --fork gh:git-fixtures/basic
 ```
 
 ## list <Badge text="v1.0+"/>
