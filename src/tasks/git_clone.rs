@@ -25,7 +25,7 @@ impl Task for GitClone {
             None => &repo.get_path(),
         };
 
-        git::git_clone(&path, &url).await?;
+        git::git_clone(path, &url).await?;
 
         #[cfg(test)]
         {

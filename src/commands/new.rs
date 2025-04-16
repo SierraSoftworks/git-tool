@@ -72,16 +72,33 @@ impl CommandRunnable for NewCommand {
             return Ok(0);
         }
 
-        let tasks = if let Some(from_repo) = matches.get_one::<String>("from") {
+        if let Some(from_repo) = matches.get_one::<String>("from") {
             let from_repo_id: Identifier = from_repo.as_str().parse()?;
             let from_repo = core.resolver().get_best_repo(&from_repo_id)?;
+            let from_service = core.config().get_service(&from_repo.service)?;
+            let from_url = from_service.get_git_url(&from_repo)?;
 
-            sequence![ForkRepository {
-                from_repo,
-                no_create_remote: matches.get_flag("no-create-remote"),
-            }]
+            let target_service = core.config().get_service(&from_repo.service)?;
+            let target_url = target_service.get_git_url(&repo)?;
+
+            let tasks = sequence![
+                ForkRepository {
+                    from_repo: from_repo.clone()
+                },
+                GitClone::with_path(Some(repo.path.clone())),
+                GitAddRemote {
+                    name: "origin".into(),
+                    url: target_url,
+                },
+                GitAddRemote {
+                    name: "upstream".into(),
+                    url: from_url,
+                }
+            ];
+
+            tasks.apply_repo(core, &from_repo).await?;
         } else {
-            sequence![
+            let tasks = sequence![
                 EnsureNoRemote {
                     enabled: !matches.get_flag("no-check-exists")
                 },
@@ -91,10 +108,10 @@ impl CommandRunnable for NewCommand {
                 CreateRemote {
                     enabled: !matches.get_flag("no-create-remote")
                 }
-            ]
-        };
+            ];
 
-        tasks.apply_repo(core, &repo).await?;
+            tasks.apply_repo(core, &repo).await?;
+        };
 
         if matches.get_flag("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
             let app = core.config().get_default_app().ok_or_else(|| errors::user(
