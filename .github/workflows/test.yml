@@ -223,6 +223,6 @@ jobs:
     needs:
       - test-platforms
       - code-quality
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - run: echo "Tests Complete for All Platforms"
