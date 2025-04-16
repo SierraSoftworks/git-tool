@@ -728,11 +728,19 @@ pub mod mocks {
     }
 
     pub fn repo_fork(repo: &str) -> Vec<super::MockHttpRoute> {
-        vec![super::MockHttpRoute::new(
-            "POST",
-            format!("https://api.github.com/repos/{repo}/forks").as_str(),
-            202,
-            r#"{ "id": 1234 }"#,
-        )]
+        vec![
+            super::MockHttpRoute::new(
+                "GET",
+                "https://api.github.com/user",
+                200,
+                r#"{ "login": "test" }"#,
+            ),
+            super::MockHttpRoute::new(
+                "POST",
+                format!("https://api.github.com/repos/{repo}/forks").as_str(),
+                202,
+                r#"{ "id": 1234 }"#,
+            ),
+        ]
     }
 }

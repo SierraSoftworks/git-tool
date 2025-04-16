@@ -59,6 +59,25 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
+    async fn test_repo_custom_location() {
+        let temp = tempdir().unwrap();
+        let repo = Repo::new("gh:git-fixtures/basic", temp.path().join("repo2"));
+
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .build();
+
+        GitClone {
+            path: temp.path().join("repo2").to_str().unwrap().to_string(),
+        }
+        .apply_repo(&core, &repo)
+        .await
+        .unwrap();
+        assert!(repo.valid());
+    }
+
+    #[tokio::test]
     async fn test_scratch() {
         let temp = tempdir().unwrap();
         let scratch = Scratchpad::new("2019w15", temp.path().join("scratch"));
