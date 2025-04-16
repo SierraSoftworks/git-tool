@@ -52,6 +52,14 @@ impl CommandRunnable for NewCommand {
                     .short('f')
                     .help("create a fork of an existing remote (on supported services) or a copy of an existing remote repository (on unsupported services)"),
             )
+
+            .arg(
+                Arg::new("fork-all-branches")
+                    .long("fork-all-branches")
+                    .short('A')
+                    .help("when forking from an existing repository, fork all branches (Default: False - default branch only).")
+                    .action(clap::ArgAction::SetTrue),
+            )
     }
 
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
@@ -81,8 +89,9 @@ impl CommandRunnable for NewCommand {
             let target_service = core.config().get_service(&from_repo.service)?;
             let target_url = target_service.get_git_url(&repo)?;
 
-            ForkRepository {
+            ForkRemote {
                 from_repo: from_repo.clone(),
+                default_branch_only: !matches.get_flag("fork-all-branches"),
             }
             .apply_repo(&core, &repo)
             .await?;

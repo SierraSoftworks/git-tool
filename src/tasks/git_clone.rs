@@ -1,6 +1,6 @@
 use super::*;
 use crate::{engine::Target, git};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
 #[derive(Default)]
@@ -40,8 +40,10 @@ impl Task for GitClone {
 }
 
 impl GitClone {
-    pub fn with_path(path: PathBuf) -> Self {
-        Self { into: Some(path) }
+    pub fn with_path<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            into: Some(path.as_ref().to_owned()),
+        }
     }
 }
 

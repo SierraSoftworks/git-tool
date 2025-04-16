@@ -31,6 +31,7 @@ pub trait OnlineService: Send + Sync {
         service: &Service,
         source: &Repo,
         destination: &Repo,
+        default_branch_only: bool,
     ) -> Result<(), Error>;
 }
 

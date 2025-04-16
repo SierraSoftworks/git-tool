@@ -73,6 +73,7 @@ impl FeaturesBuilder {
         self.with(CREATE_REMOTE, true)
             .with(CREATE_REMOTE_PRIVATE, true)
             .with(MOVE_REMOTE, true)
+            .with(FORK_REMOTE, true)
             .with(TELEMETRY, false)
             .with(CHECK_FOR_UPDATES, true)
             .with(CHECK_EXISTS, true)

@@ -182,6 +182,7 @@ Configure it with the following:
         service: &Service,
         source: &Repo,
         destination: &Repo,
+        default_branch_only: bool,
     ) -> Result<(), Error> {
         let uri = format!(
             "{}/repos/{}/{}/forks",
@@ -192,7 +193,7 @@ Configure it with the following:
 
         let mut body_json = json!({
             "name": destination.name,
-            "default_branch_only": true,
+            "default_branch_only": default_branch_only,
         });
 
         let user = self.get_user_login(core, service).await?;

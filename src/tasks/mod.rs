@@ -20,7 +20,7 @@ macro_rules! sequence {
 
 mod create_remote;
 mod ensure_no_remote;
-mod fork_repo;
+mod fork_remote;
 mod git_add;
 mod git_checkout;
 mod git_clone;
@@ -35,7 +35,7 @@ mod write_file;
 
 pub use create_remote::CreateRemote;
 pub use ensure_no_remote::EnsureNoRemote;
-pub use fork_repo::ForkRepository;
+pub use fork_remote::ForkRemote;
 #[allow(unused_imports)]
 pub use git_add::GitAdd;
 pub use git_checkout::GitCheckout;

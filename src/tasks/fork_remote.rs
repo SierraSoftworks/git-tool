@@ -2,12 +2,13 @@ use super::*;
 use crate::engine::Repo;
 use tracing_batteries::prelude::*;
 
-pub struct ForkRepository {
+pub struct ForkRemote {
     pub from_repo: Repo,
+    pub default_branch_only: bool,
 }
 
 #[async_trait::async_trait]
-impl Task for ForkRepository {
+impl Task for ForkRemote {
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:fork_repository(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), engine::Error> {
@@ -26,7 +27,13 @@ impl Task for ForkRepository {
                 .find(|s| s.handles(service))
             {
                 online_service
-                    .fork_repo(core, service, &self.from_repo, repo)
+                    .fork_repo(
+                        core,
+                        service,
+                        &self.from_repo,
+                        repo,
+                        self.default_branch_only,
+                    )
                     .await?;
             }
         }
@@ -38,7 +45,7 @@ impl Task for ForkRepository {
 #[cfg(test)]
 mod tests {
     use crate::engine::{Core, Identifier, Repo};
-    use crate::tasks::{ForkRepository, Task};
+    use crate::tasks::{ForkRemote, Task};
     use mockall::predicate::eq;
     use rstest::rstest;
     use tempfile::tempdir;
@@ -114,7 +121,7 @@ mod tests {
             .get_best_repo(&target_repo.parse().unwrap())
             .unwrap();
 
-        ForkRepository { from_repo }
+        ForkRemote { from_repo }
             .apply_repo(&core, &target_repo)
             .await
             .unwrap();
