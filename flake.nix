@@ -65,12 +65,12 @@
           # we can block the CI if there are issues here, but not
           # prevent downstream consumers from building our crate by itself.
           git-tool-clippy = craneLib.cargoClippy {
-            inherit cargoArtifacts src buildInputs;
+            inherit cargoArtifacts src nativeBuildInputs buildInputs;
             cargoClippyExtraArgs = "--all-targets -- --deny warnings";
           };
 
           git-tool-doc = craneLib.cargoDoc {
-            inherit cargoArtifacts src;
+            inherit cargoArtifacts src nativeBuildInputs buildInputs;
           };
 
           # Check formatting
