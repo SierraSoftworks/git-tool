@@ -5,6 +5,7 @@ use crate::errors;
 use reqwest::{Method, Request, StatusCode, Url};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tracing_batteries::prelude::*;
 
 #[derive(Default)]
@@ -189,11 +190,22 @@ Configure it with the following:
             source.name
         );
 
-        let body = serde_json::to_vec(&serde_json::json!({
-            "organization": destination.namespace,
+        let mut body_json = json!({
             "name": destination.name,
             "default_branch_only": true,
-        }))?;
+        });
+
+        let user = self.get_user_login(core, service).await?;
+
+        if destination.namespace != user {
+            // Add "organization" field
+            if let Value::Object(map) = &mut body_json {
+                map.insert(
+                    "organization".to_string(),
+                    Value::String(destination.namespace.clone()),
+                );
+            }
+        }
 
         let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
             .make_request(
@@ -201,7 +213,7 @@ Configure it with the following:
                 service,
                 Method::POST,
                 &uri,
-                body,
+                serde_json::to_vec(&body_json)?,
                 vec![StatusCode::OK, StatusCode::ACCEPTED],
             )
             .await?;
@@ -289,21 +301,40 @@ impl GitHubService {
                 }
                 Ok(resp) => {
                     let status = resp.status();
-                    let mut result: GitHubErrorResponse = resp.json().await.map_err(|e| {
+                    let bytes = resp.bytes().await.map_err(|e| {
                         errors::system_with_internal(
                             &format!(
-                                "We received an unexpected HTTP {} {} status code from GitHub and weren't able to parse the response (which likely indicates an outage or network connectivity issue).",
+                                "We received an unexpected HTTP {} {} status code from GitHub and couldn't read the response body.",
                                 status.as_u16(),
                                 status.canonical_reason().unwrap_or("Unknown")
                             ),
-                            "GitHub might be having reliability difficulties at the moment, please take a look at https://www.githubstatus.com/ to see if there are any known issues.",
+                            "GitHub might be having reliability difficulties at the moment. Check https://www.githubstatus.com/ for updates.",
                             e,
                         )
                     })?;
-                    result.http_status_code = status;
 
+                    let mut result: GitHubErrorResponse = match serde_json::from_slice(&bytes) {
+                        Ok(parsed) => parsed,
+                        Err(err) => {
+                            return Err(errors::system_with_internal(
+                                &format!(
+                                    "Received an HTTP {} {} from GitHub, but couldn't parse the response body as a GitHub error.",
+                                    status.as_u16(),
+                                    status.canonical_reason().unwrap_or("Unknown")
+                                ),
+                                &format!(
+                                    "Response body:\n{}\n\nThis likely indicates an outage or unexpected change in GitHub’s API.",
+                                    String::from_utf8_lossy(&bytes)
+                                ),
+                                err,
+                            ));
+                        }
+                    };
+
+                    result.http_status_code = status;
                     return Ok(Err(result));
                 }
+
                 Err(error) if remaining_attempts > 0 => {
                     warn!(
                         "GitHub API request failed with error {}. Retrying...",
