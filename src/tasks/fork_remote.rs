@@ -42,6 +42,16 @@ impl Task for ForkRemote {
     }
 }
 
+impl ForkRemote {
+    #[allow(dead_code)]
+    pub fn from_remote(from_repo: Repo) -> Self {
+        Self {
+            from_repo,
+            default_branch_only: true,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::engine::{Core, Identifier, Repo};
@@ -121,7 +131,7 @@ mod tests {
             .get_best_repo(&target_repo.parse().unwrap())
             .unwrap();
 
-        ForkRemote { from_repo }
+        ForkRemote::from_remote(from_repo)
             .apply_repo(&core, &target_repo)
             .await
             .unwrap();

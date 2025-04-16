@@ -1,11 +1,10 @@
 use super::*;
 use crate::{engine::Target, git};
-use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
 #[derive(Default)]
 pub struct GitClone {
-    pub into: Option<PathBuf>,
+    pub url: Option<String>,
 }
 
 #[async_trait::async_trait]
@@ -18,16 +17,10 @@ impl Task for GitClone {
 
         let service = core.config().get_service(&repo.service)?;
 
-        let url = service.get_git_url(repo)?;
+        let default_url = service.get_git_url(repo)?;
+        let url = self.url.as_deref().unwrap_or(default_url.as_str());
 
-        let default_path = repo.get_path();
-        let path = self
-            .into
-            .as_ref()
-            .map(|p| p.as_path())
-            .unwrap_or_else(|| default_path.as_path());
-
-        git::git_clone(path, &url).await?;
+        git::git_clone(&repo.get_path(), url).await?;
 
         #[cfg(test)]
         {
@@ -40,9 +33,9 @@ impl Task for GitClone {
 }
 
 impl GitClone {
-    pub fn with_path<P: AsRef<Path>>(path: P) -> Self {
+    pub fn with_url<S: ToString>(url: S) -> Self {
         Self {
-            into: Some(path.as_ref().to_owned()),
+            url: Some(url.to_string()),
         }
     }
 }
@@ -69,7 +62,7 @@ mod tests {
 
     #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn test_repo_custom_location() {
+    async fn test_repo_custom_url() {
         let temp = tempdir().unwrap();
         let repo = Repo::new("gh:git-fixtures/basic", temp.path().join("repo2"));
 
@@ -77,7 +70,7 @@ mod tests {
             .with_config_for_dev_directory(temp.path())
             .build();
 
-        GitClone::with_path(temp.path().join("repo2"))
+        GitClone::with_url("https://github.com/git-fixtures/basic.git")
             .apply_repo(&core, &repo)
             .await
             .unwrap();

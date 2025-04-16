@@ -80,7 +80,7 @@ impl CommandRunnable for NewCommand {
             return Ok(0);
         }
 
-        if let Some(from_repo) = matches.get_one::<String>("from") {
+        let tasks = if let Some(from_repo) = matches.get_one::<String>("from") {
             let from_repo_id: Identifier = from_repo.as_str().parse()?;
             let from_repo = core.resolver().get_best_repo(&from_repo_id)?;
             let from_service = core.config().get_service(&from_repo.service)?;
@@ -89,15 +89,12 @@ impl CommandRunnable for NewCommand {
             let target_service = core.config().get_service(&from_repo.service)?;
             let target_url = target_service.get_git_url(&repo)?;
 
-            ForkRemote {
-                from_repo: from_repo.clone(),
-                default_branch_only: !matches.get_flag("fork-all-branches"),
-            }
-            .apply_repo(&core, &repo)
-            .await?;
-
-            let tasks = sequence![
-                GitClone::with_path(repo.path.clone()),
+            sequence![
+                ForkRemote {
+                    from_repo: from_repo.clone(),
+                    default_branch_only: !matches.get_flag("fork-all-branches"),
+                },
+                GitClone::with_url(&from_url),
                 GitAddRemote {
                     name: "origin".into(),
                     url: target_url,
@@ -106,11 +103,9 @@ impl CommandRunnable for NewCommand {
                     name: "upstream".into(),
                     url: from_url,
                 }
-            ];
-
-            tasks.apply_repo(core, &from_repo).await?;
+            ]
         } else {
-            let tasks = sequence![
+            sequence![
                 EnsureNoRemote {
                     enabled: !matches.get_flag("no-check-exists")
                 },
@@ -120,10 +115,10 @@ impl CommandRunnable for NewCommand {
                 CreateRemote {
                     enabled: !matches.get_flag("no-create-remote")
                 }
-            ];
-
-            tasks.apply_repo(core, &repo).await?;
+            ]
         };
+
+        tasks.apply_repo(core, &repo).await?;
 
         if matches.get_flag("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
             let app = core.config().get_default_app().ok_or_else(|| errors::user(
