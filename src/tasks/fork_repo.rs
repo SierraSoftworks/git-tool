@@ -1,6 +1,15 @@
 use super::*;
 use crate::engine::Repo;
+use crate::errors;
+use std::io;
+use std::io::Write;
+use std::time::Duration;
+use tokio::time::{sleep, Instant};
 use tracing_batteries::prelude::*;
+
+const MAX_WAIT: Duration = Duration::from_secs(300); // 5 minutes
+const POLL_INTERVAL: Duration = Duration::from_secs(2); // 2 seconds
+const SPINNER_FRAMES: &[&str] = &["|", "/", "-", "\\"];
 
 pub struct ForkRepository {
     pub from_repo: Repo,
@@ -34,6 +43,33 @@ impl Task for ForkRepository {
                 online_service
                     .fork_repo(core, service, &self.from_repo, repo)
                     .await?;
+
+                // Forking a Repository happens asynchronously.
+                // You may have to wait a short period of time before you can access the git objects.
+                // If this takes longer than 5 minutes, be sure to contact GitHub Support.
+                let mut spinner_index = 0;
+                let start = Instant::now();
+                println!("Waiting for the repository to be forked...");
+                loop {
+                    if online_service.is_created(core, service, repo).await? {
+                        println!("\r✔ Repository is ready!");
+                        break; // repo is ready
+                    }
+
+                    // draw spinner
+                    print!("\r{}", SPINNER_FRAMES[spinner_index]);
+                    io::stdout().flush().unwrap();
+
+                    if start.elapsed() >= MAX_WAIT {
+                        return Err(errors::user(
+                            "Timed out waiting for GitHub to finish creating the forked repository.",
+                            "GitHub may be experiencing delays. Please check https://www.githubstatus.com/ or try again later.",
+                        ));
+                    }
+
+                    spinner_index = (spinner_index + 1) % SPINNER_FRAMES.len();
+                    sleep(POLL_INTERVAL).await;
+                }
             }
         }
 
@@ -78,7 +114,6 @@ mod tests {
     use tempfile::tempdir;
 
     #[rstest]
-    #[tokio::test]
     #[cfg(feature = "auth")]
     #[case(
         "gh:git-fixtures/basic",
@@ -86,6 +121,13 @@ mod tests {
         "gh:cedi/basic",
         "cedi/basic"
     )]
+    #[case(
+        "gh:git-fixtures/basic",
+        "git-fixtures/basic",
+        "gh:SierraSoftworks/basic",
+        "SierraSoftworks/basic"
+    )]
+    #[tokio::test]
     #[cfg_attr(feature = "pure-tests", ignore)]
     async fn fork_repo(
         #[case] source_repo: &str,
