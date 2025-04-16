@@ -81,11 +81,14 @@ impl CommandRunnable for NewCommand {
             let target_service = core.config().get_service(&from_repo.service)?;
             let target_url = target_service.get_git_url(&repo)?;
 
+            ForkRepository {
+                from_repo: from_repo.clone(),
+            }
+            .apply_repo(&core, &repo)
+            .await?;
+
             let tasks = sequence![
-                ForkRepository {
-                    from_repo: from_repo.clone()
-                },
-                GitClone::with_path(Some(repo.path.clone())),
+                GitClone::with_path(repo.path.clone()),
                 GitAddRemote {
                     name: "origin".into(),
                     url: target_url,
@@ -154,9 +157,11 @@ impl CommandRunnable for NewCommand {
 
 #[cfg(test)]
 mod tests {
-    use mockall::predicate::eq;
-
     use super::*;
+    use crate::engine::Repo;
+    use mockall::predicate::eq;
+    use rstest::rstest;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn run_partial() {
@@ -220,6 +225,86 @@ mod tests {
             .resolver()
             .get_best_repo(&"gh:test/new-repo-full".parse().unwrap())
             .unwrap();
+        assert!(!repo.valid());
+
+        cmd.assert_run_successful(&core, &args).await;
+
+        assert!(repo.valid());
+    }
+
+    #[rstest]
+    #[cfg(feature = "auth")]
+    #[case(
+        "gh:git-fixtures/basic",
+        "git-fixtures/basic",
+        "gh:cedi/basic",
+        "cedi/basic"
+    )]
+    #[case(
+        "gh:git-fixtures/basic",
+        "git-fixtures/basic",
+        "gh:SierraSoftworks/basic",
+        "SierraSoftworks/basic"
+    )]
+    #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
+    async fn fork_repo(
+        #[case] source_repo: &str,
+        #[case] source: &str,
+        #[case] target_repo: &str,
+        #[case] target: &str,
+    ) {
+        let cmd = NewCommand {};
+
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["new", target_repo, "--fork", source_repo]);
+
+        let temp = tempdir().unwrap();
+        let temp_path = temp.path().to_path_buf();
+
+        let core = Core::builder()
+            .with_config_for_dev_directory(temp.path())
+            .with_mock_http_client(crate::online::service::github::mocks::repo_fork(source))
+            .with_mock_keychain(|mock| {
+                mock.expect_get_token()
+                    .with(eq("gh"))
+                    .returning(|_| Ok("test_token".into()));
+            })
+            .with_mock_resolver(|mock| {
+                let source_temp_path = temp_path.clone();
+                let source = source.to_owned();
+                let source_segments = source.split('/');
+                let full_source_path = source_segments
+                    .fold(source_temp_path.clone(), |path, segment| path.join(segment));
+                let source_identifier: Identifier = source_repo.parse().unwrap();
+                mock.expect_get_best_repo()
+                    .with(eq(source_identifier))
+                    .times(1)
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", full_source_path.clone()))
+                    });
+
+                let target_temp_path = temp_path.clone();
+                let target = target.to_owned();
+                let target_segments = target.split('/');
+                let full_target_path = target_segments
+                    .fold(target_temp_path.clone(), |path, segment| path.join(segment));
+                let target_identifier: Identifier = target_repo.parse().unwrap();
+                mock.expect_get_best_repo()
+                    .with(eq(target_identifier))
+                    .times(2)
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/empty", full_target_path.clone()))
+                    });
+            })
+            .build();
+
+        let repo = core
+            .resolver()
+            .get_best_repo(&target_repo.parse().unwrap())
+            .unwrap();
+
         assert!(!repo.valid());
 
         cmd.assert_run_successful(&core, &args).await;
