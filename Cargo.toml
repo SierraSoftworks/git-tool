@@ -51,7 +51,7 @@ tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batterie
 [dev-dependencies]
 mockall = "0.13.1"
 rstest = "0.25"
-sentry = { version = "0.37", default-features = false, features = [
+sentry = { version = "0.38", default-features = false, features = [
     "reqwest",
     "rustls",
     "log",
