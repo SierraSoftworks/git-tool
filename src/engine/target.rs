@@ -15,8 +15,13 @@ pub struct TempTarget {
 
 impl TempTarget {
     pub fn new(keep: bool) -> Result<Self, crate::errors::Error> {
+        let mut builder = tempfile::Builder::new();
+        if keep {
+            builder.disable_cleanup(true);
+        }
+
         Ok(Self {
-            dir: tempfile::Builder::new().keep(keep).tempdir()?,
+            dir: builder.tempdir()?,
         })
     }
 

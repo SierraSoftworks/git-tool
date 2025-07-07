@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::env::consts::OS;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
@@ -19,7 +19,7 @@ pub struct Config {
     #[serde(rename = "$schema")]
     schema: Option<String>,
 
-    #[serde(rename = "directory")]
+    #[serde(rename = "directory", deserialize_with = "deserialize_expanded_path")]
     dev_directory: PathBuf,
     #[serde(default, rename = "scratchpads")]
     scratch_directory: Option<PathBuf>,
@@ -324,6 +324,38 @@ impl Config {
     }
 }
 
+fn expand_path<S: AsRef<str>>(input: S) -> PathBuf {
+    let input = input.as_ref();
+
+    // Expand tilde ~
+    let input = if let Some(stripped) = input.strip_prefix("~/") {
+        if let Some(home) = dirs::home_dir() {
+            home.join(stripped)
+        } else {
+            PathBuf::from(input)
+        }
+    } else {
+        PathBuf::from(input)
+    };
+
+    // Convert to lossy string once
+    let input_str = input.to_string_lossy();
+
+    // Clone needed here to avoid use-after-move conflict
+    let with_expanded_vars = shellexpand::env(input_str.as_ref())
+        .unwrap_or_else(|_| input_str.clone().into_owned().into());
+
+    Path::new(&*with_expanded_vars).to_path_buf()
+}
+
+fn deserialize_expanded_path<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(expand_path(s))
+}
+
 impl Default for Config {
     fn default() -> Self {
         let dev_dir = match std::env::var("DEV_DIRECTORY").ok() {
@@ -565,5 +597,32 @@ apps:
             Some(file_path),
             "the file path should have been populated"
         );
+    }
+
+    #[test]
+    fn test_load_directory_with_env() {
+        match Config::from_str("directory: ~/src") {
+            Ok(cfg) => {
+                let home = dirs::home_dir().expect("Home directory not found");
+                let src_dir = home.join("src");
+                let scratch_dir = src_dir.join("scratch");
+
+                assert_eq!(cfg.get_dev_directory(), src_dir);
+                assert_eq!(cfg.get_scratch_directory(), scratch_dir);
+            }
+            Err(e) => panic!("{}", e.message()),
+        }
+
+        match Config::from_str("directory: $HOME/src") {
+            Ok(cfg) => {
+                let home = dirs::home_dir().expect("Home directory not found");
+                let src_dir = home.join("src");
+                let scratch_dir = src_dir.join("scratch");
+
+                assert_eq!(cfg.get_dev_directory(), src_dir);
+                assert_eq!(cfg.get_scratch_directory(), scratch_dir);
+            }
+            Err(e) => panic!("{}", e.message()),
+        }
     }
 }
