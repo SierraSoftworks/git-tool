@@ -124,7 +124,7 @@ impl Config {
                 if !replace_existing {
                     return Err(errors::user(
                         &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
-                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app=&app.name)));
+                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app = &app.name)));
                 } else {
                     into.apps[existing_position] = Arc::new(app.into());
                 }
@@ -138,7 +138,7 @@ impl Config {
                 if !replace_existing {
                     return Err(errors::user(
                         &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
-                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.name)));
+                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc = &svc.name)));
                 } else {
                     into.services[existing_position] = Arc::new(svc.into());
                 }
@@ -179,7 +179,7 @@ impl Config {
         let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
             &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
             "Check that your config file exists and is readable by the user running git-tool before trying again.",
-            err
+            err,
         ))?;
 
         let mut cfg = Config::default().extend(Config::from_reader(f)?);
@@ -220,14 +220,14 @@ impl Config {
             tokio::fs::create_dir_all(parent).await.map_err(|err| errors::user_with_internal(
                 &format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
                 "Make sure that Git-Tool has permission to write to your config directory and then try again.",
-                err
+                err,
             ))?;
         }
 
         tokio::fs::write(&path, self.to_string()?).await.map_err(|err| errors::user_with_internal(
             &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
             "Make sure that Git-Tool has permission to write to your config file and then try again.",
-            err
+            err,
         ))?;
 
         Ok(())
@@ -464,6 +464,7 @@ mod tests {
         online::registry::{EntryApp, EntryConfig, EntryService},
         test::get_repo_root,
     };
+    use rstest::rstest;
     use std::path::PathBuf;
 
     #[test]
@@ -599,30 +600,18 @@ apps:
         );
     }
 
-    #[test]
-    fn test_load_directory_with_env() {
-        match Config::from_str("directory: ~/src") {
-            Ok(cfg) => {
-                let home = dirs::home_dir().expect("Home directory not found");
-                let src_dir = home.join("src");
-                let scratch_dir = src_dir.join("scratch");
+    #[rstest]
+    #[case("directory: ~/src")]
+    #[cfg_attr(unix, case("directory: $HOME/src"))]
+    #[cfg_attr(windows, case("directory: %USERPROFILE%/src"))]
+    fn test_load_directory_with_env(#[case] input: &str) {
+        let cfg = Config::from_str(input).expect("Failed to parse config");
 
-                assert_eq!(cfg.get_dev_directory(), src_dir);
-                assert_eq!(cfg.get_scratch_directory(), scratch_dir);
-            }
-            Err(e) => panic!("{}", e.message()),
-        }
+        let home = dirs::home_dir().expect("Home directory not found");
+        let src_dir = home.join("src");
+        let scratch_dir = src_dir.join("scratch");
 
-        match Config::from_str("directory: $HOME/src") {
-            Ok(cfg) => {
-                let home = dirs::home_dir().expect("Home directory not found");
-                let src_dir = home.join("src");
-                let scratch_dir = src_dir.join("scratch");
-
-                assert_eq!(cfg.get_dev_directory(), src_dir);
-                assert_eq!(cfg.get_scratch_directory(), scratch_dir);
-            }
-            Err(e) => panic!("{}", e.message()),
-        }
+        assert_eq!(cfg.get_dev_directory(), src_dir);
+        assert_eq!(cfg.get_scratch_directory(), scratch_dir);
     }
 }
