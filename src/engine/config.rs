@@ -345,7 +345,7 @@ fn expand_path<S: AsRef<str>>(input: S) -> PathBuf {
     let with_expanded_vars = shellexpand::env(input_str.as_ref())
         .unwrap_or_else(|_| input_str.clone().into_owned().into());
 
-    Path::new(&*with_expanded_vars).to_path_buf()
+    Path::new(with_expanded_vars.as_ref()).to_path_buf()
 }
 
 fn deserialize_expanded_path<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
@@ -603,6 +603,7 @@ apps:
     #[rstest]
     #[case("directory: ~/src")]
     #[cfg_attr(unix, case("directory: $HOME/src"))]
+    #[cfg_attr(windows, case("directory: %USERPROFILE%/src"))]
     fn test_load_directory_with_env(#[case] input: &str) {
         let cfg = Config::from_str(input).expect("Failed to parse config");
 
