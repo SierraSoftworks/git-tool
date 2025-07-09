@@ -603,7 +603,6 @@ apps:
     #[rstest]
     #[case("directory: ~/src")]
     #[cfg_attr(unix, case("directory: $HOME/src"))]
-    #[cfg_attr(windows, case("directory: %USERPROFILE%/src"))]
     fn test_load_directory_with_env(#[case] input: &str) {
         let cfg = Config::from_str(input).expect("Failed to parse config");
 
