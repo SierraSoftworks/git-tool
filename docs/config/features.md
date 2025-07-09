@@ -10,7 +10,8 @@ of its advanced options.
 
 ::: warning This feature flag is not supported in Git-Tool `v3.x`, with this
 behaviour being controlled by the [`gitUrl`](./services.md#giturl) service
-field. :::
+field.
+:::
 
 By default Git-Tool uses the SSH transport for `git` with URLs like
 `git@github.com:sierrasoftworks/git-tool.git`. In some situations, particularly
@@ -18,7 +19,8 @@ those where you wish to run without authentication, you may prefer to use git's
 HTTPS transport instead.
 
 ::: tip Use `gt config feature http_transport true` to turn this flag on
-directly from your command line. :::
+directly from your command line.
+:::
 
 ## `create_remote` <Badge text="v1.0+"/>
 
@@ -31,7 +33,8 @@ don't want to manually set up a GitHub repo - but you can disable it if you
 prefer.
 
 ::: tip Use `gt config feature create_remote false` to turn this flag off
-directly from your command line. :::
+directly from your command line.
+:::
 
 ## `create_remote_private` <Badge text="v2.0+"/>
 
@@ -44,7 +47,8 @@ Private repository to a Public one when you're ready, however if you would
 prefer to create Public repos, you can disable this feature flag.
 
 ::: tip Use `gt config feature create_remote_private false` to turn this flag
-off directly from your command line. :::
+off directly from your command line.
+:::
 
 ## `check_exists` <Badge text="v3.3+"/>
 
@@ -57,11 +61,13 @@ conflicts. To help avoid this, Git-Tool can check whether a repository already
 exists on a supported remote service before attempting to create a new one.
 
 ::: tip Use `gt config feature check_exists false` to turn this flag off
-directly from your command line. :::
+directly from your command line.
+:::
 
 ::: warning This feature is not supported for all services. For a service to
 support this feature it must include a supported [`api`](./services.md#api)
-field in its configuration. :::
+field in its configuration.
+:::
 
 ## `open_new_repo_in_default_app` <Badge text="v2.1.1+"/>
 
@@ -72,7 +78,8 @@ created repositories in your default application when running `gt new`. This is
 equivalent to passing the `--open` flag.
 
 ::: tip Use `gt config feature open_new_repo_in_default_app true` to turn this
-flag on directly from your command line. :::
+flag on directly from your command line.
+:::
 
 ## `always_open_best_match` <Badge text="v3.2+"/>
 
@@ -81,7 +88,8 @@ repository if there are multiple repositories which may be matched by your
 current pattern.
 
 ::: Use `gt config feature always_open_best_match true` to turn this flag on
-directly from your command line. :::
+directly from your command line.
+:::
 
 ## `telemetry` <Badge text="v2.1.21+"/>
 
@@ -93,7 +101,8 @@ crashes and improve the tool for everyone. If you would like to share your
 telemetry with us, you can enable this feature flag.
 
 ::: tip Use `gt config feature telemetry true` to turn this flag on directly
-from your command line. :::
+from your command line.
+:::
 
 ## `check_for_updates` <Badge text="v3.2+"/>
 
@@ -111,7 +120,8 @@ you up to date with the latest updates.
 - **Default** `false`
 
 ::: warning This feature flag is not supported in Git-Tool `v2.x`, with this
-behaviour being the default in all newer versions of Git-Tool. :::
+behaviour being the default in all newer versions of Git-Tool.
+:::
 
 Git-Tool supports using your local `git` executable to clone and initialize
 repositories instead of using its built-in git logic. If you wish to use your

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::env::consts::OS;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
@@ -19,7 +19,7 @@ pub struct Config {
     #[serde(rename = "$schema")]
     schema: Option<String>,
 
-    #[serde(rename = "directory")]
+    #[serde(rename = "directory", deserialize_with = "deserialize_expanded_path")]
     dev_directory: PathBuf,
     #[serde(default, rename = "scratchpads")]
     scratch_directory: Option<PathBuf>,
@@ -124,7 +124,7 @@ impl Config {
                 if !replace_existing {
                     return Err(errors::user(
                         &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
-                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app=&app.name)));
+                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app = &app.name)));
                 } else {
                     into.apps[existing_position] = Arc::new(app.into());
                 }
@@ -138,7 +138,7 @@ impl Config {
                 if !replace_existing {
                     return Err(errors::user(
                         &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
-                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc=&svc.name)));
+                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc = &svc.name)));
                 } else {
                     into.services[existing_position] = Arc::new(svc.into());
                 }
@@ -179,7 +179,7 @@ impl Config {
         let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
             &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
             "Check that your config file exists and is readable by the user running git-tool before trying again.",
-            err
+            err,
         ))?;
 
         let mut cfg = Config::default().extend(Config::from_reader(f)?);
@@ -220,14 +220,14 @@ impl Config {
             tokio::fs::create_dir_all(parent).await.map_err(|err| errors::user_with_internal(
                 &format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
                 "Make sure that Git-Tool has permission to write to your config directory and then try again.",
-                err
+                err,
             ))?;
         }
 
         tokio::fs::write(&path, self.to_string()?).await.map_err(|err| errors::user_with_internal(
             &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
             "Make sure that Git-Tool has permission to write to your config file and then try again.",
-            err
+            err,
         ))?;
 
         Ok(())
@@ -322,6 +322,38 @@ impl Config {
     pub fn get_features(&self) -> &features::Features {
         &self.features
     }
+}
+
+fn expand_path<S: AsRef<str>>(input: S) -> PathBuf {
+    let input = input.as_ref();
+
+    // Expand tilde ~
+    let input = if let Some(stripped) = input.strip_prefix("~/") {
+        if let Some(home) = dirs::home_dir() {
+            home.join(stripped)
+        } else {
+            PathBuf::from(input)
+        }
+    } else {
+        PathBuf::from(input)
+    };
+
+    // Convert to lossy string once
+    let input_str = input.to_string_lossy();
+
+    // Clone needed here to avoid use-after-move conflict
+    let with_expanded_vars = shellexpand::env(input_str.as_ref())
+        .unwrap_or_else(|_| input_str.clone().into_owned().into());
+
+    Path::new(with_expanded_vars.as_ref()).to_path_buf()
+}
+
+fn deserialize_expanded_path<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(expand_path(s))
 }
 
 impl Default for Config {
@@ -432,6 +464,7 @@ mod tests {
         online::registry::{EntryApp, EntryConfig, EntryService},
         test::get_repo_root,
     };
+    use rstest::rstest;
     use std::path::PathBuf;
 
     #[test]
@@ -565,5 +598,19 @@ apps:
             Some(file_path),
             "the file path should have been populated"
         );
+    }
+
+    #[rstest]
+    #[case("directory: ~/src")]
+    #[cfg_attr(unix, case("directory: $HOME/src"))]
+    fn test_load_directory_with_env(#[case] input: &str) {
+        let cfg = Config::from_str(input).expect("Failed to parse config");
+
+        let home = dirs::home_dir().expect("Home directory not found");
+        let src_dir = home.join("src");
+        let scratch_dir = src_dir.join("scratch");
+
+        assert_eq!(cfg.get_dev_directory(), src_dir);
+        assert_eq!(cfg.get_scratch_directory(), scratch_dir);
     }
 }

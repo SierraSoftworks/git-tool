@@ -1,4 +1,5 @@
 # Introduction
+
 Git-Tool uses a `yaml` configuration file while allows you to configure everything from where
 your repositories and scratchpads are stored, to which applications you use to open them and
 which Git hosting services you use to store them.
@@ -12,42 +13,69 @@ including adding new services and apps, configuring your feature flags and alias
 used repos.
 
 ## Directory
+
 The first thing to set up in your `config.yml` file is your development directory path. This is
 the directory into which Git-Tool will place your repositories whenever you clone or create them.
 
 ::: tip
-You can change your development directory at any time using the [`gt config path`](../commands/config.md#config-path) command.
+You can change your development directory at any time using the [`gt config path`](../commands/config.md#config-path)
+command.
 :::
 
 :::: code-group
 ::: code-group-item Windows
+
 ```yaml
 directory: "C:\\Users\\bpannell\\dev"
 ```
+
 :::
 
 ::: code-group-item Linux
+
 ```yaml
 directory: "/home/bpannell/dev"
 ```
+
 :::
 
 ::: code-group-item MacOS
+
 ```yaml
 directory: "/Users/bpannell/dev"
 ```
+
 :::
 ::::
 
+::: tip Use environment variables in path <Badge text="v3.10+"/>
+Git-Tool, since <Badge text="v3.10+"/>, will be able to use environment variables
+or `~/` in the config file for directory:
+
+```yaml
+directory: "~/dev"
+```
+
+or
+
+```yaml
+directory: "$HOME/dev"
+```
+
+:::
+
+### Environment Variable Support
 
 ## Scratchpads
+
 If you plan on using Git-Tool's [scratchpads](../commands/scratch.md) feature, you might decide that
 you want to place your scratchpads in a different directory to your repositories. Maybe you'd like
 them to be replicated using your cloud storage service, or maybe you like to live dangerously and
 want them on a `/tmp` RAMDisk.
 
 ::: tip
-You can change your scratchpad directory at any time using the [`gt config path --scratch`](../commands/config.md#config-path) command.
+You can change your scratchpad directory at any time using the [
+`gt config path --scratch`](../commands/config.md#config-path) command.
 
 If you don't specify a `scratchpads` directory, Git-Tool will use a `scratch` folder within your development
 directory to hold your scratchpads.
@@ -55,26 +83,32 @@ directory to hold your scratchpads.
 
 :::: code-group
 ::: code-group-item Windows
+
 ```yaml
 scratchpads: "C:\\Users\\bpannell\\scratch"
 ```
+
 :::
 
 ::: code-group-item Linux
+
 ```yaml
 scratchpads: "/home/bpannell/scratch"
 ```
+
 :::
 
 ::: code-group-item MacOS
+
 ```yaml
 scratchpads: "/Users/bpannell/scratch"
 ```
+
 :::
 ::::
 
-
 ## Example Configuration
+
 Here is a short example configuration file which you can use as the basis for your own.
 You might find the [config commands](../commands/config.md) useful to make changes to it.
 

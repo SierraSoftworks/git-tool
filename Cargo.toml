@@ -47,6 +47,8 @@ tokio = { version = "1.46", features = [
     "signal",
 ] }
 tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git" }
+dirs = "6.0.0"
+shellexpand = "3"
 
 [dev-dependencies]
 mockall = "0.13.1"
