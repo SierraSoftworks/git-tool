@@ -22,7 +22,7 @@ http = "0.2"
 human-errors = "0.1.5"
 inventory = "0.3.20"
 itertools = "0.14"
-keyring = { version = "3.6.2", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
+keyring = { version = "3.6.3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 lazy_static = "1.5"
 nix = { version = "0.30.1", features = ["process", "signal"] }
 rpassword = { version = "7.4", optional = true }
