@@ -22,31 +22,26 @@ You can change your development directory at any time using the [`gt config path
 command.
 :::
 
-:::: code-group
-::: code-group-item Windows
+::: code-tabs
+@tab Windows
 
 ```yaml
 directory: "C:\\Users\\bpannell\\dev"
 ```
 
-:::
-
-::: code-group-item Linux
+@tab Linux
 
 ```yaml
 directory: "/home/bpannell/dev"
 ```
 
-:::
-
-::: code-group-item MacOS
+@tab MacOS
 
 ```yaml
 directory: "/Users/bpannell/dev"
 ```
 
 :::
-::::
 
 ::: tip Use environment variables in path <Badge text="v3.10+"/>
 Git-Tool, since <Badge text="v3.10+"/>, will be able to use environment variables
@@ -81,31 +76,26 @@ If you don't specify a `scratchpads` directory, Git-Tool will use a `scratch` fo
 directory to hold your scratchpads.
 :::
 
-:::: code-group
-::: code-group-item Windows
+::: code-tabs
+@tab Windows
 
 ```yaml
 scratchpads: "C:\\Users\\bpannell\\scratch"
 ```
 
-:::
-
-::: code-group-item Linux
+@tab Linux
 
 ```yaml
 scratchpads: "/home/bpannell/scratch"
 ```
 
-:::
-
-::: code-group-item MacOS
+@tab MacOS
 
 ```yaml
 scratchpads: "/Users/bpannell/scratch"
 ```
 
 :::
-::::
 
 ## Example Configuration
 

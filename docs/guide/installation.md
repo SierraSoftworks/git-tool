@@ -32,35 +32,32 @@ will no longer be available and the [`create_remote`](../config/features.md#crea
 feature will be disabled.
 :::
 
-:::: code-group
+::: code-tabs
 
-::: code-group-item Windows
+@tab Windows
 ```powershell
 cargo install --git https://github.com/SierraSoftworks/git-tool.git
 ```
-:::
 
-::: code-group-item Linux (with Keychain)
+@tab Linux (with Keychain)
 ```bash
 # Install libdbus-1-3 and libdbus-1-dev
 sudo apt update && sudo apt install -y libdbus-1-dev libdbus-1-3
 cargo install --git https://github.com/SierraSoftworks/git-tool.git
 ```
-:::
 
-::: code-group-item Linux (without Keychain)
+@tab Linux (without Keychain)
 ```bash
 # If your platform doesn't support dbus or the Linux Keychain, you can disable the auth feature
 cargo install --git https://github.com/SierraSoftworks/git-tool.git --no-default-features
 ```
-:::
 
-::: code-group-item MacOS
+@tab MacOS
 ```powershell
 cargo install --git https://github.com/SierraSoftworks/git-tool.git
 ```
+
 :::
-::::
 
 ### Using Nix
 If you're running on [NixOS](https://nixos.org) or are using the Nix package manager on your system,
@@ -141,25 +138,23 @@ Now that you can run Git-Tool, the next step is to configure it. If you've follo
 you will have a `$GITTOOL_CONFIG` environment variable set. That means we can quickly open up your favourite
 editor and start getting things configured.
 
-:::: code-group
-::: code-group-item Windows (PowerShell)
+::: code-tabs
+@tab Windows (PowerShell)
 ```powershell
 notepad $env:GITTOOL_CONFIG
 ```
-:::
 
-::: code-group-item Windows (cmd)
+@tab Windows (cmd)
 ```batch
 notepad %GITTOOL_CONFIG%
 ```
-:::
 
-::: code-group-item Linux/MacOS
+@tab Linux/MacOS
 ```bash
 vi $GITTOOL_CONFIG
 ```
+
 :::
-::::
 
 Drop in the following starter configuration and change the `directory` to point wherever you'd like to keep your repositories.
 

@@ -43,41 +43,37 @@ of Git-Tool. :::
 
 #### Example
 
-:::: code-group ::: code-group-item PowerShell
+::: code-tabs
+
+@tab PowerShell
 
 ```powershell
 # $PROFILE.CurrentUserAllHosts
 Invoke-Expression (&git-tool shell-init powershell)
 ```
 
-:::
-
-::: code-group-item bash
+@tab bash
 
 ```bash
 # ~/.bashrc
 eval "$(git-tool shell-init bash)"
 ```
 
-:::
-
-::: code-group-item zsh
+@tab zsh
 
 ```bash
 # ~/.zshrc
 eval "$(git-tool shell-init zsh)"
 ```
 
-:::
-
-::: code-group-item fish
+@tab fish
 
 ```bash
 # ~/config.fish
 complete -f -c git-tool -a "(git-tool complete)"
 ```
 
-::: ::::
+:::
 
 ## complete <Badge text="v1.2+"/> <Badge text="internal" type="warning"/>
 

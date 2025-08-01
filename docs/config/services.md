@@ -8,9 +8,9 @@ add it by following the [contribution guide](registry.md#contributing).
 
 Here is an example service configuration for GitHub which showcases how to 
 
-:::: code-group
+::: code-tabs
 
-::: code-group-item Git-Tool v3.x
+@tab Git-Tool v3.x
 ```yaml
 services:
   - name: gh
@@ -21,9 +21,8 @@ services:
       kind: GitHub/v3
       url: https://api.github.com
 ```
-:::
 
-::: code-group-item Git-Tool v2.x
+@tab Git-Tool v2.x
 ```yaml
 services:
   - domain: github.com
@@ -32,9 +31,8 @@ services:
     httpUrl: "https://{{ .Service.Domain }}/{{ .Repo.FullName }}.git"
     pattern: "*/*"
 ```
-:::
 
-::::
+:::
 
 ## Configuration
 ::: tip
@@ -52,21 +50,19 @@ Git-Tool v2.x requires you to specify `domain` here, however Git-Tool v3.x uses 
 This was done to make a clear distinction between domains and the names you use to refer to your service configurations.
 :::
 
-:::: code-group
+::: code-tabs
 
-::: code-group-item Git-Tool v3.x
+@tab Git-Tool v3.x
 ```yaml
 name: github.com
 ```
-:::
 
-::: code-group-item Git-Tool v2.x
+@tab Git-Tool v2.x
 ```yaml
 domain: github.com
 ```
 :::
 
-::::
 
 #### `website` <Badge text="required" type="danger"/>
 The `website` property configures the template which is used to generate URLs for a repository's
