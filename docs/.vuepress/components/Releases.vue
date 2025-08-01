@@ -5,7 +5,7 @@
     <div class="release-platforms">
       <div>Select your Platform:</div>
       <button class="release-button release-platform" :class="{ active: platform === selectedPlatform }"
-        v-for="(name, platform) in platforms" :key="platform" v-on:click="selectedPlatform = platform">
+        v-for="(name, platform) in platforms" :key="platform" v-on:click="selectedPlatform = platform" data-m:click="action=release/view;platform={{ platform }}">
         {{ name }}
       </button>
     </div>
@@ -14,7 +14,7 @@
       <div class="release" v-for="release in applicableReleases" :key="release.id">
         <h4 class="release__name">
           <a class="release-button no-external-link-icon" :href="getReleaseAsset(release, selectedPlatform).browser_download_url
-            " target="_blank">Download</a>
+            " target="_blank" data-m:click="action=release/download;platform={{ selectedPlatform }};version={{ release.tag_name }}">Download</a>
 
           {{ release.name }}
           <Badge v-if="release.prerelease" text="Early Access" type="warning" />
