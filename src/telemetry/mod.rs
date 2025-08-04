@@ -1,3 +1,5 @@
+mod medama;
+
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
@@ -32,4 +34,7 @@ pub fn setup() -> tracing_batteries::Session {
                 "vdf1xcENEju8V0d8ffQq2Y",
             ),
         )
+        .with_battery(medama::MedamaAnalytics::new(
+            "https://analytics.sierrasoftworks.com",
+        ))
 }
