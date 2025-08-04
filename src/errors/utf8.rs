@@ -1,4 +1,4 @@
-use super::{user_with_internal, Error};
+use super::{Error, user_with_internal};
 use std::string::FromUtf8Error;
 
 impl From<FromUtf8Error> for Error {

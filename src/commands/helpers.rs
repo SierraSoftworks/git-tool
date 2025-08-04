@@ -97,9 +97,11 @@ mod tests {
     fn test_unknown_app() {
         let core = Core::builder().with_default_config().build();
 
-        assert!(get_launch_app(&core, Some("unknown"), Some("gh:test/test"))
-            .expect_err("receive an error.")
-            .is_user())
+        assert!(
+            get_launch_app(&core, Some("unknown"), Some("gh:test/test"))
+                .expect_err("receive an error.")
+                .is_user()
+        )
     }
 
     #[test]

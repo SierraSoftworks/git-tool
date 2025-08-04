@@ -1,7 +1,7 @@
 use crate::console::{self, ConsoleProvider};
 
 use super::{
-    auth, http, launcher, resolver, Config, Core, Error, HttpClient, KeyChain, Launcher, Resolver,
+    Config, Core, Error, HttpClient, KeyChain, Launcher, Resolver, auth, http, launcher, resolver,
 };
 use std::{path::PathBuf, sync::Arc};
 

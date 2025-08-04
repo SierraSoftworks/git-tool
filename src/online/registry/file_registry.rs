@@ -199,12 +199,16 @@ mod registry_compliance {
             }
 
             if is_app && config.app.is_none() {
-                println!("- {name} is in the apps/ namespace but has a configuration which is missing an app setting");
+                println!(
+                    "- {name} is in the apps/ namespace but has a configuration which is missing an app setting"
+                );
                 valid = false;
             }
 
             if is_service && config.service.is_none() {
-                println!("- {name} is in the services/ namespace but has a configuration which is missing a service setting");
+                println!(
+                    "- {name} is in the services/ namespace but has a configuration which is missing a service setting"
+                );
                 valid = false;
             }
 
@@ -242,7 +246,10 @@ mod registry_compliance {
                     );
                     valid = false;
                 } else if !valid_service_pattern(&svc.pattern) {
-                    println!("- {}#{} has a service entry with an invalid pattern, it should match the regex: /^\\*(\\/\\*)*$/", name, &config.platform);
+                    println!(
+                        "- {}#{} has a service entry with an invalid pattern, it should match the regex: /^\\*(\\/\\*)*$/",
+                        name, &config.platform
+                    );
                     valid = false;
                 }
 

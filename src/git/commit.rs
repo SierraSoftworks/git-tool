@@ -53,28 +53,32 @@ mod tests {
 
         git_add(temp.path(), &vec!["test.txt"]).await.unwrap();
 
-        assert!(git_cmd(
-            Command::new("git")
-                .current_dir(temp.path())
-                .arg("rev-parse")
-                .arg("--short")
-                .arg("HEAD"),
-        )
-        .await
-        .is_err());
+        assert!(
+            git_cmd(
+                Command::new("git")
+                    .current_dir(temp.path())
+                    .arg("rev-parse")
+                    .arg("--short")
+                    .arg("HEAD"),
+            )
+            .await
+            .is_err()
+        );
 
         git_commit(temp.path(), "test commit", &vec!["test.txt"])
             .await
             .unwrap();
 
-        assert!(git_cmd(
-            Command::new("git")
-                .current_dir(temp.path())
-                .arg("rev-parse")
-                .arg("--short")
-                .arg("HEAD"),
-        )
-        .await
-        .is_ok());
+        assert!(
+            git_cmd(
+                Command::new("git")
+                    .current_dir(temp.path())
+                    .arg("rev-parse")
+                    .arg("--short")
+                    .arg("HEAD"),
+            )
+            .await
+            .is_ok()
+        );
     }
 }

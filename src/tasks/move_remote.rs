@@ -25,7 +25,10 @@ impl Task for MoveRemote {
         }
 
         if repo.service != self.target.service {
-            info!("Skipping move of remote repository as the target service '{}' does not match the source '{}'", self.target.service, repo.service);
+            info!(
+                "Skipping move of remote repository as the target service '{}' does not match the source '{}'",
+                self.target.service, repo.service
+            );
             return Ok(());
         }
 
@@ -47,8 +50,8 @@ impl Task for MoveRemote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tasks::move_remote::MoveRemote;
     use crate::tasks::Task;
+    use crate::tasks::move_remote::MoveRemote;
     use tempfile::tempdir;
 
     #[tokio::test]

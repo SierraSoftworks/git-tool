@@ -1,5 +1,5 @@
-use super::{errors, target::TempTarget, Config, Repo, Scratchpad, Service, Target};
-use gtmpl::{template, Value};
+use super::{Config, Repo, Scratchpad, Service, Target, errors, target::TempTarget};
+use gtmpl::{Value, template};
 use tracing_batteries::prelude::*;
 
 macro_rules! map(

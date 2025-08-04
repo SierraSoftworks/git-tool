@@ -36,12 +36,19 @@ impl CommandRunnable for SetupCommand {
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, Error> {
         if core.config().file_exists() && !matches.get_flag("force") {
             Err(errors::user(
-                &format!("You already have a Git-Tool config file ({}) which will not be modified.", core.config().get_config_file().unwrap().display()),
-                "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check."))?;
+                &format!(
+                    "You already have a Git-Tool config file ({}) which will not be modified.",
+                    core.config().get_config_file().unwrap().display()
+                ),
+                "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check.",
+            ))?;
         }
 
         writeln!(core.output(), "Welcome to the Git-Tool setup wizard.")?;
-        writeln!(core.output(), "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n")?;
+        writeln!(
+            core.output(),
+            "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n"
+        )?;
 
         let mut prompter = core.prompter();
 
@@ -75,7 +82,10 @@ impl CommandRunnable for SetupCommand {
             )
             .await?;
 
-        writeln!(core.output(),"\nSuccess! We've written your config to disk, now we need to configure your system to use it.")?;
+        writeln!(
+            core.output(),
+            "\nSuccess! We've written your config to disk, now we need to configure your system to use it."
+        )?;
         self.prompt_setup_shell(core, &mut prompter)?;
 
         Ok(0)
@@ -177,7 +187,11 @@ impl SetupCommand {
 
         writeln!(core.output())?;
         if let Some(shell) = shells.iter().find(|s| s.get_name() == shell) {
-            writeln!(core.output(), "To use Git-Tool, you'll need to add the following to your shell's config file ({}):", shell.get_config_file())?;
+            writeln!(
+                core.output(),
+                "To use Git-Tool, you'll need to add the following to your shell's config file ({}):",
+                shell.get_config_file()
+            )?;
             writeln!(core.output(), "{}", shell.get_install())?;
         } else {
             writeln!(

@@ -120,32 +120,40 @@ mod tests {
 
         assert_eq!(children.len(), 5);
 
-        assert!(children.iter().any(|p| p
-            == &get_dev_dir()
-                .join("gh")
-                .join("sierrasoftworks")
-                .join("test1")));
-        assert!(children.iter().any(|p| p
-            == &get_dev_dir()
-                .join("gh")
-                .join("sierrasoftworks")
-                .join("test2")));
-        assert!(children
-            .iter()
-            .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test1")));
-        assert!(children
-            .iter()
-            .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2")));
-
-        assert!(resolve_directories(
-            &get_dev_dir()
+        assert!(children.iter().any(|p| {
+            p == &get_dev_dir()
                 .join("gh")
                 .join("sierrasoftworks")
                 .join("test1")
-                .join(".gitkeep"),
-            "*"
-        )
-        .is_err());
+        }));
+        assert!(children.iter().any(|p| {
+            p == &get_dev_dir()
+                .join("gh")
+                .join("sierrasoftworks")
+                .join("test2")
+        }));
+        assert!(
+            children
+                .iter()
+                .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test1"))
+        );
+        assert!(
+            children
+                .iter()
+                .any(|p| p == &get_dev_dir().join("gh").join("spartan563").join("test2"))
+        );
+
+        assert!(
+            resolve_directories(
+                &get_dev_dir()
+                    .join("gh")
+                    .join("sierrasoftworks")
+                    .join("test1")
+                    .join(".gitkeep"),
+                "*"
+            )
+            .is_err()
+        );
     }
 
     #[rstest]

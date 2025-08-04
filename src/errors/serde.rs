@@ -1,4 +1,4 @@
-use super::{user_with_internal, Error};
+use super::{Error, user_with_internal};
 
 impl From<serde_yaml::Error> for Error {
     fn from(err: serde_yaml::Error) -> Self {

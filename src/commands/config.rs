@@ -177,7 +177,10 @@ impl CommandRunnable for ConfigCommand {
                         true
                     }
                     Some(invalid) => {
-                        writeln!(core.output(), "Cannot set the feature flag '{flag}' to '{invalid}' because only 'true' and 'false' are valid settings.")?;
+                        writeln!(
+                            core.output(),
+                            "Cannot set the feature flag '{flag}' to '{invalid}' because only 'true' and 'false' are valid settings."
+                        )?;
                         return Ok(1);
                     }
                     None => {

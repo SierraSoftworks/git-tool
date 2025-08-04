@@ -45,27 +45,33 @@ New applications can be configured either by making changes to your configuratio
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         if core.config().get_config_file().is_none() {
             warn!("No configuration file has been loaded, continuing with defaults.");
-            writeln!(core.output(),"Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n")?;
+            writeln!(
+                core.output(),
+                "Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n"
+            )?;
         }
 
-        let (app, repo) = match helpers::get_launch_app(core, matches.get_one::<String>("app"), matches.get_one::<String>("repo"))? {
+        let (app, repo) = match helpers::get_launch_app(
+            core,
+            matches.get_one::<String>("app"),
+            matches.get_one::<String>("repo"),
+        )? {
             helpers::LaunchTarget::AppAndTarget(app, target) => {
                 (app, core.resolver().get_best_repo(&target)?)
-            },
-            helpers::LaunchTarget::App(app) => {
-                (app, core.resolver().get_current_repo()?)
-            },
+            }
+            helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_repo()?),
             helpers::LaunchTarget::Target(target) => {
                 let app = core.config().get_default_app().ok_or_else(|| errors::user(
                     "No default application available.",
                     "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
 
                 (app, core.resolver().get_best_repo(&target)?)
-            },
+            }
             helpers::LaunchTarget::None => {
                 return Err(errors::user(
                     "You did not specify the name of a repository to use.",
-                    "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'."))
+                    "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'.",
+                ));
             }
         };
 
@@ -97,7 +103,11 @@ New applications can be configured either by making changes to your configuratio
                 futures::join!(core.launcher().run(app, &repo), self.check_for_update(core));
 
             if let Ok(Some(latest_release)) = latest_release {
-                writeln!(core.output(), "A new version of Git-Tool is available (v{}). You can update it using `gt update`,", latest_release.version)?;
+                writeln!(
+                    core.output(),
+                    "A new version of Git-Tool is available (v{}). You can update it using `gt update`,",
+                    latest_release.version
+                )?;
             }
 
             Ok(status?)
