@@ -1,4 +1,4 @@
-use super::{errors, Error};
+use super::{Error, errors};
 use crate::engine::Core;
 use tracing_batteries::prelude::*;
 
@@ -80,7 +80,8 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(errors::user(
             "We could not find one of the languages you requested.",
-            "Check that the languages you've provided are all available using the 'gt ignore' command."));
+            "Check that the languages you've provided are all available using the 'gt ignore' command.",
+        ));
     }
 
     if !response.status().is_success() {
@@ -103,7 +104,12 @@ impl Into<String> for GitIgnoreFileSection {
             return self.prologue;
         }
 
-        format!("{}\n## -------- Managed by Git Tool -------- ##\n## Add any custom rules above this block ##\n## ------------------------------------- ##\n## @languages: {}\n{}", self.prologue, self.languages.join(","), self.content)
+        format!(
+            "{}\n## -------- Managed by Git Tool -------- ##\n## Add any custom rules above this block ##\n## ------------------------------------- ##\n## @languages: {}\n{}",
+            self.prologue,
+            self.languages.join(","),
+            self.content
+        )
     }
 }
 
@@ -270,7 +276,10 @@ bin/
                 panic!("It should return an error, not succeed");
             }
             Err(e) => {
-                assert_eq!(e.message(), "Oh no! We could not find one of the languages you requested.\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command.");
+                assert_eq!(
+                    e.message(),
+                    "Oh no! We could not find one of the languages you requested.\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command."
+                );
             }
         }
     }

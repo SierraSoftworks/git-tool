@@ -134,11 +134,13 @@ mod tests {
 
     #[test]
     fn is_compatible() {
-        assert!(EntryConfig {
-            platform: "any".to_string(),
-            ..Default::default()
-        }
-        .is_compatible());
+        assert!(
+            EntryConfig {
+                platform: "any".to_string(),
+                ..Default::default()
+            }
+            .is_compatible()
+        );
 
         assert_eq!(
             EntryConfig {

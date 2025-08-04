@@ -36,8 +36,15 @@ impl Task for EnsureNoRemote {
         {
             if online_service.is_created(core, service, repo).await? {
                 return Err(crate::errors::user(
-                    &format!("The remote repository {} already exists", repo.get_full_name()),
-                    &format!("If you want to open this repository, you can clone it locally with `git-tool open {}:{}`", &repo.service, repo.get_full_name()),
+                    &format!(
+                        "The remote repository {} already exists",
+                        repo.get_full_name()
+                    ),
+                    &format!(
+                        "If you want to open this repository, you can clone it locally with `git-tool open {}:{}`",
+                        &repo.service,
+                        repo.get_full_name()
+                    ),
                 ));
             }
         }

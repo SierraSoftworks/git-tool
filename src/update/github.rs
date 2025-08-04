@@ -50,9 +50,12 @@ impl Source for GitHubSource {
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
-                    &format!("Received an HTTP {status} response from GitHub when attempting to list items in the Git-Tool registry."),
+                    &format!(
+                        "Received an HTTP {status} response from GitHub when attempting to list items in the Git-Tool registry."
+                    ),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    inner_error))
+                    inner_error,
+                ))
             }
         }
     }
@@ -214,17 +217,19 @@ impl GitHubSource {
                 }
 
                 Ok(())
-            },
+            }
             reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
                 Err(errors::user(
                     "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again."))
-            },
-            status => {
-                Err(errors::system(
-                    &format!("Received an HTTP {status} response from GitHub when attempting to download the update for your platform ({uri})."),
-                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."))
+                    "Please wait until GitHub removes this rate limit before trying again.",
+                ))
             }
+            status => Err(errors::system(
+                &format!(
+                    "Received an HTTP {status} response from GitHub when attempting to download the update for your platform ({uri})."
+                ),
+                "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+            )),
         }
     }
 }

@@ -8,7 +8,7 @@ use tracing_batteries::prelude::*;
 use super::super::errors;
 use super::features;
 use super::service;
-use super::{app, Error};
+use super::{Error, app};
 use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -40,7 +40,9 @@ impl Config {
         match directories_next::ProjectDirs::from("com", "SierraSoftworks", "Git-Tool") {
             Some(dir) => Some(dir.config_dir().join("config.yml")),
             None => {
-                warn!("Could not find a config directory for your OS. Using the current directory instead.");
+                warn!(
+                    "Could not find a config directory for your OS. Using the current directory instead."
+                );
                 None
             }
         }
@@ -123,8 +125,15 @@ impl Config {
             {
                 if !replace_existing {
                     return Err(errors::user(
-                        &format!("The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &app.name),
-                        &format!("If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.", app = &app.name)));
+                        &format!(
+                            "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
+                            &app.name
+                        ),
+                        &format!(
+                            "If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.",
+                            app = &app.name
+                        ),
+                    ));
                 } else {
                     into.apps[existing_position] = Arc::new(app.into());
                 }
@@ -137,8 +146,15 @@ impl Config {
             if let Some(existing_position) = into.services.iter().position(|s| s.name == svc.name) {
                 if !replace_existing {
                     return Err(errors::user(
-                        &format!("The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.", &svc.name),
-                        &format!("If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.", svc = &svc.name)));
+                        &format!(
+                            "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
+                            &svc.name
+                        ),
+                        &format!(
+                            "If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.",
+                            svc = &svc.name
+                        ),
+                    ));
                 } else {
                     into.services[existing_position] = Arc::new(svc.into());
                 }
@@ -299,8 +315,15 @@ impl Config {
         }
 
         Err(errors::user(
-            &format!("Could not find a service entry in your config file for {}", domain),
-            &format!("Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`", domain)))
+            &format!(
+                "Could not find a service entry in your config file for {}",
+                domain
+            ),
+            &format!(
+                "Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`",
+                domain
+            ),
+        ))
     }
 
     pub fn get_alias(&self, name: &str) -> Option<String> {

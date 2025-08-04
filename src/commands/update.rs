@@ -110,23 +110,34 @@ where {
 
         match target_release {
             Some(release) => {
-                sentry::capture_message(&format!("Starting Update to {}", release.id), sentry::Level::Info);
+                sentry::capture_message(
+                    &format!("Starting Update to {}", release.id),
+                    sentry::Level::Info,
+                );
                 writeln!(core.output(), "Downloading update {}...", &release.id)?;
                 if manager.update(core, release).await? {
-                    writeln!(core.output(), "Shutting down to complete the update operation.")?;
+                    writeln!(
+                        core.output(),
+                        "Shutting down to complete the update operation."
+                    )?;
                 }
-            },
+            }
             None if matches.contains_id("version") => {
                 return Err(errors::user(
                     "Could not find an available update for your platform matching the version you provided.",
-                    "If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`."))
-            },
+                    "If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`.",
+                ));
+            }
             None => {
                 writeln!(
                     core.output(),
                     "It doesn't look like there is an update available for your platform yet."
                 )?;
-                writeln!(core.output(), "If you would like to rollback to a specific version, you can do so with `gt update v{}`.", version!())?;
+                writeln!(
+                    core.output(),
+                    "If you would like to rollback to a specific version, you can do so with `gt update v{}`.",
+                    version!()
+                )?;
             }
         }
 

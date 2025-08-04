@@ -1,12 +1,12 @@
 use crate::errors;
 
-use super::app;
 use super::Error;
+use super::app;
 use super::{
-    templates::{render, render_list},
     Config, Target,
+    templates::{render, render_list},
 };
-use futures::{pin_mut, FutureExt};
+use futures::{FutureExt, pin_mut};
 use tracing_batteries::prelude::*;
 
 #[cfg(test)]

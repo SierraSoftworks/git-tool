@@ -58,8 +58,8 @@ impl CommandRunnable for RenameCommand {
         if !repo.exists() {
             return Err(errors::user(
                 "Could not find the repository directory due to an error.",
-                "Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'.")
-            );
+                "Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'.",
+            ));
         }
 
         let new_repo = core.resolver().get_best_repo(&new_name)?;

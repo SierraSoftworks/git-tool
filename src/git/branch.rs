@@ -24,7 +24,9 @@ pub async fn git_current_branch(repo: &path::Path) -> Result<String, errors::Err
 }
 
 pub async fn git_branches(repo: &path::Path) -> Result<Vec<String>, errors::Error> {
-    info!("Running `git for-each-ref --format=%(refname:lstrip=2) refs/heads/` to get the list of branches");
+    info!(
+        "Running `git for-each-ref --format=%(refname:lstrip=2) refs/heads/` to get the list of branches"
+    );
     validate_repo_path_exists(repo)?;
     let output = git_cmd(
         Command::new("git")

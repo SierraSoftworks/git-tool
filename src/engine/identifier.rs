@@ -28,8 +28,13 @@ impl Identifier {
 
     pub fn resolve(&self, partial: &str) -> Result<Self, errors::Error> {
         if partial.trim().is_empty() {
-            return Err(errors::user(&format!("Could not resolve a new repository identifier based on '{}' when the target is empty.", self),
-            "Make sure that you specify a valid target repository path such as 'namespace/name'"));
+            return Err(errors::user(
+                &format!(
+                    "Could not resolve a new repository identifier based on '{}' when the target is empty.",
+                    self
+                ),
+                "Make sure that you specify a valid target repository path such as 'namespace/name'",
+            ));
         }
 
         if partial.contains(':') {
@@ -69,7 +74,9 @@ impl FromStr for Identifier {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.trim().is_empty() {
             return Err(errors::user(
-                &format!("The repository identifier '{s}' was not in a valid format and could not be understood."),
+                &format!(
+                    "The repository identifier '{s}' was not in a valid format and could not be understood."
+                ),
                 "Make sure you specify a valid repository identifier in the form 'service:namespace/name' or 'namespace/name'",
             ));
         }

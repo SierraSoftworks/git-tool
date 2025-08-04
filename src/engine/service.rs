@@ -1,4 +1,4 @@
-use super::{templates, Error, Repo};
+use super::{Error, Repo, templates};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

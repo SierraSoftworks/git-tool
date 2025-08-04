@@ -82,14 +82,17 @@ where
                 return Err(errors::user(
                     "The application binary is read-only. Please make sure that the application binary is writable by the current user.",
                     {
-                        #[cfg(windows)] {
+                        #[cfg(windows)]
+                        {
                             "Try running this command in an administrative console (Win+X, A)."
                         }
 
-                        #[cfg(unix)]{
+                        #[cfg(unix)]
+                        {
                             "Try running this command as root with `sudo git-tool update`."
                         }
-                    }));
+                    },
+                ));
             }
         }
 

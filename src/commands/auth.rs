@@ -43,8 +43,11 @@ impl CommandRunnable for AuthCommand {
         if let Ok(svc) = core.config().get_service(service) {
             if svc.api.is_none() {
                 return Err(errors::user(
-                    &format!("The service '{}' does not include an API which supports authentication.", &svc.name),
-                    "You do not need to configure authentication for this service, but you can check the services in your configuration using `git-tool services`."
+                    &format!(
+                        "The service '{}' does not include an API which supports authentication.",
+                        &svc.name
+                    ),
+                    "You do not need to configure authentication for this service, but you can check the services in your configuration using `git-tool services`.",
                 ));
             }
 
@@ -81,7 +84,9 @@ impl CommandRunnable for AuthCommand {
             }
         } else {
             let suggestion = if let Some(default_service) = core.config().get_services().next() {
-                format!("Try running `git-tool auth {default_service}` or use one of the services listed in `git-tool services`.")
+                format!(
+                    "Try running `git-tool auth {default_service}` or use one of the services listed in `git-tool services`."
+                )
             } else {
                 "Make sure that you have registered a service in your configuration file.".into()
             };

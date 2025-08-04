@@ -41,18 +41,24 @@ impl CommandRunnable for PruneCommand {
 
         let default_branch = match git::git_default_branch(&repo.get_path()).await {
             Ok(default_branch) => default_branch,
-            Err(e) => return Err(errors::user_with_cause(
-                "Could not determine the default branch for your repository, this probably means that you do not have a synchronized `origin`.", 
-                "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
-                e)),
+            Err(e) => {
+                return Err(errors::user_with_cause(
+                    "Could not determine the default branch for your repository, this probably means that you do not have a synchronized `origin`.",
+                    "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
+                    e,
+                ));
+            }
         };
 
         let merged = match git::git_merged_branches(&repo.get_path()).await {
             Ok(merged) => merged,
-            Err(e) => return Err(errors::user_with_cause(
-                "Could not determine the branches that have been merged into the default branch.",
-                "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
-                e)),
+            Err(e) => {
+                return Err(errors::user_with_cause(
+                    "Could not determine the branches that have been merged into the default branch.",
+                    "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
+                    e,
+                ));
+            }
         };
 
         let to_remove: Vec<&String> = merged
@@ -337,9 +343,11 @@ mod tests {
             .expect_err("the command should fail");
 
         assert!(repo.valid(), "the repository should still be valid");
-        assert!(git::git_branches(&repo.get_path())
-            .await
-            .unwrap()
-            .is_empty());
+        assert!(
+            git::git_branches(&repo.get_path())
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 }

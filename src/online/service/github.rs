@@ -387,36 +387,36 @@ struct GitHubErrorResponse {
 impl Into<Error> for GitHubErrorResponse {
     fn into(self) -> Error {
         match self.http_status_code {
-            StatusCode::UNAUTHORIZED => {
-                errors::user(
-                    "You have not provided a valid authentication token for github.com.",
-                    "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.")
-            },
-            StatusCode::FORBIDDEN => {
-                errors::user_with_internal(
-                    &format!("You do not have permission to perform this action on GitHub: {}", self.message),
-                    "Check your GitHub account permissions for this organization or repository and try again.",
-                    errors::detailed_message(&format!("{self:?}")),
-                )
-            },
-            StatusCode::NOT_FOUND => {
-                errors::user_with_internal(
-                    "We could not create the GitHub repo because the organization or user you specified could not be found.",
-                    "Check that you have specified the correct organization or user in the repository name and try again.",
-                    errors::detailed_message(&format!("{self:?}"))
-                )
-            },
-            StatusCode::TOO_MANY_REQUESTS => {
-                errors::user(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again.")
-            },
-            status => {
-                errors::system_with_internal(
-                    &format!("Received an HTTP {} {} response from GitHub.", status.as_u16(), status.canonical_reason().unwrap_or_default()),
-                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                    errors::detailed_message(&format!("{self:?}")))
-            }
+            StatusCode::UNAUTHORIZED => errors::user(
+                "You have not provided a valid authentication token for github.com.",
+                "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.",
+            ),
+            StatusCode::FORBIDDEN => errors::user_with_internal(
+                &format!(
+                    "You do not have permission to perform this action on GitHub: {}",
+                    self.message
+                ),
+                "Check your GitHub account permissions for this organization or repository and try again.",
+                errors::detailed_message(&format!("{self:?}")),
+            ),
+            StatusCode::NOT_FOUND => errors::user_with_internal(
+                "We could not create the GitHub repo because the organization or user you specified could not be found.",
+                "Check that you have specified the correct organization or user in the repository name and try again.",
+                errors::detailed_message(&format!("{self:?}")),
+            ),
+            StatusCode::TOO_MANY_REQUESTS => errors::user(
+                "GitHub has rate limited requests from your IP address.",
+                "Please wait until GitHub removes this rate limit before trying again.",
+            ),
+            status => errors::system_with_internal(
+                &format!(
+                    "Received an HTTP {} {} response from GitHub.",
+                    status.as_u16(),
+                    status.canonical_reason().unwrap_or_default()
+                ),
+                "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+                errors::detailed_message(&format!("{self:?}")),
+            ),
         }
     }
 }

@@ -1,4 +1,4 @@
-pub use super::{templates::repo_context, Config, Target};
+pub use super::{Config, Target, templates::repo_context};
 use gtmpl::Value;
 use std::path;
 

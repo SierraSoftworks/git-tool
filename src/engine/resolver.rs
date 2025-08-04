@@ -1,5 +1,5 @@
 use super::features::ALWAYS_OPEN_BEST_MATCH;
-use super::{errors, Config, Error, Identifier, Repo, Scratchpad, Service, TempTarget};
+use super::{Config, Error, Identifier, Repo, Scratchpad, Service, TempTarget, errors};
 use crate::{fs::to_native_path, search};
 use chrono::prelude::*;
 use std::env;
@@ -101,8 +101,12 @@ impl Resolver for TrueResolver {
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
             return Err(errors::user(
-                &format!("The glob pattern used for the '{}' service was invalid.", &svc.name),
-                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."));
+                &format!(
+                    "The glob pattern used for the '{}' service was invalid.",
+                    &svc.name
+                ),
+                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again.",
+            ));
         }
 
         let path = self.config.get_dev_directory().join(&svc.name);
@@ -147,24 +151,26 @@ impl Resolver for TrueResolver {
         });
 
         match repos.len() {
-            0 => {
-                match repo_from_str(&self.config, &true_name, true) {
-                    Ok(repo) => Ok(repo),
-                    Err(_) => Err(errors::user(
-                        &format!("None of your local repositories matched '{full_name}'."),
-                        &format!("Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'.")))
-                }
+            0 => match repo_from_str(&self.config, &true_name, true) {
+                Ok(repo) => Ok(repo),
+                Err(_) => Err(errors::user(
+                    &format!("None of your local repositories matched '{full_name}'."),
+                    &format!(
+                        "Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'."
+                    ),
+                )),
             },
             1 => Ok((*repos.first().unwrap()).clone()),
-            _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => Ok((*repos.first().unwrap()).clone()),
-            _ => {
-                match repos.iter().find(|r| r.get_full_name() == full_name) {
-                    Some(repo) => Ok((*repo).clone()),
-                    None => Err(errors::user(
-                        "The repository name you provided matched more than one repository.",
-                        "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."))
-                }
+            _ if self.config.get_features().has(ALWAYS_OPEN_BEST_MATCH) => {
+                Ok((*repos.first().unwrap()).clone())
             }
+            _ => match repos.iter().find(|r| r.get_full_name() == full_name) {
+                Some(repo) => Ok((*repo).clone()),
+                None => Err(errors::user(
+                    "The repository name you provided matched more than one repository.",
+                    "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion.",
+                )),
+            },
         }
     }
 
@@ -179,9 +185,16 @@ impl Resolver for TrueResolver {
         match self.get_repo_from_path(&cwd) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(errors::user_with_cause(
-                &format!("Current directory ('{}') is not a valid repository.", cwd.display()),
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", self.config.get_dev_directory().display()),
-                e))
+                &format!(
+                    "Current directory ('{}') is not a valid repository.",
+                    cwd.display()
+                ),
+                &format!(
+                    "Make sure that you are currently within a repository contained within your development directory ('{}').",
+                    self.config.get_dev_directory().display()
+                ),
+                e,
+            )),
         }
     }
 }
@@ -207,7 +220,11 @@ impl TrueResolver {
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
             return Err(errors::user(
                 "Current directory is not a valid repository.",
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())));
+                &format!(
+                    "Make sure that you are currently within a repository contained within your development directory ('{}').",
+                    dev_dir.display()
+                ),
+            ));
         }
 
         match dir.strip_prefix(&dev_dir) {
@@ -216,12 +233,21 @@ impl TrueResolver {
                     "Current directory is not a valid repository.",
                     &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
                 let svc_name = svc.as_os_str().to_string_lossy().to_string();
-                repo_from_svc_and_path(&self.config, Some(svc_name), relative_path.strip_prefix(svc).unwrap_or(relative_path), false)
-            },
+                repo_from_svc_and_path(
+                    &self.config,
+                    Some(svc_name),
+                    relative_path.strip_prefix(svc).unwrap_or(relative_path),
+                    false,
+                )
+            }
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.",
-                &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display()),
-                e))
+                &format!(
+                    "Make sure that you are currently within a repository contained within your development directory ('{}').",
+                    dev_dir.display()
+                ),
+                e,
+            )),
         }
     }
 }
@@ -274,8 +300,7 @@ fn repo_from_svc_and_path(
             ),
             &format!(
                 "Make sure that you are using a repository name which looks like '{}:{}'.",
-                &svc.name,
-                &svc.pattern
+                &svc.name, &svc.pattern
             ),
         ))
     } else {
@@ -289,7 +314,7 @@ fn repo_from_svc_and_path(
 #[cfg(test)]
 mod tests {
     use super::super::Target;
-    use super::{resolver, Config, Resolver};
+    use super::{Config, Resolver, resolver};
     use crate::engine::resolver::TrueResolver;
     use crate::test::get_dev_dir;
     use chrono::prelude::*;
