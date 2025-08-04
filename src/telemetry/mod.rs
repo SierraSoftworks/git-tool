@@ -32,4 +32,7 @@ pub fn setup() -> tracing_batteries::Session {
                 "vdf1xcENEju8V0d8ffQq2Y",
             ),
         )
+        .with_battery(tracing_batteries::Medama::new(
+            "https://analytics.sierrasoftworks.com",
+        ))
 }

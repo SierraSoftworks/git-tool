@@ -13,9 +13,9 @@ extern crate tracing_batteries;
 
 use crate::commands::CommandRunnable;
 use crate::engine::features;
-use clap::{crate_authors, Arg};
-use std::sync::{atomic::AtomicBool, Arc};
-use tracing_batteries::prelude::*;
+use clap::{Arg, crate_authors};
+use std::sync::{Arc, atomic::AtomicBool};
+use tracing_batteries::{Session, prelude::*};
 
 #[macro_use]
 mod macros;
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let app = build_app();
 
-        match host(app, session.enable()).await {
+        match host(app, &session).await {
             Ok(status) => {
                 session.shutdown();
                 status
@@ -90,11 +90,8 @@ fn build_app() -> clap::Command {
             .subcommands(inventory::iter::<commands::Command>().map(|x| x.app()))
 }
 
-#[tracing::instrument(err, skip(app), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
-async fn host(
-    app: clap::Command,
-    telemetry_enabled: Arc<AtomicBool>,
-) -> Result<i32, errors::Error> {
+#[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
+async fn host(app: clap::Command, session: &Session) -> Result<i32, errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
@@ -119,7 +116,7 @@ async fn host(
                 .record("exit_code", 1_u32)
                 .record("exception", display(&error));
 
-            if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
+            if session.enable().load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
                     Span::current().context().span().span_context().trace_id()
@@ -160,7 +157,12 @@ async fn host(
         .record("command", command_name.as_str())
         .record("otel.name", command_name.as_str());
 
-    match run(matches, telemetry_enabled.clone()).await {
+    let _page = session.record_new_page(format!(
+        "/{}",
+        matches.subcommand_name().unwrap_or_default()
+    ));
+
+    match run(matches, session.enable().clone()).await {
         Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
@@ -190,7 +192,7 @@ async fn host(
                 Span::current().record("exception", error.description());
             }
 
-            if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
+            if session.enable().load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
                     Span::current().context().span().span_context().trace_id()
@@ -216,7 +218,9 @@ async fn run(
         debug!("Loading configuration from default config file...");
         core_builder.with_config_file_or_default(dirs)
     } else {
-        warn!("No configuration file was specified and we were unable to determine the default configuration file location.");
+        warn!(
+            "No configuration file was specified and we were unable to determine the default configuration file location."
+        );
         core_builder.with_default_config()
     };
 
@@ -243,7 +247,9 @@ async fn run(
         matches.get_one::<String>("update-resume-internal"),
         matches.subcommand_name(),
     ) {
-        info!("Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command.");
+        info!(
+            "Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command."
+        );
         if let Some(cmd) = inventory::iter::<commands::Command>().find(|c| c.name() == "update") {
             let matches = cmd
                 .app()
