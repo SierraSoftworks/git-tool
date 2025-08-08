@@ -2,6 +2,7 @@ use super::*;
 use crate::{engine::Target, git};
 use tracing_batteries::prelude::*;
 
+#[allow(dead_code)]
 pub struct GitCommit<'a> {
     pub message: &'a str,
     pub paths: Vec<&'a str>,

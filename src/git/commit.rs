@@ -5,6 +5,7 @@ use std::path;
 use tokio::process::Command;
 use tracing_batteries::prelude::*;
 
+#[allow(dead_code)]
 pub async fn git_commit(
     repo: &path::Path,
     message: &str,

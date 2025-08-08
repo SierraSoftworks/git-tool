@@ -281,7 +281,7 @@ impl Config {
         }
     }
 
-    pub fn get_apps(&self) -> core::slice::Iter<Arc<app::App>> {
+    pub fn get_apps(&self) -> core::slice::Iter<'_, Arc<app::App>> {
         self.apps.iter()
     }
 
@@ -299,7 +299,7 @@ impl Config {
         None
     }
 
-    pub fn get_services(&self) -> core::slice::Iter<Arc<service::Service>> {
+    pub fn get_services(&self) -> core::slice::Iter<'_, Arc<service::Service>> {
         self.services.iter()
     }
 
@@ -330,7 +330,7 @@ impl Config {
         self.aliases.get(name).cloned()
     }
 
-    pub fn get_aliases(&self) -> std::collections::hash_map::Iter<String, String> {
+    pub fn get_aliases(&self) -> std::collections::hash_map::Iter<'_, String, String> {
         self.aliases.iter()
     }
 

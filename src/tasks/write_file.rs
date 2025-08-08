@@ -4,6 +4,7 @@ use super::{engine::Target, *};
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
+#[allow(dead_code)]
 pub struct WriteFile<'a> {
     pub path: PathBuf,
     pub content: &'a str,
@@ -34,6 +35,7 @@ impl Task for WriteFile<'_> {
     }
 }
 
+#[allow(dead_code)]
 impl WriteFile<'_> {
     async fn write_file(&self, path: &Path) -> Result<(), errors::Error> {
         if let Some(parent) = path.parent() {
