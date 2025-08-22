@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
+#[cfg(feature = "telemetry")]
 pub fn setup() -> tracing_batteries::Session {
     tracing_batteries::Session::new("git-tool", version!())
         .with_battery(tracing_batteries::Sentry::new((
@@ -35,4 +36,9 @@ pub fn setup() -> tracing_batteries::Session {
         .with_battery(tracing_batteries::Medama::new(
             "https://analytics.sierrasoftworks.com",
         ))
+}
+
+#[cfg(not(feature = "telemetry"))]
+pub fn setup() -> () {
+    ()
 }

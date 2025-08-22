@@ -62,8 +62,9 @@ sentry = { version = "0.42", default-features = false, features = [
 ] }
 
 [features]
-default = ["auth"]
+default = ["auth", "telemetry"]
 auth = ["keyring", "rpassword"]
+telemetry = []
 
 # This feature disables tests which access the network, system secret store,
 # or portions of the filesystem OTHER than the $TMP directory.
