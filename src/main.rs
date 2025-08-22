@@ -37,6 +37,11 @@ mod update;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "telemetry")]
+type TelemetrySession = Session;
+#[cfg(not(feature = "telemetry"))]
+type TelemetrySession = ();
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     std::process::exit({
@@ -46,14 +51,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         match host(app, &session).await {
             Ok(status) => {
+                #[cfg(feature = "telemetry")]
                 session.shutdown();
                 status
             }
             Err(err) => {
                 if err.is_system() {
+                    #[cfg(feature = "telemetry")]
                     session.record_error(&err);
                 }
 
+                #[cfg(feature = "telemetry")]
                 session.shutdown();
                 1
             }
@@ -91,12 +99,12 @@ fn build_app() -> clap::Command {
 }
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
-async fn host(app: clap::Command, session: &Session) -> Result<i32, errors::Error> {
+async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
                 load_trace_context(&Span::current(), context);
-                info!("Loaded trace context from command line parameters.");
+                debug!("Loaded trace context from command line parameters.");
             }
 
             let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
@@ -116,6 +124,7 @@ async fn host(app: clap::Command, session: &Session) -> Result<i32, errors::Erro
                 .record("exit_code", 1_u32)
                 .record("exception", display(&error));
 
+            #[cfg(feature = "telemetry")]
             if session.enable().load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
@@ -157,12 +166,18 @@ async fn host(app: clap::Command, session: &Session) -> Result<i32, errors::Erro
         .record("command", command_name.as_str())
         .record("otel.name", command_name.as_str());
 
+    #[cfg(feature = "telemetry")]
     let _page = session.record_new_page(format!(
         "/{}",
         matches.subcommand_name().unwrap_or_default()
     ));
 
-    match run(matches, session.enable().clone()).await {
+    #[cfg(feature = "telemetry")]
+    let telemetry_enabled = session.enable();
+    #[cfg(not(feature = "telemetry"))]
+    let telemetry_enabled = Arc::new(AtomicBool::new(false));
+
+    match run(matches, telemetry_enabled.clone()).await {
         Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
@@ -192,7 +207,7 @@ async fn host(app: clap::Command, session: &Session) -> Result<i32, errors::Erro
                 Span::current().record("exception", error.description());
             }
 
-            if session.enable().load(std::sync::atomic::Ordering::Relaxed) {
+            if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
                 println!(
                     "Trace ID: {:032x}",
                     Span::current().context().span().span_context().trace_id()

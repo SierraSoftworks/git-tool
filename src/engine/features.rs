@@ -22,6 +22,7 @@ lazy_static! {
         FORK_REMOTE,
         OPEN_NEW_REPO,
         ALWAYS_OPEN_BEST_MATCH,
+        #[cfg(feature = "telemetry")]
         TELEMETRY,
         CHECK_FOR_UPDATES,
     ];
@@ -74,7 +75,6 @@ impl FeaturesBuilder {
             .with(CREATE_REMOTE_PRIVATE, true)
             .with(MOVE_REMOTE, true)
             .with(FORK_REMOTE, true)
-            .with(TELEMETRY, false)
             .with(CHECK_FOR_UPDATES, true)
             .with(CHECK_EXISTS, true)
     }
