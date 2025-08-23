@@ -26,6 +26,7 @@ variable "resource_group" {
 variable "tags" {
   description = "The tags which should apply to the resource."
   type        = map(string)
+  default     = {}
 }
 
 variable "location_override" {
