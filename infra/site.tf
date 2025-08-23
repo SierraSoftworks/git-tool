@@ -7,6 +7,8 @@ resource "azurerm_static_web_app" "website" {
   tags                = var.tags
 
   lifecycle {
+    prevent_destroy = true
+
     ignore_changes = [
       repository_branch,
       repository_url
@@ -18,6 +20,27 @@ resource "azurerm_static_web_app_custom_domain" "domain" {
   static_web_app_id = azurerm_static_web_app.website.id
   domain_name       = trimsuffix(azurerm_dns_cname_record.cname.fqdn, ".")
   validation_type   = "cname-delegation"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [
+    azurerm_dns_cname_record.cname
+  ]
+}
+
+resource "azurerm_static_web_app_custom_domain" "www" {
+  static_web_app_id = azurerm_static_web_app.website.id
+  domain_name       = "www.${var.root-domain}"
+  validation_type   = "cname-delegation"
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      validation_type
+    ]
+  }
 
   depends_on = [
     azurerm_dns_cname_record.cname
