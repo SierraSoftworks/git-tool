@@ -5,6 +5,10 @@ resource "azurerm_dns_cname_record" "cname" {
   ttl                 = 300
   target_resource_id  = azurerm_static_web_app.website.id
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   depends_on = [
     azurerm_static_web_app.website
   ]
