@@ -29,3 +29,20 @@ resource "azurerm_static_web_app_custom_domain" "domain" {
     azurerm_dns_cname_record.cname
   ]
 }
+
+resource "azurerm_static_web_app_custom_domain" "www" {
+  static_web_app_id = azurerm_static_web_app.website.id
+  domain_name       = "www.${var.root-domain}"
+  validation_type   = "cname-delegation"
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      validation_type
+    ]
+  }
+
+  depends_on = [
+    azurerm_dns_cname_record.cname
+  ]
+}
