@@ -14,7 +14,7 @@ terraform {
 
     honeycombio = {
       source  = "honeycombio/honeycombio"
-      version = "~> 0.38.1"
+      version = "~> 0.39.0"
     }
   }
 }
