@@ -3,5 +3,19 @@
     "yaml.schemas": {
         "https://schemas.sierrasoftworks.com/git-tool/v2/config.schema.json": "config/*.yml",
         "https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json": "registry/**/*.yaml"
-    }
+    },
+    "cSpell.words": [
+        "anchore",
+        "bour",
+        "cargofile",
+        "libdbus",
+        "libgcc",
+        "mathieu",
+        "msvc",
+        "multilib",
+        "Pannell",
+        "protoc",
+        "pwsh",
+        "Softworks"
+    ]
 }
