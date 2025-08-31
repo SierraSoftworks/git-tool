@@ -128,8 +128,14 @@ alias gt={app}"#,
         },
         Shell {
             name: "fish",
-            short_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
-            long_init: format!(r#"complete -f -c {app} "({app} complete)"#, app = &app),
+            short_init: format!(
+                r#"complete -f -c {app} -a "({app} complete (commandline -cp))""#,
+                app = &app
+            ),
+            long_init: format!(
+                r#"complete -f -c {app} "({app} complete (commandline -cp))""#,
+                app = &app
+            ),
 
             config_file: "~/.fishrc".to_string(),
             install: format!(
