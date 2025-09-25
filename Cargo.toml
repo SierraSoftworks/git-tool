@@ -54,7 +54,7 @@ shellexpand = "3"
 [dev-dependencies]
 mockall = "0.13.1"
 rstest = "0.26"
-sentry = { version = "0.42", default-features = false, features = [
+sentry = { version = "0.43", default-features = false, features = [
     "reqwest",
     "rustls",
     "log",
