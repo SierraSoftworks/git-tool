@@ -14,7 +14,7 @@ name = "git-tool"
 async-trait = "0.1"
 base64 = "0.22"
 chrono = { version = "0.4.41" }
-clap = { version = "4.5.49", features = ["cargo", "env", "string"] }
+clap = { version = "4.5.50", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
