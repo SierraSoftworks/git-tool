@@ -160,7 +160,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Fetch Versioned Cargo.toml
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: cargofile
 
