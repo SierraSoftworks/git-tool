@@ -54,7 +54,7 @@ jobs:
         run: sed -i "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" Cargo.toml
 
       - name: Stash Versioned Cargo.toml
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cargofile
           path: Cargo.toml
