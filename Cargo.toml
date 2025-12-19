@@ -46,7 +46,7 @@ tokio = { version = "1.48", features = [
     "macros",
     "signal",
 ] }
-tracing = { version = "0.1.43", features = ["log"] }
+tracing = { version = "0.1.44", features = ["log"] }
 tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git", features = ["medama", "opentelemetry", "sentry"] }
 dirs = "6.0.0"
 shellexpand = "3"
