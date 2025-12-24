@@ -19,7 +19,7 @@ directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
 http = "0.2"
-human-errors = "0.1.5"
+human-errors = "0.2.2"
 inventory = "0.3.21"
 itertools = "0.14"
 keyring = { version = "3.6.3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
