@@ -59,11 +59,12 @@ impl Resolver for TrueResolver {
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         if name.starts_with('^') || name.starts_with('~') {
             let delta = name[1..].parse::<u64>().map_err(|err| {
-                human_errors::user(format!
+                human_errors::user(
+                    format!(
                         "Could not parse the offset expression '{}' into a valid week offset: {}.",
                         &name, err,
                     ),
-                    "Please provide a valid number of weeks to go back in time.",
+                    &["Please provide a valid number of weeks to go back in time."],
                 )
             })?;
 
@@ -99,11 +100,12 @@ impl Resolver for TrueResolver {
     #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
-            return Err(human_errors::user(format!
+            return Err(human_errors::user(
+                format!(
                     "The glob pattern used for the '{}' service was invalid.",
                     &svc.name
                 ),
-                "Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again.",
+                &["Please ensure that the glob pattern you have used for this service (in your config file) is valid and try again."],
             ));
         }
 
@@ -132,11 +134,12 @@ impl Resolver for TrueResolver {
         let all_repos = match &identifier.scope {
             ns if ns.is_empty() => self.get_repos()?,
             ns => self.get_repos_for(self.config.get_service(ns).map_err(|_| {
-                human_errors::user(format!
+                human_errors::user(
+                    format!(
                         "The service '{}' used to resolve a repo was not present in your config.",
                         ns
                     ),
-                    "Try adding the namespace to your configuration as a supported service.",
+                    &["Try adding the namespace to your configuration as a supported service."],
                 )
             })?)?,
         };
@@ -150,10 +153,9 @@ impl Resolver for TrueResolver {
         match repos.len() {
             0 => match repo_from_str(&self.config, &true_name, true) {
                 Ok(repo) => Ok(repo),
-                Err(_) => Err(human_errors::user(format!"None of your local repositories matched '{full_name}'."),
-                    format!(
-                        "Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'."
-                    ),
+                Err(_) => Err(human_errors::user(
+                    format!("None of your local repositories matched '{full_name}'. Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'."),
+                    &["Verify the repository name is correct."],
                 )),
             },
             1 => Ok((*repos.first().unwrap()).clone()),
@@ -270,8 +272,10 @@ fn repo_from_svc_and_path(
     let svc = match svc {
         Some(svc) => config.get_service(&svc),
         None if fallback_to_default => config.get_default_service().ok_or_else(|| human_errors::user("No services configured for use with Git Tool.", &["Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."])),
-        None => Err(human_errors::user(format!"The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
-            "Make sure that your repository starts with the name of a service, such as 'gh:sierrasoftworks/git-tool'."))
+        None => Err(human_errors::user(
+            format!("The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
+            &["Make sure that your repository starts with the name of a service, such as 'gh:sierrasoftworks/git-tool'."],
+        )),
     }?;
 
     let name_length = svc.pattern.split_terminator('/').count();

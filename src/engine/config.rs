@@ -124,14 +124,13 @@ impl Config {
             if let Some(existing_position) = into.apps.iter().position(|a| a.get_name() == app.name)
             {
                 if !replace_existing {
-                    return Err(human_errors::user(format!
-                            "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
+                    return Err(human_errors::user(
+                        format!(
+                            "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect. If you would like to replace the existing entry, use `gt config add apps/{} --force`.",
+                            &app.name,
                             &app.name
                         ),
-                        format!(
-                            "If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.",
-                            app = &app.name
-                        ),
+                        &["Check your configuration file to see existing applications."],
                     ));
                 } else {
                     into.apps[existing_position] = Arc::new(app.into());
@@ -144,14 +143,13 @@ impl Config {
         if let Some(svc) = template.service {
             if let Some(existing_position) = into.services.iter().position(|s| s.name == svc.name) {
                 if !replace_existing {
-                    return Err(human_errors::user(format!
-                            "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
+                    return Err(human_errors::user(
+                        format!(
+                            "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect. If you would like to replace the existing entry, use `gt config add services/{} --force`.",
+                            &svc.name,
                             &svc.name
                         ),
-                        format!(
-                            "If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.",
-                            svc = &svc.name
-                        ),
+                        &["Check your configuration file to see existing services."],
                     ));
                 } else {
                     into.services[existing_position] = Arc::new(svc.into());
@@ -181,10 +179,10 @@ impl Config {
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 human_errors::wrap_user(
-                e,
-                "We couldn't parse your configuration file due to a YAML parser error.",
-                &["Check that the YAML in your configuration file is correctly formatted."],
-            
+                    e,
+                    "We couldn't parse your configuration file due to a YAML parser error.",
+                    &["Check that the YAML in your configuration file is correctly formatted."],
+                )
             })
     }
 
@@ -220,10 +218,10 @@ impl Config {
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 human_errors::wrap_user(
-                e,
-                "We couldn't parse your configuration file due to a YAML parser error.",
-                &["Check that the YAML in your configuration file is correctly formatted."],
-            
+                    e,
+                    "We couldn't parse your configuration file due to a YAML parser error.",
+                    &["Check that the YAML in your configuration file is correctly formatted."],
+                )
             })
     }
 
@@ -253,7 +251,7 @@ impl Config {
                 e,
                 "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
                 &["Please report this issue on GitHub so that we can try and resolve it."],
-            
+            )
         })?;
 
         match &self.schema {
@@ -312,14 +310,13 @@ impl Config {
             }
         }
 
-        Err(human_errors::user(format!
-                "Could not find a service entry in your config file for {}",
-                domain
-            ),
+        Err(human_errors::user(
             format!(
-                "Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`",
+                "Could not find a service entry in your config file for {}. Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`",
+                domain,
                 domain
             ),
+            &["Check your configuration file for available services."],
         ))
     }
 
