@@ -17,7 +17,7 @@ impl Task for GitSwitch {
             && git::git_branches(&repo.get_path())
                 .await?
                 .iter()
-                .any(|v| v == &self.branch || v == &format!("origin/{}", &self.branch))
+                .any(|v| v == &self.branch || v == format!("origin/{}", &self.branch))
         {
             create = false;
         }

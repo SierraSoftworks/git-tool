@@ -43,7 +43,7 @@ impl CommandRunnable for AuthCommand {
         if let Ok(svc) = core.config().get_service(service) {
             if svc.api.is_none() {
                 return Err(errors::user(
-                    &format!(
+                    format!(
                         "The service '{}' does not include an API which supports authentication.",
                         &svc.name
                     ),
@@ -92,7 +92,7 @@ impl CommandRunnable for AuthCommand {
             };
 
             return Err(errors::user(
-                &format!(
+                format!(
                     "The service you specified ('{service}') does not exist in your configuration."
                 ),
                 &suggestion,

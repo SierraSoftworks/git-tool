@@ -56,7 +56,8 @@ where {
                     e))?;
                 sentry::configure_scope(|scope| {
                     scope.set_extra("state", serde_json::to_value(&state).unwrap_or_default());
-                    scope.set_transaction(Some(&format!("update/{}", state.phase)));
+                    scope.set_transaction(Some(
+                format!("update/{}", state.phase)));
                 });
 
                 info!("Resuming update in phase {}", state.phase);
@@ -111,7 +112,7 @@ where {
         match target_release {
             Some(release) => {
                 sentry::capture_message(
-                    &format!("Starting Update to {}", release.id),
+                    format!("Starting Update to {}", release.id),
                     sentry::Level::Info,
                 );
                 writeln!(core.output(), "Downloading update {}...", &release.id)?;

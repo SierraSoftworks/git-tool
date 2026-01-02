@@ -125,11 +125,11 @@ impl Config {
             {
                 if !replace_existing {
                     return Err(errors::user(
-                        &format!(
+                        format!(
                             "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
                             &app.name
                         ),
-                        &format!(
+                        format!(
                             "If you would like to replace the existing entry for {app}, use `gt config add apps/{app} --force`.",
                             app = &app.name
                         ),
@@ -146,11 +146,11 @@ impl Config {
             if let Some(existing_position) = into.services.iter().position(|s| s.name == svc.name) {
                 if !replace_existing {
                     return Err(errors::user(
-                        &format!(
+                        format!(
                             "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
                             &svc.name
                         ),
-                        &format!(
+                        format!(
                             "If you would like to replace the existing entry for {svc}, use `gt config add services/{svc} --force`.",
                             svc = &svc.name
                         ),
@@ -193,7 +193,7 @@ impl Config {
     #[tracing::instrument(name = "config:from_file" err, skip(path))]
     pub fn from_file(path: &Path) -> Result<Self, Error> {
         let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
-            &format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
+            format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
             "Check that your config file exists and is readable by the user running git-tool before trying again.",
             err,
         ))?;
@@ -234,14 +234,14 @@ impl Config {
 
         if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent).await.map_err(|err| errors::user_with_internal(
-                &format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
+                format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
                 "Make sure that Git-Tool has permission to write to your config directory and then try again.",
                 err,
             ))?;
         }
 
         tokio::fs::write(&path, self.to_string()?).await.map_err(|err| errors::user_with_internal(
-            &format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
+            format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
             "Make sure that Git-Tool has permission to write to your config file and then try again.",
             err,
         ))?;
@@ -315,11 +315,11 @@ impl Config {
         }
 
         Err(errors::user(
-            &format!(
+            format!(
                 "Could not find a service entry in your config file for {}",
                 domain
             ),
-            &format!(
+            format!(
                 "Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`",
                 domain
             ),

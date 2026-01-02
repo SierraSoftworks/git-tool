@@ -36,7 +36,7 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                     "Git exited with a failure status code.",
                     "Please check the output printed by Git to determine why the command failed and take appropriate action.",
                     errors::system(
-                        &format!("{cmd:?} exited with status code {code}."),
+                        format!("{cmd:?} exited with status code {code}."),
                         &output_text,
                     ),
                 ))
@@ -60,7 +60,7 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
 pub fn validate_repo_path_exists(repo: &Path) -> Result<(), errors::Error> {
     if !repo.exists() {
         Err(errors::user(
-            &format!("The repository path '{}' does not exist.", repo.display()),
+            format!("The repository path '{}' does not exist.", repo.display()),
             "Please check that the path is correct and that you have permission to access it.",
         ))
     } else {

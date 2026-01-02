@@ -69,7 +69,7 @@ where
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."))?;
 
         let variant = release.get_variant(&self.variant).ok_or_else(|| errors::system(
-            &format!("Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
+            format!("Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
             "Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."))?;
 
         {
@@ -104,7 +104,7 @@ where
             );
             let mut app_file = std::fs::File::create(&app).map_err(|err| {
                 errors::user_with_internal(
-                    &format!(
+                    format!(
                         "Could not create the new application file '{}' due to an OS-level error.",
                         app.display()
                     ),
@@ -187,7 +187,7 @@ where
     fn prepare_app_file(&self, file: &Path) -> Result<(), errors::Error> {
         let mut perms = std::fs::metadata(file).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not gather permissions information for '{}' due to an OS-level error.",
                     file.display()
                 ),
@@ -203,7 +203,7 @@ where
         perms.set_mode(0o775);
         std::fs::set_permissions(file, perms).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not set executable permissions on '{}' due to an OS-level error.",
                     file.display()
                 ),

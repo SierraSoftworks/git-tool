@@ -44,7 +44,7 @@ impl WriteFile<'_> {
 
         tokio::fs::write(&path, self.content).await.map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not write data to the file '{}' due to an OS-level error.",
                     path.display()
                 ),

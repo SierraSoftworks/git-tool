@@ -78,7 +78,8 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["temp"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             "
 directory: {}=
 
@@ -135,7 +136,8 @@ apps:
         let args = cmd.app().get_matches_from(vec!["temp", "test-app"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             "
 directory: {}
 
@@ -187,7 +189,8 @@ apps:
         let args = cmd.app().get_matches_from(vec!["temp", "unknown-app"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             "
 directory: {}
 

@@ -60,7 +60,7 @@ impl Resolver for TrueResolver {
         if name.starts_with('^') || name.starts_with('~') {
             let delta = name[1..].parse::<u64>().map_err(|err| {
                 errors::user(
-                    &format!(
+                    format!(
                         "Could not parse the offset expression '{}' into a valid week offset: {}.",
                         &name, err,
                     ),
@@ -101,7 +101,7 @@ impl Resolver for TrueResolver {
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
             return Err(errors::user(
-                &format!(
+                format!(
                     "The glob pattern used for the '{}' service was invalid.",
                     &svc.name
                 ),
@@ -135,7 +135,7 @@ impl Resolver for TrueResolver {
             ns if ns.is_empty() => self.get_repos()?,
             ns => self.get_repos_for(self.config.get_service(ns).map_err(|_| {
                 errors::user(
-                    &format!(
+                    format!(
                         "The service '{}' used to resolve a repo was not present in your config.",
                         ns
                     ),
@@ -154,8 +154,8 @@ impl Resolver for TrueResolver {
             0 => match repo_from_str(&self.config, &true_name, true) {
                 Ok(repo) => Ok(repo),
                 Err(_) => Err(errors::user(
-                    &format!("None of your local repositories matched '{full_name}'."),
-                    &format!(
+                    format!("None of your local repositories matched '{full_name}'."),
+                    format!(
                         "Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'."
                     ),
                 )),
@@ -185,11 +185,11 @@ impl Resolver for TrueResolver {
         match self.get_repo_from_path(&cwd) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(errors::user_with_cause(
-                &format!(
+                format!(
                     "Current directory ('{}') is not a valid repository.",
                     cwd.display()
                 ),
-                &format!(
+                format!(
                     "Make sure that you are currently within a repository contained within your development directory ('{}').",
                     self.config.get_dev_directory().display()
                 ),
@@ -203,13 +203,13 @@ impl TrueResolver {
     fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
         debug!("Constructing repo object from path '{}'", path.display());
         let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
-            &format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
+            format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
             "Check that the directory exists and that Git-Tool has permission to access it.",
             err
         ))?;
         let dir = if path.is_absolute() {
             path.canonicalize().map_err(|err| errors::user_with_internal(
-                &format!("Could not determine the canonical path for the directory '{}' due to an OS-level error.", path.display()),
+                format!("Could not determine the canonical path for the directory '{}' due to an OS-level error.", path.display()),
                 "Check that the directory exists and that Git-Tool has permission to access it.",
                 err
             ))?
@@ -220,7 +220,7 @@ impl TrueResolver {
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
             return Err(errors::user(
                 "Current directory is not a valid repository.",
-                &format!(
+                format!(
                     "Make sure that you are currently within a repository contained within your development directory ('{}').",
                     dev_dir.display()
                 ),
@@ -231,7 +231,7 @@ impl TrueResolver {
             Ok(relative_path) => {
                 let svc = relative_path.components().next().ok_or_else(|| errors::user(
                     "Current directory is not a valid repository.",
-                    &format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
+                    format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
                 let svc_name = svc.as_os_str().to_string_lossy().to_string();
                 repo_from_svc_and_path(
                     &self.config,
@@ -242,7 +242,7 @@ impl TrueResolver {
             }
             Err(e) => Err(errors::system_with_internal(
                 "We were unable to determine the repository's fully qualified name.",
-                &format!(
+                format!(
                     "Make sure that you are currently within a repository contained within your development directory ('{}').",
                     dev_dir.display()
                 ),
@@ -277,7 +277,7 @@ fn repo_from_svc_and_path(
             "Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."
         )),
         None => Err(errors::user(
-            &format!("The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
+            format!("The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
             "Make sure that your repository starts with the name of a service, such as 'gh:sierrasoftworks/git-tool'."))
     }?;
 
@@ -292,20 +292,17 @@ fn repo_from_svc_and_path(
 
     if name_parts.len() != name_length {
         Err(errors::user(
-            &format!(
+            format!(
                 "The service '{}' requires a repository name in the form '{}', but you provided '{}'.",
                 &svc.name,
                 &svc.pattern,
                 path.display()
             ),
-            &format!(
-                "Make sure that you are using a repository name which looks like '{}:{}'.",
-                &svc.name, &svc.pattern
-            ),
+            "Make sure that you are using a repository name which matches the service's expected pattern.",
         ))
     } else {
         Ok(Repo::new(
-            &format!("{}:{}", &svc.name, &name_parts.join("/")),
+            format!("{}:{}", &svc.name, &name_parts.join("/")),
             to_native_path(config.get_dev_directory().join(true_path)),
         ))
     }

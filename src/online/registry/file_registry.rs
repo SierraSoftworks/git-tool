@@ -22,7 +22,7 @@ impl Registry for FileRegistry {
 
         for entry in read_dir(&self.path).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.",
                     self.path.display()
                 ),
@@ -31,7 +31,7 @@ impl Registry for FileRegistry {
             )
         })? {
             let type_entry = entry.map_err(|err| errors::user_with_internal(
-                &format!("Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.", self.path.display()),
+                format!("Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.", self.path.display()),
                 "Check that the directory exists and that Git-Tool has read access to it and its children.",
                 err
             ))?;
@@ -42,7 +42,7 @@ impl Registry for FileRegistry {
 
             for entry in read_dir(type_entry.path()).map_err(|err| {
                 errors::user_with_internal(
-                    &format!(
+                    format!(
                         "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
                         type_entry.path().display()
                     ),
@@ -53,7 +53,7 @@ impl Registry for FileRegistry {
                 let file_entry =
                     entry.map_err(|err| {
                         errors::user_with_internal(
-                            &format!(
+                            format!(
                                 "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
                                 type_entry.path().display()
                             ),
@@ -91,7 +91,7 @@ impl Registry for FileRegistry {
         let path = self.path.join(to_native_path(format!("{id}.yaml")));
         let contents = read_to_string(&path).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not read the local filesystem registry entry '{}' due to an OS-level error.",
                     path.display()
                 ),
@@ -102,7 +102,7 @@ impl Registry for FileRegistry {
 
         Ok(serde_yaml::from_str(&contents).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not deserialize the registry entry '{id}' due to a YAML parser error."
                 ),
                 "Check that the registry entry is valid YAML and matches the registry entry schema.",

@@ -62,7 +62,7 @@ impl CommandRunnable for IgnoreCommand {
                 .await?;
 
                 tokio::fs::write(&ignore_path, content).await.map_err(|err| errors::user_with_internal(
-                    &format!("Could not write to your '{}' file due to an OS-level error.", ignore_path.display()),
+                    format!("Could not write to your '{}' file due to an OS-level error.", ignore_path.display()),
                     "Check that Git-Tool has permission to write to your .gitignore file and try again.",
                     err
                 ))?;

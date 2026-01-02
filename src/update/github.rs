@@ -50,7 +50,7 @@ impl Source for GitHubSource {
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(errors::system_with_internal(
-                    &format!(
+                    format!(
                         "Received an HTTP {status} response from GitHub when attempting to list items in the Git-Tool registry."
                     ),
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
@@ -87,7 +87,7 @@ impl GitHubSource {
     async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, errors::Error> {
         let uri: reqwest::Url = url.parse().map_err(|e| {
             errors::system_with_internal(
-                &format!("Unable to parse GitHub API URL '{url}'."),
+                format!("Unable to parse GitHub API URL '{url}'."),
                 "Please report this error to us by opening a ticket in GitHub.",
                 e,
             )
@@ -103,7 +103,7 @@ impl GitHubSource {
             "User-Agent",
             version!("Git-Tool/").parse().map_err(|e| {
                 errors::system_with_internal(
-                    &format!(
+                    format!(
                         "Unable to parse Git-Tool user agent header {}.",
                         version!("Git-Tool/")
                     ),
@@ -207,7 +207,7 @@ impl GitHubSource {
                     let buf = buf?;
                     into.write_all(&buf).map_err(|err| {
                         errors::user_with_internal(
-                            &format!(
+                            format!(
                                 "Could not write data from '{uri}' to disk due to an OS-level error.",
                             ),
                             "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
@@ -225,7 +225,7 @@ impl GitHubSource {
                 ))
             }
             status => Err(errors::system(
-                &format!(
+                format!(
                     "Received an HTTP {status} response from GitHub when attempting to download the update for your platform ({uri})."
                 ),
                 "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",

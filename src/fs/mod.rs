@@ -68,15 +68,15 @@ pub fn get_child_directories(
 ) -> Result<impl Iterator<Item = PathBuf>, crate::errors::Error> {
     Ok(from.read_dir().map_err(|e| match e.kind() {
         std::io::ErrorKind::NotFound => crate::errors::user(
-            &format!("The path '{}' does not exist.", from.display()),
+            format!("The path '{}' does not exist.", from.display()),
             "Please check that the path is correct and that you have permission to access it.",
         ),
         std::io::ErrorKind::NotADirectory => crate::errors::user(
-            &format!("The path '{}' is not a directory.", from.display()),
+            format!("The path '{}' is not a directory.", from.display()),
             "Please check that this path is a directory and that you have not accidentally created a file here instead.",
         ),
         _ => crate::errors::system_with_internal(
-            &format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
+            format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
             "Check that Git-Tool has permission to read this directory.",
             e,
         ),

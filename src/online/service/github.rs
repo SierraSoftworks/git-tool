@@ -252,7 +252,7 @@ impl GitHubService {
     ) -> Result<Result<T, GitHubErrorResponse>, Error> {
         let url: Url = uri.parse().map_err(|e| {
             errors::system_with_internal(
-                &format!("Unable to parse GitHub API URL '{uri}'."),
+                format!("Unable to parse GitHub API URL '{uri}'."),
                 "Please report this error to us by opening an issue on GitHub.",
                 e,
             )

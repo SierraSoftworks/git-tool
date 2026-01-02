@@ -29,9 +29,9 @@ impl TempTarget {
         let temp_path = self.dir.path().to_owned();
 
         self.dir.close().map_err(|e| crate::errors::user_with_internal(
-          "Unable to remove the temporary directory, it is likely still in use by another application.",
-          &format!("Make sure that you close any open files and then delete '{}'", temp_path.display()),
-          e))?;
+            format!("Unable to remove the temporary directory at '{}', it is likely still in use by another application.", temp_path.display()),
+            "Make sure that you close any open files and then try deleting the directory manually.",
+            e))?;
         Ok(())
     }
 

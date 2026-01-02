@@ -30,7 +30,7 @@ impl Task for MoveDirectory {
 
         fs::rename(repo.path.clone(), self.new_path.clone()).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not rename the repository directory '{}' to '{}' due to an OS-level error.",
                     repo.path.display(),
                     self.new_path.display()
@@ -58,7 +58,7 @@ impl Task for MoveDirectory {
 
         fs::rename(scratch.get_path(), self.new_path.clone()).map_err(|err| {
             errors::user_with_internal(
-                &format!(
+                format!(
                     "Could not rename the scratchpad directory '{}' to '{}' due to an OS-level error.",
                     scratch.get_path().display(),
                     self.new_path.display()

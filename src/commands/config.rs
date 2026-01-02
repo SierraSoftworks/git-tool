@@ -567,7 +567,8 @@ aliases:
 
     #[tokio::test]
     async fn test_alias_completion() {
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             r#"
 directory: "{}"
 
@@ -630,7 +631,8 @@ features:
 
     #[tokio::test]
     async fn test_feature_completion() {
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             r#"
 directory: "{}"
 
@@ -702,7 +704,8 @@ scratchpads: /scratch
 
     #[tokio::test]
     async fn test_path_completion() {
-        let cfg = Config::from_str(&format!(
+        let cfg = Config::from_str(
+                format!(
             r#"
 directory: "{}"
 "#,
