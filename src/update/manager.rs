@@ -66,8 +66,10 @@ where
 
         let app = state.temporary_application.clone().ok_or_else(|| human_errors::system("A temporary application path was not provided and the update cannot proceed (prepare -> replace phase).", &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."]))?;
 
-        let variant = release.get_variant(&self.variant).ok_or_else(|| human_errors::system(format!"Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
-            "Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."))?;
+        let variant = release.get_variant(&self.variant).ok_or_else(|| human_errors::system(
+            format!("Your operating system and architecture are not supported by {}. Supported platforms include: {}", release.id, release.variants.iter().map(|v| format!("{}_{}", v.platform, v.arch)).format(", ")),
+            &["Please open an issue on GitHub to request that we cross-compile a release of Git-Tool for your platform."],
+        ))?;
 
         {
             info!(
