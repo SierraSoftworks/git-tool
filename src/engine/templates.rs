@@ -16,10 +16,11 @@ macro_rules! map(
 
 pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
     debug!("Rendering template '{}' with context {}", tmpl, context);
-    template(tmpl, context).map_err(|e| errors::user_with_internal(
-        format!("We couldn't render your template '{tmpl}'.").as_str(),
-        "Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/",
-        errors::detailed_message(&e.to_string())))
+    template(tmpl, context).map_err(|e| human_errors::wrap_user(
+        errors::StringError::new(e.to_string()),
+        format!("We couldn't render your template '{tmpl}'."),
+        &["Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/"],
+    ))
 }
 
 #[tracing::instrument(err, skip(context, items))]

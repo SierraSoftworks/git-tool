@@ -59,8 +59,7 @@ impl Resolver for TrueResolver {
     fn get_scratchpad(&self, name: &str) -> Result<Scratchpad, Error> {
         if name.starts_with('^') || name.starts_with('~') {
             let delta = name[1..].parse::<u64>().map_err(|err| {
-                errors::user(
-                    format!(
+                human_errors::user(format!
                         "Could not parse the offset expression '{}' into a valid week offset: {}.",
                         &name, err,
                     ),
@@ -100,8 +99,7 @@ impl Resolver for TrueResolver {
     #[tracing::instrument(err, skip(self, svc), fields(service=%svc.name))]
     fn get_repos_for(&self, svc: &Service) -> Result<Vec<Repo>, Error> {
         if !&svc.pattern.split('/').all(|p| p == "*") {
-            return Err(errors::user(
-                format!(
+            return Err(human_errors::user(format!
                     "The glob pattern used for the '{}' service was invalid.",
                     &svc.name
                 ),
@@ -134,8 +132,7 @@ impl Resolver for TrueResolver {
         let all_repos = match &identifier.scope {
             ns if ns.is_empty() => self.get_repos()?,
             ns => self.get_repos_for(self.config.get_service(ns).map_err(|_| {
-                errors::user(
-                    format!(
+                human_errors::user(format!
                         "The service '{}' used to resolve a repo was not present in your config.",
                         ns
                     ),
@@ -153,8 +150,7 @@ impl Resolver for TrueResolver {
         match repos.len() {
             0 => match repo_from_str(&self.config, &true_name, true) {
                 Ok(repo) => Ok(repo),
-                Err(_) => Err(errors::user(
-                    format!("None of your local repositories matched '{full_name}'."),
+                Err(_) => Err(human_errors::user(format!"None of your local repositories matched '{full_name}'."),
                     format!(
                         "Please check that you have provided the correct name for the repository or try cloning it with 'gt open {full_name}'."
                     ),
@@ -166,17 +162,18 @@ impl Resolver for TrueResolver {
             }
             _ => match repos.iter().find(|r| r.get_full_name() == full_name) {
                 Some(repo) => Ok((*repo).clone()),
-                None => Err(errors::user(
-                    "The repository name you provided matched more than one repository.",
-                    "Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion.",
-                )),
+                None => Err(human_errors::user("The repository name you provided matched more than one repository.", &["Try entering a repository name that is unique, or the fully qualified repository name, to avoid confusion."])),
             },
         }
     }
 
     #[tracing::instrument(err, skip(self))]
     fn get_current_repo(&self) -> Result<Repo, Error> {
-        let cwd = env::current_dir().map_err(|err| errors::system_with_internal(
+        let cwd = env::current_dir().map_err(|err| human_errors::wrap_system(
+                err,
+                "Could not determine your current working directory due to an OS-level error.",
+                &["Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it."],
+            )ors::wrap_system(
             "Could not determine your current working directory due to an OS-level error.",
             "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
             err
@@ -184,7 +181,7 @@ impl Resolver for TrueResolver {
 
         match self.get_repo_from_path(&cwd) {
             Ok(repo) => Ok(repo),
-            Err(e) => Err(errors::user_with_cause(
+            Err(e) => Err(human_errors::wrap_user(
                 format!(
                     "Current directory ('{}') is not a valid repository.",
                     cwd.display()
@@ -202,13 +199,13 @@ impl Resolver for TrueResolver {
 impl TrueResolver {
     fn get_repo_from_path(&self, path: &std::path::Path) -> Result<Repo, Error> {
         debug!("Constructing repo object from path '{}'", path.display());
-        let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| errors::user_with_internal(
+        let dev_dir = self.config.get_dev_directory().canonicalize().map_err(|err| human_errors::wrap_user(
             format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),
             "Check that the directory exists and that Git-Tool has permission to access it.",
             err
         ))?;
         let dir = if path.is_absolute() {
-            path.canonicalize().map_err(|err| errors::user_with_internal(
+            path.canonicalize().map_err(|err| human_errors::wrap_user(
                 format!("Could not determine the canonical path for the directory '{}' due to an OS-level error.", path.display()),
                 "Check that the directory exists and that Git-Tool has permission to access it.",
                 err
@@ -218,7 +215,7 @@ impl TrueResolver {
         };
 
         if !dir.starts_with(&dev_dir) || dir == dev_dir {
-            return Err(errors::user(
+            return Err(human_errors::user(
                 "Current directory is not a valid repository.",
                 format!(
                     "Make sure that you are currently within a repository contained within your development directory ('{}').",
@@ -229,7 +226,7 @@ impl TrueResolver {
 
         match dir.strip_prefix(&dev_dir) {
             Ok(relative_path) => {
-                let svc = relative_path.components().next().ok_or_else(|| errors::user(
+                let svc = relative_path.components().next().ok_or_else(|| human_errors::user(
                     "Current directory is not a valid repository.",
                     format!("Make sure that you are currently within a repository contained within your development directory ('{}').", dev_dir.display())))?;
                 let svc_name = svc.as_os_str().to_string_lossy().to_string();
@@ -240,7 +237,7 @@ impl TrueResolver {
                     false,
                 )
             }
-            Err(e) => Err(errors::system_with_internal(
+            Err(e) => Err(human_errors::wrap_system(
                 "We were unable to determine the repository's fully qualified name.",
                 format!(
                     "Make sure that you are currently within a repository contained within your development directory ('{}').",
@@ -272,12 +269,8 @@ fn repo_from_svc_and_path(
 ) -> Result<Repo, Error> {
     let svc = match svc {
         Some(svc) => config.get_service(&svc),
-        None if fallback_to_default => config.get_default_service().ok_or_else(|| errors::user(
-            "No services configured for use with Git Tool.",
-            "Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."
-        )),
-        None => Err(errors::user(
-            format!("The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
+        None if fallback_to_default => config.get_default_service().ok_or_else(|| human_errors::user("No services configured for use with Git Tool.", &["Make sure that you have registered a service in your Git-Tool config using `git-tool config add services/NAME`."])),
+        None => Err(human_errors::user(format!"The path '{}' used to resolve a repo did not start with a service namespace.", path.display()),
             "Make sure that your repository starts with the name of a service, such as 'gh:sierrasoftworks/git-tool'."))
     }?;
 
@@ -291,8 +284,7 @@ fn repo_from_svc_and_path(
     let true_path = std::path::PathBuf::from(&svc.name).join(path);
 
     if name_parts.len() != name_length {
-        Err(errors::user(
-            format!(
+        Err(human_errors::user(format!
                 "The service '{}' requires a repository name in the form '{}', but you provided '{}'.",
                 &svc.name,
                 &svc.pattern,

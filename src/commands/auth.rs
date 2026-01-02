@@ -34,16 +34,12 @@ impl CommandRunnable for AuthCommand {
     #[tracing::instrument(name = "gt auth", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error> {
         let service = matches.get_one::<String>("service").ok_or_else(|| {
-            errors::user(
-            "You have not provided the name of the service you wish to authenticate.",
-            "Please provide the name of the service when running this command: `git-tool auth gh`.",
-        )
+            human_errors::user("You have not provided the name of the service you wish to authenticate.", &["Please provide the name of the service when running this command: `git-tool auth gh`."])
         })?;
 
         if let Ok(svc) = core.config().get_service(service) {
             if svc.api.is_none() {
-                return Err(errors::user(
-                    format!(
+                return Err(human_errors::user(format!
                         "The service '{}' does not include an API which supports authentication.",
                         &svc.name
                     ),
@@ -66,10 +62,11 @@ impl CommandRunnable for AuthCommand {
                         }
 
                         writeln!(core.output(), "Access Token: ")?;
-                        rpassword::read_password().map_err(|e| errors::user_with_internal(
-                        "Could not read the access token that you entered.",
-                        "Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue.",
-                        e))?
+                        rpassword::read_password().map_err(|e| human_errors::wrap_user(
+                e,
+                "Could not read the access token that you entered.",
+                &["Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue."],
+            ))?
                     }
                 };
 
@@ -91,8 +88,7 @@ impl CommandRunnable for AuthCommand {
                 "Make sure that you have registered a service in your configuration file.".into()
             };
 
-            return Err(errors::user(
-                format!(
+            return Err(human_errors::user(format!
                     "The service you specified ('{service}') does not exist in your configuration."
                 ),
                 &suggestion,

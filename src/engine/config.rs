@@ -124,8 +124,7 @@ impl Config {
             if let Some(existing_position) = into.apps.iter().position(|a| a.get_name() == app.name)
             {
                 if !replace_existing {
-                    return Err(errors::user(
-                        format!(
+                    return Err(human_errors::user(format!
                             "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
                             &app.name
                         ),
@@ -145,8 +144,7 @@ impl Config {
         if let Some(svc) = template.service {
             if let Some(existing_position) = into.services.iter().position(|s| s.name == svc.name) {
                 if !replace_existing {
-                    return Err(errors::user(
-                        format!(
+                    return Err(human_errors::user(format!
                             "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect.",
                             &svc.name
                         ),
@@ -182,17 +180,17 @@ impl Config {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
-                errors::user_with_internal(
-                    "We couldn't parse your configuration file due to a YAML parser error.",
-                    "Check that the YAML in your configuration file is correctly formatted.",
-                    e,
-                )
+                human_errors::wrap_user(
+                e,
+                "We couldn't parse your configuration file due to a YAML parser error.",
+                &["Check that the YAML in your configuration file is correctly formatted."],
+            
             })
     }
 
     #[tracing::instrument(name = "config:from_file" err, skip(path))]
     pub fn from_file(path: &Path) -> Result<Self, Error> {
-        let f = std::fs::File::open(path).map_err(|err| errors::user_with_internal(
+        let f = std::fs::File::open(path).map_err(|err| human_errors::wrap_user(
             format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
             "Check that your config file exists and is readable by the user running git-tool before trying again.",
             err,
@@ -221,11 +219,11 @@ impl Config {
         serde_yaml::from_reader(rdr)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
-                errors::user_with_internal(
-                    "We couldn't parse your configuration file due to a YAML parser error.",
-                    "Check that the YAML in your configuration file is correctly formatted.",
-                    e,
-                )
+                human_errors::wrap_user(
+                e,
+                "We couldn't parse your configuration file due to a YAML parser error.",
+                &["Check that the YAML in your configuration file is correctly formatted."],
+            
             })
     }
 
@@ -233,14 +231,14 @@ impl Config {
         let path = path.as_ref();
 
         if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await.map_err(|err| errors::user_with_internal(
+            tokio::fs::create_dir_all(parent).await.map_err(|err| human_errors::wrap_user(
                 format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
                 "Make sure that Git-Tool has permission to write to your config directory and then try again.",
                 err,
             ))?;
         }
 
-        tokio::fs::write(&path, self.to_string()?).await.map_err(|err| errors::user_with_internal(
+        tokio::fs::write(&path, self.to_string()?).await.map_err(|err| human_errors::wrap_user(
             format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
             "Make sure that Git-Tool has permission to write to your config file and then try again.",
             err,
@@ -251,11 +249,11 @@ impl Config {
 
     pub fn to_string(&self) -> Result<String, Error> {
         let config = serde_yaml::to_string(self).map_err(|e| {
-            errors::system_with_internal(
-                "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
-                "Please report this issue on GitHub so that we can try and resolve it.",
+            human_errors::wrap_system(
                 e,
-            )
+                "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
+                &["Please report this issue on GitHub so that we can try and resolve it."],
+            
         })?;
 
         match &self.schema {
@@ -314,8 +312,7 @@ impl Config {
             }
         }
 
-        Err(errors::user(
-            format!(
+        Err(human_errors::user(format!
                 "Could not find a service entry in your config file for {}",
                 domain
             ),

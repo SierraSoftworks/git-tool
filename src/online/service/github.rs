@@ -251,8 +251,11 @@ impl GitHubService {
         acceptable: Vec<StatusCode>,
     ) -> Result<Result<T, GitHubErrorResponse>, Error> {
         let url: Url = uri.parse().map_err(|e| {
-            errors::system_with_internal(
+            human_errors::wrap_system(
+                e,
                 format!("Unable to parse GitHub API URL '{uri}'."),
+                &["Please report this error to us by opening an issue on GitHub."],
+            ,
                 "Please report this error to us by opening an issue on GitHub.",
                 e,
             )
@@ -283,10 +286,11 @@ impl GitHubService {
 
             match core.http_client().request(req).await {
                 Ok(resp) if acceptable.contains(&resp.status()) => {
-                    let result = resp.json().await.map_err(|e| errors::system_with_internal(
-                        "We could not deserialize the response from GitHub because it didn't match the expected response format.",
-                        "Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate.",
-                        e))?;
+                    let result = resp.json().await.map_err(|e| human_errors::wrap_system(
+                e,
+                "We could not deserialize the response from GitHub because it didn't match the expected response format.",
+                &["Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate."],
+            ))?;
 
                     return Ok(Ok(result));
                 }
@@ -303,7 +307,7 @@ impl GitHubService {
                 Ok(resp) => {
                     let status = resp.status();
                     let bytes = resp.bytes().await.map_err(|e| {
-                        errors::system_with_internal(
+                        human_errors::wrap_system(
                             &format!(
                                 "We received an unexpected HTTP {} {} status code from GitHub and couldn't read the response body.",
                                 status.as_u16(),
@@ -317,7 +321,7 @@ impl GitHubService {
                     let mut result: GitHubErrorResponse = match serde_json::from_slice(&bytes) {
                         Ok(parsed) => parsed,
                         Err(err) => {
-                            return Err(errors::system_with_internal(
+                            return Err(human_errors::wrap_system(
                                 &format!(
                                     "Received an HTTP {} {} from GitHub, but couldn't parse the response body as a GitHub error.",
                                     status.as_u16(),
@@ -387,35 +391,28 @@ struct GitHubErrorResponse {
 impl Into<Error> for GitHubErrorResponse {
     fn into(self) -> Error {
         match self.http_status_code {
-            StatusCode::UNAUTHORIZED => errors::user(
-                "You have not provided a valid authentication token for github.com.",
-                "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.",
-            ),
-            StatusCode::FORBIDDEN => errors::user_with_internal(
+            StatusCode::UNAUTHORIZED => human_errors::user("You have not provided a valid authentication token for github.com.", &["Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`."]),
+            StatusCode::FORBIDDEN => human_errors::wrap_user(
                 &format!(
                     "You do not have permission to perform this action on GitHub: {}",
                     self.message
                 ),
-                "Check your GitHub account permissions for this organization or repository and try again.",
-                errors::detailed_message(&format!("{self:?}")),
+                &["Check your GitHub account permissions for this organization or repository and try again."],
             ),
-            StatusCode::NOT_FOUND => errors::user_with_internal(
+            StatusCode::NOT_FOUND => human_errors::wrap_user(
+                errors::StringError::new(format!("{self:?}")),
                 "We could not create the GitHub repo because the organization or user you specified could not be found.",
-                "Check that you have specified the correct organization or user in the repository name and try again.",
-                errors::detailed_message(&format!("{self:?}")),
+                &["Check that you have specified the correct organization or user in the repository name and try again."],
             ),
-            StatusCode::TOO_MANY_REQUESTS => errors::user(
-                "GitHub has rate limited requests from your IP address.",
-                "Please wait until GitHub removes this rate limit before trying again.",
-            ),
-            status => errors::system_with_internal(
-                &format!(
+            StatusCode::TOO_MANY_REQUESTS => human_errors::user("GitHub has rate limited requests from your IP address.", &["Please wait until GitHub removes this rate limit before trying again."]),
+            status => human_errors::wrap_system(
+                errors::StringError::new(format!("{self:?}")),
+                format!(
                     "Received an HTTP {} {} response from GitHub.",
                     status.as_u16(),
                     status.canonical_reason().unwrap_or_default()
                 ),
-                "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                errors::detailed_message(&format!("{self:?}")),
+                &["Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."],
             ),
         }
     }

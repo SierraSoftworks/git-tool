@@ -54,7 +54,7 @@ impl Launcher for TrueLauncher {
             .current_dir(t.get_path())
             .envs(env_arg_tuples)
             .spawn()
-            .map_err(|err| errors::user_with_internal(
+            .map_err(|err| human_errors::wrap_user(
                 &format!("Could not launch the application '{}' due to an OS-level error.", a.get_command()),
                 "Make sure that the program exists on your $PATH and is executable before trying again.",
                 err
@@ -77,7 +77,11 @@ impl TrueLauncher {
                     // can handle it as necessary.
                 },
                 status = child.wait() => {
-                    return Ok(status.map_err(|err| errors::system_with_internal(
+                    return Ok(status.map_err(|err| human_errors::wrap_system(
+                err,
+                "We could not determine the exit status code for the program you ran.",
+                &["Please report this error to us on GitHub so that we can work with you to investigate the cause."],
+            )stem(
                         "We could not determine the exit status code for the program you ran.",
                         "Please report this error to us on GitHub so that we can work with you to investigate the cause.",
                         err
@@ -89,15 +93,13 @@ impl TrueLauncher {
 
     #[cfg(unix)]
     async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
-        let child_id = child.id().ok_or_else(|| errors::user(
-            "Unable to determine the child process's PID because the child process has already exited.",
-            "This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."
-        ))?;
+        let child_id = child.id().ok_or_else(|| human_errors::user("Unable to determine the child process's PID because the child process has already exited.", &["This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."]))?;
 
-        let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| errors::system_with_internal(
-            "Unable to convert child process ID to a valid PID. This may impact Git-Tool's ability to forward signals to a child application.",
-            "Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further.",
-            err))?);
+        let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| human_errors::wrap_system(
+                err,
+                "Unable to convert child process ID to a valid PID. This may impact Git-Tool's ability to forward signals to a child application.",
+                &["Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further."],
+            ))?);
 
         let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
         let mut sigterm =

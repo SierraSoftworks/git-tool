@@ -134,10 +134,10 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, err
 
             error.print().unwrap_or_default();
 
-            return Err(errors::user_with_internal(
-                "You did no provide a valid set of command line arguments to Git-Tool.",
-                "Read the help message printed above and try running Git-Tool again, or take a look at our documentation on https://git-tool.sierrasoftworks.com.",
+            return Err(human_errors::wrap_user(
                 error,
+                "You did no provide a valid set of command line arguments to Git-Tool.",
+                &["Read the help message printed above and try running Git-Tool again, or take a look at our documentation on https://git-tool.sierrasoftworks.com."],
             ));
         }
         Err(error) => {
@@ -269,9 +269,11 @@ async fn run(
             let matches = cmd
                 .app()
                 .try_get_matches_from(vec!["gt", "update", "--state", state])
-                .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
-                    "Please report this error to us on GitHub and use the manual update process until it is resolved.",
-                    errors::detailed_message(&e.to_string())))?;
+                .map_err(|e| human_errors::wrap_system(
+                    errors::StringError::new(e.to_string()),
+                    "Failed to process internal update operation.",
+                    &["Please report this error to us on GitHub and use the manual update process until it is resolved."],
+                ))?;
 
             info!(
                 "Running update sub-command with state sourced from --update-resume-internal flag."

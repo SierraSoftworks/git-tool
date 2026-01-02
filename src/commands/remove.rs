@@ -29,10 +29,7 @@ impl CommandRunnable for RemoveCommand {
         let repo_name = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {
-                errors::user(
-                    "No repository name was provided.",
-                    "Provide the name of the repository you wish to remove.",
-                )
+                human_errors::user("No repository name was provided.", &["Provide the name of the repository you wish to remove."])
             })?
             .parse()?;
 
@@ -40,10 +37,10 @@ impl CommandRunnable for RemoveCommand {
 
         if repo.exists() {
             if let Err(err) = std::fs::remove_dir_all(repo.get_path()) {
-                return Err(errors::user_with_internal(
-                    "Could not remove the repository directory due to an error.",
-                    "Make sure you have the correct permissions to remove the directory.",
+                return Err(human_errors::wrap_user(
                     err,
+                    "Could not remove the repository directory due to an error.",
+                    &["Make sure you have the correct permissions to remove the directory."],
                 ));
             }
         }

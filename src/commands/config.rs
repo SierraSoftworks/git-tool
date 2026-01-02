@@ -106,7 +106,7 @@ impl CommandRunnable for ConfigCommand {
             }
             Some(("add", args)) => {
                 let id = args.get_one::<String>("id").ok_or_else(|| {
-                    errors::user(
+                    human_errors::user(
                         "You have not provided an ID for the config template you wish to add.",
                         "",
                     )

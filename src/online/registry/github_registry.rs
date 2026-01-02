@@ -8,8 +8,11 @@ pub struct GitHubRegistry;
 impl GitHubRegistry {
     async fn get(&self, core: &Core, url: &str) -> Result<reqwest::Response, Error> {
         let uri: reqwest::Url = url.parse().map_err(|e| {
-            errors::system_with_internal(
+            human_errors::wrap_system(
+                e,
                 format!("Unable to parse GitHub API URL '{url}'."),
+                &["Please report this error to us by opening a ticket in GitHub."],
+            ,
                 "Please report this error to us by opening a ticket in GitHub.",
                 e,
             )
@@ -24,7 +27,7 @@ impl GitHubRegistry {
         req.headers_mut().append(
             "User-Agent",
             version!("Git-Tool/").parse().map_err(|e| {
-                errors::system_with_internal(
+                human_errors::wrap_system(
                     format!(
                         "Unable to parse Git-Tool user agent header {}.",
                         version!("Git-Tool/")
@@ -41,11 +44,11 @@ impl GitHubRegistry {
                 req.headers_mut().append(
                     "Authorization",
                     format!("token {token}").parse().map_err(|e| {
-                        errors::system_with_internal(
-                            "Unable to parse GITHUB_TOKEN authorization header.",
-                            "Please report this error to us by opening a ticket in GitHub.",
-                            e,
-                        )
+                        human_errors::wrap_system(
+                e,
+                "Unable to parse GITHUB_TOKEN authorization header.",
+                &["Please report this error to us by opening a ticket in GitHub."],
+            
                     })?,
                 );
             }
@@ -86,18 +89,21 @@ impl Registry for GitHubRegistry {
             }
             http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
-                Err(errors::user_with_internal(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again.",
-                    inner_error,
-                ))
+                Err(human_errors::wrap_user(
+                inner_error,
+                "GitHub has rate limited requests from your IP address.",
+                &["Please wait until GitHub removes this rate limit before trying again."],
+            )
             }
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
-                Err(errors::system_with_internal(
-                    format!(
+                Err(human_errors::wrap_system(
+                inner_error,
+                format!(
                         "Received an HTTP {status} response from GitHub when attempting to list items in the Git-Tool registry."
                     ),
+                &["Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."],
+            ,
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
                     inner_error,
                 ))
@@ -123,24 +129,26 @@ impl Registry for GitHubRegistry {
                 debug!("{}", entity);
                 Ok(entity)
             }
-            http::StatusCode::NOT_FOUND => Err(errors::user(
-                format!("Could not find {id} in the Git-Tool registry."),
+            http::StatusCode::NOT_FOUND => Err(human_errors::user(format!"Could not find {id} in the Git-Tool registry."),
                 "Please make sure that you've selected a configuration entry which exists in the registry. You can check this with `git-tool config list`.",
             )),
             http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
-                Err(errors::user_with_internal(
-                    "GitHub has rate limited requests from your IP address.",
-                    "Please wait until GitHub removes this rate limit before trying again.",
-                    inner_error,
-                ))
+                Err(human_errors::wrap_user(
+                inner_error,
+                "GitHub has rate limited requests from your IP address.",
+                &["Please wait until GitHub removes this rate limit before trying again."],
+            )
             }
             status => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
-                Err(errors::system_with_internal(
-                    format!(
+                Err(human_errors::wrap_system(
+                inner_error,
+                format!(
                         "Received an HTTP {status} response from GitHub when attempting to fetch /registry/{id}.yaml."
                     ),
+                &["Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub."],
+            ,
                     "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
                     inner_error,
                 ))

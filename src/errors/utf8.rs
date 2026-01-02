@@ -1,12 +1,11 @@
-use super::{Error, user_with_internal};
 use std::string::FromUtf8Error;
 
-impl From<FromUtf8Error> for Error {
+impl From<FromUtf8Error> for super::Error {
     fn from(err: FromUtf8Error) -> Self {
-        user_with_internal(
-            "We could not parse the UTF-8 content we received.",
-            "Make sure that you are not providing git-tool with content which is invalid UTF-8.",
+        human_errors::wrap_user(
             err,
+            "We could not parse the UTF-8 content we received.",
+            &["Make sure that you are not providing git-tool with content which is invalid UTF-8."],
         )
     }
 }

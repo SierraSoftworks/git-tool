@@ -12,7 +12,7 @@ impl Task for NewFolder {
         let path = repo.get_path();
 
         std::fs::create_dir_all(&path).map_err(|err| {
-            errors::user_with_internal(
+            human_errors::wrap_user(
                 format!(
                     "Could not create the repository directory '{}' due to an OS-level error.",
                     path.display()
@@ -34,7 +34,7 @@ impl Task for NewFolder {
         let path = scratch.get_path();
 
         std::fs::create_dir_all(&path).map_err(|err| {
-            errors::user_with_internal(
+            human_errors::wrap_user(
                 format!(
                     "Could not create the scratchpad directory '{}' due to an OS-level error.",
                     path.display()

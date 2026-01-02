@@ -39,7 +39,7 @@ impl FileSystem for DefaultFileSystem {
             match tokio::fs::remove_file(path).await {
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
                 Err(e) if retries < 0 => {
-                    return Err(errors::user_with_internal(
+                    return Err(human_errors::wrap_user(
                         format!(
                             "Could not remove the old application file '{}' after {} retries.",
                             path.display(),
@@ -67,7 +67,7 @@ impl FileSystem for DefaultFileSystem {
 
             match tokio::fs::copy(from, to).await {
                 Err(e) if retries < 0 => {
-                    return Err(errors::user_with_internal(
+                    return Err(human_errors::wrap_user(
                         format!(
                             "Could not copy the new application file '{}' to overwrite the old application file '{}' after {} retries.",
                             from.display(),

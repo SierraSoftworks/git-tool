@@ -42,16 +42,12 @@ impl CommandRunnable for ScratchCommand {
             }
             helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_scratchpad()?),
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or_else(|| errors::user(
-                    "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+                let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
 
                 (app, core.resolver().get_scratchpad(&target.to_string())?)
             }
             helpers::LaunchTarget::None => {
-                let app = core.config().get_default_app().ok_or_else(|| errors::user(
-                    "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+                let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
 
                 (app, core.resolver().get_current_scratchpad()?)
             }

@@ -35,13 +35,9 @@ impl CommandRunnable for TempCommand {
     #[tracing::instrument(name = "gt temp", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
         let app = if let Some(app) = matches.get_one::<String>("app") {
-            core.config().get_app(app).ok_or_else(|| errors::user(
-            "The specified application does not exist.",
-            "Make sure you have added the application to your config file using 'git-tool config add apps/bash' or similar."))?
+            core.config().get_app(app).ok_or_else(|| human_errors::user("The specified application does not exist.", &["Make sure you have added the application to your config file using 'git-tool config add apps/bash' or similar."]))?
         } else {
-            core.config().get_default_app().ok_or_else(|| errors::user(
-              "No default application available.",
-              "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?
+            core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?
         };
 
         let keep = matches.get_one::<bool>("keep").copied().unwrap_or_default();

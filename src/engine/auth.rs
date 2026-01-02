@@ -54,10 +54,7 @@ struct UnsupportedKeyChain {}
 #[allow(dead_code)]
 impl KeyChain for UnsupportedKeyChain {
     fn get_token(&self, _service: &str) -> Result<String, Error> {
-        Err(errors::user(
-            "This version of Git-Tool was compiled without support for authentication.",
-            "Use a version of Git-Tool which supports authentication, or compile Git-Tool yourself with --features=auth.",
-        ))
+        Err(human_errors::user("This version of Git-Tool was compiled without support for authentication.", &["Use a version of Git-Tool which supports authentication, or compile Git-Tool yourself with --features=auth."]))
     }
 
     fn set_token(&self, _service: &str, _token: &str) -> Result<(), Error> {

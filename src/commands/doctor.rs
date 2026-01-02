@@ -31,19 +31,13 @@ impl CommandRunnable for DoctorCommand {
         }
 
         if !core.config().get_dev_directory().exists() {
-            Err(errors::user(
-                "Your development directory does not exist.",
-                "Make sure that the dev directory you have specified in your configuration file exists and is writable by Git-Tool.",
-            ))?;
+            Err(human_errors::user("Your development directory does not exist.", &["Make sure that the dev directory you have specified in your configuration file exists and is writable by Git-Tool."]))?;
         }
 
         writeln!(core.output(), "[OK] Development directory exists")?;
 
         if !core.config().get_scratch_directory().exists() {
-            Err(errors::user(
-                "Your scratch directory does not exist.",
-                "Make sure that the scratch directory you have specified in your configuration file exists and is writable by Git-Tool.",
-            ))?;
+            Err(human_errors::user("Your scratch directory does not exist.", &["Make sure that the scratch directory you have specified in your configuration file exists and is writable by Git-Tool."]))?;
         }
 
         for svc in core.config().get_services() {

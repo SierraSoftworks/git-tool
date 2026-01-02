@@ -38,11 +38,11 @@ pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
     let uri = "https://www.toptal.com/developers/gitignore/api/list"
         .parse()
         .map_err(|e| {
-            errors::system_with_internal(
-                "Could not parse gitignore.io URL.",
-                "Please report this error to us by creating an issue on GitHub.",
+            human_errors::wrap_system(
                 e,
-            )
+                "Could not parse gitignore.io URL.",
+                &["Please report this error to us by creating an issue on GitHub."],
+            
         })?;
     let response = core.http_client().get(uri).await?;
 
@@ -69,19 +69,16 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     )
     .parse()
     .map_err(|e| {
-        errors::system_with_internal(
-            "Could not parse gitignore.io URL.",
-            "Please report this error to us by creating an issue on GitHub.",
-            e,
-        )
+        human_errors::wrap_system(
+                e,
+                "Could not parse gitignore.io URL.",
+                &["Please report this error to us by creating an issue on GitHub."],
+            
     })?;
     let response = core.http_client().get(uri).await?;
 
     if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(errors::user(
-            "We could not find one of the languages you requested.",
-            "Check that the languages you've provided are all available using the 'gt ignore' command.",
-        ));
+        return Err(human_errors::user("We could not find one of the languages you requested.", &["Check that the languages you've provided are all available using the 'gt ignore' command."]));
     }
 
     if !response.status().is_success() {

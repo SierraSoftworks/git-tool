@@ -23,9 +23,10 @@ pub fn get_launch_app<'a, S: AsRef<str> + std::fmt::Debug + std::fmt::Display + 
             } else if let Some(app) = core.config().get_app(second.as_ref()) {
                 Ok(LaunchTarget::AppAndTarget(app, first.as_ref().parse()?))
             } else {
-                Err(errors::user(
-                    format!("Could not find application with name '{first}'.").as_str(),
-                    format!("Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{first}'.").as_str()))
+                Err(human_errors::user(
+                    format!("Could not find application with name '{first}'. Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{first}'."),
+                    &["Check your configuration file for available applications."],
+                ))
             }
         }
         (Some(field), None) | (None, Some(field)) => {

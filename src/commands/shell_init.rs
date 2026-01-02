@@ -44,9 +44,9 @@ where {
         match matches.subcommand() {
             Some((name, matches)) => {
                 let shells = get_shells();
-                let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| errors::user(
+                let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| human_errors::user(
                     format!("The shell '{name}' is not currently supported by Git-Tool."),
-                    "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
+                    &["Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."],
                 ))?;
 
                 if matches.get_flag("full") {
@@ -56,10 +56,7 @@ where {
                 }
             }
             _ => {
-                Err(errors::user(
-                    "You did not provide the name of the shell you want to configure.",
-                    "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent.",
-                ))?;
+                Err(human_errors::user("You did not provide the name of the shell you want to configure.", &["Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."]))?;
             }
         }
 

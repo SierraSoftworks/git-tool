@@ -67,10 +67,7 @@ impl CommandRunnable for NewCommand {
         let repo_id = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {
-                errors::user(
-                    "No repository name provided for creation.",
-                    "Please provide a repository name when calling this method: git-tool new my/repo",
-                )
+                human_errors::user("No repository name provided for creation.", &["Please provide a repository name when calling this method: git-tool new my/repo"])
             })?
             .parse()?;
 
@@ -121,9 +118,7 @@ impl CommandRunnable for NewCommand {
         tasks.apply_repo(core, &repo).await?;
 
         if matches.get_flag("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
-            let app = core.config().get_default_app().ok_or_else(|| errors::user(
-                "No default application available.",
-                "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+            let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
 
             let status = core.launcher().run(app, &repo).await?;
             return Ok(status);

@@ -37,10 +37,11 @@ impl CommandRunnable for UpdateCommand {
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
 where {
-        let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
-            "Could not parse the current application version into a SemVer version number.",
-            "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
-            err))?;
+        let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
+                err,
+                "Could not parse the current application version into a SemVer version number.",
+                &["Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved."],
+            ))?;
         let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
         let resume_successful = match matches.get_one::<String>("state") {
@@ -50,10 +51,11 @@ where {
                     scope.set_extra("state", json!(state));
                 });
 
-                let state: crate::update::UpdateState = serde_json::from_str(state).map_err(|e| errors::system_with_internal(
-                    "Could not deserialize the update state blob.",
-                    "Please report this issue to us on GitHub and use the manual update process until this problem is resolved.",
-                    e))?;
+                let state: crate::update::UpdateState = serde_json::from_str(state).map_err(|e| human_errors::wrap_system(
+                e,
+                "Could not deserialize the update state blob.",
+                &["Please report this issue to us on GitHub and use the manual update process until this problem is resolved."],
+            ))?;
                 sentry::configure_scope(|scope| {
                     scope.set_extra("state", serde_json::to_value(&state).unwrap_or_default());
                     scope.set_transaction(Some(
@@ -124,10 +126,7 @@ where {
                 }
             }
             None if matches.contains_id("version") => {
-                return Err(errors::user(
-                    "Could not find an available update for your platform matching the version you provided.",
-                    "If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`.",
-                ));
+                return Err(human_errors::user("Could not find an available update for your platform matching the version you provided.", &["If you would like to switch to a specific version, ensure that it is available by running `git-tool update --list`."]));
             }
             None => {
                 writeln!(

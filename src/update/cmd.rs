@@ -49,7 +49,7 @@ pub trait Launcher {
         #[cfg(windows)]
         cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
 
-        self.spawn(cmd).map_err(|e| errors::system_with_internal(
+        self.spawn(cmd).map_err(|e| human_errors::wrap_system(
             format!("Could not launch the new application version to continue the update process (_ -> {} phase)", state.phase),
             "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself.",
             e))

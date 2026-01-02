@@ -113,19 +113,20 @@ impl CompleteCommand {
 
     fn get_completion_matches(&self, args: &str) -> Result<ArgMatches, errors::Error> {
         let true_args = shell_words::split(args)
-            .map_err(|e| errors::user_with_internal(
+            .map_err(|e| human_errors::wrap_user(
+                e,
                 "Could not parse the arguments you provided.",
-                "Please make sure that you are using auto-complete with a valid set of command line arguments.",
-                e))?;
+                &["Please make sure that you are using auto-complete with a valid set of command line arguments."],
+            ))?;
 
         let complete_app = clap::Command::new("Git-Tool")
             .subcommands(inventory::iter::<Command>().map(|x| x.app()));
 
         complete_app.try_get_matches_from(true_args).map_err(|err| {
-            errors::user_with_internal(
+            human_errors::wrap_user(
+                errors::StringError::new(err.to_string()),
                 "Failed to parse command line arguments for auto-completion.",
-                "Make sure that you are using valid Git-Tool command line arguments and try again.",
-                errors::detailed_message(&err.to_string()),
+                &["Make sure that you are using valid Git-Tool command line arguments and try again."],
             )
         })
     }

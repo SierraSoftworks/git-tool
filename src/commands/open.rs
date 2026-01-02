@@ -61,17 +61,12 @@ New applications can be configured either by making changes to your configuratio
             }
             helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_repo()?),
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or_else(|| errors::user(
-                    "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+                let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
 
                 (app, core.resolver().get_best_repo(&target)?)
             }
             helpers::LaunchTarget::None => {
-                return Err(errors::user(
-                    "You did not specify the name of a repository to use.",
-                    "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'.",
-                ));
+                return Err(human_errors::user("You did not specify the name of a repository to use.", &["Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'."]));
             }
         };
 
@@ -132,10 +127,11 @@ New applications can be configured either by making changes to your configuratio
 impl OpenCommand {
     #[tracing::instrument(err, skip(self, core))]
     async fn check_for_update(&self, core: &Core) -> Result<Option<Release>, errors::Error> {
-        let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
-            "Could not parse the current application version into a SemVer version number.",
-            "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
-            err))?;
+        let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
+                err,
+                "Could not parse the current application version into a SemVer version number.",
+                &["Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved."],
+            ))?;
 
         info!("Current application version is v{}", current_version);
 

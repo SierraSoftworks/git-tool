@@ -17,9 +17,9 @@ impl Task for MoveDirectory {
         repo: &crate::engine::Repo,
     ) -> Result<(), crate::engine::Error> {
         if !repo.exists() {
-            return Err(errors::user(
-                format!("The repository {} does not exist on your machine and cannot be moved as a result.", repo.name).as_str(),
-                format!("Make sure the name is correct and that the repository exists by running `git-tool clone {}` first.", repo.name).as_str()
+            return Err(human_errors::user(
+                format!("The repository {} does not exist on your machine and cannot be moved as a result. Make sure the name is correct and that the repository exists by running `git-tool clone {}` first.", repo.name, repo.name),
+                &["Verify that you have spelled the repository name correctly."],
             ));
         }
 
@@ -29,14 +29,14 @@ impl Task for MoveDirectory {
         }
 
         fs::rename(repo.path.clone(), self.new_path.clone()).map_err(|err| {
-            errors::user_with_internal(
+            human_errors::wrap_user(
+                err,
                 format!(
                     "Could not rename the repository directory '{}' to '{}' due to an OS-level error.",
                     repo.path.display(),
                     self.new_path.display()
                 ),
-                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
-                err,
+                &["Check that Git-Tool has permission to create this directory and any missing parent directories."],
             )
         })?;
 
@@ -50,21 +50,21 @@ impl Task for MoveDirectory {
         scratch: &crate::engine::Scratchpad,
     ) -> Result<(), crate::engine::Error> {
         if !scratch.exists() {
-            return Err(errors::user(
-                format!("The scratchpad {} does not exist on your machine and cannot be moved as a result.", scratch.get_name()).as_str(),
-                "Make sure the name is correct and that the scratchpad exists first."
+            return Err(human_errors::user(
+                format!("The scratchpad {} does not exist on your machine and cannot be moved as a result.", scratch.get_name()),
+                &["Make sure the name is correct and that the scratchpad exists first."],
             ));
         }
 
         fs::rename(scratch.get_path(), self.new_path.clone()).map_err(|err| {
-            errors::user_with_internal(
+            human_errors::wrap_user(
+                err,
                 format!(
                     "Could not rename the scratchpad directory '{}' to '{}' due to an OS-level error.",
                     scratch.get_path().display(),
                     self.new_path.display()
                 ),
-                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
-                err,
+                &["Check that Git-Tool has permission to create this directory and any missing parent directories."],
             )
         })?;
 

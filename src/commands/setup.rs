@@ -35,7 +35,7 @@ impl CommandRunnable for SetupCommand {
     #[tracing::instrument(name = "gt setup", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, Error> {
         if core.config().file_exists() && !matches.get_flag("force") {
-            Err(errors::user(
+            Err(human_errors::user(
                 &format!(
                     "You already have a Git-Tool config file ({}) which will not be modified.",
                     core.config().get_config_file().unwrap().display()
@@ -76,9 +76,7 @@ impl CommandRunnable for SetupCommand {
                 &new_config
                     .get_config_file()
                     .or_else(engine::Config::default_path)
-                    .ok_or_else(|| errors::system(
-                        "Could not determine a default configuration file path for your system.",
-                        "Set the GITTOOL_CONFIG environment variable to a valid configuration file path and try again."))?,
+                    .ok_or_else(|| human_errors::system("Could not determine a default configuration file path for your system.", &["Set the GITTOOL_CONFIG environment variable to a valid configuration file path and try again."]))?,
             )
             .await?;
 
@@ -144,10 +142,7 @@ impl SetupCommand {
                 Some(v)
             }
         })
-        .ok_or_else(|| errors::user(
-            "You did not enter a valid directory to store your projects in.",
-            "Enter a valid path to a directory which Git-Tool can use to store your projects in.",
-        ))?;
+        .ok_or_else(|| human_errors::user("You did not enter a valid directory to store your projects in.", &["Enter a valid path to a directory which Git-Tool can use to store your projects in."]))?;
 
         Ok(to_native_path(dev_dir))
     }

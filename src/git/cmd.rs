@@ -10,14 +10,14 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
     #[cfg(test)]
     let cmd = cmd.stderr(Stdio::piped());
 
-    let child = cmd.stdout(Stdio::piped()).spawn().map_err(|err| errors::user_with_internal(
+    let child = cmd.stdout(Stdio::piped()).spawn().map_err(|err| human_errors::wrap_user(
         "Failed to run git, which is a dependency of Git-Tool.",
         "Please ensure that git is installed, available in your $PATH, and that Git-Tool has permission to execute it. Also check that the folder you are running git in exists, and that git has permission to access it.",
         err
     ))?;
 
     let output = child.wait_with_output().await.map_err(|err| {
-        errors::user_with_internal(
+        human_errors::wrap_user(
             "Git was started, but Git-Tool failed to retrieve its output.",
             "This may indicate an issue with system resources or git crashing during execution.",
             err,
@@ -32,11 +32,11 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                 Span::current()
                     .record("status_code", code)
                     .record("otel.status_code", 2_u32);
-                Err(errors::user_with_cause(
-                    "Git exited with a failure status code.",
-                    "Please check the output printed by Git to determine why the command failed and take appropriate action.",
-                    errors::system(
-                        format!("{cmd:?} exited with status code {code}."),
+                Err(human_errors::wrap_user(
+                human_errors::system(format!"{cmd:?} exited with status code {code}.",
+                "Git exited with a failure status code.",
+                &["Please check the output printed by Git to determine why the command failed and take appropriate action."],
+            ),
                         &output_text,
                     ),
                 ))
@@ -45,10 +45,10 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                 Span::current()
                     .record("status_code", 1_i32)
                     .record("otel.status_code", 2_u32);
-                Err(errors::system_with_internal(
+                Err(human_errors::wrap_system(
+                    errors::StringError::new(output_text),
                     "Git exited prematurely because it received an unexpected signal.",
-                    "Please check the output printed by Git to determine why the command failed and take appropriate action.",
-                    errors::detailed_message(&output_text),
+                    &["Please check the output printed by Git to determine why the command failed and take appropriate action."],
                 ))
             }
         }
@@ -59,8 +59,7 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
 
 pub fn validate_repo_path_exists(repo: &Path) -> Result<(), errors::Error> {
     if !repo.exists() {
-        Err(errors::user(
-            format!("The repository path '{}' does not exist.", repo.display()),
+        Err(human_errors::user(format!"The repository path '{}' does not exist.", repo.display()),
             "Please check that the path is correct and that you have permission to access it.",
         ))
     } else {
