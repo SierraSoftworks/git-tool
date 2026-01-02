@@ -400,13 +400,13 @@ impl Into<Error> for GitHubErrorResponse {
                 &["Check your GitHub account permissions for this organization or repository and try again."],
             ),
             StatusCode::NOT_FOUND => human_errors::wrap_user(
-                errors::StringError::new(format!("{self:?}")),
+                format!("{self:?}"),
                 "We could not create the GitHub repo because the organization or user you specified could not be found.",
                 &["Check that you have specified the correct organization or user in the repository name and try again."],
             ),
             StatusCode::TOO_MANY_REQUESTS => human_errors::user("GitHub has rate limited requests from your IP address.", &["Please wait until GitHub removes this rate limit before trying again."]),
             status => human_errors::wrap_system(
-                errors::StringError::new(format!("{self:?}")),
+                format!("{self:?}"),
                 format!(
                     "Received an HTTP {} {} response from GitHub.",
                     status.as_u16(),

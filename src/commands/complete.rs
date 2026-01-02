@@ -124,7 +124,7 @@ impl CompleteCommand {
 
         complete_app.try_get_matches_from(true_args).map_err(|err| {
             human_errors::wrap_user(
-                errors::StringError::new(err.to_string()),
+                err.to_string(),
                 "Failed to parse command line arguments for auto-completion.",
                 &["Make sure that you are using valid Git-Tool command line arguments and try again."],
             )

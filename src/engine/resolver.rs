@@ -175,11 +175,7 @@ impl Resolver for TrueResolver {
                 err,
                 "Could not determine your current working directory due to an OS-level error.",
                 &["Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it."],
-            )ors::wrap_system(
-            "Could not determine your current working directory due to an OS-level error.",
-            "Please report this issue on GitHub so that we can work with you to investigate the cause and resolve it.",
-            err
-        ))?;
+            ))?;
 
         match self.get_repo_from_path(&cwd) {
             Ok(repo) => Ok(repo),
@@ -288,13 +284,14 @@ fn repo_from_svc_and_path(
     let true_path = std::path::PathBuf::from(&svc.name).join(path);
 
     if name_parts.len() != name_length {
-        Err(human_errors::user(format!
+        Err(human_errors::user(
+            format!(
                 "The service '{}' requires a repository name in the form '{}', but you provided '{}'.",
                 &svc.name,
                 &svc.pattern,
                 path.display()
             ),
-            "Make sure that you are using a repository name which matches the service's expected pattern.",
+            &["Make sure that you are using a repository name which matches the service's expected pattern."],
         ))
     } else {
         Ok(Repo::new(

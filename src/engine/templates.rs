@@ -17,7 +17,7 @@ macro_rules! map(
 pub fn render(tmpl: &str, context: Value) -> Result<String, errors::Error> {
     debug!("Rendering template '{}' with context {}", tmpl, context);
     template(tmpl, context).map_err(|e| human_errors::wrap_user(
-        errors::StringError::new(e.to_string()),
+        e.to_string(),
         format!("We couldn't render your template '{tmpl}'."),
         &["Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/"],
     ))

@@ -32,13 +32,9 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                 Span::current()
                     .record("status_code", code)
                     .record("otel.status_code", 2_u32);
-                Err(human_errors::wrap_user(
-                human_errors::system(format!"{cmd:?} exited with status code {code}.",
-                "Git exited with a failure status code.",
-                &["Please check the output printed by Git to determine why the command failed and take appropriate action."],
-            ),
-                        &output_text,
-                    ),
+                Err(human_errors::system(
+                    format!("{cmd:?} exited with status code {code}. {output_text}"),
+                    &["Please check the output printed by Git to determine why the command failed and take appropriate action."],
                 ))
             }
             None => {
@@ -46,7 +42,7 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
                     .record("status_code", 1_i32)
                     .record("otel.status_code", 2_u32);
                 Err(human_errors::wrap_system(
-                    errors::StringError::new(output_text),
+                    output_text,
                     "Git exited prematurely because it received an unexpected signal.",
                     &["Please check the output printed by Git to determine why the command failed and take appropriate action."],
                 ))
@@ -59,8 +55,9 @@ pub async fn git_cmd(cmd: &mut Command) -> Result<String, errors::Error> {
 
 pub fn validate_repo_path_exists(repo: &Path) -> Result<(), errors::Error> {
     if !repo.exists() {
-        Err(human_errors::user(format!"The repository path '{}' does not exist.", repo.display()),
-            "Please check that the path is correct and that you have permission to access it.",
+        Err(human_errors::user(
+            format!("The repository path '{}' does not exist.", repo.display()),
+            &["Please check that the path is correct and that you have permission to access it."],
         ))
     } else {
         Ok(())

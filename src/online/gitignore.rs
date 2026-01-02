@@ -42,7 +42,7 @@ pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
                 e,
                 "Could not parse gitignore.io URL.",
                 &["Please report this error to us by creating an issue on GitHub."],
-            
+            )
         })?;
     let response = core.http_client().get(uri).await?;
 
@@ -70,10 +70,10 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     .parse()
     .map_err(|e| {
         human_errors::wrap_system(
-                e,
-                "Could not parse gitignore.io URL.",
-                &["Please report this error to us by creating an issue on GitHub."],
-            
+            e,
+            "Could not parse gitignore.io URL.",
+            &["Please report this error to us by creating an issue on GitHub."],
+        )
     })?;
     let response = core.http_client().get(uri).await?;
 

@@ -67,16 +67,18 @@ pub fn get_child_directories(
     from: &Path,
 ) -> Result<impl Iterator<Item = PathBuf>, crate::errors::Error> {
     Ok(from.read_dir().map_err(|e| match e.kind() {
-        std::io::ErrorKind::NotFound => crate::human_errors::user(format!"The path '{}' does not exist.", from.display()),
-            "Please check that the path is correct and that you have permission to access it.",
+        std::io::ErrorKind::NotFound => crate::human_errors::user(
+            format!("The path '{}' does not exist.", from.display()),
+            &["Please check that the path is correct and that you have permission to access it."],
         ),
-        std::io::ErrorKind::NotADirectory => crate::human_errors::user(format!"The path '{}' is not a directory.", from.display()),
-            "Please check that this path is a directory and that you have not accidentally created a file here instead.",
+        std::io::ErrorKind::NotADirectory => crate::human_errors::user(
+            format!("The path '{}' is not a directory.", from.display()),
+            &["Please check that this path is a directory and that you have not accidentally created a file here instead."],
         ),
         _ => crate::human_errors::wrap_system(
-            format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
-            "Check that Git-Tool has permission to read this directory.",
             e,
+            format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
+            &["Check that Git-Tool has permission to read this directory."],
         ),
     })?.filter_map(|entry| {
         if let Ok(entry) = entry {

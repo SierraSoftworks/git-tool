@@ -13,7 +13,7 @@ impl From<keyring::Error> for super::Error {
                 &["This likely means that your operating system is not supported by our key-chain implementation. Please open an issue on GitHub and we'll see if we can help."],
             ),
             e => human_errors::wrap_user(
-                super::StringError::new(format!("{e:?}")),
+                format!("{e:?}"),
                 "A problem occurred while trying to access the secure token store.",
                 &["This might indicate that you haven't configured an access token yet, which you can do with `git-tool auth gh`. It may also indicate that there is an issue with your system secure token store. Please open a GitHub issue if you cannot resolve this."],
             ),

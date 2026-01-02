@@ -270,7 +270,7 @@ async fn run(
                 .app()
                 .try_get_matches_from(vec!["gt", "update", "--state", state])
                 .map_err(|e| human_errors::wrap_system(
-                    errors::StringError::new(e.to_string()),
+                    e.to_string(),
                     "Failed to process internal update operation.",
                     &["Please report this error to us on GitHub and use the manual update process until it is resolved."],
                 ))?;
