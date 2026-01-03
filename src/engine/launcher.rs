@@ -110,7 +110,7 @@ impl TrueLauncher {
                 &["Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further."],
             ))?);
 
-        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?
+        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
             .to_human_error()?;
         let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
             .to_human_error()?;
