@@ -282,7 +282,7 @@ bin/
             Err(e) => {
                 assert_eq!(
                     e.message(),
-                    "Oh no! We could not find one of the languages you requested.\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command."
+                    "We could not find one of the languages you requested. (User error)\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command."
                 );
             }
         }
