@@ -99,6 +99,8 @@ impl TrueLauncher {
         &self,
         child: &mut tokio::process::Child,
     ) -> Result<i32, human_errors::Error> {
+        use crate::errors::HumanErrorResultExt as _;
+
         let child_id = child.id().ok_or_else(|| human_errors::user("Unable to determine the child process's PID because the child process has already exited.", &["This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."]))?;
 
         let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| human_errors::wrap_system(
