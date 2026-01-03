@@ -186,12 +186,12 @@ where
     fn prepare_app_file(&self, file: &Path) -> Result<(), human_errors::Error> {
         let mut perms = std::fs::metadata(file).map_err(|err| {
             human_errors::wrap_user(
+                err,
                 format!(
                     "Could not gather permissions information for '{}' due to an OS-level error.",
                     file.display()
                 ),
-                "Check that Git-Tool has permission to read this file and that the parent directory exists.",
-                err,
+                &["Check that Git-Tool has permission to read this file and that the parent directory exists."],
             )
         })?.permissions();
 
@@ -202,12 +202,12 @@ where
         perms.set_mode(0o775);
         std::fs::set_permissions(file, perms).map_err(|err| {
             human_errors::wrap_user(
+                err,
                 format!(
                     "Could not set executable permissions on '{}' due to an OS-level error.",
                     file.display()
                 ),
-                "Check that Git-Tool has permission to modify permissions for this file and that the parent directory exists.",
-                err,
+                &["Check that Git-Tool has permission to modify permissions for this file and that the parent directory exists."],
             )
         })?;
 
