@@ -11,8 +11,8 @@ extern crate serde_json;
 extern crate tokio;
 extern crate tracing_batteries;
 
-use crate::commands::CommandRunnable;
 use crate::engine::features;
+use crate::{commands::CommandRunnable, errors::HumanErrorResultExt};
 use clap::{Arg, crate_authors};
 use std::sync::{Arc, atomic::AtomicBool};
 use tracing_batteries::{Session, prelude::*};
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 status
             }
             Err(err) => {
-                if err.is_system() {
+                if err.is(human_errors::Kind::System) {
                     #[cfg(feature = "telemetry")]
                     session.record_error(&err);
                 }
@@ -99,7 +99,7 @@ fn build_app() -> clap::Command {
 }
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
-async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, errors::Error> {
+async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, human_errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
@@ -134,10 +134,12 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, err
 
             error.print().unwrap_or_default();
 
-            return Err(errors::user_with_internal(
-                "You did no provide a valid set of command line arguments to Git-Tool.",
-                "Read the help message printed above and try running Git-Tool again, or take a look at our documentation on https://git-tool.sierrasoftworks.com.",
+            return Err(human_errors::wrap_user(
                 error,
+                "You did no provide a valid set of command line arguments to Git-Tool.",
+                &[
+                    "Read the help message printed above and try running Git-Tool again, or take a look at our documentation on https://git-tool.sierrasoftworks.com.",
+                ],
             ));
         }
         Err(error) => {
@@ -201,7 +203,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, err
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32);
 
-            if error.is_system() {
+            if error.is(human_errors::Kind::System) {
                 Span::current().record("exception", display(&error));
             } else {
                 Span::current().record("exception", error.description());
@@ -223,7 +225,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, err
 async fn run(
     matches: clap::ArgMatches,
     telemetry_enabled: Arc<AtomicBool>,
-) -> Result<i32, errors::Error> {
+) -> Result<i32, human_errors::Error> {
     let core_builder = engine::Core::builder();
 
     let core_builder = if let Some(cfg_file) = matches.get_one::<String>("config") {
@@ -254,7 +256,8 @@ async fn run(
             core.output(),
             "Tracing enabled, your trace ID is: {:032x}",
             Span::current().context().span().span_context().trace_id()
-        )?;
+        )
+        .to_human_error()?;
     }
 
     // Legacy update interoperability for compatibility with the Golang implementation
@@ -269,9 +272,11 @@ async fn run(
             let matches = cmd
                 .app()
                 .try_get_matches_from(vec!["gt", "update", "--state", state])
-                .map_err(|e| errors::system_with_internal("Failed to process internal update operation.",
-                    "Please report this error to us on GitHub and use the manual update process until it is resolved.",
-                    errors::detailed_message(&e.to_string())))?;
+                .map_err(|e| human_errors::wrap_system(
+                    e.to_string(),
+                    "Failed to process internal update operation.",
+                    &["Please report this error to us on GitHub and use the manual update process until it is resolved."],
+                ))?;
 
             info!(
                 "Running update sub-command with state sourced from --update-resume-internal flag."
@@ -310,7 +315,7 @@ fn load_trace_context(span: &Span, context: &str) {
     let carrier: std::collections::HashMap<String, String> =
         serde_json::from_str(context).unwrap_or_default();
     let parent_context = opentelemetry::global::get_text_map_propagator(|p| p.extract(&carrier));
-    span.set_parent(parent_context);
+    span.set_parent(parent_context).unwrap_or_default();
 }
 
 #[cfg(test)]

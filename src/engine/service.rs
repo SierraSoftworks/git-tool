@@ -1,4 +1,4 @@
-use super::{Error, Repo, templates};
+use super::{Repo, templates};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -19,11 +19,11 @@ pub struct ServiceAPI {
 }
 
 impl Service {
-    pub fn get_website(&self, r: &Repo) -> Result<String, Error> {
+    pub fn get_website(&self, r: &Repo) -> Result<String, human_errors::Error> {
         templates::render(self.website.clone().as_str(), r.into())
     }
 
-    pub fn get_git_url(&self, r: &Repo) -> Result<String, Error> {
+    pub fn get_git_url(&self, r: &Repo) -> Result<String, human_errors::Error> {
         templates::render(self.git_url.clone().as_str(), r.into())
     }
 }

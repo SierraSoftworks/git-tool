@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::Target;
+use crate::errors::HumanErrorResultExt;
 use crate::tasks::*;
 use clap::Arg;
 use std::path::PathBuf;
@@ -27,26 +28,24 @@ impl CommandRunnable for CloneCommand {
     }
 
     #[tracing::instrument(name = "gt clone", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
-        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| errors::user(
-            "You didn't specify the repository you wanted to clone.",
-            "Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."))?;
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
+        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| human_errors::user("You didn't specify the repository you wanted to clone.", &["Remember to specify a repository name like this: 'git-tool clone gh:sierrasoftworks/git-tool'."]))?;
 
         if let Some(file_path) = repo_name.strip_prefix('@') {
             // Load the list of repos to clone from a file
             let file_path: PathBuf = file_path.parse().map_err(|e| {
-                errors::user_with_internal(
-                    "The specified file path is not valid.",
-                    "Please make sure you are specifying a valid file path for your import file.",
+                human_errors::wrap_user(
                     e,
+                    "The specified file path is not valid.",
+                    &["Please make sure you are specifying a valid file path for your import file."],
                 )
             })?;
 
             let file = std::fs::read_to_string(&file_path).map_err(|e| {
-                errors::user_with_internal(
-                    "Could not read the specified clone file.",
-                    "Please make sure the file exists and is readable.",
+                human_errors::wrap_user(
                     e,
+                    "Could not read the specified clone file.",
+                    &["Please make sure the file exists and is readable."],
                 )
             })?;
 
@@ -58,7 +57,7 @@ impl CommandRunnable for CloneCommand {
                 }
 
                 let repo = core.resolver().get_best_repo(&line.trim().parse()?)?;
-                writeln!(core.output(), "{}", repo)?;
+                writeln!(core.output(), "{}", repo).to_human_error()?;
                 match operation.apply_repo(core, &repo).await {
                     Ok(()) => {}
                     Err(e) => return Err(e),

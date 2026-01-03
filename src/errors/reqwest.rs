@@ -1,75 +1,89 @@
-use super::{Error, system_with_internal, user, user_with_internal};
 use http::{StatusCode, uri::InvalidUri};
 use std::fmt::Debug;
 
-impl From<InvalidUri> for Error {
-    fn from(err: InvalidUri) -> Self {
-        user_with_internal(
+impl super::HumanErrorExt for InvalidUri {
+    fn to_human_error(self) -> human_errors::Error {
+        human_errors::wrap_user(
+            self,
             "We could not parse the URL.",
-            "Please make sure that the URLs you are using are well formed and try this operation again.",
-            err,
+            &[
+                "Please make sure that the URLs you are using are well formed and try this operation again.",
+            ],
         )
     }
 }
 
-impl From<reqwest::Error> for Error {
-    fn from(err: reqwest::Error) -> Self {
-        if err.is_redirect() {
-            user_with_internal(
+impl super::HumanErrorExt for reqwest::Error {
+    fn to_human_error(self) -> human_errors::Error {
+        if self.is_redirect() {
+            human_errors::wrap_user(
+                self,
                 "We could not complete a web request to due to a redirect loop.",
-                "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
-                err,
+                &[
+                    "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
+                ],
             )
-        } else if err.is_timeout() {
-            system_with_internal(
+        } else if self.is_timeout() {
+            human_errors::wrap_system(
+                self,
                 "We timed out making a web request.",
-                "This is likely due to a problem with the remote server or your internet connection, please try again later and report the problem to us on GitHub if the issue persists.",
-                err,
+                &[
+                    "This is likely due to a problem with the remote server or your internet connection, please try again later and report the problem to us on GitHub if the issue persists.",
+                ],
             )
         } else {
-            system_with_internal(
+            human_errors::wrap_system(
+                self,
                 "An internal error occurred which we could not recover from.",
-                "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                err,
+                &[
+                    "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+                ],
             )
         }
     }
 }
 
-impl From<reqwest::Response> for Error {
-    fn from(resp: reqwest::Response) -> Self {
-        match resp.status() {
-            StatusCode::NOT_FOUND => user(
+impl super::HumanErrorExt for reqwest::Response {
+    fn to_human_error(self) -> human_errors::Error {
+        match self.status() {
+            StatusCode::NOT_FOUND => human_errors::user(
                 "We received a 404 Not Found response when sending a web request.",
-                "Please check that you're using the correct options and try again. If the problem persists, please open an issue with us on GitHub.",
+                &[
+                    "Please check that you're using the correct options and try again. If the problem persists, please open an issue with us on GitHub.",
+                ],
             ),
-            StatusCode::UNAUTHORIZED => user(
+            StatusCode::UNAUTHORIZED => human_errors::user(
                 "We received an 401 Unauthorized response when sending a web request.",
-                "This probably means that you have not configured your access tokens correctly, please check your configuration and try again.",
+                &[
+                    "This probably means that you have not configured your access tokens correctly, please check your configuration and try again.",
+                ],
             ),
-            StatusCode::FORBIDDEN => user(
+            StatusCode::FORBIDDEN => human_errors::user(
                 "We received a 403 Forbidden response when sending a web request.",
-                "This probably means that you do not have permission to access this resource, please check that you do have permission and try again.",
+                &[
+                    "This probably means that you do not have permission to access this resource, please check that you do have permission and try again.",
+                ],
             ),
-            _ => system_with_internal(
+            status => human_errors::wrap_system(
+                ResponseError::from(self),
                 format!(
                     "We received a {} status code when making a web request.",
-                    resp.status()
-                )
-                .as_str(),
-                "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
-                ResponseError::from(resp),
+                    status
+                ),
+                &[
+                    "This is likely due to a problem with the remote server, please try again later and report the problem to us on GitHub if the issue persists.",
+                ],
             ),
         }
     }
 }
 
-impl From<http::header::InvalidHeaderValue> for Error {
-    fn from(err: http::header::InvalidHeaderValue) -> Self {
-        system_with_internal(
+impl super::HumanErrorExt for http::header::InvalidHeaderValue {
+    fn to_human_error(self) -> human_errors::Error {
+        human_errors::wrap_system(
+            self,
             "Could not parse header value due to an internal error.",
-            "Please report this error to us by creating an issue on GitHub.",
-            err,
+            &["Please report this error to us by creating an issue on GitHub."],
         )
     }
 }

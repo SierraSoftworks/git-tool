@@ -1,11 +1,10 @@
 use super::git_cmd;
-use crate::errors;
 use crate::git::cmd::validate_repo_path_exists;
 use std::path;
 use tokio::process::Command;
 use tracing_batteries::prelude::*;
 
-pub async fn git_remote_list(repo: &path::Path) -> Result<Vec<String>, errors::Error> {
+pub async fn git_remote_list(repo: &path::Path) -> Result<Vec<String>, human_errors::Error> {
     info!("Running `git remote` to list configured remotes");
     validate_repo_path_exists(repo)?;
     let output = git_cmd(Command::new("git").current_dir(repo).arg("remote"))
@@ -17,7 +16,11 @@ pub async fn git_remote_list(repo: &path::Path) -> Result<Vec<String>, errors::E
     Ok(output)
 }
 
-pub async fn git_remote_add(repo: &path::Path, name: &str, url: &str) -> Result<(), errors::Error> {
+pub async fn git_remote_add(
+    repo: &path::Path,
+    name: &str,
+    url: &str,
+) -> Result<(), human_errors::Error> {
     info!("Running `git remote add $NAME $URL` to add new remote");
     validate_repo_path_exists(repo)?;
     git_cmd(
@@ -37,7 +40,7 @@ pub async fn git_remote_set_url(
     repo: &path::Path,
     name: &str,
     url: &str,
-) -> Result<(), errors::Error> {
+) -> Result<(), human_errors::Error> {
     info!("Running `git remote set-url $NAME $URL` to add new remote");
     validate_repo_path_exists(repo)?;
     git_cmd(
@@ -58,7 +61,7 @@ pub async fn git_remote_rename(
     repo: &path::Path,
     name: &str,
     new_name: &str,
-) -> Result<(), errors::Error> {
+) -> Result<(), human_errors::Error> {
     info!("Running `git remote rename $NAME $NEW_NAME` to rename remote");
     validate_repo_path_exists(repo)?;
     git_cmd(

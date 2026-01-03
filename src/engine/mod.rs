@@ -21,8 +21,7 @@ pub use self::http::mocks::MockHttpRoute;
 
 use crate::console::ConsoleProvider;
 
-use super::errors;
-pub use errors::Error;
+pub use human_errors::Error;
 
 pub use self::http::HttpClient;
 pub use app::App;

@@ -149,13 +149,13 @@ mod tests {
         let worse_score = score(worse, pattern);
         let better_score = score(better, pattern);
 
-        if let Some(better_score) = better_score {
-            if let Some(worse_score) = worse_score {
-                assert!(
-                    better_score > worse_score,
-                    "the pattern '{pattern}' should score better against '{better}' than '{worse}'"
-                );
-            }
+        if let Some(better_score) = better_score
+            && let Some(worse_score) = worse_score
+        {
+            assert!(
+                better_score > worse_score,
+                "the pattern '{pattern}' should score better against '{better}' than '{worse}'"
+            );
         }
     }
 

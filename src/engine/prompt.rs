@@ -4,9 +4,10 @@ use std::{
 };
 use tracing_batteries::prelude::*;
 
-use crate::console::ConsoleProvider;
-
-use super::Error;
+use crate::{
+    console::ConsoleProvider,
+    errors::{HumanErrorExt, HumanErrorResultExt},
+};
 
 pub struct Prompter {
     console: Arc<dyn ConsoleProvider + Send + Sync>,
@@ -18,7 +19,11 @@ impl Prompter {
     }
 
     #[tracing::instrument(err, skip(self, validate))]
-    pub fn prompt<V>(&mut self, message: &str, validate: V) -> Result<Option<String>, Error>
+    pub fn prompt<V>(
+        &mut self,
+        message: &str,
+        validate: V,
+    ) -> Result<Option<String>, human_errors::Error>
     where
         V: Fn(&str) -> bool,
     {
@@ -26,8 +31,8 @@ impl Prompter {
         let mut reader = self.console.input();
 
         for _i in 0..3 {
-            write!(writer, "{message}")?;
-            writer.flush()?;
+            write!(writer, "{message}").to_human_error()?;
+            writer.flush().to_human_error()?;
 
             let line = Self::read_line(&mut reader)?;
             if line.is_empty() {
@@ -46,7 +51,7 @@ impl Prompter {
         &mut self,
         message: &str,
         default: Option<bool>,
-    ) -> Result<Option<bool>, Error> {
+    ) -> Result<Option<bool>, human_errors::Error> {
         if let Some(answer) = self.prompt(message, |l| {
             l.to_lowercase() == "y" || l.to_lowercase() == "n"
         })? {
@@ -59,12 +64,12 @@ impl Prompter {
     // NOTE: We use unbuffered reads here since the prompter is stateless and needs to avoid
     // consuming output from future prompts.
     #[allow(unknown_lints, clippy::unbuffered_bytes)]
-    fn read_line<R: Read>(reader: R) -> Result<String, Error> {
+    fn read_line<R: Read>(reader: R) -> Result<String, human_errors::Error> {
         let mut bytes = Vec::with_capacity(128);
 
         for byte in reader.bytes() {
             match byte {
-                Err(e) => return Err(e.into()),
+                Err(e) => return Err(e.to_human_error()),
                 Ok(char) => {
                     bytes.push(char);
 
@@ -75,7 +80,7 @@ impl Prompter {
             }
         }
 
-        Ok(String::from_utf8(bytes)?)
+        String::from_utf8(bytes).to_human_error()
     }
 }
 

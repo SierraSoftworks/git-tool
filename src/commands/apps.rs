@@ -1,3 +1,5 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::*;
 use tracing_batteries::prelude::*;
 
@@ -20,7 +22,7 @@ impl CommandRunnable for AppsCommand {
     #[tracing::instrument(name = "gt apps", err, skip(self, core, _matches))]
     async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, engine::Error> {
         for app in core.config().get_apps() {
-            writeln!(core.output(), "{}", app.get_name())?;
+            writeln!(core.output(), "{}", app.get_name()).to_human_error()?;
         }
 
         Ok(0)

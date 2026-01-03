@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::Target;
+use crate::errors::HumanErrorResultExt;
 use crate::git;
 use crate::tasks::*;
 use clap::Arg;
@@ -38,7 +39,7 @@ impl CommandRunnable for SwitchCommand {
     }
 
     #[tracing::instrument(name = "gt switch", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
         match matches.get_one::<String>("branch") {
@@ -58,7 +59,7 @@ impl CommandRunnable for SwitchCommand {
                     .unique()
                     .sorted()
                 {
-                    writeln!(core.output(), "{branch}")?;
+                    writeln!(core.output(), "{branch}").to_human_error()?;
                 }
             }
         };

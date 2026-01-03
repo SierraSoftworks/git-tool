@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::features;
+use crate::errors::HumanErrorResultExt;
 use crate::tasks::*;
 use crate::update::{GitHubSource, Release, ReleaseVariant};
 use crate::{engine::Target, update::UpdateManager};
@@ -42,13 +43,13 @@ New applications can be configured either by making changes to your configuratio
     }
 
     #[tracing::instrument(name = "gt open", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         if core.config().get_config_file().is_none() {
             warn!("No configuration file has been loaded, continuing with defaults.");
             writeln!(
                 core.output(),
                 "Hi! It looks like you haven't set up a Git-Tool config file yet. Try running `git-tool setup` to get started or make sure you've set the GITTOOL_CONFIG environment variable.\n"
-            )?;
+            ).to_human_error()?;
         }
 
         let (app, repo) = match helpers::get_launch_app(
@@ -61,16 +62,16 @@ New applications can be configured either by making changes to your configuratio
             }
             helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_repo()?),
             helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or_else(|| errors::user(
-                    "No default application available.",
-                    "Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."))?;
+                let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
 
                 (app, core.resolver().get_best_repo(&target)?)
             }
             helpers::LaunchTarget::None => {
-                return Err(errors::user(
+                return Err(human_errors::user(
                     "You did not specify the name of a repository to use.",
-                    "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'.",
+                    &[
+                        "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'.",
+                    ],
                 ));
             }
         };
@@ -107,7 +108,7 @@ New applications can be configured either by making changes to your configuratio
                     core.output(),
                     "A new version of Git-Tool is available (v{}). You can update it using `gt update`,",
                     latest_release.version
-                )?;
+                ).to_human_error()?;
             }
 
             Ok(status?)
@@ -131,11 +132,12 @@ New applications can be configured either by making changes to your configuratio
 
 impl OpenCommand {
     #[tracing::instrument(err, skip(self, core))]
-    async fn check_for_update(&self, core: &Core) -> Result<Option<Release>, errors::Error> {
-        let current_version: semver::Version = version!().parse().map_err(|err| errors::system_with_internal(
-            "Could not parse the current application version into a SemVer version number.",
-            "Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved.",
-            err))?;
+    async fn check_for_update(&self, core: &Core) -> Result<Option<Release>, human_errors::Error> {
+        let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
+                err,
+                "Could not parse the current application version into a SemVer version number.",
+                &["Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved."],
+            ))?;
 
         info!("Current application version is v{}", current_version);
 

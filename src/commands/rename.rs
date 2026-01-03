@@ -35,30 +35,29 @@ impl CommandRunnable for RenameCommand {
     }
 
     #[tracing::instrument(name = "gt rename", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let no_move_remote = matches.get_flag("no-move-remote");
         let repo_name: Identifier = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {
-                errors::user(
-                "The repository name to be moved was not provided and cannot be moved as a result.",
-                "Make sure to provide the name of the repository you want to rename.",
-            )
+                human_errors::user("The repository name to be moved was not provided and cannot be moved as a result.", &["Make sure to provide the name of the repository you want to rename."])
             })?
             .parse()?;
 
         let new_name = repo_name.resolve(matches.get_one::<String>("new_name").ok_or_else(|| {
-            errors::user(
-                format!("The new repository name to rename your repository {} to was not provided and cannot be moved as a result.", repo_name).as_str(),
-                "Make sure to provide the new name of the repository you want to rename."
+            human_errors::user(
+                format!("The new repository name to rename your repository {} to was not provided and cannot be moved as a result.", repo_name),
+                &["Make sure to provide the new name of the repository you want to rename."],
             )
         })?)?;
 
         let repo = core.resolver().get_best_repo(&repo_name)?;
         if !repo.exists() {
-            return Err(errors::user(
+            return Err(human_errors::user(
                 "Could not find the repository directory due to an error.",
-                "Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'.",
+                &[
+                    "Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'.",
+                ],
             ));
         }
 

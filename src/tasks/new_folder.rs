@@ -1,6 +1,5 @@
-use crate::errors;
-
 use super::{engine::Target, *};
+use human_errors::ResultExt;
 use tracing_batteries::prelude::*;
 
 pub struct NewFolder {}
@@ -11,16 +10,13 @@ impl Task for NewFolder {
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let path = repo.get_path();
 
-        std::fs::create_dir_all(&path).map_err(|err| {
-            errors::user_with_internal(
-                &format!(
+        std::fs::create_dir_all(&path).wrap_user_err(
+            format!(
                     "Could not create the repository directory '{}' due to an OS-level error.",
                     path.display()
                 ),
-                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
-                err,
-            )
-        })?;
+                &["Check that Git-Tool has permission to create this directory and any missing parent directories."],
+            )?;
 
         Ok(())
     }
@@ -33,16 +29,13 @@ impl Task for NewFolder {
     ) -> Result<(), engine::Error> {
         let path = scratch.get_path();
 
-        std::fs::create_dir_all(&path).map_err(|err| {
-            errors::user_with_internal(
-                &format!(
+        std::fs::create_dir_all(&path).wrap_user_err(
+            format!(
                     "Could not create the scratchpad directory '{}' due to an OS-level error.",
                     path.display()
                 ),
-                "Check that Git-Tool has permission to create this directory and any missing parent directories.",
-                err,
-            )
-        })?;
+                &["Check that Git-Tool has permission to create this directory and any missing parent directories."],
+            )?;
 
         Ok(())
     }

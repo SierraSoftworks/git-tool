@@ -93,13 +93,10 @@ impl Task for TestTask {
         *r = Some(repo.clone());
 
         match self.error {
-            true => Err(human_errors::Error::SystemError(
-                "Mock Error".to_string(),
-                "Configure the mock to not throw an error".to_string(),
-                None,
-                None,
-            )
-            .into()),
+            true => Err(human_errors::system(
+                "Mock Error",
+                &["Configure the mock to not throw an error"],
+            )),
             false => Ok(()),
         }
     }
@@ -114,13 +111,10 @@ impl Task for TestTask {
         *s = Some(scratch.clone());
 
         match self.error {
-            true => Err(human_errors::Error::SystemError(
-                "Mock Error".to_string(),
-                "Configure the mock to not throw an error".to_string(),
-                None,
-                None,
-            )
-            .into()),
+            true => Err(human_errors::system(
+                "Mock Error",
+                &["Configure the mock to not throw an error"],
+            )),
             false => Ok(()),
         }
     }

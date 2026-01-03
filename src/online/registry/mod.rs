@@ -11,8 +11,8 @@ pub use github_registry::GitHubRegistry;
 
 #[async_trait::async_trait]
 pub trait Registry: Send + Sync {
-    async fn get_entries(&self, core: &Core) -> Result<Vec<String>, Error>;
-    async fn get_entry(&self, core: &Core, id: &str) -> Result<Entry, Error>;
+    async fn get_entries(&self, core: &Core) -> Result<Vec<String>, human_errors::Error>;
+    async fn get_entry(&self, core: &Core, id: &str) -> Result<Entry, human_errors::Error>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

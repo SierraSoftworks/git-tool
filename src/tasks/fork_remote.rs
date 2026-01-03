@@ -21,21 +21,19 @@ impl Task for ForkRemote {
             .config()
             .get_features()
             .has(engine::features::MOVE_REMOTE)
-        {
-            if let Some(online_service) = crate::online::services()
+            && let Some(online_service) = crate::online::services()
                 .iter()
                 .find(|s| s.handles(service))
-            {
-                online_service
-                    .fork_repo(
-                        core,
-                        service,
-                        &self.from_repo,
-                        repo,
-                        self.default_branch_only,
-                    )
-                    .await?;
-            }
+        {
+            online_service
+                .fork_repo(
+                    core,
+                    service,
+                    &self.from_repo,
+                    repo,
+                    self.default_branch_only,
+                )
+                .await?;
         }
 
         Ok(())

@@ -1,4 +1,3 @@
-use crate::errors;
 use std::fmt::Display;
 use std::str::FromStr;
 
@@ -26,14 +25,16 @@ impl Identifier {
         self.path.split('/').filter(|segment| !segment.is_empty())
     }
 
-    pub fn resolve(&self, partial: &str) -> Result<Self, errors::Error> {
+    pub fn resolve(&self, partial: &str) -> Result<Self, human_errors::Error> {
         if partial.trim().is_empty() {
-            return Err(errors::user(
-                &format!(
+            return Err(human_errors::user(
+                format!(
                     "Could not resolve a new repository identifier based on '{}' when the target is empty.",
                     self
                 ),
-                "Make sure that you specify a valid target repository path such as 'namespace/name'",
+                &[
+                    "Make sure that you specify a valid target repository path such as 'namespace/name'",
+                ],
             ));
         }
 
@@ -69,15 +70,17 @@ impl Display for Identifier {
 }
 
 impl FromStr for Identifier {
-    type Err = errors::Error;
+    type Err = human_errors::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.trim().is_empty() {
-            return Err(errors::user(
-                &format!(
+            return Err(human_errors::user(
+                format!(
                     "The repository identifier '{s}' was not in a valid format and could not be understood."
                 ),
-                "Make sure you specify a valid repository identifier in the form 'service:namespace/name' or 'namespace/name'",
+                &[
+                    "Make sure you specify a valid repository identifier in the form 'service:namespace/name' or 'namespace/name'",
+                ],
             ));
         }
 
