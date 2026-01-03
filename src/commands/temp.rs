@@ -1,6 +1,7 @@
 use super::async_trait;
 use super::*;
 use crate::engine::Target;
+use crate::errors::HumanErrorResultExt;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -33,7 +34,7 @@ impl CommandRunnable for TempCommand {
     }
 
     #[tracing::instrument(name = "gt temp", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let app = if let Some(app) = matches.get_one::<String>("app") {
             core.config().get_app(app).ok_or_else(|| human_errors::user("The specified application does not exist.", &["Make sure you have added the application to your config file using 'git-tool config add apps/bash' or similar."]))?
         } else {
@@ -45,7 +46,7 @@ impl CommandRunnable for TempCommand {
         let temp = core.resolver().get_temp(keep)?;
 
         if keep {
-            writeln!(core.output(), "temp path: {}", temp.get_path().display())?;
+            writeln!(core.output(), "temp path: {}", temp.get_path().display()).to_human_error()?;
         }
 
         let status = core.launcher().run(app, &temp).await?;
@@ -74,8 +75,7 @@ mod tests {
         let args = cmd.app().get_matches_from(vec!["temp"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             "
 directory: {}=
 
@@ -132,8 +132,7 @@ apps:
         let args = cmd.app().get_matches_from(vec!["temp", "test-app"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             "
 directory: {}
 
@@ -185,8 +184,7 @@ apps:
         let args = cmd.app().get_matches_from(vec!["temp", "unknown-app"]);
 
         let temp = tempfile::tempdir().unwrap();
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             "
 directory: {}
 

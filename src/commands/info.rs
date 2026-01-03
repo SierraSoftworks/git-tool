@@ -1,3 +1,5 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::engine::Target;
 use super::*;
 use clap::Arg;
@@ -24,23 +26,23 @@ impl CommandRunnable for InfoCommand {
     }
 
     #[tracing::instrument(name = "gt info", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let mut output = core.output();
         let repo = match matches.get_one::<String>("repo") {
             Some(name) => core.resolver().get_best_repo(&name.parse()?)?,
             None => core.resolver().get_current_repo()?,
         };
 
-        writeln!(output, "Name:      {}", repo.get_name())?;
-        writeln!(output, "Namespace: {}", &repo.namespace)?;
-        writeln!(output, "Service:   {}", &repo.service)?;
-        writeln!(output, "Path:      {}", repo.path.display())?;
+        writeln!(output, "Name:      {}", repo.get_name()).to_human_error()?;
+        writeln!(output, "Namespace: {}", &repo.namespace).to_human_error()?;
+        writeln!(output, "Service:   {}", &repo.service).to_human_error()?;
+        writeln!(output, "Path:      {}", repo.path.display()).to_human_error()?;
 
         if let Ok(svc) = core.config().get_service(&repo.service) {
-            writeln!(output)?;
-            writeln!(output, "URLs:")?;
-            writeln!(output, " - Website:  {}", svc.get_website(&repo)?)?;
-            writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?)?;
+            writeln!(output).to_human_error()?;
+            writeln!(output, "URLs:").to_human_error()?;
+            writeln!(output, " - Website:  {}", svc.get_website(&repo)?).to_human_error()?;
+            writeln!(output, " - Git:  {}", svc.get_git_url(&repo)?).to_human_error()?;
         }
 
         Ok(0)

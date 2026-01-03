@@ -1,3 +1,4 @@
+use human_errors::ResultExt;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::env::consts::OS;
 use std::path::PathBuf;
@@ -5,10 +6,9 @@ use std::{collections::HashMap, path::Path};
 use std::{path, sync::Arc};
 use tracing_batteries::prelude::*;
 
-use super::super::errors;
+use super::app;
 use super::features;
 use super::service;
-use super::{Error, app};
 use crate::online::registry::EntryConfig;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -117,7 +117,7 @@ impl Config {
         &self,
         template: EntryConfig,
         replace_existing: bool,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, human_errors::Error> {
         let mut into = self.clone();
 
         if let Some(app) = template.app {
@@ -127,8 +127,7 @@ impl Config {
                     return Err(human_errors::user(
                         format!(
                             "The application {} already exists in your configuration file. Adding a duplicate entry will have no effect. If you would like to replace the existing entry, use `gt config add apps/{} --force`.",
-                            &app.name,
-                            &app.name
+                            &app.name, &app.name
                         ),
                         &["Check your configuration file to see existing applications."],
                     ));
@@ -146,8 +145,7 @@ impl Config {
                     return Err(human_errors::user(
                         format!(
                             "The service {} already exists in your configuration file. Adding a duplicate entry will have no effect. If you would like to replace the existing entry, use `gt config add services/{} --force`.",
-                            &svc.name,
-                            &svc.name
+                            &svc.name, &svc.name
                         ),
                         &["Check your configuration file to see existing services."],
                     ));
@@ -174,7 +172,7 @@ impl Config {
     }
 
     #[cfg(test)]
-    pub fn from_str(yaml: &str) -> Result<Self, Error> {
+    pub fn from_str(yaml: &str) -> Result<Self, human_errors::Error> {
         serde_yaml::from_str(yaml)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
@@ -187,12 +185,11 @@ impl Config {
     }
 
     #[tracing::instrument(name = "config:from_file" err, skip(path))]
-    pub fn from_file(path: &Path) -> Result<Self, Error> {
-        let f = std::fs::File::open(path).map_err(|err| human_errors::wrap_user(
+    pub fn from_file(path: &Path) -> Result<Self, human_errors::Error> {
+        let f = std::fs::File::open(path).wrap_user_err(
             format!("We could not open your Git-Tool config file '{}' for reading.", path.display()),
-            "Check that your config file exists and is readable by the user running git-tool before trying again.",
-            err,
-        ))?;
+            &["Check that your config file exists and is readable by the user running git-tool before trying again."],
+        )?;
 
         let mut cfg = Config::default().extend(Config::from_reader(f)?);
         cfg.config_file = Some(path.to_path_buf());
@@ -210,7 +207,7 @@ impl Config {
         }
     }
 
-    pub fn from_reader<R>(rdr: R) -> Result<Self, Error>
+    pub fn from_reader<R>(rdr: R) -> Result<Self, human_errors::Error>
     where
         R: std::io::Read,
     {
@@ -225,27 +222,24 @@ impl Config {
             })
     }
 
-    pub async fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+    pub async fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), human_errors::Error> {
         let path = path.as_ref();
 
         if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await.map_err(|err| human_errors::wrap_user(
+            tokio::fs::create_dir_all(parent).await.wrap_user_err(
                 format!("Could not create the config directory '{}' due to an OS-level error.", parent.display()),
-                "Make sure that Git-Tool has permission to write to your config directory and then try again.",
-                err,
-            ))?;
+                &["Make sure that Git-Tool has permission to write to your config directory and then try again."],
+            )?;
         }
 
-        tokio::fs::write(&path, self.to_string()?).await.map_err(|err| human_errors::wrap_user(
+        tokio::fs::write(&path, self.to_string()?).await.wrap_user_err(
             format!("Could not write your updated config to the config file '{}' due to an OS-level error.", path.display()),
-            "Make sure that Git-Tool has permission to write to your config file and then try again.",
-            err,
-        ))?;
-
+            &["Make sure that Git-Tool has permission to write to your config file and then try again."],
+        )?;
         Ok(())
     }
 
-    pub fn to_string(&self) -> Result<String, Error> {
+    pub fn to_string(&self) -> Result<String, human_errors::Error> {
         let config = serde_yaml::to_string(self).map_err(|e| {
             human_errors::wrap_system(
                 e,
@@ -303,7 +297,7 @@ impl Config {
         self.services.first().map(|f| f.as_ref())
     }
 
-    pub fn get_service(&self, domain: &str) -> Result<&service::Service, Error> {
+    pub fn get_service(&self, domain: &str) -> Result<&service::Service, human_errors::Error> {
         for svc in self.services.iter() {
             if svc.name == domain {
                 return Ok(svc.as_ref());
@@ -313,8 +307,7 @@ impl Config {
         Err(human_errors::user(
             format!(
                 "Could not find a service entry in your config file for {}. Ensure that your git-tool configuration has a service entry for this service, or add it with `git-tool config add service/{}`",
-                domain,
-                domain
+                domain, domain
             ),
             &["Check your configuration file for available services."],
         ))

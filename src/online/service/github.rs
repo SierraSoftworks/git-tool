@@ -1,7 +1,9 @@
 use std::time::Duration;
 
+use crate::errors::HumanErrorResultExt;
+
 use super::*;
-use crate::errors;
+use human_errors::ResultExt;
 use reqwest::{Method, Request, StatusCode, Url};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -30,13 +32,18 @@ Configure it with the following:
     - Repository permissions / Administration: Read and Write"#.trim().into()
     }
 
-    async fn test(&self, core: &Core, service: &Service) -> Result<(), Error> {
+    async fn test(&self, core: &Core, service: &Service) -> Result<(), human_errors::Error> {
         self.get_user_login(core, service).await?;
         Ok(())
     }
 
     #[tracing::instrument(err, skip(self, core))]
-    async fn is_created(&self, core: &Core, service: &Service, repo: &Repo) -> Result<bool, Error> {
+    async fn is_created(
+        &self,
+        core: &Core,
+        service: &Service,
+        repo: &Repo,
+    ) -> Result<bool, human_errors::Error> {
         let uri = format!(
             "{}/repos/{}",
             service.api.as_ref().unwrap().url.as_str(),
@@ -66,7 +73,7 @@ Configure it with the following:
         core: &Core,
         service: &Service,
         repo: &Repo,
-    ) -> Result<(), Error> {
+    ) -> Result<(), human_errors::Error> {
         let current_user = self.get_user_login(core, service).await?;
 
         let uri = if repo.namespace == current_user {
@@ -87,7 +94,11 @@ Configure it with the following:
                 .has(features::CREATE_REMOTE_PRIVATE),
         };
 
-        let req_body = serde_json::to_vec(&new_repo)?;
+        let req_body = serde_json::to_vec(&new_repo).wrap_system_err(
+            "Failed to serialize repository information for submission to GitHub as part of repo creation.", &[
+                "Please report this issue to us by creating a new GitHub issue.",
+                "Try creating your repository with `git-tool new --no-create-remote` and then pushing it to GitHub manually."
+            ])?;
         let new_repo_resp: Result<NewRepoResponse, GitHubErrorResponse> = self
             .make_request(
                 core,
@@ -113,7 +124,7 @@ Configure it with the following:
         service: &Service,
         source: &Repo,
         destination: &Repo,
-    ) -> Result<(), Error> {
+    ) -> Result<(), human_errors::Error> {
         // When updating a repository name on GitHub, we have two different approaches:
         // 1. If the source and destination are in the same organization, we can use the
         //    "Update Repository" API endpoint to rename the repository.
@@ -134,7 +145,11 @@ Configure it with the following:
 
             let body = serde_json::to_vec(&serde_json::json!({
                 "name": destination.name,
-            }))?;
+            })).wrap_system_err(
+                "Failed to serialize repository information for submission to GitHub as part of repo rename.", &[
+                "Please report this issue to us by creating a new GitHub issue.",
+                "Try renaming the repository manually on GitHub using the repository settings page."
+            ])?;
 
             let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
                 .make_request(
@@ -158,7 +173,11 @@ Configure it with the following:
             let body = serde_json::to_vec(&serde_json::json!({
                 "new_owner": destination.namespace,
                 "new_name": destination.name,
-            }))?;
+            })).wrap_system_err(
+                "Failed to serialize repository information for submission to GitHub as part of repo transfer.", &[
+                    "Please report this issue to us by creating a new GitHub issue.",
+                    "Try transferring the repository manually on GitHub using the repository settings page."
+            ])?;
 
             let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
                 .make_request(
@@ -183,7 +202,7 @@ Configure it with the following:
         source: &Repo,
         destination: &Repo,
         default_branch_only: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), human_errors::Error> {
         let uri = format!(
             "{}/repos/{}/{}/forks",
             service.api.as_ref().unwrap().url.as_str(),
@@ -208,13 +227,19 @@ Configure it with the following:
             }
         }
 
+        let req_body = serde_json::to_vec(&body_json).wrap_system_err(
+            "Failed to serialize repository information for submission to GitHub as part of repo fork.", &[
+                "Please report this issue to us by creating a new GitHub issue.",
+                "Try forking the repository manually on GitHub using the repository page."
+            ])?;
+
         let _resp: Result<NewRepoResponse, GitHubErrorResponse> = self
             .make_request(
                 core,
                 service,
                 Method::POST,
                 &uri,
-                serde_json::to_vec(&body_json)?,
+                req_body,
                 vec![StatusCode::OK, StatusCode::ACCEPTED],
             )
             .await?;
@@ -223,7 +248,11 @@ Configure it with the following:
 }
 
 impl GitHubService {
-    async fn get_user_login(&self, core: &Core, service: &Service) -> Result<String, Error> {
+    async fn get_user_login(
+        &self,
+        core: &Core,
+        service: &Service,
+    ) -> Result<String, human_errors::Error> {
         let user: Result<UserProfile, GitHubErrorResponse> = self
             .make_request(
                 core,
@@ -249,14 +278,11 @@ impl GitHubService {
         uri: &str,
         body: B,
         acceptable: Vec<StatusCode>,
-    ) -> Result<Result<T, GitHubErrorResponse>, Error> {
-        let url: Url = uri.parse().map_err(|e| {
-            errors::system_with_internal(
-                &format!("Unable to parse GitHub API URL '{uri}'."),
-                "Please report this error to us by opening an issue on GitHub.",
-                e,
-            )
-        })?;
+    ) -> Result<Result<T, GitHubErrorResponse>, human_errors::Error> {
+        let url: Url = uri.parse().wrap_system_err(
+            format!("Unable to parse GitHub API URL '{uri}'."),
+            &["Please report this error to us by opening an issue on GitHub."],
+        )?;
 
         let token = core.keychain().get_token(&service.name)?;
 
@@ -277,16 +303,25 @@ impl GitHubService {
 
             let headers = req.headers_mut();
 
-            headers.append("User-Agent", version!("Git-Tool/v").parse()?);
-            headers.append("Accept", "application/vnd.github.v3+json".parse()?);
-            headers.append("Authorization", format!("token {token}").parse()?);
+            headers.append(
+                "User-Agent",
+                version!("Git-Tool/v").parse().to_human_error()?,
+            );
+            headers.append(
+                "Accept",
+                "application/vnd.github.v3+json".parse().to_human_error()?,
+            );
+            headers.append(
+                "Authorization",
+                format!("token {token}").parse().to_human_error()?,
+            );
 
             match core.http_client().request(req).await {
                 Ok(resp) if acceptable.contains(&resp.status()) => {
-                    let result = resp.json().await.map_err(|e| errors::system_with_internal(
+                    let result = resp.json().await.wrap_system_err(
                         "We could not deserialize the response from GitHub because it didn't match the expected response format.",
-                        "Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate.",
-                        e))?;
+                        &["Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate."],
+                    )?;
 
                     return Ok(Ok(result));
                 }
@@ -302,35 +337,23 @@ impl GitHubService {
                 }
                 Ok(resp) => {
                     let status = resp.status();
-                    let bytes = resp.bytes().await.map_err(|e| {
-                        errors::system_with_internal(
-                            &format!(
+                    let bytes = resp.bytes().await.wrap_system_err(
+                        format!(
                                 "We received an unexpected HTTP {} {} status code from GitHub and couldn't read the response body.",
                                 status.as_u16(),
                                 status.canonical_reason().unwrap_or("Unknown")
                             ),
-                            "GitHub might be having reliability difficulties at the moment. Check https://www.githubstatus.com/ for updates.",
-                            e,
-                        )
-                    })?;
+                            &["GitHub might be having reliability difficulties at the moment. Check https://www.githubstatus.com/ for updates."],
+                        )?;
 
-                    let mut result: GitHubErrorResponse = match serde_json::from_slice(&bytes) {
-                        Ok(parsed) => parsed,
-                        Err(err) => {
-                            return Err(errors::system_with_internal(
-                                &format!(
+                    let mut result: GitHubErrorResponse = serde_json::from_slice(&bytes).wrap_system_err(
+                        format!(
                                     "Received an HTTP {} {} from GitHub, but couldn't parse the response body as a GitHub error.",
                                     status.as_u16(),
                                     status.canonical_reason().unwrap_or("Unknown")
                                 ),
-                                &format!(
-                                    "Response body:\n{}\n\nThis likely indicates an outage or unexpected change in GitHub’s API.",
-                                    String::from_utf8_lossy(&bytes)
-                                ),
-                                err,
-                            ));
-                        }
-                    };
+                        &["Please report this issue to us on GitHub with the trace ID for the command you were running so that we can investigate."],
+                            )?;
 
                     result.http_status_code = status;
                     return Ok(Err(result));
@@ -387,35 +410,43 @@ struct GitHubErrorResponse {
 impl Into<Error> for GitHubErrorResponse {
     fn into(self) -> Error {
         match self.http_status_code {
-            StatusCode::UNAUTHORIZED => errors::user(
+            StatusCode::UNAUTHORIZED => human_errors::user(
                 "You have not provided a valid authentication token for github.com.",
-                "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.",
+                &[
+                    "Please generate a valid Personal Access Token at https://github.com/settings/tokens (with the `repo` scope) and add it using `git-tool auth github.com`.",
+                ],
             ),
-            StatusCode::FORBIDDEN => errors::user_with_internal(
-                &format!(
+            StatusCode::FORBIDDEN => human_errors::wrap_user(
+                format!("{self:?}"),
+                format!(
                     "You do not have permission to perform this action on GitHub: {}",
                     self.message
                 ),
-                "Check your GitHub account permissions for this organization or repository and try again.",
-                errors::detailed_message(&format!("{self:?}")),
+                &[
+                    "Check your GitHub account permissions for this organization or repository and try again.",
+                ],
             ),
-            StatusCode::NOT_FOUND => errors::user_with_internal(
+            StatusCode::NOT_FOUND => human_errors::wrap_user(
+                format!("{self:?}"),
                 "We could not create the GitHub repo because the organization or user you specified could not be found.",
-                "Check that you have specified the correct organization or user in the repository name and try again.",
-                errors::detailed_message(&format!("{self:?}")),
+                &[
+                    "Check that you have specified the correct organization or user in the repository name and try again.",
+                ],
             ),
-            StatusCode::TOO_MANY_REQUESTS => errors::user(
+            StatusCode::TOO_MANY_REQUESTS => human_errors::user(
                 "GitHub has rate limited requests from your IP address.",
-                "Please wait until GitHub removes this rate limit before trying again.",
+                &["Please wait until GitHub removes this rate limit before trying again."],
             ),
-            status => errors::system_with_internal(
-                &format!(
+            status => human_errors::wrap_system(
+                format!("{self:?}"),
+                format!(
                     "Received an HTTP {} {} response from GitHub.",
                     status.as_u16(),
                     status.canonical_reason().unwrap_or_default()
                 ),
-                "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-                errors::detailed_message(&format!("{self:?}")),
+                &[
+                    "Please read the error message below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+                ],
             ),
         }
     }

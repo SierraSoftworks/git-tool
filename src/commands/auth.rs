@@ -1,5 +1,8 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::*;
 use clap::Arg;
+use human_errors::prelude::*;
 use tracing_batteries::prelude::*;
 
 pub struct AuthCommand;
@@ -38,14 +41,13 @@ impl CommandRunnable for AuthCommand {
         })?;
 
         if let Ok(svc) = core.config().get_service(service) {
-            if svc.api.is_none() {
-                return Err(human_errors::user(format!
-                        "The service '{}' does not include an API which supports authentication.",
-                        &svc.name
-                    ),
-                    "You do not need to configure authentication for this service, but you can check the services in your configuration using `git-tool services`.",
-                ));
-            }
+            svc.api.as_ref().ok_or_user_err(
+                format!(
+                    "The service '{}' does not include an API which supports authentication.",
+                    &svc.name
+                ),
+                &["You do not need to configure authentication for this service, but you can check the services in your configuration using `git-tool services`."],
+            )?;
 
             if matches.get_flag("remove-token") {
                 core.keychain().delete_token(service)?;
@@ -58,40 +60,41 @@ impl CommandRunnable for AuthCommand {
                             .find(|s| s.handles(svc))
                             .cloned()
                         {
-                            writeln!(core.output(), "{}", online_service.auth_instructions())?;
+                            writeln!(core.output(), "{}", online_service.auth_instructions())
+                                .to_human_error()?;
                         }
 
-                        writeln!(core.output(), "Access Token: ")?;
-                        rpassword::read_password().map_err(|e| human_errors::wrap_user(
-                e,
-                "Could not read the access token that you entered.",
-                &["Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue."],
-            ))?
+                        writeln!(core.output(), "Access Token: ").to_human_error()?;
+                        rpassword::read_password().wrap_user_err(
+                            "Could not read the access token that you entered.",
+                            &["Please try running this command again, or let us know if you continue to run into problems by opening a GitHub issue."],
+                        )?
                     }
                 };
 
                 core.keychain().set_token(service, &token)?;
 
-                writeln!(core.output(), "Access Token set for service '{service}'")?;
+                writeln!(core.output(), "Access Token set for service '{service}'")
+                    .to_human_error()?;
                 if let Some(online_service) = online::services().iter().find(|s| s.handles(svc)) {
-                    writeln!(core.output(), "Testing authentication token...")?;
+                    writeln!(core.output(), "Testing authentication token...").to_human_error()?;
                     online_service.test(core, svc).await?;
-                    writeln!(core.output(), "Authentication token is valid.")?;
+                    writeln!(core.output(), "Authentication token is valid.").to_human_error()?;
                 }
             }
-        } else {
-            let suggestion = if let Some(default_service) = core.config().get_services().next() {
+        } else if core.config().get_services().next().is_some() {
+            return Err(human_errors::user(
                 format!(
-                    "Try running `git-tool auth {default_service}` or use one of the services listed in `git-tool services`."
-                )
-            } else {
-                "Make sure that you have registered a service in your configuration file.".into()
-            };
-
-            return Err(human_errors::user(format!
                     "The service you specified ('{service}') does not exist in your configuration."
                 ),
-                &suggestion,
+                &["Try using one of the services listing in `git-tool services` instead."],
+            ));
+        } else {
+            return Err(human_errors::user(
+                format!(
+                    "The service you specified ('{service}') does not exist in your configuration."
+                ),
+                &["Make sure that you have registered a service in your configuration file."],
             ));
         }
 

@@ -8,5 +8,16 @@ mod serde;
 mod std_io;
 mod utf8;
 
-// Re-export the Error type from human_errors
-pub type Error = human_errors::Error;
+pub trait HumanErrorExt {
+    fn to_human_error(self) -> human_errors::Error;
+}
+
+pub trait HumanErrorResultExt<T> {
+    fn to_human_error(self) -> Result<T, human_errors::Error>;
+}
+
+impl<T, E: HumanErrorExt> HumanErrorResultExt<T> for Result<T, E> {
+    fn to_human_error(self) -> Result<T, human_errors::Error> {
+        self.map_err(|e| e.to_human_error())
+    }
+}

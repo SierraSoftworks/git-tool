@@ -1,5 +1,5 @@
 use super::*;
-use crate::completion::get_shells;
+use crate::{completion::get_shells, errors::HumanErrorResultExt};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -50,13 +50,18 @@ where {
                 ))?;
 
                 if matches.get_flag("full") {
-                    write!(output, "{}", shell.get_long_init())?;
+                    write!(output, "{}", shell.get_long_init()).to_human_error()?;
                 } else {
-                    write!(output, "{}", shell.get_short_init())?;
+                    write!(output, "{}", shell.get_short_init()).to_human_error()?;
                 }
             }
             _ => {
-                Err(human_errors::user("You did not provide the name of the shell you want to configure.", &["Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent."]))?;
+                Err(human_errors::user(
+                    "You did not provide the name of the shell you want to configure.",
+                    &[
+                        "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent.",
+                    ],
+                ))?;
             }
         }
 

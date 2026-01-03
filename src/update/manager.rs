@@ -1,5 +1,6 @@
 use super::*;
-use crate::{engine::Core, errors};
+use crate::engine::Core;
+use human_errors::ResultExt;
 use itertools::Itertools;
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
@@ -52,12 +53,16 @@ where
         }
     }
 
-    pub async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error> {
+    pub async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, human_errors::Error> {
         self.source.get_releases(core).await
     }
 
     #[tracing::instrument(err, skip(self, core))]
-    pub async fn update(&self, core: &Core, release: &Release) -> Result<bool, errors::Error> {
+    pub async fn update(
+        &self,
+        core: &Core,
+        release: &Release,
+    ) -> Result<bool, human_errors::Error> {
         let state = UpdateState {
             target_application: Some(self.target_application.clone()),
             temporary_application: Some(self.filesystem.get_temp_app_path(release)),
@@ -76,19 +81,25 @@ where
                 "Checking whether app binary ({}) is writable by current user.",
                 self.target_application.display()
             );
-            let permissions = tokio::fs::metadata(self.target_application.clone()).await?;
+            let permissions = tokio::fs::metadata(self.target_application.clone()).await.wrap_user_err(
+                format!("Failed to get the current file state of the git-tool binary ({}).", self.target_application.display()),
+                &[
+                    "Please ensure that the application binary exists and that Git-Tool has permission to read and write to it.",
+                    "Try running the `git-tool update` command again as an administrator.",
+                ],
+            )?;
             if permissions.permissions().readonly() {
                 return Err(human_errors::user(
                     "The application binary is read-only. Please make sure that the application binary is writable by the current user.",
-                    {
+                    &{
                         #[cfg(windows)]
                         {
-                            "Try running this command in an administrative console (Win+X, A)."
+                            ["Try running this command in an administrative console (Win+X, A)."]
                         }
 
                         #[cfg(unix)]
                         {
-                            "Try running this command as root with `sudo git-tool update`."
+                            ["Try running this command as root with `sudo git-tool update`."]
                         }
                     },
                 ));
@@ -101,16 +112,13 @@ where
                 release.version,
                 app.display()
             );
-            let mut app_file = std::fs::File::create(&app).map_err(|err| {
-                human_errors::wrap_user(
-                    format!(
+            let mut app_file = std::fs::File::create(&app).wrap_user_err(
+                format!(
                         "Could not create the new application file '{}' due to an OS-level error.",
                         app.display()
                     ),
-                    "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
-                    err,
-                )
-            })?;
+                    &["Check that Git-Tool has permission to create and write to this file and that the parent directory exists."],
+                )?;
             self.source
                 .get_binary(core, release, variant, &mut app_file)
                 .await?;
@@ -123,7 +131,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    pub async fn resume(&self, state: &UpdateState) -> Result<bool, errors::Error> {
+    pub async fn resume(&self, state: &UpdateState) -> Result<bool, human_errors::Error> {
         match state.phase {
             UpdatePhase::NoUpdate => Ok(false),
             UpdatePhase::Prepare => self.prepare(state).await,
@@ -133,7 +141,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn prepare(&self, state: &UpdateState) -> Result<bool, errors::Error> {
+    async fn prepare(&self, state: &UpdateState) -> Result<bool, human_errors::Error> {
         let next_state = state.for_phase(UpdatePhase::Replace);
         let update_source = state.temporary_application.clone().ok_or_else(|| human_errors::system("Could not launch the new application version to continue the update process (prepare -> replace phase).", &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."]))?;
 
@@ -144,7 +152,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn replace(&self, state: &UpdateState) -> Result<bool, errors::Error> {
+    async fn replace(&self, state: &UpdateState) -> Result<bool, human_errors::Error> {
         let update_source = state.temporary_application.clone().ok_or_else(|| human_errors::system("Could not locate the temporary update files needed to complete the update process (replace phase).", &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."]))?;
         let update_target = state.target_application.clone().ok_or_else(|| human_errors::system("Could not locate the application which was meant to be updated due to an issue loading the update state (replace phase).", &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."]))?;
 
@@ -164,7 +172,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn cleanup(&self, state: &UpdateState) -> Result<bool, errors::Error> {
+    async fn cleanup(&self, state: &UpdateState) -> Result<bool, human_errors::Error> {
         let update_source = state.temporary_application.clone().ok_or_else(|| human_errors::system("Could not locate the temporary update files needed to complete the update process (cleanup phase).", &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."]))?;
 
         info!("Removing temporary update application binary.");
@@ -175,7 +183,7 @@ where
 
     #[cfg(unix)]
     #[tracing::instrument(err, skip(self, file))]
-    fn prepare_app_file(&self, file: &Path) -> Result<(), errors::Error> {
+    fn prepare_app_file(&self, file: &Path) -> Result<(), human_errors::Error> {
         let mut perms = std::fs::metadata(file).map_err(|err| {
             human_errors::wrap_user(
                 format!(
@@ -207,12 +215,12 @@ where
     }
 
     #[cfg(not(unix))]
-    fn prepare_app_file(&self, _file: &std::path::Path) -> Result<(), errors::Error> {
+    fn prepare_app_file(&self, _file: &std::path::Path) -> Result<(), human_errors::Error> {
         Ok(())
     }
 
     #[tracing::instrument(err, skip(self, app_path))]
-    fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
+    fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), human_errors::Error> {
         self.launcher.launch(app_path, state)
     }
 }

@@ -1,8 +1,10 @@
 use crate::engine::features;
+use crate::errors::HumanErrorResultExt;
 
 use super::async_trait;
 use super::*;
 use clap::Arg;
+use human_errors::OptionExt;
 use online::registry::Registry;
 use tracing_batteries::prelude::*;
 
@@ -89,7 +91,7 @@ impl CommandRunnable for ConfigCommand {
     }
 
     #[tracing::instrument(name = "gt config", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let mut cfg = core.config().clone();
 
         let save_config = match matches.subcommand() {
@@ -99,24 +101,22 @@ impl CommandRunnable for ConfigCommand {
                 let entries = registry.get_entries(core).await?;
                 let mut output = core.output();
                 for entry in entries {
-                    writeln!(output, "{entry}")?;
+                    writeln!(output, "{entry}").to_human_error()?;
                 }
 
                 false
             }
             Some(("add", args)) => {
-                let id = args.get_one::<String>("id").ok_or_else(|| {
-                    human_errors::user(
-                        "You have not provided an ID for the config template you wish to add.",
-                        "",
-                    )
-                })?;
+                let id = args.get_one::<String>("id").ok_or_user_err(
+                    "You have not provided an ID for the config template you wish to add.",
+                    &["Please provide the ID of the config template when running this command (e.g. `git-tool config add apps/bash`)."],
+                )?;
 
                 let registry = online::GitHubRegistry;
                 let entry = registry.get_entry(core, id).await?;
 
-                writeln!(core.output(), "Applying {}", entry.name)?;
-                writeln!(core.output(), "> {}", entry.description)?;
+                writeln!(core.output(), "Applying {}", entry.name).to_human_error()?;
+                writeln!(core.output(), "> {}", entry.description).to_human_error()?;
 
                 for ec in entry.configs {
                     if ec.is_compatible() {
@@ -147,14 +147,15 @@ impl CommandRunnable for ConfigCommand {
                             }
                             None => match core.config().get_alias(alias) {
                                 Some(repo) => {
-                                    writeln!(core.output(), "{alias} = {repo}")?;
+                                    writeln!(core.output(), "{alias} = {repo}").to_human_error()?;
                                     false
                                 }
                                 None => {
                                     writeln!(
                                         core.output(),
                                         "No alias exists with the name '{alias}'"
-                                    )?;
+                                    )
+                                    .to_human_error()?;
                                     false
                                 }
                             },
@@ -164,7 +165,7 @@ impl CommandRunnable for ConfigCommand {
                 None => {
                     let mut output = core.output();
                     for (alias, repo) in core.config().get_aliases() {
-                        writeln!(output, "{alias} = {repo}")?;
+                        writeln!(output, "{alias} = {repo}").to_human_error()?;
                     }
 
                     false
@@ -180,7 +181,7 @@ impl CommandRunnable for ConfigCommand {
                         writeln!(
                             core.output(),
                             "Cannot set the feature flag '{flag}' to '{invalid}' because only 'true' and 'false' are valid settings."
-                        )?;
+                        ).to_human_error()?;
                         return Ok(1);
                     }
                     None => {
@@ -189,7 +190,8 @@ impl CommandRunnable for ConfigCommand {
                             "{} = {}",
                             flag,
                             core.config().get_features().has(flag)
-                        )?;
+                        )
+                        .to_human_error()?;
 
                         false
                     }
@@ -202,7 +204,8 @@ impl CommandRunnable for ConfigCommand {
                             "{} = {}",
                             feature,
                             core.config().get_features().has(feature)
-                        )?;
+                        )
+                        .to_human_error()?;
                     }
 
                     false
@@ -221,7 +224,8 @@ impl CommandRunnable for ConfigCommand {
                             core.output(),
                             "{}",
                             core.config().get_scratch_directory().display()
-                        )?;
+                        )
+                        .to_human_error()?;
 
                         false
                     }
@@ -238,13 +242,14 @@ impl CommandRunnable for ConfigCommand {
                         core.output(),
                         "{}",
                         core.config().get_dev_directory().display()
-                    )?;
+                    )
+                    .to_human_error()?;
 
                     false
                 }
             },
             _ => {
-                writeln!(core.output(), "{}", core.config().to_string()?)?;
+                writeln!(core.output(), "{}", core.config().to_string()?).to_human_error()?;
 
                 false
             }
@@ -256,7 +261,7 @@ impl CommandRunnable for ConfigCommand {
                     cfg.save(&path).await?;
                 }
                 None => {
-                    writeln!(core.output(), "{}", cfg.to_string()?)?;
+                    writeln!(core.output(), "{}", cfg.to_string()?).to_human_error()?;
                 }
             }
         }
@@ -567,8 +572,7 @@ aliases:
 
     #[tokio::test]
     async fn test_alias_completion() {
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             r#"
 directory: "{}"
 
@@ -631,8 +635,7 @@ features:
 
     #[tokio::test]
     async fn test_feature_completion() {
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             r#"
 directory: "{}"
 
@@ -704,8 +707,7 @@ scratchpads: /scratch
 
     #[tokio::test]
     async fn test_path_completion() {
-        let cfg = Config::from_str(
-                format!(
+        let cfg = Config::from_str(&format!(
             r#"
 directory: "{}"
 "#,

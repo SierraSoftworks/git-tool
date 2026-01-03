@@ -1,3 +1,5 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::*;
 use tracing_batteries::prelude::*;
 
@@ -19,32 +21,44 @@ impl CommandRunnable for DoctorCommand {
 
     #[tracing::instrument(name = "gt doctor", err, skip(self, core, _matches))]
     async fn run(&self, core: &Core, _matches: &ArgMatches) -> Result<i32, engine::Error> {
-        writeln!(core.output(), "Checking environment...")?;
+        writeln!(core.output(), "Checking environment...").to_human_error()?;
 
         if core.config().file_exists() {
-            writeln!(core.output(), "[OK] Config file exists")?;
+            writeln!(core.output(), "[OK] Config file exists").to_human_error()?;
         } else {
             writeln!(
                 core.output(),
                 "[WARNING] Config file does not exist, you are using the built-in defaults"
-            )?;
+            )
+            .to_human_error()?;
         }
 
         if !core.config().get_dev_directory().exists() {
-            Err(human_errors::user("Your development directory does not exist.", &["Make sure that the dev directory you have specified in your configuration file exists and is writable by Git-Tool."]))?;
+            Err(human_errors::user(
+                "Your development directory does not exist.",
+                &[
+                    "Make sure that the dev directory you have specified in your configuration file exists and is writable by Git-Tool.",
+                ],
+            ))?;
         }
 
-        writeln!(core.output(), "[OK] Development directory exists")?;
+        writeln!(core.output(), "[OK] Development directory exists").to_human_error()?;
 
         if !core.config().get_scratch_directory().exists() {
-            Err(human_errors::user("Your scratch directory does not exist.", &["Make sure that the scratch directory you have specified in your configuration file exists and is writable by Git-Tool."]))?;
+            Err(human_errors::user(
+                "Your scratch directory does not exist.",
+                &[
+                    "Make sure that the scratch directory you have specified in your configuration file exists and is writable by Git-Tool.",
+                ],
+            ))?;
         }
 
         for svc in core.config().get_services() {
             if let Some(online_service) = online::services().iter().find(|s| s.handles(svc)) {
                 match online_service.test(core, svc).await {
                     Ok(_) => {
-                        writeln!(core.output(), "[OK] Access to '{}' is working", &svc.name)?;
+                        writeln!(core.output(), "[OK] Access to '{}' is working", &svc.name)
+                            .to_human_error()?;
                     }
                     Err(err) => {
                         writeln!(
@@ -53,7 +67,7 @@ impl CommandRunnable for DoctorCommand {
                             &svc.name,
                             &svc.name,
                             err
-                        )?;
+                        ).to_human_error()?;
                     }
                 }
             }

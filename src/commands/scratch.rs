@@ -31,7 +31,7 @@ impl CommandRunnable for ScratchCommand {
     }
 
     #[tracing::instrument(name = "gt scratch", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let (app, scratchpad) = match helpers::get_launch_app(
             core,
             matches.get_one::<String>("app"),

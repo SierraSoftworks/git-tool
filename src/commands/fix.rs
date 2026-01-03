@@ -1,5 +1,5 @@
 use super::*;
-use crate::{search, tasks::*};
+use crate::{errors::HumanErrorResultExt, search, tasks::*};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -33,7 +33,7 @@ impl CommandRunnable for FixCommand {
     }
 
     #[tracing::instrument(name = "gt fix", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let tasks = sequence![
             GitRemote { name: "origin" },
             CreateRemote {
@@ -57,7 +57,8 @@ impl CommandRunnable for FixCommand {
                         "Fixing {}/{}",
                         &repo.service,
                         repo.get_full_name()
-                    )?;
+                    )
+                    .to_human_error()?;
                     tasks.apply_repo(core, repo).await?;
                 }
             }

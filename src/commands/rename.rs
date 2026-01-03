@@ -35,7 +35,7 @@ impl CommandRunnable for RenameCommand {
     }
 
     #[tracing::instrument(name = "gt rename", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let no_move_remote = matches.get_flag("no-move-remote");
         let repo_name: Identifier = matches
             .get_one::<String>("repo")
@@ -53,7 +53,12 @@ impl CommandRunnable for RenameCommand {
 
         let repo = core.resolver().get_best_repo(&repo_name)?;
         if !repo.exists() {
-            return Err(human_errors::user("Could not find the repository directory due to an error.", &["Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'."]));
+            return Err(human_errors::user(
+                "Could not find the repository directory due to an error.",
+                &[
+                    "Make sure you have the correct permissions to rename the directory. Remember to specify a repository name in it's fully-qualified form like this: 'git-tool rename gh:sierrasoftworks/git-tool gt'.",
+                ],
+            ));
         }
 
         let new_repo = core.resolver().get_best_repo(&new_name)?;

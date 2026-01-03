@@ -63,7 +63,7 @@ impl CommandRunnable for NewCommand {
     }
 
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let repo_id = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {

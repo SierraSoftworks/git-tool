@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::Target;
+use crate::errors::HumanErrorResultExt;
 use crate::search;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -53,10 +54,10 @@ where {
             format!("{}:{}", &r.service, r.get_full_name())
         }) {
             if quiet {
-                writeln!(output, "{}:{}", &repo.service, repo.get_full_name())?;
+                writeln!(output, "{}:{}", &repo.service, repo.get_full_name()).to_human_error()?;
             } else if full {
                 if !first {
-                    writeln!(output, "---")?;
+                    writeln!(output, "---").to_human_error()?;
                 }
 
                 writeln!(
@@ -70,7 +71,8 @@ Path:           {path}",
                     namespace = &repo.namespace,
                     domain = &repo.service,
                     path = repo.path.display()
-                )?;
+                )
+                .to_human_error()?;
 
                 if let Ok(svc) = core.config().get_service(&repo.service) {
                     writeln!(
@@ -81,7 +83,8 @@ URLs:
   - Git:    {git}",
                         website = svc.get_website(repo)?,
                         git = svc.get_git_url(repo)?,
-                    )?
+                    )
+                    .to_human_error()?;
                 };
             } else {
                 match core.config().get_service(&repo.service) {
@@ -91,8 +94,10 @@ URLs:
                         &repo.service,
                         repo.get_full_name(),
                         svc.get_website(repo)?
-                    )?,
-                    Err(_) => writeln!(output, "{}:{}", &repo.service, repo.get_full_name())?,
+                    )
+                    .to_human_error()?,
+                    Err(_) => writeln!(output, "{}:{}", &repo.service, repo.get_full_name())
+                        .to_human_error()?,
                 };
             }
 

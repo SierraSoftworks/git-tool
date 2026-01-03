@@ -1,3 +1,4 @@
+use human_errors::ResultExt;
 use std::{path::Path, process::Command};
 use tracing_batteries::prelude::*;
 
@@ -15,8 +16,6 @@ mod windows {
 #[cfg(test)]
 use mockall::automock;
 
-use crate::errors;
-
 use super::UpdateState;
 
 pub(super) fn default() -> Box<dyn Launcher + Send + Sync> {
@@ -25,17 +24,20 @@ pub(super) fn default() -> Box<dyn Launcher + Send + Sync> {
 
 #[cfg_attr(test, automock)]
 pub trait Launcher {
-    fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), errors::Error> {
+    fn launch(&self, app_path: &Path, state: &UpdateState) -> Result<(), human_errors::Error> {
         let trace_context = {
             let mut context = std::collections::HashMap::new();
             opentelemetry::global::get_text_map_propagator(|p| {
                 p.inject_context(&Span::current().context(), &mut context)
             });
 
-            serde_json::to_string(&context)
-        }?;
+            serde_json::to_string(&context).unwrap_or_default()
+        };
 
-        let state_json = serde_json::to_string(state)?;
+        let state_json = serde_json::to_string(state).wrap_system_err(
+            "Failed to serialize the update state into a JSON payload.",
+            &["Please report this issue to us by creating a new GitHub issue."],
+        )?;
 
         let mut cmd = Command::new(app_path);
         cmd.arg("--update-resume-internal")
@@ -49,20 +51,26 @@ pub trait Launcher {
         #[cfg(windows)]
         cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
 
-        self.spawn(cmd).map_err(|e| human_errors::wrap_system(
+        self.spawn(cmd).wrap_system_err(
             format!("Could not launch the new application version to continue the update process (_ -> {} phase)", state.phase),
-            "Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself.",
-            e))
+            &["Please report this issue to us on GitHub, or try updating manually by downloading the latest release from GitHub yourself."],
+        )
     }
 
-    fn spawn(&self, cmd: Command) -> Result<(), errors::Error>;
+    fn spawn(&self, cmd: Command) -> Result<(), human_errors::Error>;
 }
 
 struct DefaultLauncher {}
 
 impl Launcher for DefaultLauncher {
-    fn spawn(&self, mut cmd: Command) -> Result<(), errors::Error> {
-        cmd.spawn()?;
+    fn spawn(&self, mut cmd: Command) -> Result<(), human_errors::Error> {
+        cmd.spawn().wrap_user_err(
+            "Failed to launch Git-Tool to complete the update process.",
+            &[
+                "Try re-running the update using `git-tool update`.",
+                "Download the latest release from GitHub and install it manually if the problem continues."
+            ],
+        )?;
 
         Ok(())
     }

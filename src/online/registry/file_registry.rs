@@ -1,5 +1,6 @@
 use super::*;
-use crate::{errors, fs::to_native_path};
+use crate::fs::to_native_path;
+use human_errors::ResultExt;
 use std::{fs::read_dir, fs::read_to_string, path::PathBuf};
 use tracing_batteries::prelude::*;
 
@@ -17,68 +18,56 @@ impl FileRegistry {
 #[async_trait::async_trait]
 impl Registry for FileRegistry {
     #[tracing::instrument(err, skip(self, _core))]
-    async fn get_entries(&self, _core: &Core) -> Result<Vec<String>, Error> {
+    async fn get_entries(&self, _core: &Core) -> Result<Vec<String>, human_errors::Error> {
         let mut entries = Vec::new();
 
-        for entry in read_dir(&self.path).map_err(|err| {
-            errors::user_with_internal(
-                &format!(
-                    "Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.",
-                    self.path.display()
-                ),
-                "Check that the directory exists and that Git-Tool has read access to it.",
-                err,
-            )
-        })? {
-            let type_entry = entry.map_err(|err| errors::user_with_internal(
-                &format!("Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.", self.path.display()),
-                "Check that the directory exists and that Git-Tool has read access to it and its children.",
-                err
-            ))?;
+        for entry in read_dir(&self.path).wrap_user_err(
+            format!(
+                "Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.",
+                self.path.display()
+            ),
+            &["Check that the directory exists and that Git-Tool has read access to it."],
+        )? {
+            let type_entry = entry.wrap_user_err(
+                format!("Could not enumerate the directories within the local filesystem registry folder '{}' due to an OS-level error.", self.path.display()),
+                &["Check that the directory exists and that Git-Tool has read access to it and its children."],
+            )?;
 
             if !type_entry.path().is_dir() {
                 continue;
             }
 
-            for entry in read_dir(type_entry.path()).map_err(|err| {
-                errors::user_with_internal(
-                    &format!(
-                        "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
-                        type_entry.path().display()
-                    ),
-                    "Check that the directory exists and that Git-Tool has read access to it.",
-                    err,
-                )
-            })? {
+            for entry in read_dir(type_entry.path()).wrap_user_err(
+                format!(
+                    "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
+                    type_entry.path().display()
+                ),
+                &["Check that the directory exists and that Git-Tool has read access to it."],
+            )? {
                 let file_entry =
-                    entry.map_err(|err| {
-                        errors::user_with_internal(
-                            &format!(
-                                "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
-                                type_entry.path().display()
-                            ),
-                            "Check that the directory exists and that Git-Tool has read access to it and the files within.",
-                            err,
-                        )
-                    })?;
+                    entry.wrap_user_err(
+                        format!(
+                            "Could not enumerate the files within the local filesystem registry folder '{}' due to an OS-level error.",
+                            type_entry.path().display()
+                        ),
+                        &["Check that the directory exists and that Git-Tool has read access to it and the files within."],
+                    )?;
 
                 if file_entry
                     .file_name()
                     .to_str()
                     .map(|s| s.ends_with(".yaml"))
                     .unwrap_or_default()
-                {
-                    if let Some(file_name) = PathBuf::from(file_entry.file_name()).file_stem() {
-                        let entry = format!(
-                            "{}/{}",
-                            PathBuf::from(type_entry.file_name()).display(),
-                            PathBuf::from(file_name).display()
-                        );
+                && let Some(file_name) = PathBuf::from(file_entry.file_name()).file_stem() {
+                    let entry = format!(
+                        "{}/{}",
+                        PathBuf::from(type_entry.file_name()).display(),
+                        PathBuf::from(file_name).display()
+                    );
 
-                        debug!("Found entry '{}'", &entry);
+                    debug!("Found entry '{}'", &entry);
 
-                        entries.push(entry);
-                    }
+                    entries.push(entry);
                 }
             }
         }
@@ -87,28 +76,20 @@ impl Registry for FileRegistry {
     }
 
     #[tracing::instrument(err, skip(self, _core))]
-    async fn get_entry(&self, _core: &Core, id: &str) -> Result<Entry, Error> {
+    async fn get_entry(&self, _core: &Core, id: &str) -> Result<Entry, human_errors::Error> {
         let path = self.path.join(to_native_path(format!("{id}.yaml")));
-        let contents = read_to_string(&path).map_err(|err| {
-            errors::user_with_internal(
-                &format!(
-                    "Could not read the local filesystem registry entry '{}' due to an OS-level error.",
-                    path.display()
-                ),
-                "Check that the file exists and that Git-Tool has read access to it.",
-                err,
-            )
-        })?;
+        let contents = read_to_string(&path).wrap_user_err(
+            format!(
+                "Could not read the local filesystem registry entry '{}' due to an OS-level error.",
+                path.display()
+            ),
+            &["Check that the file exists and that Git-Tool has read access to it."],
+        )?;
 
-        Ok(serde_yaml::from_str(&contents).map_err(|err| {
-            errors::user_with_internal(
-                &format!(
-                    "Could not deserialize the registry entry '{id}' due to a YAML parser error."
-                ),
-                "Check that the registry entry is valid YAML and matches the registry entry schema.",
-                err,
-            )
-        })?)
+        serde_yaml::from_str(&contents).wrap_user_err(
+            format!("Could not deserialize the registry entry '{id}' due to a YAML parser error."),
+            &["Check that the registry entry is valid YAML and matches the registry entry schema."],
+        )
     }
 }
 
@@ -164,7 +145,10 @@ mod registry_compliance {
         assert!(valid, "all registry entries should be valid");
     }
 
-    async fn validate_entry(registry: &FileRegistry, name: &str) -> Result<bool, Error> {
+    async fn validate_entry(
+        registry: &FileRegistry,
+        name: &str,
+    ) -> Result<bool, human_errors::Error> {
         let core = Core::builder().with_default_config().build();
         let entry = registry.get_entry(&core, name).await?;
         let mut valid = true;

@@ -111,7 +111,7 @@ impl CompleteCommand {
         }
     }
 
-    fn get_completion_matches(&self, args: &str) -> Result<ArgMatches, errors::Error> {
+    fn get_completion_matches(&self, args: &str) -> Result<ArgMatches, human_errors::Error> {
         let true_args = shell_words::split(args)
             .map_err(|e| human_errors::wrap_user(
                 e,

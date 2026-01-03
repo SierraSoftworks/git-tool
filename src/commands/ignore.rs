@@ -1,7 +1,10 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::async_trait;
 use super::online::gitignore;
 use super::*;
 use clap::{Arg, value_parser};
+use human_errors::ResultExt;
 use tracing_batteries::prelude::*;
 
 pub struct IgnoreCommand;
@@ -33,13 +36,13 @@ impl CommandRunnable for IgnoreCommand {
     }
 
     #[tracing::instrument(name = "gt ignore", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         match matches.get_many::<String>("language") {
             None => {
                 let languages = gitignore::list(core).await?;
 
                 for lang in languages {
-                    writeln!(core.output(), "{lang}")?;
+                    writeln!(core.output(), "{lang}").to_human_error()?;
                 }
             }
             Some(languages) => {
@@ -61,11 +64,10 @@ impl CommandRunnable for IgnoreCommand {
                 )
                 .await?;
 
-                tokio::fs::write(&ignore_path, content).await.map_err(|err| human_errors::wrap_user(
+                tokio::fs::write(&ignore_path, content).await.wrap_user_err(
                     format!("Could not write to your '{}' file due to an OS-level error.", ignore_path.display()),
-                    "Check that Git-Tool has permission to write to your .gitignore file and try again.",
-                    err
-                ))?;
+                    &["Check that Git-Tool has permission to write to your .gitignore file and try again."],
+                )?;
             }
         }
 

@@ -1,7 +1,5 @@
 use crate::{
-    completion::get_shells,
-    engine::{Error, Prompter},
-    fs::to_native_path,
+    completion::get_shells, engine::Prompter, errors::HumanErrorResultExt, fs::to_native_path,
 };
 use std::{io::ErrorKind, path::PathBuf, writeln};
 use tracing_batteries::prelude::*;
@@ -33,23 +31,24 @@ impl CommandRunnable for SetupCommand {
     }
 
     #[tracing::instrument(name = "gt setup", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         if core.config().file_exists() && !matches.get_flag("force") {
-            Err(human_errors::user(
-                &format!(
+            return Err(human_errors::user(
+                format!(
                     "You already have a Git-Tool config file ({}) which will not be modified.",
                     core.config().get_config_file().unwrap().display()
                 ),
-                "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check.",
-            ))?;
+                &[
+                    "If you want to replace your config file, you can use `git-tool setup --force` to bypass this check.",
+                ],
+            ));
         }
 
-        writeln!(core.output(), "Welcome to the Git-Tool setup wizard.")?;
+        writeln!(core.output(), "Welcome to the Git-Tool setup wizard.").to_human_error()?;
         writeln!(
             core.output(),
             "This wizard will help you prepare your system for use with Git-Tool, including selecting your dev directory and installing auto-complete support.\n"
-        )?;
-
+        ).to_human_error()?;
         let mut prompter = core.prompter();
 
         let dev_directory = self.prompt_dev_directory(core, &mut prompter)?;
@@ -57,7 +56,8 @@ impl CommandRunnable for SetupCommand {
             core.output(),
             "\nGotcha, we'll store your projects in {}.",
             dev_directory.display()
-        )?;
+        )
+        .to_human_error()?;
 
         let enable_telemetry = prompter
             .prompt_bool(
@@ -83,7 +83,7 @@ impl CommandRunnable for SetupCommand {
         writeln!(
             core.output(),
             "\nSuccess! We've written your config to disk, now we need to configure your system to use it."
-        )?;
+        ).to_human_error()?;
         self.prompt_setup_shell(core, &mut prompter)?;
 
         Ok(0)
@@ -97,7 +97,11 @@ impl CommandRunnable for SetupCommand {
 }
 
 impl SetupCommand {
-    fn prompt_dev_directory(&self, core: &Core, prompter: &mut Prompter) -> Result<PathBuf, Error> {
+    fn prompt_dev_directory(
+        &self,
+        core: &Core,
+        prompter: &mut Prompter,
+    ) -> Result<PathBuf, human_errors::Error> {
         let default_dir = match core.config().get_dev_directory().to_str() {
             Some(path) if !path.is_empty() => Some(path.to_owned()),
             _ => None,
@@ -147,7 +151,11 @@ impl SetupCommand {
         Ok(to_native_path(dev_dir))
     }
 
-    fn prompt_setup_shell(&self, core: &Core, prompter: &mut Prompter) -> Result<(), Error> {
+    fn prompt_setup_shell(
+        &self,
+        core: &Core,
+        prompter: &mut Prompter,
+    ) -> Result<(), human_errors::Error> {
         #[cfg(windows)]
         let default_shell = "powershell";
         #[cfg(target_os = "linux")]
@@ -180,19 +188,19 @@ impl SetupCommand {
             v
         }).unwrap_or_else(|| default_shell.into());
 
-        writeln!(core.output())?;
+        writeln!(core.output()).to_human_error()?;
         if let Some(shell) = shells.iter().find(|s| s.get_name() == shell) {
             writeln!(
                 core.output(),
                 "To use Git-Tool, you'll need to add the following to your shell's config file ({}):",
                 shell.get_config_file()
-            )?;
-            writeln!(core.output(), "{}", shell.get_install())?;
+            ).to_human_error()?;
+            writeln!(core.output(), "{}", shell.get_install()).to_human_error()?;
         } else {
             writeln!(
                 core.output(),
                 "Git-Tool doesn't support your current shell with native auto-completion, please let us know about this by opening a GitHub issue."
-            )?;
+            ).to_human_error()?;
         }
 
         Ok(())

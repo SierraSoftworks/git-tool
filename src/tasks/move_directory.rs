@@ -1,6 +1,6 @@
 use crate::engine::{Core, Target};
-use crate::errors;
 use crate::tasks::Task;
+use human_errors::ResultExt;
 use std::{fs, path};
 use tracing_batteries::prelude::tracing;
 
@@ -18,14 +18,23 @@ impl Task for MoveDirectory {
     ) -> Result<(), crate::engine::Error> {
         if !repo.exists() {
             return Err(human_errors::user(
-                format!("The repository {} does not exist on your machine and cannot be moved as a result. Make sure the name is correct and that the repository exists by running `git-tool clone {}` first.", repo.name, repo.name),
+                format!(
+                    "The repository {} does not exist on your machine and cannot be moved as a result. Make sure the name is correct and that the repository exists by running `git-tool clone {}` first.",
+                    repo.name, repo.name
+                ),
                 &["Verify that you have spelled the repository name correctly."],
             ));
         }
 
         if let Some(parent) = self.new_path.parent() {
             // Ensure that the parent directory exists for the target folder
-            fs::create_dir_all(parent)?;
+            fs::create_dir_all(parent).wrap_user_err(
+                format!("Could not create the parent directory '{}'.", parent.display()),
+                &[
+                    "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                    "Ensure that the filesystem is not mounted as read-only.",
+                ],
+            )?;
         }
 
         fs::rename(repo.path.clone(), self.new_path.clone()).map_err(|err| {
@@ -36,7 +45,10 @@ impl Task for MoveDirectory {
                     repo.path.display(),
                     self.new_path.display()
                 ),
-                &["Check that Git-Tool has permission to create this directory and any missing parent directories."],
+                &[
+                    "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                    "Ensure that the filesystem is not mounted as read-only.",
+                ],
             )
         })?;
 
@@ -51,7 +63,10 @@ impl Task for MoveDirectory {
     ) -> Result<(), crate::engine::Error> {
         if !scratch.exists() {
             return Err(human_errors::user(
-                format!("The scratchpad {} does not exist on your machine and cannot be moved as a result.", scratch.get_name()),
+                format!(
+                    "The scratchpad {} does not exist on your machine and cannot be moved as a result.",
+                    scratch.get_name()
+                ),
                 &["Make sure the name is correct and that the scratchpad exists first."],
             ));
         }

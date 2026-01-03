@@ -3,7 +3,9 @@ use std::sync::Arc;
 use reqwest::{Client, Request, Response};
 use tracing_batteries::prelude::*;
 
-use super::{Config, Error};
+use crate::errors::HumanErrorResultExt;
+
+use super::Config;
 
 #[cfg(test)]
 use mockall::automock;
@@ -12,12 +14,12 @@ use mockall::automock;
 #[async_trait::async_trait]
 pub trait HttpClient: Send + Sync {
     #[tracing::instrument(err, skip(self, uri))]
-    async fn get(&self, uri: reqwest::Url) -> Result<Response, Error> {
+    async fn get(&self, uri: reqwest::Url) -> Result<Response, human_errors::Error> {
         let req = Request::new(reqwest::Method::GET, uri);
         self.request(req).await
     }
 
-    async fn request(&self, req: Request) -> Result<Response, Error>;
+    async fn request(&self, req: Request) -> Result<Response, human_errors::Error>;
 }
 
 pub fn client() -> Arc<dyn HttpClient + Send + Sync> {
@@ -55,10 +57,10 @@ impl HttpClient for TrueHttpClient {
             http.response_content_length = EmptyField,
         )
     )]
-    async fn request(&self, req: Request) -> Result<Response, Error> {
+    async fn request(&self, req: Request) -> Result<Response, human_errors::Error> {
         let client = Client::new();
 
-        let response = client.execute(req).await?;
+        let response = client.execute(req).await.to_human_error()?;
 
         if !response.status().is_success() {
             Span::current().record("otel.status_code", 2_u32).record(

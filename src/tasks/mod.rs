@@ -93,7 +93,7 @@ impl Task for TestTask {
         *r = Some(repo.clone());
 
         match self.error {
-            true => Err(human_human_errors::system(
+            true => Err(human_errors::system(
                 "Mock Error",
                 &["Configure the mock to not throw an error"],
             )
@@ -112,7 +112,7 @@ impl Task for TestTask {
         *s = Some(scratch.clone());
 
         match self.error {
-            true => Err(human_human_errors::system(
+            true => Err(human_errors::system(
                 "Mock Error",
                 &["Configure the mock to not throw an error"],
             )

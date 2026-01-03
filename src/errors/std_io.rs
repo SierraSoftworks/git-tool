@@ -1,17 +1,19 @@
 use std::io;
 
-impl From<io::Error> for super::Error {
-    fn from(err: io::Error) -> Self {
-        match err.kind() {
+impl super::HumanErrorExt for io::Error {
+    fn to_human_error(self) -> human_errors::Error {
+        match self.kind() {
             io::ErrorKind::NotFound => human_errors::wrap_user(
-                err,
+                self,
                 "Could not find the requested file.",
                 &["Check that the file path you provided is correct and try again."],
             ),
             _ => human_errors::wrap_system(
-                err,
+                self,
                 "An internal error occurred which we could not recover from.",
-                &["Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub."],
+                &[
+                    "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+                ],
             ),
         }
     }

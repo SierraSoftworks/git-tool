@@ -1,12 +1,10 @@
-use crate::errors;
-
-use super::Error;
 use super::app;
 use super::{
     Config, Target,
     templates::{render, render_list},
 };
 use futures::{FutureExt, pin_mut};
+use human_errors::ResultExt;
 use tracing_batteries::prelude::*;
 
 #[cfg(test)]
@@ -18,7 +16,11 @@ use tokio::process::Command;
 #[async_trait::async_trait]
 #[cfg_attr(test, automock)]
 pub trait Launcher: Send + Sync {
-    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error>;
+    async fn run(
+        &self,
+        a: &app::App,
+        t: &(dyn Target + Send + Sync),
+    ) -> Result<i32, human_errors::Error>;
 }
 
 pub fn launcher(config: Arc<Config>) -> Arc<dyn Launcher + Send + Sync> {
@@ -38,7 +40,11 @@ impl std::fmt::Debug for dyn Launcher {
 #[async_trait::async_trait]
 impl Launcher for TrueLauncher {
     #[tracing::instrument(name = "launch", err, skip(self, t, a), fields(app=%a, target=%t))]
-    async fn run(&self, a: &app::App, t: &(dyn Target + Send + Sync)) -> Result<i32, Error> {
+    async fn run(
+        &self,
+        a: &app::App,
+        t: &(dyn Target + Send + Sync),
+    ) -> Result<i32, human_errors::Error> {
         let context = t.template_context(&self.config);
 
         let program = render(a.get_command(), context.clone())?;
@@ -54,11 +60,10 @@ impl Launcher for TrueLauncher {
             .current_dir(t.get_path())
             .envs(env_arg_tuples)
             .spawn()
-            .map_err(|err| human_errors::wrap_user(
-                &format!("Could not launch the application '{}' due to an OS-level error.", a.get_command()),
-                "Make sure that the program exists on your $PATH and is executable before trying again.",
-                err
-            ))?;
+            .wrap_user_err(
+                format!("Could not launch the application '{}' due to an OS-level error.", a.get_command()),
+                &["Make sure that the program exists on your $PATH and is executable before trying again."],
+            )?;
 
         self.forward_signals(&mut child).await
     }
@@ -66,7 +71,10 @@ impl Launcher for TrueLauncher {
 
 impl TrueLauncher {
     #[cfg(windows)]
-    async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
+    async fn forward_signals(
+        &self,
+        child: &mut tokio::process::Child,
+    ) -> Result<i32, human_errors::Error> {
         loop {
             let ctrlc = tokio::signal::ctrl_c().fuse();
             pin_mut!(ctrlc);
@@ -77,22 +85,20 @@ impl TrueLauncher {
                     // can handle it as necessary.
                 },
                 status = child.wait() => {
-                    return Ok(status.map_err(|err| human_errors::wrap_system(
-                err,
-                "We could not determine the exit status code for the program you ran.",
-                &["Please report this error to us on GitHub so that we can work with you to investigate the cause."],
-            )stem(
+                    return Ok(status.wrap_system_err(
                         "We could not determine the exit status code for the program you ran.",
-                        "Please report this error to us on GitHub so that we can work with you to investigate the cause.",
-                        err
-                    ))?.code().unwrap_or_default());
+                        &["Please report this error to us on GitHub so that we can work with you to investigate the cause."],
+                    )?.code().unwrap_or_default());
                 }
             }
         }
     }
 
     #[cfg(unix)]
-    async fn forward_signals(&self, child: &mut tokio::process::Child) -> Result<i32, Error> {
+    async fn forward_signals(
+        &self,
+        child: &mut tokio::process::Child,
+    ) -> Result<i32, human_errors::Error> {
         let child_id = child.id().ok_or_else(|| human_errors::user("Unable to determine the child process's PID because the child process has already exited.", &["This might not be a problem, depending on the program you are running, however it may also indicate that the process is not running correctly."]))?;
 
         let pid = nix::unistd::Pid::from_raw(child_id.try_into().map_err(|err| human_errors::wrap_system(

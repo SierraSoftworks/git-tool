@@ -1,5 +1,4 @@
 use super::engine;
-use super::errors;
 use super::online;
 use super::tasks;
 use async_trait::async_trait;
@@ -64,7 +63,7 @@ impl CommandRunnable for Command {
         self.0.app()
     }
 
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         self.0.run(core, matches).await
     }
 
@@ -77,7 +76,7 @@ impl CommandRunnable for Command {
 pub trait CommandRunnable: Send + Sync {
     fn name(&self) -> String;
     fn app(&self) -> clap::Command;
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error>;
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error>;
     async fn complete(&self, core: &Core, completer: &Completer, matches: &ArgMatches);
 
     #[cfg(test)]

@@ -1,7 +1,7 @@
 use crate::console::{self, ConsoleProvider};
 
 use super::{
-    Config, Core, Error, HttpClient, KeyChain, Launcher, Resolver, auth, http, launcher, resolver,
+    Config, Core, HttpClient, KeyChain, Launcher, Resolver, auth, http, launcher, resolver,
 };
 use std::{path::PathBuf, sync::Arc};
 
@@ -33,7 +33,7 @@ impl CoreBuilderWithoutConfig {
     pub fn with_config_file<P: Into<PathBuf>>(
         self,
         cfg_file: P,
-    ) -> Result<CoreBuilderWithConfig, Error> {
+    ) -> Result<CoreBuilderWithConfig, human_errors::Error> {
         let cfg = Config::from_file(&cfg_file.into())?;
 
         Ok(self.with_config(cfg))

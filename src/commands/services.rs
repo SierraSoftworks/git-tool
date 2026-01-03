@@ -1,3 +1,5 @@
+use crate::errors::HumanErrorResultExt;
+
 use super::*;
 use tracing_batteries::prelude::*;
 
@@ -21,7 +23,7 @@ impl CommandRunnable for ServicesCommand {
         let mut output = core.output();
 
         for svc in core.config().get_services() {
-            writeln!(output, "{}", &svc.name)?;
+            writeln!(output, "{}", &svc.name).to_human_error()?;
         }
 
         Ok(0)
