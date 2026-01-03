@@ -25,27 +25,27 @@ impl CommandRunnable for RemoveCommand {
     }
 
     #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let repo_name = matches
             .get_one::<String>("repo")
             .ok_or_else(|| {
-                errors::user(
+                human_errors::user(
                     "No repository name was provided.",
-                    "Provide the name of the repository you wish to remove.",
+                    &["Provide the name of the repository you wish to remove."],
                 )
             })?
             .parse()?;
 
         let repo = core.resolver().get_best_repo(&repo_name)?;
 
-        if repo.exists() {
-            if let Err(err) = std::fs::remove_dir_all(repo.get_path()) {
-                return Err(errors::user_with_internal(
-                    "Could not remove the repository directory due to an error.",
-                    "Make sure you have the correct permissions to remove the directory.",
-                    err,
-                ));
-            }
+        if repo.exists()
+            && let Err(err) = std::fs::remove_dir_all(repo.get_path())
+        {
+            return Err(human_errors::wrap_user(
+                err,
+                "Could not remove the repository directory due to an error.",
+                &["Make sure you have the correct permissions to remove the directory."],
+            ));
         }
 
         Ok(0)

@@ -102,7 +102,7 @@ mod tests {
     fn test_get_latest() {
         assert_eq!(Release::get_latest(vec![]), None);
 
-        let releases = vec![
+        let releases = [
             Release {
                 id: "1".to_string(),
                 changelog: "".to_string(),

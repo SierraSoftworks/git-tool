@@ -1,6 +1,5 @@
-use crate::errors;
-
 use super::{engine::Target, *};
+use human_errors::ResultExt;
 use std::path::{Path, PathBuf};
 use tracing_batteries::prelude::*;
 
@@ -37,21 +36,26 @@ impl Task for WriteFile<'_> {
 
 #[allow(dead_code)]
 impl WriteFile<'_> {
-    async fn write_file(&self, path: &Path) -> Result<(), errors::Error> {
+    async fn write_file(&self, path: &Path) -> Result<(), human_errors::Error> {
         if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await?
+            tokio::fs::create_dir_all(parent).await.wrap_user_err(
+                format!("Could not create the parent directory '{}'.", parent.display()),
+                &[
+                    "Check that Git-Tool has permission to create this directory and any missing parent directories.",
+                    "Ensure that the filesystem is not mounted as read-only.",
+                ],
+            )?
         };
 
-        tokio::fs::write(&path, self.content).await.map_err(|err| {
-            errors::user_with_internal(
-                &format!(
+        tokio::fs::write(&path, self.content).await.wrap_user_err(
+            format!(
                     "Could not write data to the file '{}' due to an OS-level error.",
                     path.display()
                 ),
-                "Check that Git-Tool has permission to create and write to this file and that the parent directory exists.",
-                err,
-            )
-        })
+                &["Check that Git-Tool has permission to create and write to this file and that the parent directory exists."],
+            )?;
+
+        Ok(())
     }
 }
 

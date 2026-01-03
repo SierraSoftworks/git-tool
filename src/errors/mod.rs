@@ -1,5 +1,3 @@
-pub use human_errors::detailed_message;
-
 mod base64;
 #[cfg(feature = "auth")]
 mod keyring;
@@ -10,4 +8,16 @@ mod serde;
 mod std_io;
 mod utf8;
 
-human_errors::error_shim!(Error);
+pub trait HumanErrorExt {
+    fn to_human_error(self) -> human_errors::Error;
+}
+
+pub trait HumanErrorResultExt<T> {
+    fn to_human_error(self) -> Result<T, human_errors::Error>;
+}
+
+impl<T, E: HumanErrorExt> HumanErrorResultExt<T> for Result<T, E> {
+    fn to_human_error(self) -> Result<T, human_errors::Error> {
+        self.map_err(|e| e.to_human_error())
+    }
+}

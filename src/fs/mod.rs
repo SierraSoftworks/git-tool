@@ -42,14 +42,14 @@ pub fn to_native_path<T: Into<PathBuf>>(path: T) -> PathBuf {
 pub fn resolve_directories(
     from: &Path,
     pattern: &str,
-) -> Result<Vec<PathBuf>, crate::errors::Error> {
+) -> Result<Vec<PathBuf>, human_errors::Error> {
     if !from.exists() {
         Ok(Vec::new())
     } else if let Some((first_segment, rest)) = pattern.split_once('/') {
         if first_segment == "*" {
             Ok(get_child_directories(from)?
                 .map(|dir| resolve_directories(&dir, rest))
-                .collect::<Result<Vec<Vec<PathBuf>>, crate::errors::Error>>()?
+                .collect::<Result<Vec<Vec<PathBuf>>, human_errors::Error>>()?
                 .into_iter()
                 .flatten()
                 .collect())
@@ -65,20 +65,20 @@ pub fn resolve_directories(
 
 pub fn get_child_directories(
     from: &Path,
-) -> Result<impl Iterator<Item = PathBuf>, crate::errors::Error> {
+) -> Result<impl Iterator<Item = PathBuf>, human_errors::Error> {
     Ok(from.read_dir().map_err(|e| match e.kind() {
-        std::io::ErrorKind::NotFound => crate::errors::user(
-            &format!("The path '{}' does not exist.", from.display()),
-            "Please check that the path is correct and that you have permission to access it.",
+        std::io::ErrorKind::NotFound => human_errors::user(
+            format!("The path '{}' does not exist.", from.display()),
+            &["Please check that the path is correct and that you have permission to access it."],
         ),
-        std::io::ErrorKind::NotADirectory => crate::errors::user(
-            &format!("The path '{}' is not a directory.", from.display()),
-            "Please check that this path is a directory and that you have not accidentally created a file here instead.",
+        std::io::ErrorKind::NotADirectory => human_errors::user(
+            format!("The path '{}' is not a directory.", from.display()),
+            &["Please check that this path is a directory and that you have not accidentally created a file here instead."],
         ),
-        _ => crate::errors::system_with_internal(
-            &format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
-            "Check that Git-Tool has permission to read this directory.",
+        _ => human_errors::wrap_system(
             e,
+            format!("Could not enumerate directories in '{}' due to an OS-level error.", from.display()),
+            &["Check that Git-Tool has permission to read this directory."],
         ),
     })?.filter_map(|entry| {
         if let Ok(entry) = entry {

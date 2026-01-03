@@ -1,7 +1,9 @@
 use super::*;
 use crate::engine::Target;
+use crate::errors::HumanErrorResultExt;
 use crate::git;
 use clap::Arg;
+use human_errors::ResultExt;
 use itertools::Itertools;
 use tracing_batteries::prelude::*;
 
@@ -36,27 +38,23 @@ impl CommandRunnable for PruneCommand {
     }
 
     #[tracing::instrument(name = "gt prune", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, errors::Error> {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
         let repo = core.resolver().get_current_repo()?;
 
-        let default_branch = match git::git_default_branch(&repo.get_path()).await {
-            Ok(default_branch) => default_branch,
-            Err(e) => {
-                return Err(errors::user_with_cause(
-                    "Could not determine the default branch for your repository, this probably means that you do not have a synchronized `origin`.",
-                    "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
-                    e,
-                ));
-            }
-        };
+        let default_branch = git::git_default_branch(&repo.get_path()).await.wrap_user_err(
+            "Could not determine the default branch for your repository, this probably means that you do not have a synchronized `origin`.",
+            &["Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again."],
+        )?;
 
         let merged = match git::git_merged_branches(&repo.get_path()).await {
             Ok(merged) => merged,
             Err(e) => {
-                return Err(errors::user_with_cause(
-                    "Could not determine the branches that have been merged into the default branch.",
-                    "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
+                return Err(human_errors::wrap_user(
                     e,
+                    "Could not determine the branches that have been merged into the default branch.",
+                    &[
+                        "Make sure that you have a correctly configured `origin` and that you have run `git fetch` before running this command again.",
+                    ],
                 ));
             }
         };
@@ -68,17 +66,16 @@ impl CommandRunnable for PruneCommand {
             .collect();
 
         if to_remove.is_empty() {
-            writeln!(core.output(), "No branches to remove")?;
+            writeln!(core.output(), "No branches to remove").to_human_error()?;
             return Ok(0);
         }
 
         if !matches.get_flag("yes") {
-            writeln!(core.output(), "The following branches will be removed:")?;
+            writeln!(core.output(), "The following branches will be removed:").to_human_error()?;
             for branch in to_remove.iter() {
-                writeln!(core.output(), "  {branch}")?;
+                writeln!(core.output(), "  {branch}").to_human_error()?;
             }
-            writeln!(core.output())?;
-
+            writeln!(core.output()).to_human_error()?;
             let remove_branches = core
                 .prompter()
                 .prompt_bool(
@@ -88,7 +85,7 @@ impl CommandRunnable for PruneCommand {
                 .unwrap_or_default();
 
             if !remove_branches {
-                writeln!(core.output(), "Okay, we'll keep them as-is.")?;
+                writeln!(core.output(), "Okay, we'll keep them as-is.").to_human_error()?;
                 return Ok(0);
             }
         }

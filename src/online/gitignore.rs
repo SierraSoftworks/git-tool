@@ -1,5 +1,7 @@
-use super::{Error, errors};
-use crate::engine::Core;
+use crate::{
+    engine::Core,
+    errors::{HumanErrorExt, HumanErrorResultExt},
+};
 use tracing_batteries::prelude::*;
 
 #[tracing::instrument(err, skip(core, content))]
@@ -7,7 +9,7 @@ pub async fn add_or_update(
     core: &Core,
     content: &str,
     new_languages: Vec<&str>,
-) -> Result<String, Error> {
+) -> Result<String, human_errors::Error> {
     let mut managed: GitIgnoreFileSection;
 
     match GitIgnoreFileSection::parse(content) {
@@ -34,23 +36,23 @@ pub async fn add_or_update(
 }
 
 #[tracing::instrument(err, skip(core))]
-pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
+pub async fn list(core: &Core) -> Result<Vec<String>, human_errors::Error> {
     let uri = "https://www.toptal.com/developers/gitignore/api/list"
         .parse()
         .map_err(|e| {
-            errors::system_with_internal(
-                "Could not parse gitignore.io URL.",
-                "Please report this error to us by creating an issue on GitHub.",
+            human_errors::wrap_system(
                 e,
+                "Could not parse gitignore.io URL.",
+                &["Please report this error to us by creating an issue on GitHub."],
             )
         })?;
     let response = core.http_client().get(uri).await?;
 
     if !response.status().is_success() {
-        return Err(response.into());
+        return Err(response.to_human_error());
     }
 
-    let content = response.text().await?;
+    let content = response.text().await.to_human_error()?;
     Ok(content
         .split([',', '\n'])
         .map(|slice| String::from_utf8(Vec::from(slice)).unwrap_or_default())
@@ -58,7 +60,7 @@ pub async fn list(core: &Core) -> Result<Vec<String>, Error> {
 }
 
 #[tracing::instrument(err, skip(core))]
-pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
+pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, human_errors::Error> {
     if langs.is_empty() {
         return Ok("".to_string());
     }
@@ -69,26 +71,28 @@ pub async fn ignore(core: &Core, langs: Vec<&str>) -> Result<String, Error> {
     )
     .parse()
     .map_err(|e| {
-        errors::system_with_internal(
-            "Could not parse gitignore.io URL.",
-            "Please report this error to us by creating an issue on GitHub.",
+        human_errors::wrap_system(
             e,
+            "Could not parse gitignore.io URL.",
+            &["Please report this error to us by creating an issue on GitHub."],
         )
     })?;
     let response = core.http_client().get(uri).await?;
 
     if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(errors::user(
+        return Err(human_errors::user(
             "We could not find one of the languages you requested.",
-            "Check that the languages you've provided are all available using the 'gt ignore' command.",
+            &[
+                "Check that the languages you've provided are all available using the 'gt ignore' command.",
+            ],
         ));
     }
 
     if !response.status().is_success() {
-        return Err(response.into());
+        return Err(response.to_human_error());
     }
 
-    Ok(response.text().await?)
+    response.text().await.to_human_error()
 }
 
 struct GitIgnoreFileSection {
@@ -278,7 +282,7 @@ bin/
             Err(e) => {
                 assert_eq!(
                     e.message(),
-                    "Oh no! We could not find one of the languages you requested.\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command."
+                    "We could not find one of the languages you requested. (User error)\n\nTo try and fix this, you can:\n - Check that the languages you've provided are all available using the 'gt ignore' command."
                 );
             }
         }

@@ -1,5 +1,5 @@
 use super::release::*;
-use crate::{engine::Core, errors};
+use crate::engine::Core;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::io;
@@ -7,14 +7,14 @@ use std::path::PathBuf;
 
 #[async_trait::async_trait]
 pub trait Source: Default + std::fmt::Debug + Send + Sync {
-    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, errors::Error>;
+    async fn get_releases(&self, core: &Core) -> Result<Vec<Release>, human_errors::Error>;
     async fn get_binary<W: io::Write + Send>(
         &self,
         core: &Core,
         release: &Release,
         variant: &ReleaseVariant,
         into: &mut W,
-    ) -> Result<(), errors::Error>;
+    ) -> Result<(), human_errors::Error>;
 }
 
 #[derive(Default, Debug, Serialize, Deserialize, Eq, PartialEq)]

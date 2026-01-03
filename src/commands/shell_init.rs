@@ -1,5 +1,5 @@
 use super::*;
-use crate::completion::get_shells;
+use crate::{completion::get_shells, errors::HumanErrorResultExt};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -44,21 +44,23 @@ where {
         match matches.subcommand() {
             Some((name, matches)) => {
                 let shells = get_shells();
-                let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| errors::user(
-                    &format!("The shell '{name}' is not currently supported by Git-Tool."),
-                    "Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."
+                let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| human_errors::user(
+                    format!("The shell '{name}' is not currently supported by Git-Tool."),
+                    &["Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."],
                 ))?;
 
                 if matches.get_flag("full") {
-                    write!(output, "{}", shell.get_long_init())?;
+                    write!(output, "{}", shell.get_long_init()).to_human_error()?;
                 } else {
-                    write!(output, "{}", shell.get_short_init())?;
+                    write!(output, "{}", shell.get_short_init()).to_human_error()?;
                 }
             }
             _ => {
-                Err(errors::user(
+                Err(human_errors::user(
                     "You did not provide the name of the shell you want to configure.",
-                    "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent.",
+                    &[
+                        "Make sure you provide the shell name by running `git-tool shell-init powershell` or equivalent.",
+                    ],
                 ))?;
             }
         }

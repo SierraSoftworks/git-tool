@@ -1,5 +1,6 @@
 use super::Config;
 use gtmpl::Value;
+use human_errors::ResultExt;
 use std::fmt::Display;
 
 pub trait Target: Display {
@@ -14,25 +15,27 @@ pub struct TempTarget {
 }
 
 impl TempTarget {
-    pub fn new(keep: bool) -> Result<Self, crate::errors::Error> {
+    pub fn new(keep: bool) -> Result<Self, human_errors::Error> {
         let mut builder = tempfile::Builder::new();
         if keep {
             builder.disable_cleanup(true);
         }
 
         Ok(Self {
-            dir: builder.tempdir()?,
+            dir: builder.tempdir().wrap_user_err(
+                "Failed to create temporary directory.", &[
+                    "Ensure that your system has sufficient permissions and disk space to create temporary files.",
+                ])?,
         })
     }
 
-    pub fn close(self) -> Result<(), crate::errors::Error> {
+    pub fn close(self) -> Result<(), human_errors::Error> {
         let temp_path = self.dir.path().to_owned();
 
-        self.dir.close().map_err(|e| crate::errors::user_with_internal(
-          "Unable to remove the temporary directory, it is likely still in use by another application.",
-          &format!("Make sure that you close any open files and then delete '{}'", temp_path.display()),
-          e))?;
-        Ok(())
+        self.dir.close().wrap_user_err(
+            format!("Unable to remove the temporary directory at '{}', it is likely still in use by another application.", temp_path.display()),
+            &["Make sure that you close any open files and then try deleting the directory manually."],
+        )
     }
 
     #[cfg(test)]

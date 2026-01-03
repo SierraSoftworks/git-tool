@@ -1,11 +1,11 @@
-use super::{Error, system_with_internal};
-
-impl From<base64::DecodeError> for Error {
-    fn from(err: base64::DecodeError) -> Self {
-        system_with_internal(
+impl super::HumanErrorExt for base64::DecodeError {
+    fn to_human_error(self) -> human_errors::Error {
+        human_errors::wrap_system(
+            self,
             "We could not decode a base64 response correctly.",
-            "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
-            err,
+            &[
+                "Please read the internal error below and decide if there is something you can do to fix the problem, or report it to us on GitHub.",
+            ],
         )
     }
 }
