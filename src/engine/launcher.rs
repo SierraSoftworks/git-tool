@@ -107,11 +107,14 @@ impl TrueLauncher {
                 &["Please report this error to us on GitHub, along with information about your operating system and version of Git-Tool, so that we can investigate further."],
             ))?);
 
-        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
-        let mut sigterm =
-            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-        let mut sigquit = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())?;
-        let mut sighup = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?;
+        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?
+            .to_human_error()?;
+        let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .to_human_error()?;
+        let mut sigquit = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())
+            .to_human_error()?;
+        let mut sighup = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())
+            .to_human_error()?;
 
         loop {
             let sigint = sigint.recv().fuse();
@@ -124,22 +127,22 @@ impl TrueLauncher {
             tokio::select! {
                 _ = sigint => {
                     debug!("Forwarding SIGINT to child process.");
-                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGINT)?;
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGINT).to_human_error()?;
                 },
                 _ = sigterm => {
                     debug!("Forwarding SIGTERM to child process.");
-                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGTERM)?;
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGTERM).to_human_error()?;
                 },
                 _ = sigquit => {
                     debug!("Forwarding SIGQUIT to child process.");
-                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGQUIT)?;
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGQUIT).to_human_error()?;
                 },
                 _ = sighup => {
                     debug!("Forwarding SIGHUP to child process.");
-                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGHUP)?;
+                    nix::sys::signal::kill(pid, nix::sys::signal::Signal::SIGHUP).to_human_error()?;
                 },
                 status = child.wait() => {
-                    return Ok(status?.code().unwrap_or_default())
+                    return Ok(status.to_human_error()?.code().unwrap_or_default())
                 }
             }
         }
