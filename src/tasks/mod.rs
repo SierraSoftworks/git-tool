@@ -96,8 +96,7 @@ impl Task for TestTask {
             true => Err(human_errors::system(
                 "Mock Error",
                 &["Configure the mock to not throw an error"],
-            )
-            .into()),
+            )),
             false => Ok(()),
         }
     }
@@ -115,8 +114,7 @@ impl Task for TestTask {
             true => Err(human_errors::system(
                 "Mock Error",
                 &["Configure the mock to not throw an error"],
-            )
-            .into()),
+            )),
             false => Ok(()),
         }
     }

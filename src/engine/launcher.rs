@@ -15,6 +15,7 @@ use tokio::process::Command;
 
 #[async_trait::async_trait]
 #[cfg_attr(test, automock)]
+#[allow(unused_parens)]
 pub trait Launcher: Send + Sync {
     async fn run(
         &self,
