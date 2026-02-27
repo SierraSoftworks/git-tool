@@ -40,7 +40,7 @@
         nativeBuildInputs = [pkgs.pkg-config pkgs.protobuf pkgs.gitMinimal];
 
         buildInputs = [ pkgs.openssl ]
-        ++ lib.optionals stdenv.isDarwin [pkgs.libiconv pkgs.darwin.apple_sdk.frameworks.Security pkgs.darwin.apple_sdk.frameworks.SystemConfiguration]
+        ++ lib.optionals stdenv.isDarwin [pkgs.libiconv]
         ++ lib.optionals stdenv.isLinux [pkgs.dbus];
 
         cargoArtifacts = craneLib.buildDepsOnly {
