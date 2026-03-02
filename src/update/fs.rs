@@ -46,6 +46,7 @@ impl FileSystem for DefaultFileSystem {
                         ),
                         &[
                             "This probably means that Git-Tool is still running in another terminal. Please exit any running Git-Tool processes (including shells launched by it) before trying again.",
+                            "Make sure that you have write permissions on the application file, or try running Git-Tool with elevated permissions (e.g. 'sudo git-tool update' on Unix-like systems).",
                         ],
                     ));
                 }
@@ -77,6 +78,7 @@ impl FileSystem for DefaultFileSystem {
                         ),
                         &[
                             "This probably means that Git-Tool is still running in another terminal. Please exit any running Git-Tool processes (including shells launched by it) before trying again.",
+                            "Make sure that you have write permissions on the application file, or try running Git-Tool with elevated permissions (e.g. 'sudo git-tool update' on Unix-like systems).",
                         ],
                     ));
                 }
