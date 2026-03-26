@@ -18,7 +18,7 @@ clap = { version = "4.5.54", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
-http = "0.2"
+http = "1"
 human-errors = "0.2.3"
 inventory = "0.3.21"
 itertools = "0.14"
@@ -26,8 +26,8 @@ keyring = { version = "3.6.3", optional = true, features = ["apple-native", "win
 lazy_static = "1.5"
 nix = { version = "0.30.1", features = ["process", "signal"] }
 rpassword = { version = "7.4", optional = true }
-reqwest = { version = "0.12.28", default-features = false, features = [
-    "rustls-tls",
+reqwest = { version = "0.13", default-features = false, features = [
+    "rustls",
     "json",
     "stream",
 ] }
@@ -54,7 +54,7 @@ shellexpand = "3"
 [dev-dependencies]
 mockall = "0.14.0"
 rstest = "0.26"
-sentry = { version = "0.46", default-features = false, features = [
+sentry = { version = "0.47", default-features = false, features = [
     "reqwest",
     "rustls",
     "log",
