@@ -4,10 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    crane.url = "github:ipetkov/crane";
 
     flake-utils.url = "github:numtide/flake-utils";
 
@@ -40,8 +37,8 @@
         nativeBuildInputs = [pkgs.pkg-config pkgs.protobuf pkgs.gitMinimal];
 
         buildInputs = [ pkgs.openssl ]
-        ++ lib.optionals stdenv.isDarwin [pkgs.libiconv]
-        ++ lib.optionals stdenv.isLinux [pkgs.dbus];
+        ++ lib.optionals stdenv.hostPlatform.isDarwin [pkgs.libiconv]
+        ++ lib.optionals stdenv.hostPlatform.isLinux [pkgs.dbus];
 
         cargoArtifacts = craneLib.buildDepsOnly {
           inherit src nativeBuildInputs buildInputs;
