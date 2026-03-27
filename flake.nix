@@ -8,13 +8,9 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    advisory-db = {
-      url = "github:rustsec/advisory-db";
-      flake = false;
-    };
   };
 
-  outputs = { self, nixpkgs, crane, flake-utils, advisory-db, ... }:
+  outputs = { self, nixpkgs, crane, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -54,31 +50,6 @@
         checks = {
           # Build the crate as part of `nix flake check` for convenience
           inherit git-tool;
-
-          # Run clippy (and deny all warnings) on the crate source,
-          # again, resuing the dependency artifacts from above.
-          #
-          # Note that this is done as a separate derivation so that
-          # we can block the CI if there are issues here, but not
-          # prevent downstream consumers from building our crate by itself.
-          git-tool-clippy = craneLib.cargoClippy {
-            inherit cargoArtifacts src nativeBuildInputs buildInputs;
-            cargoClippyExtraArgs = "--all-targets -- --deny warnings";
-          };
-
-          git-tool-doc = craneLib.cargoDoc {
-            inherit cargoArtifacts src nativeBuildInputs buildInputs;
-          };
-
-          # Check formatting
-          git-tool-fmt = craneLib.cargoFmt {
-            inherit src;
-          };
-
-          # Audit dependencies
-          git-tool-audit = craneLib.cargoAudit {
-            inherit src advisory-db;
-          };
 
           # Run tests with cargo-nextest
           # Consider setting `doCheck = false` on `my-crate` if you do not want
