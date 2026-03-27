@@ -163,7 +163,6 @@ export default defineComponent({
 .release-button {
   background: none;
   border-radius: 5px;
-  background: var();
   color: var(--vp-c-accent-bg);
   border: 1px solid var(--vp-c-accent-bg);
   font-size: 80%;
