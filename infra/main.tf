@@ -29,6 +29,11 @@ variable "tags" {
   default     = {}
 }
 
+variable "cloudflare_account_id" {
+  description = "The Cloudflare account ID used when looking up DNS zones."
+  type        = string
+}
+
 variable "location_override" {
   description = "The location into which the website itself should be deployed, if different to the default."
   type        = string
