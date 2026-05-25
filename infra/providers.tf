@@ -34,6 +34,10 @@ terraform {
   }
 }
 
+provider "cloudflare" {}
+
+
+
 provider "azurerm" {
   features {}
 
@@ -46,10 +50,6 @@ provider "azuread" {
   // NOTE: You can retrieve this secret using `op read op://epfkgzb2bz4msye2xrhffiz3se/jrlwg64m56hkbkbfvgljfkwcfy/Azure/client_secret`
   tenant_id = var.azure_tenant
 }
-
-provider "cloudflare" {}
-
-
 
 variable "azure_subscription" {
 
