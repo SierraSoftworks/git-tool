@@ -33,6 +33,7 @@ export default defineUserConfig({
         ["script", {
             defer: "",
             src: "https://analytics.sierrasoftworks.com/script.js",
+            "data-website-id": "a816dd16-8bf4-4433-b04f-9d73a6751f84"
         }],
     ],
 
