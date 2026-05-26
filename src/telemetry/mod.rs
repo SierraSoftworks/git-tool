@@ -33,9 +33,13 @@ pub fn setup() -> tracing_batteries::Session {
                 "vdf1xcENEju8V0d8ffQq2Y",
             ),
         )
-        .with_battery(tracing_batteries::Medama::new(
-            "https://analytics.sierrasoftworks.com",
-        ))
+        .with_battery(
+            tracing_batteries::Umami::new(
+                "https://analytics.sierrasoftworks.com",
+                "a816dd16-8bf4-4433-b04f-9d73a6751f84",
+            )
+            .with_initial_page("/.app/"),
+        )
 }
 
 #[cfg(not(feature = "telemetry"))]

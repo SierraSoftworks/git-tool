@@ -170,7 +170,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
 
     #[cfg(feature = "telemetry")]
     let _page = session.record_new_page(format!(
-        "/{}",
+        "/.app/{}",
         matches.subcommand_name().unwrap_or_default()
     ));
 
