@@ -987,7 +987,7 @@ dependencies = [
  "dirs",
  "futures",
  "gtmpl",
- "http 0.2.12",
+ "http 1.4.1",
  "human-errors",
  "inventory",
  "itertools",
