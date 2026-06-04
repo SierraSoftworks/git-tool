@@ -197,7 +197,7 @@ impl GitHubSource {
         let resp = self.get(core, uri).await?;
 
         match resp.status() {
-            http::StatusCode::OK => {
+            reqwest::StatusCode::OK => {
                 let mut stream = resp.bytes_stream();
 
                 while let Some(buf) = stream.next().await {
