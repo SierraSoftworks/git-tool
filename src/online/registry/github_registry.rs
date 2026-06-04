@@ -54,7 +54,7 @@ impl Registry for GitHubRegistry {
         let resp = self.get(core, "https://api.github.com/repos/SierraSoftworks/git-tool/git/trees/main?recursive=true").await?;
 
         match resp.status() {
-            http::StatusCode::OK => {
+            reqwest::StatusCode::OK => {
                 let tree: GitHubTree = resp.json().await.to_human_error()?;
 
                 let mut entries: Vec<String> = Vec::new();
@@ -76,7 +76,7 @@ impl Registry for GitHubRegistry {
 
                 Ok(entries)
             }
-            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
+            reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(human_errors::wrap_user(
                     inner_error,
@@ -111,7 +111,7 @@ impl Registry for GitHubRegistry {
             .await?;
 
         match resp.status() {
-            http::StatusCode::OK => {
+            reqwest::StatusCode::OK => {
                 let body = resp.bytes().await.to_human_error()?;
                 let entity = serde_yaml::from_slice(&body).wrap_system_err(
                     format!("Could not parse /registry/{id}.yaml from the Git-Tool registry."),
@@ -120,13 +120,13 @@ impl Registry for GitHubRegistry {
                 debug!("{}", entity);
                 Ok(entity)
             }
-            http::StatusCode::NOT_FOUND => Err(human_errors::user(
+            reqwest::StatusCode::NOT_FOUND => Err(human_errors::user(
                 format!("Could not find {id} in the Git-Tool registry."),
                 &[
                     "Please make sure that you've selected a configuration entry which exists in the registry. You can check this with `git-tool config list`.",
                 ],
             )),
-            http::StatusCode::TOO_MANY_REQUESTS | http::StatusCode::FORBIDDEN => {
+            reqwest::StatusCode::TOO_MANY_REQUESTS | reqwest::StatusCode::FORBIDDEN => {
                 let inner_error = errors::reqwest::ResponseError::with_body(resp).await;
                 Err(human_errors::wrap_user(
                     inner_error,

@@ -1,17 +1,6 @@
-use http::{StatusCode, uri::InvalidUri};
+use reqwest::StatusCode;
+use reqwest::header::InvalidHeaderValue;
 use std::fmt::Debug;
-
-impl super::HumanErrorExt for InvalidUri {
-    fn to_human_error(self) -> human_errors::Error {
-        human_errors::wrap_user(
-            self,
-            "We could not parse the URL.",
-            &[
-                "Please make sure that the URLs you are using are well formed and try this operation again.",
-            ],
-        )
-    }
-}
 
 impl super::HumanErrorExt for reqwest::Error {
     fn to_human_error(self) -> human_errors::Error {
@@ -78,7 +67,7 @@ impl super::HumanErrorExt for reqwest::Response {
     }
 }
 
-impl super::HumanErrorExt for http::header::InvalidHeaderValue {
+impl super::HumanErrorExt for InvalidHeaderValue {
     fn to_human_error(self) -> human_errors::Error {
         human_errors::wrap_system(
             self,
