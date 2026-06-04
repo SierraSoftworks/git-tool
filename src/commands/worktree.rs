@@ -66,55 +66,56 @@ If the base repository has not been cloned yet, it will be cloned automatically.
 
         // Resolve the base repository, the branch, and the requested application
         // following a context-first strategy.
-        let (repo, branch, app_arg): (Repo, Option<String>, Option<String>) =
-            if let Ok(current) = current_repo {
-                match provided.as_slice() {
-                    // gt w <repo> <branch> <app>
-                    [repo, branch, app] => (
-                        self.resolve_repo(core, repo)?,
-                        Some((*branch).clone()),
-                        Some((*app).clone()),
-                    ),
-                    // gt w <value> [second]
-                    [value, rest @ ..] => {
-                        let maybe_second = rest.first().copied();
-                        let second_is_app = maybe_second
-                            .map(|v| core.config().get_app(v).is_some())
-                            .unwrap_or(false);
+        let (repo, branch, app_arg): (Repo, Option<String>, Option<String>) = if let Ok(current) =
+            current_repo
+        {
+            match provided.as_slice() {
+                // gt w <repo> <branch> <app>
+                [repo, branch, app] => (
+                    self.resolve_repo(core, repo)?,
+                    Some((*branch).clone()),
+                    Some((*app).clone()),
+                ),
+                // gt w <value> [second]
+                [value, rest @ ..] => {
+                    let maybe_second = rest.first().copied();
+                    let second_is_app = maybe_second
+                        .map(|v| core.config().get_app(v).is_some())
+                        .unwrap_or(false);
 
-                        if !second_is_app {
-                            if let Ok(repo) = self.resolve_repo(core, value) {
-                                // gt w <repo> [branch]
-                                (repo, maybe_second.cloned(), None)
-                            } else {
-                                // gt w <branch> [app]
-                                (current, Some((*value).clone()), maybe_second.cloned())
-                            }
+                    if !second_is_app {
+                        if let Ok(repo) = self.resolve_repo(core, value) {
+                            // gt w <repo> [branch]
+                            (repo, maybe_second.cloned(), None)
                         } else {
-                            // gt w <branch> <app>
+                            // gt w <branch> [app]
                             (current, Some((*value).clone()), maybe_second.cloned())
                         }
-                    }
-                    // gt w (no arguments) -> list worktrees for the current repo
-                    [] => (current, None, None),
-                }
-            } else {
-                match provided.as_slice() {
-                    [repo, rest @ ..] => (
-                        self.resolve_repo(core, repo)?,
-                        rest.first().map(|v| (*v).clone()),
-                        rest.get(1).map(|v| (*v).clone()),
-                    ),
-                    [] => {
-                        return Err(human_errors::user(
-                            "You did not specify the name of a repository to use.",
-                            &[
-                                "Remember to specify a repository name like this: 'git-tool worktree github.com/sierrasoftworks/git-tool feature/example'.",
-                            ],
-                        ));
+                    } else {
+                        // gt w <branch> <app>
+                        (current, Some((*value).clone()), maybe_second.cloned())
                     }
                 }
-            };
+                // gt w (no arguments) -> list worktrees for the current repo
+                [] => (current, None, None),
+            }
+        } else {
+            match provided.as_slice() {
+                [repo, rest @ ..] => (
+                    self.resolve_repo(core, repo)?,
+                    rest.first().map(|v| (*v).clone()),
+                    rest.get(1).map(|v| (*v).clone()),
+                ),
+                [] => {
+                    return Err(human_errors::user(
+                        "You did not specify the name of a repository to use.",
+                        &[
+                            "Remember to specify a repository name like this: 'git-tool worktree github.com/sierrasoftworks/git-tool feature/example'.",
+                        ],
+                    ));
+                }
+            }
+        };
 
         // Without a branch we list the existing worktrees for the repository.
         let branch = match branch {
@@ -126,7 +127,9 @@ If the base repository has not been cloned yet, it will be cloned automatically.
                             "The repository '{}' has not been cloned yet, so it has no worktrees.",
                             repo.get_full_name()
                         ),
-                        &["Specify a branch name to create a worktree, like this: 'git-tool worktree feature/example'."],
+                        &[
+                            "Specify a branch name to create a worktree, like this: 'git-tool worktree feature/example'.",
+                        ],
                     ));
                 }
 
@@ -171,7 +174,9 @@ If the base repository has not been cloned yet, it will be cloned automatically.
 
         // Ensure the base repository has been cloned before creating a worktree.
         if !repo.exists() {
-            sequence![GitClone::default()].apply_repo(core, &repo).await?;
+            sequence![GitClone::default()]
+                .apply_repo(core, &repo)
+                .await?;
         }
 
         let worktree_path = core
@@ -223,7 +228,10 @@ If the base repository has not been cloned yet, it will be cloned automatically.
         Ok(result?)
     }
 
-    #[tracing::instrument(name = "gt complete -- gt worktree", skip(self, core, completer, _matches))]
+    #[tracing::instrument(
+        name = "gt complete -- gt worktree",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--no-create");
         completer.offer("--base");
@@ -582,7 +590,9 @@ mod tests {
         let console = crate::console::mock();
 
         let cfg = Config::for_dev_directory(temp.path());
-        let core = Core::builder().with_config(cfg).with_console(console.clone());
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone());
         let (core, repo) = setup_current_repo(core, &temp).await;
 
         let core = core
@@ -607,12 +617,9 @@ mod tests {
 
         // 'feature/existing' already exists, so the requested --base should be
         // ignored and the user warned about it.
-        let args = cmd.app().get_matches_from(vec![
-            "worktree",
-            "feature/existing",
-            "--base",
-            "develop",
-        ]);
+        let args =
+            cmd.app()
+                .get_matches_from(vec!["worktree", "feature/existing", "--base", "develop"]);
         cmd.run(&core, &args).await.unwrap();
 
         assert!(
@@ -628,7 +635,9 @@ mod tests {
         let console = crate::console::mock();
 
         let cfg = Config::for_dev_directory(temp.path());
-        let core = Core::builder().with_config(cfg).with_console(console.clone());
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_console(console.clone());
         let (core, repo) = setup_current_repo(core, &temp).await;
         let core = core.build();
 
@@ -647,4 +656,3 @@ mod tests {
         );
     }
 }
-
