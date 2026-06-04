@@ -78,15 +78,20 @@ impl CommandRunnable for ConfigCommand {
 
             .subcommand(clap::Command::new("path")
                 .version("1.0")
-                .about("manage the path used to store your repositories and scratchpads")
-                .long_about("Set the folder used to store the repositories managed by Git-Tool, or your scratchpads.")
+                .about("manage the path used to store your repositories, scratchpads and worktrees")
+                .long_about("Set the folder used to store the repositories managed by Git-Tool, your scratchpads, or your worktrees.")
                 .arg(Arg::new("path")
-                    .help("the path to use for storing repositories and scratchpads")
+                    .help("the path to use for storing repositories, scratchpads or worktrees")
                     .index(1))
                 .arg(Arg::new("scratch")
                     .long("scratch")
                     .short('s')
                     .help("configure the scratchpads path instead of the repositories path")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("worktree")
+                    .long("worktree")
+                    .short('w')
+                    .help("configure the worktrees path instead of the repositories path")
                     .action(clap::ArgAction::SetTrue)))
     }
 
@@ -231,6 +236,26 @@ impl CommandRunnable for ConfigCommand {
                     }
                 }
             }
+            Some(("path", args)) if args.get_flag("worktree") => {
+                match args.get_one::<String>("path") {
+                    Some(path) => {
+                        cfg = core.config().with_worktree_directory(path);
+
+                        true
+                    }
+
+                    None => {
+                        writeln!(
+                            core.output(),
+                            "{}",
+                            core.config().get_worktree_directory().display()
+                        )
+                        .to_human_error()?;
+
+                        false
+                    }
+                }
+            }
             Some(("path", args)) => match args.get_one::<String>("path") {
                 Some(path) => {
                     cfg = cfg.with_dev_directory(path);
@@ -307,6 +332,9 @@ impl CommandRunnable for ConfigCommand {
             Some(("path", args)) => {
                 if !args.get_flag("scratch") {
                     completer.offer("--scratch");
+                }
+                if !args.get_flag("worktree") {
+                    completer.offer("--worktree");
                 }
             }
             _ => {

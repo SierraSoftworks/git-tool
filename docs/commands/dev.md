@@ -35,6 +35,77 @@ gt sw feature/demo
 gt b -N feature/demo
 ```
 
+## worktree <Badge text="v3.10+"/>
+If you find yourself wanting to work on several branches of a repository at the same time,
+git's [worktree](https://git-scm.com/docs/git-worktree) feature is invaluable. The `gt worktree`
+command brings the same ergonomics you get from `gt open` and `gt switch` to worktrees: it
+prepares (and, if necessary, clones) the repository, creates a worktree for the branch you've
+asked for, and then launches your chosen application inside it.
+
+Worktrees are stored within the [`worktrees` directory](../config/README.md#worktrees) configured in
+your config file, which defaults to a `worktrees` folder inside your development directory. Each
+worktree is placed in its own folder named after the repository and branch, with a short hash of the
+repository's full name appended to keep repositories with the same short name from colliding.
+
+::: tip
+You can run `gt worktree` from anywhere by specifying a repository (`gt w <repo> <branch> [app]`),
+or run it from within a repository and omit the repository name to operate on the current repo
+(`gt w <branch> [app]`), just like `gt switch`.
+
+If you don't specify a branch, Git-Tool will list the existing worktrees for the repository. The
+primary working tree is labelled `[primary]`, and worktrees with a detached `HEAD` are shown with
+their current commit.
+:::
+
+::: warning Windows long paths
+Worktree directories are nested inside your `worktrees` folder and include the repository name,
+branch name and a hash suffix, so the resulting paths can become quite long. On Windows you may
+run into the default 260 character path limit (`MAX_PATH`). If you do, either choose a shorter
+`worktrees` directory (for example `C:\wt`) or
+[enable long path support](https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation#enable-long-paths-in-windows-10-version-1607-and-later)
+in Windows and git (`git config --global core.longpaths true`).
+:::
+
+::: warning
+Using `--rm` will only remove the worktree if all of your changes have been committed. If you have
+uncommitted changes, Git-Tool will leave the worktree in place and let you know so that you don't
+lose any work — commit or discard your changes and then remove it with `git worktree remove <path>`.
+
+Branches created for throwaway worktrees are left behind on purpose; use [`gt prune`](#prune)
+to clean them up once they've been merged.
+:::
+
+#### Aliases
+ - `gt worktree`
+ - `gt w`
+ - `gt wt`
+
+#### Options
+ - `-N`, `--no-create` prevents the branch from being created if it doesn't exist already.
+ - `--base` controls the branch that a newly created worktree branch is based on.
+ - `--rm` removes the worktree once the launched application exits.
+
+#### Example
+``` powershell
+# Create (or open) a worktree for the feat/forgejo branch of github-backup
+gt w github-backup feat/forgejo
+
+# Open the feat/forgejo worktree in VS Code
+gt w github-backup feat/forgejo code
+
+# Open a worktree for the current repository's feature/demo branch
+gt w feature/demo
+
+# Base a new worktree branch on origin/main
+gt w github-backup feat/forgejo --base origin/main
+
+# Open a throwaway worktree that is removed once you exit the shell
+gt w github-backup feat/forgejo --rm
+
+# List the existing worktrees for a repository
+gt w github-backup
+```
+
 ## ignore <Badge text="v1.0+"/>
 Setting up your `.gitignore` files and keeping them updated can be a bit
 of a faff. It takes time, it doesn't add much core value and we often forget

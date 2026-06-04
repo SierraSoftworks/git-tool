@@ -8,6 +8,7 @@ mod fetch;
 mod init;
 mod remote;
 mod switch;
+mod worktree;
 
 #[cfg(test)]
 mod config;
@@ -29,6 +30,8 @@ pub use init::git_init;
 #[allow(unused_imports)]
 pub use remote::{git_remote_add, git_remote_list, git_remote_rename, git_remote_set_url};
 pub use switch::git_switch;
+#[allow(unused_imports)]
+pub use worktree::{Worktree, git_worktree_add, git_worktree_list, git_worktree_remove};
 
 #[cfg(test)]
 pub use config::git_config_set;
