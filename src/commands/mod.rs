@@ -32,6 +32,7 @@ mod shell_init;
 mod switch;
 mod temp;
 mod update;
+mod worktree;
 inventory::collect!(Command);
 
 #[macro_export]

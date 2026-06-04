@@ -23,6 +23,12 @@ pub struct Config {
     dev_directory: PathBuf,
     #[serde(default, rename = "scratchpads")]
     scratch_directory: Option<PathBuf>,
+    #[serde(
+        default,
+        rename = "worktrees",
+        deserialize_with = "deserialize_optional_expanded_path"
+    )]
+    worktree_directory: Option<PathBuf>,
 
     #[serde(default)]
     services: Vec<Arc<service::Service>>,
@@ -67,6 +73,12 @@ impl Config {
         into
     }
 
+    pub fn with_worktree_directory<P: Into<PathBuf>>(&self, worktree_dir: P) -> Self {
+        let mut into = self.clone();
+        into.worktree_directory = Some(worktree_dir.into());
+        into
+    }
+
     pub fn with_feature_flag(&self, flag: &str, enabled: bool) -> Self {
         let mut into = self.clone();
         into.features = self.features.to_builder().with(flag, enabled).build();
@@ -85,6 +97,9 @@ impl Config {
         }
         if let Some(path) = from.scratch_directory {
             into.scratch_directory = Some(path)
+        }
+        if let Some(path) = from.worktree_directory {
+            into.worktree_directory = Some(path)
         }
         if !from.services.is_empty() {
             into.services.clone_from(&from.services);
@@ -166,6 +181,7 @@ impl Config {
             config_file: None,
             dev_directory: dir.to_path_buf(),
             scratch_directory: None,
+            worktree_directory: None,
             features: features::Features::builder().with_defaults().build(),
             ..Default::default()
         }
@@ -271,6 +287,13 @@ impl Config {
         }
     }
 
+    pub fn get_worktree_directory(&self) -> PathBuf {
+        match self.worktree_directory.clone() {
+            Some(dir) => dir,
+            None => self.get_dev_directory().join("worktrees"),
+        }
+    }
+
     pub fn get_apps(&self) -> core::slice::Iter<'_, Arc<app::App>> {
         self.apps.iter()
     }
@@ -366,6 +389,14 @@ where
     Ok(expand_path(s))
 }
 
+fn deserialize_optional_expanded_path<'de, D>(deserializer: D) -> Result<Option<PathBuf>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = Option::<String>::deserialize(deserializer)?;
+    Ok(s.map(expand_path))
+}
+
 impl Default for Config {
     fn default() -> Self {
         let dev_dir = match std::env::var("DEV_DIRECTORY").ok() {
@@ -418,6 +449,7 @@ impl Default for Config {
             config_file: Self::default_path(),
             dev_directory: dev_dir,
             scratch_directory: None,
+            worktree_directory: None,
             apps: vec![
                 Arc::new(default_shell),
             ],
@@ -486,6 +518,10 @@ mod tests {
                     cfg.get_scratch_directory(),
                     PathBuf::from("/test/dev/scratch")
                 );
+                assert_eq!(
+                    cfg.get_worktree_directory(),
+                    PathBuf::from("/test/dev/worktrees")
+                );
 
                 match cfg.get_app("shell") {
                     Some(app) => {
@@ -493,6 +529,26 @@ mod tests {
                     }
                     _ => panic!("expected that the shell app would be registered"),
                 }
+            }
+            Err(e) => panic!("{}", e.message()),
+        }
+    }
+
+    #[test]
+    fn load_from_string_with_worktreedir() {
+        match Config::from_str("directory: /test/dev\nworktrees: /test/worktrees") {
+            Ok(cfg) => {
+                assert_eq!(cfg.get_dev_directory(), PathBuf::from("/test/dev"));
+                assert_eq!(
+                    cfg.get_worktree_directory(),
+                    PathBuf::from("/test/worktrees")
+                );
+
+                let updated = cfg.with_worktree_directory("/other/worktrees");
+                assert_eq!(
+                    updated.get_worktree_directory(),
+                    PathBuf::from("/other/worktrees")
+                );
             }
             Err(e) => panic!("{}", e.message()),
         }

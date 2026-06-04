@@ -16,13 +16,14 @@ gt config
 ```
 
 ### config path <Badge text="v3.4+"/>
-Git-Tool stores repositories and scratchpads in directories you specify in your
+Git-Tool stores repositories, scratchpads and worktrees in directories you specify in your
 configuration file. The `gt config path` command allows you to quickly view
 and modify these directories, simplifying setup (especially when using the default
 configuration file location).
 
 #### Options
  - `--scratch` will show or change the scratchpad directory instead of the repository directory.
+ - `--worktree` <Badge text="v3.10+"/> will show or change the [worktree directory](../config/README.md#worktrees) instead of the repository directory.
 
 #### Example
 ```powershell
@@ -37,6 +38,12 @@ gt config path --scratch
 
 # Set the scratchpad path to a new location
 gt config path --scratch /path/to/scratchpads
+
+# Show the current worktree path
+gt config path --worktree
+
+# Set the worktree path to a new location
+gt config path --worktree /path/to/worktrees
 ```
 
 ### config list <Badge text="v1.5+"/>

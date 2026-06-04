@@ -97,6 +97,38 @@ scratchpads: "/Users/bpannell/scratch"
 
 :::
 
+## Worktrees <Badge text="v3.10+"/>
+
+When using Git-Tool's [worktree](../commands/dev.md#worktree) feature, you can decide where the
+git worktrees it creates should be stored. This is useful if you'd like to keep your worktrees
+separate from your primary repository checkouts.
+
+::: tip
+If you don't specify a `worktrees` directory, Git-Tool will use a `worktrees` folder within your
+development directory to hold your worktrees.
+:::
+
+::: code-tabs
+@tab Windows
+
+```yaml
+worktrees: "C:\\Users\\bpannell\\worktrees"
+```
+
+@tab Linux
+
+```yaml
+worktrees: "/home/bpannell/worktrees"
+```
+
+@tab MacOS
+
+```yaml
+worktrees: "/Users/bpannell/worktrees"
+```
+
+:::
+
 ## Example Configuration
 
 Here is a short example configuration file which you can use as the basis for your own.
