@@ -1,0 +1,4 @@
+worktree:
+  symlinks:
+    - docs/node_modules
+    - target

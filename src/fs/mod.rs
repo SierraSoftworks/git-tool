@@ -93,6 +93,68 @@ pub fn get_child_directories(
     }))
 }
 
+/// Creates a filesystem link at `link` which points to `original`.
+///
+/// On Unix-like systems this creates a symbolic link. On Windows it creates a
+/// directory junction (which does not require elevated privileges or developer
+/// mode), and so is only suitable for linking directories on that platform.
+///
+/// The `original` path is expected to exist; if it does not, the link is not
+/// created and an error is returned.
+#[tracing::instrument(err)]
+pub fn create_link(original: &Path, link: &Path) -> Result<(), human_errors::Error> {
+    if !original.exists() {
+        return Err(human_errors::user(
+            format!(
+                "Could not create a link to '{}' because it does not exist.",
+                original.display()
+            ),
+            &["Make sure that the path you are linking to exists before trying again."],
+        ));
+    }
+
+    if let Some(parent) = link.parent()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            human_errors::wrap_system(
+                e,
+                format!(
+                    "Could not create the parent directory '{}' for the link due to an OS-level error.",
+                    parent.display()
+                ),
+                &["Check that Git-Tool has permission to write to this directory."],
+            )
+        })?;
+    }
+
+    create_link_native(original, link).map_err(|e| {
+        human_errors::wrap_system(
+            e,
+            format!(
+                "Could not create a link at '{}' pointing to '{}' due to an OS-level error.",
+                link.display(),
+                original.display()
+            ),
+            &["Check that Git-Tool has permission to create links in this location."],
+        )
+    })
+}
+
+#[cfg(unix)]
+fn create_link_native(original: &Path, link: &Path) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(original, link)
+}
+
+#[cfg(windows)]
+fn create_link_native(original: &Path, link: &Path) -> std::io::Result<()> {
+    if original.is_dir() {
+        junction::create(original, link)
+    } else {
+        std::os::windows::fs::symlink_file(original, link)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,5 +243,31 @@ mod tests {
             .sorted()
             .collect::<Vec<_>>();
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_create_link_directory() {
+        let temp = tempfile::tempdir().unwrap();
+        let original = temp.path().join("original");
+        std::fs::create_dir_all(&original).unwrap();
+        std::fs::write(original.join("marker.txt"), "hello").unwrap();
+
+        let link = temp.path().join("linked");
+        create_link(&original, &link).expect("the link should be created");
+
+        assert!(link.exists());
+        assert_eq!(
+            std::fs::read_to_string(link.join("marker.txt")).unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn test_create_link_missing_original() {
+        let temp = tempfile::tempdir().unwrap();
+        let original = temp.path().join("does-not-exist");
+        let link = temp.path().join("linked");
+
+        assert!(create_link(&original, &link).is_err());
     }
 }

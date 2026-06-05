@@ -68,10 +68,15 @@ and launches the specified application in that folder. When the application exit
 will be automatically deleted.
 :::
 
+#### Aliases
+ - `gt temp`
+ - `gt tmp`
+ - `gt t` <Badge text="removed in v3.11" type="danger" />
+
 #### Example
 ```powershell
 # Open a temporary scratchpad in your default app
-gt t
+gt tmp
 
 # Open a temporary scratchpad in PowerShell
 gt temp pwsh

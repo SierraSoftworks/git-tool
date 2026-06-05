@@ -45,7 +45,7 @@ can use `gtconfig add apps/bash` to configure `bash` as an available app.
 
 - `gt open`
 - `gt o`
-- `gt run`
+- `gt run` <Badge text="removed in v3.11" type="danger" />
 
 #### Options
 
