@@ -83,17 +83,21 @@ If the base repository has not been cloned yet, it will be cloned automatically.
                         .map(|v| core.config().get_app(v).is_some())
                         .unwrap_or(false);
 
-                    if !second_is_app {
-                        if let Ok(repo) = self.resolve_repo(core, value) {
-                            // gt w <repo> [branch]
-                            (repo, maybe_second.cloned(), None)
-                        } else {
-                            // gt w <branch> [app]
-                            (current, Some((*value).clone()), maybe_second.cloned())
-                        }
-                    } else {
-                        // gt w <branch> <app>
-                        (current, Some((*value).clone()), maybe_second.cloned())
+                    match maybe_second {
+                        // gt w <repo> <branch>: two non-app arguments are an
+                        // unambiguous indication that the first names a
+                        // repository and the second names the branch.
+                        Some(second) if !second_is_app => (
+                            self.resolve_repo(core, value)?,
+                            Some((*second).clone()),
+                            None,
+                        ),
+                        // gt w <branch> <app>: the branch takes precedence and
+                        // the second argument selects the application.
+                        Some(second) => (current, Some((*value).clone()), Some((*second).clone())),
+                        // gt w <branch>: a single argument is always treated as
+                        // a branch within the current repository.
+                        None => (current, Some((*value).clone()), None),
                     }
                 }
                 // gt w (no arguments) -> list worktrees for the current repo
@@ -761,6 +765,81 @@ mod tests {
         assert!(
             console.to_string().contains("ignoring '--base'"),
             "a warning should be printed when --base is ignored for an existing branch"
+        );
+    }
+
+    #[tokio::test]
+    async fn run_in_repo_prefers_branch_over_repo_for_single_argument() {
+        let cmd = WorktreeCommand {};
+        let temp = tempdir().unwrap();
+
+        let cfg = Config::for_dev_directory(temp.path());
+        let core = Core::builder().with_config(cfg);
+
+        let repo = Repo::new(
+            "gh:sierrasoftworks/test-worktree-command",
+            temp.path().join("repo"),
+        );
+
+        // The resolver reports the current repository and, crucially, will
+        // happily resolve the single argument as a repository name. A lone
+        // argument must still be treated as a branch within the current repo.
+        let repo_path = repo.get_path();
+        let other_repo_path = temp.path().join("other");
+        let core = core.with_mock_resolver(move |mock| {
+            let repo_path = repo_path.clone();
+            mock.expect_get_current_repo().returning(move || {
+                Ok(Repo::new(
+                    "gh:sierrasoftworks/test-worktree-command",
+                    repo_path.clone(),
+                ))
+            });
+
+            let other_repo_path = other_repo_path.clone();
+            mock.expect_get_best_repo().returning(move |_| {
+                Ok(Repo::new(
+                    "gh:sierrasoftworks/feature",
+                    other_repo_path.clone(),
+                ))
+            });
+        });
+
+        let expected_path = temp
+            .path()
+            .join("worktrees")
+            .join(WorktreeCommand::worktree_dir_name(&repo, "feature"));
+        let expected_for_assert = expected_path.clone();
+
+        let core = core
+            .with_mock_launcher(move |mock| {
+                let expected_path = expected_path.clone();
+                mock.expect_run()
+                    .withf(move |app, target| {
+                        // The worktree must be created inside the current repo,
+                        // not the repository the argument resolves to.
+                        app.get_name() == "shell" && target.get_path() == expected_path
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        sequence!(GitInit {}, GitCheckout { branch: "main" })
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
+        commit_initial(&repo).await;
+
+        let args = cmd.app().get_matches_from(vec!["worktree", "feature"]);
+        let status = cmd.run(&core, &args).await.unwrap();
+
+        assert_eq!(status, 0, "the launcher status code should be forwarded");
+        assert!(
+            expected_for_assert.join(".git").exists(),
+            "a worktree for the 'feature' branch should have been created in the current repo"
+        );
+        assert_eq!(
+            git::git_current_branch(&expected_for_assert).await.unwrap(),
+            "feature"
         );
     }
 
