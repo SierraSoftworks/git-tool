@@ -33,6 +33,7 @@ semver = "1.0"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
+sha2 = "0.10"
 shell-words = "1.1"
 tempfile = "3.27"
 tokio = { version = "1.52", features = [
@@ -48,6 +49,9 @@ tracing = { version = "0.1.43", features = ["log"] }
 tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git", features = ["umami", "opentelemetry", "sentry"] }
 dirs = "6.0.0"
 shellexpand = "3"
+
+[target.'cfg(windows)'.dependencies]
+junction = "1"
 
 [dev-dependencies]
 http = "1.4"

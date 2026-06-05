@@ -38,6 +38,9 @@ pub struct Config {
     aliases: HashMap<String, String>,
 
     #[serde(default)]
+    trusted_repos: HashMap<String, String>,
+
+    #[serde(default)]
     features: features::Features,
 }
 
@@ -85,6 +88,29 @@ impl Config {
         into
     }
 
+    pub fn with_trusted_repo<K: Into<String>, V: Into<String>>(&self, repo: K, hash: V) -> Self {
+        let mut into = self.clone();
+        into.trusted_repos.insert(repo.into(), hash.into());
+        into
+    }
+
+    pub fn without_trusted_repo(&self, repo: &str) -> Self {
+        let mut into = self.clone();
+        into.trusted_repos.remove(repo);
+        into
+    }
+
+    pub fn is_repo_trusted(&self, repo: &str, hash: &str) -> bool {
+        self.trusted_repos
+            .get(repo)
+            .map(|trusted| trusted == hash)
+            .unwrap_or(false)
+    }
+
+    pub fn get_trusted_repos(&self) -> impl Iterator<Item = (&String, &String)> {
+        self.trusted_repos.iter()
+    }
+
     pub fn extend(&self, other: Self) -> Self {
         let mut into = self.clone();
         let from = other;
@@ -115,6 +141,10 @@ impl Config {
 
         for (k, v) in from.aliases.iter() {
             into.aliases.insert(k.clone(), v.clone());
+        }
+
+        for (k, v) in from.trusted_repos.iter() {
+            into.trusted_repos.insert(k.clone(), v.clone());
         }
 
         into
@@ -494,6 +524,7 @@ impl Default for Config {
                 }),
             ],
             aliases: HashMap::new(),
+            trusted_repos: HashMap::new(),
             features: Default::default(),
         }
     }
@@ -573,6 +604,36 @@ mod tests {
             }
             Err(e) => panic!("{}", e.message()),
         }
+    }
+
+    #[test]
+    fn trusted_repos_roundtrip_and_extend() {
+        let repo = "gh:sierrasoftworks/git-tool";
+
+        let cfg = Config::from_str("directory: /test/dev")
+            .unwrap()
+            .with_trusted_repo(repo, "abc123");
+
+        assert!(cfg.is_repo_trusted(repo, "abc123"));
+        assert!(!cfg.is_repo_trusted(repo, "different"));
+
+        // A round-trip through YAML should preserve the trusted repositories.
+        let serialized = cfg.to_string().unwrap();
+        let reloaded = Config::from_str(&serialized).unwrap();
+        assert!(reloaded.is_repo_trusted(repo, "abc123"));
+
+        // Extending one config with another should merge trusted repositories.
+        let other = Config::from_str("directory: /test/dev")
+            .unwrap()
+            .with_trusted_repo("gh:sierrasoftworks/other", "def456");
+        let merged = cfg.extend(other);
+        assert!(merged.is_repo_trusted(repo, "abc123"));
+        assert!(merged.is_repo_trusted("gh:sierrasoftworks/other", "def456"));
+
+        // Removing trust should drop the entry.
+        let removed = merged.without_trusted_repo(repo);
+        assert!(!removed.is_repo_trusted(repo, "abc123"));
+        assert!(removed.is_repo_trusted("gh:sierrasoftworks/other", "def456"));
     }
 
     #[test]

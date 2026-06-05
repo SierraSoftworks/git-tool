@@ -57,6 +57,12 @@ primary working tree is labelled `[primary]`, and worktrees with a detached `HEA
 their current commit.
 :::
 
+::: tip Worktree automation
+A repository can automate the setup of new worktrees - creating symlinks (for directories like
+`node_modules` or `target`) and running setup tasks - by adding a `worktree` section to its
+`git-tool.yml` file. See [Worktree automation](tasks.md#worktree-automation) for details.
+:::
+
 ::: warning Windows long paths
 Worktree directories are nested inside your `worktrees` folder and include the repository name,
 branch name and a hash suffix, so the resulting paths can become quite long. On Windows you may

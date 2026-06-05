@@ -198,6 +198,18 @@ If the base repository has not been cloned yet, it will be cloned automatically.
             worktree_path.clone(),
         );
 
+        // Apply any worktree automation (symlinks and setup tasks) defined in the
+        // repository's 'git-tool.yml' file before launching the application. The
+        // configuration must be trusted before we run any of its tasks; if the
+        // user declines we simply skip the automation and continue.
+        if let Some(repo_config) = crate::engine::RepoConfig::for_repo(&repo)?
+            && repo_config.worktree().is_some()
+            && crate::commands::trust::ensure_trusted(core, &repo, &repo_config).await?
+        {
+            self.apply_worktree_automation(core, &repo, &worktree_target, &repo_config)
+                .await?;
+        }
+
         let result = core.launcher().run(app, &worktree_target).await;
 
         // When requested, remove the worktree now that the launched application has
@@ -252,6 +264,77 @@ impl WorktreeCommand {
     fn resolve_repo(&self, core: &Core, value: &str) -> Result<Repo, human_errors::Error> {
         let identifier: Identifier = value.parse()?;
         core.resolver().get_best_repo(&identifier)
+    }
+
+    /// Applies the worktree automation defined in a repository's 'git-tool.yml'
+    /// configuration: it creates the requested symlinks from the worktree back to
+    /// the original repository and then runs the configured setup tasks within the
+    /// worktree. Symlink and task failures are surfaced as warnings rather than
+    /// hard errors, since the worktree itself has already been created and the user
+    /// can continue working in it.
+    async fn apply_worktree_automation(
+        &self,
+        core: &Core,
+        repo: &Repo,
+        worktree_target: &Repo,
+        config: &crate::engine::RepoConfig,
+    ) -> Result<(), human_errors::Error> {
+        let worktree = match config.worktree() {
+            Some(worktree) => worktree,
+            None => return Ok(()),
+        };
+
+        for entry in worktree.symlinks() {
+            let original = repo.get_path().join(entry);
+            let link = worktree_target.get_path().join(entry);
+
+            if link.exists() {
+                continue;
+            }
+
+            if !original.exists() {
+                writeln!(
+                    core.output(),
+                    "Warning: skipping worktree symlink '{entry}' because it does not exist in the source repository."
+                )
+                .to_human_error()?;
+                continue;
+            }
+
+            if let Err(err) = crate::fs::create_link(&original, &link) {
+                writeln!(
+                    core.output(),
+                    "Warning: could not create worktree symlink '{entry}': {}",
+                    err.message()
+                )
+                .to_human_error()?;
+            }
+        }
+
+        for task_name in worktree.tasks() {
+            match config.get_task(task_name) {
+                Some(task) => {
+                    let app = task.to_app(task_name);
+                    if let Err(err) = core.launcher().run(&app, worktree_target).await {
+                        writeln!(
+                            core.output(),
+                            "Warning: worktree task '{task_name}' failed: {}",
+                            err.message()
+                        )
+                        .to_human_error()?;
+                    }
+                }
+                None => {
+                    writeln!(
+                        core.output(),
+                        "Warning: worktree task '{task_name}' is not defined in the repository configuration."
+                    )
+                    .to_human_error()?;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Builds the directory name used to store a worktree for the given repository
@@ -345,6 +428,59 @@ mod tests {
         let hash = WorktreeCommand::short_hash("gh:sierrasoftworks/git-tool");
         assert_eq!(hash.len(), 8);
         assert!(hash.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[tokio::test]
+    async fn apply_worktree_automation_creates_symlinks_and_runs_tasks() {
+        let cmd = WorktreeCommand {};
+        let temp = tempdir().unwrap();
+
+        // The source repository contains a 'target' directory (to be symlinked)
+        // and a git-tool.yml describing the worktree automation.
+        let repo = Repo::new(
+            "gh:sierrasoftworks/test-worktree-automation",
+            temp.path().join("repo"),
+        );
+        std::fs::create_dir_all(repo.get_path().join("target")).unwrap();
+        std::fs::write(repo.get_path().join("target").join("marker.txt"), "built").unwrap();
+        std::fs::write(
+            repo.get_path().join("git-tool.yml"),
+            "worktree:\n  symlinks:\n    - target\n  tasks:\n    - setup\ntasks:\n  setup:\n    command: echo\n    args:\n      - setup\n",
+        )
+        .unwrap();
+
+        let worktree_target = Repo::new(
+            "gh:sierrasoftworks/test-worktree-automation",
+            temp.path().join("worktree"),
+        );
+        std::fs::create_dir_all(worktree_target.get_path()).unwrap();
+
+        let repo_config = RepoConfig::for_repo(&repo).unwrap().unwrap();
+
+        let core = Core::builder()
+            .with_config(
+                Config::for_dev_directory(temp.path())
+                    .with_trusted_repo(repo.to_string(), repo_config.hash().unwrap()),
+            )
+            .with_null_console()
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .withf(|app, _| app.get_name() == "setup")
+                    .times(1)
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        cmd.apply_worktree_automation(&core, &repo, &worktree_target, &repo_config)
+            .await
+            .unwrap();
+
+        let link = worktree_target.get_path().join("target");
+        assert!(link.exists(), "the symlink should have been created");
+        assert_eq!(
+            std::fs::read_to_string(link.join("marker.txt")).unwrap(),
+            "built"
+        );
     }
 
     /// Initializes a real git repository (with an initial commit) and configures

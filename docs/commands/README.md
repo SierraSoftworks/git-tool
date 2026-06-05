@@ -37,6 +37,16 @@ and a `git switch` command proxy with great auto-complete.
 
 [Read more about to use Git-Tool in your repos &rarr;](dev.md)
 
+## Tasks
+Repositories often come with a handful of common operations - building, testing, starting a dev
+server - which you run over and over again. Git-Tool lets each repository describe these as named
+tasks in a `git-tool.yml` file, runnable from anywhere with `gt task`. Because these tasks run
+commands defined by the repository, Git-Tool only executes them once you've confirmed that you trust
+the repository's configuration (managed with `gt trust`). The same configuration also lets you
+automate worktree setup with symlinks and tasks.
+
+[Read more about running tasks &rarr;](tasks.md)
+
 ## Config Management
 Git-Tool has a wealth of configuration options available and discovering them all can be
 daunting. To make that a bit easier on everyone, Git-Tool provides a CLI to make common

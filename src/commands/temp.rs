@@ -17,7 +17,7 @@ impl CommandRunnable for TempCommand {
     fn app(&self) -> clap::Command {
         clap::Command::new(self.name())
             .version("1.0")
-            .visible_alias("t")
+            .visible_alias("tmp")
             .about("opens a temporary folder which will be removed when the shell is closed")
             .arg(
                 Arg::new("app")
