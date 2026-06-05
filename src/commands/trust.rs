@@ -98,7 +98,10 @@ impl CommandRunnable for TrustCommand {
         Ok(0)
     }
 
-    #[tracing::instrument(name = "gt complete -- gt trust", skip(self, core, completer, _matches))]
+    #[tracing::instrument(
+        name = "gt complete -- gt trust",
+        skip(self, core, completer, _matches)
+    )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         completer.offer("--remove");
         completer.offer("--list");
@@ -287,6 +290,10 @@ mod tests {
             .build();
 
         assert!(ensure_trusted(&core, &repo, &config).await.unwrap());
-        assert!(!core.config().is_repo_trusted(&repo.to_string(), &config.hash().unwrap()));
+        assert!(
+            !core
+                .config()
+                .is_repo_trusted(&repo.to_string(), &config.hash().unwrap())
+        );
     }
 }

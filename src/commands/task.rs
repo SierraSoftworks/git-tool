@@ -56,13 +56,17 @@ Tasks are only executed once you have confirmed that you trust the repository's 
                 [_value] => {
                     return Err(human_errors::user(
                         "You are not currently within a repository, so you need to specify both the repository and the task to run.",
-                        &["Run the task like this: 'git-tool task github.com/sierrasoftworks/git-tool build'."],
+                        &[
+                            "Run the task like this: 'git-tool task github.com/sierrasoftworks/git-tool build'.",
+                        ],
                     ));
                 }
                 [] => {
                     return Err(human_errors::user(
                         "You did not specify a repository or a task to run.",
-                        &["Run the task like this: 'git-tool task github.com/sierrasoftworks/git-tool build'."],
+                        &[
+                            "Run the task like this: 'git-tool task github.com/sierrasoftworks/git-tool build'.",
+                        ],
                     ));
                 }
                 _ => unreachable!("clap only provides up to two positional arguments"),
@@ -93,11 +97,8 @@ Tasks are only executed once you have confirmed that you trust the repository's 
                 let mut output = core.output();
                 let names: Vec<&String> = config.task_names().sorted().collect();
                 if names.is_empty() {
-                    writeln!(
-                        output,
-                        "The repository '{repo}' does not define any tasks."
-                    )
-                    .to_human_error()?;
+                    writeln!(output, "The repository '{repo}' does not define any tasks.")
+                        .to_human_error()?;
                 } else {
                     writeln!(output, "Available tasks for '{repo}':").to_human_error()?;
                     for name in names {
@@ -191,10 +192,7 @@ mod tests {
             .with_mock_resolver(move |mock| {
                 let repo_path = repo_path.clone();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(Repo::new(
-                        "gh:sierrasoftworks/test-task",
-                        repo_path.clone(),
-                    ))
+                    Ok(Repo::new("gh:sierrasoftworks/test-task", repo_path.clone()))
                 });
             })
             .with_mock_launcher(|mock| {
@@ -236,10 +234,7 @@ mod tests {
                 mock.expect_get_best_repo()
                     .with(eq(identifier.clone()))
                     .returning(move |_| {
-                        Ok(Repo::new(
-                            "gh:sierrasoftworks/test-task",
-                            repo_path.clone(),
-                        ))
+                        Ok(Repo::new("gh:sierrasoftworks/test-task", repo_path.clone()))
                     });
             })
             .with_mock_launcher(|mock| {
@@ -267,10 +262,7 @@ mod tests {
             .with_mock_resolver(move |mock| {
                 let repo_path = repo_path.clone();
                 mock.expect_get_current_repo().returning(move || {
-                    Ok(Repo::new(
-                        "gh:sierrasoftworks/test-task",
-                        repo_path.clone(),
-                    ))
+                    Ok(Repo::new("gh:sierrasoftworks/test-task", repo_path.clone()))
                 });
             })
             .build();
