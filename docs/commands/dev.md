@@ -153,11 +153,25 @@ repository which do not contain uncommitted changes. Worktrees with pending work
 are left in place so that you don't lose anything, and you'll be asked to confirm
 before anything is removed.
 
+You can optionally provide one or more patterns to only prune branches and
+worktrees whose branch name contains one of those patterns, and use the
+`--branches`/`--worktrees` flags to restrict the operation to just branches or
+just worktrees (by default both are pruned).
+
 #### Options
  - `-y`, `--yes` will skip the confirmation prompt and remove any branches that are found.
+ - `-b`, `--branches` will only prune merged branches (worktrees are left untouched).
+ - `-w`, `--worktrees` will only prune clean worktrees (branches are left untouched).
+ - `[pattern]...` restricts pruning to branches and worktrees whose branch name contains one of the provided patterns.
 
 #### Example
 ``` powershell
 # Remove any merged branches from your local repository
 gt prune
+
+# Only remove merged branches whose name contains "feature/"
+gt prune --branches feature/
+
+# Only remove clean worktrees
+gt prune --worktrees
 ```
