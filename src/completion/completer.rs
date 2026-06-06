@@ -1,5 +1,5 @@
 use crate::engine::Core;
-use crate::{console::ConsoleProvider, search::matches};
+use crate::{console::ConsoleProvider, search::fuzzy_matches};
 use itertools::Itertools;
 use std::{fmt::Display, sync::Arc};
 
@@ -22,7 +22,7 @@ impl Completer {
 
     pub fn offer<S: AsRef<str>>(&self, completion: S) {
         let completion = completion.as_ref();
-        if !matches(completion, &self.filter) {
+        if !fuzzy_matches(completion, &self.filter) {
             return;
         }
         let mut out = self.console.output();

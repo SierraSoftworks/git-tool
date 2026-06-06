@@ -20,6 +20,49 @@ where
     matcher.order_by(values, to_key)
 }
 
+/// Returns the subset of `values` which match the provided `sequence` using
+/// fuzzy sequence matching. Unlike [`best_matches`], the original ordering of the
+/// values is preserved. An empty sequence matches every value.
+pub fn matches<T>(sequence: &str, values: T) -> Vec<T::Item>
+where
+    T: IntoIterator,
+    T::Item: AsRef<str>,
+{
+    if sequence.is_empty() {
+        return values.into_iter().collect();
+    }
+
+    let matcher = SequenceMatcher::new(sequence);
+    values
+        .into_iter()
+        .filter(|value| matcher.score(value.as_ref()).is_some())
+        .collect()
+}
+
+/// Returns the subset of `values` which match at least one of the provided
+/// `sequences` using fuzzy sequence matching, preserving the original ordering of
+/// the values. An empty list of sequences (or a list containing an empty
+/// sequence) matches every value.
+pub fn matches_any<S, T>(sequences: &[S], values: T) -> Vec<T::Item>
+where
+    S: AsRef<str>,
+    T: IntoIterator,
+    T::Item: AsRef<str>,
+{
+    if sequences.is_empty() {
+        return values.into_iter().collect();
+    }
+
+    values
+        .into_iter()
+        .filter(|value| {
+            sequences
+                .iter()
+                .any(|sequence| !matches(sequence.as_ref(), [value.as_ref()]).is_empty())
+        })
+        .collect()
+}
+
 #[cfg(test)]
 fn score<T: AsRef<str>>(value: T, sequence: &str) -> Option<f32> {
     let matcher = SequenceMatcher::new(sequence);
@@ -194,6 +237,41 @@ mod tests {
         assert_eq!(
             best_matches("main", vec!["main123", "main", "main456",]),
             vec!["main", "main123", "main456"]
+        );
+    }
+
+    #[test]
+    fn matches_filters_and_preserves_order() {
+        assert_eq!(
+            matches("test", vec!["feature/test", "main", "feature/test2"]),
+            vec!["feature/test", "feature/test2"],
+            "only matching values should be returned, in their original order"
+        );
+    }
+
+    #[test]
+    fn matches_empty_sequence_matches_everything() {
+        assert_eq!(
+            matches("", vec!["feature/test", "main"]),
+            vec!["feature/test", "main"]
+        );
+    }
+
+    #[test]
+    fn matches_any_filters_by_any_sequence() {
+        let patterns = vec!["test".to_string(), "main".to_string()];
+        assert_eq!(
+            matches_any(&patterns, vec!["feature/test", "main", "feature/other"]),
+            vec!["feature/test", "main"]
+        );
+    }
+
+    #[test]
+    fn matches_any_empty_sequences_match_everything() {
+        let patterns: Vec<String> = Vec::new();
+        assert_eq!(
+            matches_any(&patterns, vec!["feature/test", "main"]),
+            vec!["feature/test", "main"]
         );
     }
 }
