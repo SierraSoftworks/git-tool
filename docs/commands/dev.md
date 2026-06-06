@@ -38,9 +38,9 @@ gt b -N feature/demo
 ## worktree <Badge text="v3.10+"/>
 If you find yourself wanting to work on several branches of a repository at the same time,
 git's [worktree](https://git-scm.com/docs/git-worktree) feature is invaluable. The `gt worktree`
-command brings the same ergonomics you get from `gt open` and `gt switch` to worktrees: it
-prepares (and, if necessary, clones) the repository, creates a worktree for the branch you've
-asked for, and then launches your chosen application inside it.
+command brings the same ergonomics you get from `gt open` and `gt switch` to worktrees: from within
+a repository it creates a worktree for the branch you've asked for and then launches your chosen
+application inside it.
 
 Worktrees are stored within the [`worktrees` directory](../config/README.md#worktrees) configured in
 your config file, which defaults to a `worktrees` folder inside your development directory. Each
@@ -48,9 +48,8 @@ worktree is placed in its own folder named after the repository and branch, with
 repository's full name appended to keep repositories with the same short name from colliding.
 
 ::: tip
-You can run `gt worktree` from anywhere by specifying a repository (`gt w <repo> <branch> [app]`),
-or run it from within a repository and omit the repository name to operate on the current repo
-(`gt w <branch> [app]`), just like `gt switch`.
+Run `gt worktree` from within a repository to operate on the current repo (`gt w <branch> [app]`),
+just like `gt switch`.
 
 If you don't specify a branch, Git-Tool will list the existing worktrees for the repository. The
 primary working tree is labelled `[primary]`, and worktrees with a detached `HEAD` are shown with
@@ -93,23 +92,20 @@ to clean them up once they've been merged.
 
 #### Example
 ``` powershell
-# Create (or open) a worktree for the feat/forgejo branch of github-backup
-gt w github-backup feat/forgejo
+# Create (or open) a worktree for the current repository's feat/forgejo branch
+gt w feat/forgejo
 
 # Open the feat/forgejo worktree in VS Code
-gt w github-backup feat/forgejo code
-
-# Open a worktree for the current repository's feature/demo branch
-gt w feature/demo
+gt w feat/forgejo code
 
 # Base a new worktree branch on origin/main
-gt w github-backup feat/forgejo --base origin/main
+gt w feat/forgejo --base origin/main
 
 # Open a throwaway worktree that is removed once you exit the shell
-gt w github-backup feat/forgejo --rm
+gt w feat/forgejo --rm
 
-# List the existing worktrees for a repository
-gt w github-backup
+# List the existing worktrees for the current repository
+gt w
 ```
 
 ## ignore <Badge text="v1.0+"/>
