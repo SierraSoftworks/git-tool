@@ -28,7 +28,10 @@ pub async fn git_worktree_add(
     cmd.current_dir(repo).arg("worktree").arg("add");
 
     if create {
-        cmd.arg("-b").arg(branch).arg(worktree);
+        // Use `--no-track` so that the new branch is based off of the start point
+        // (e.g. `origin/main`) without configuring it as an upstream to track. We
+        // want the worktree branch to be independent of the base branch.
+        cmd.arg("--no-track").arg("-b").arg(branch).arg(worktree);
         if let Some(base) = base {
             cmd.arg(base);
         }
