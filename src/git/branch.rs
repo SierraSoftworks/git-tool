@@ -102,7 +102,10 @@ pub async fn git_merged_branches(repo: &path::Path) -> Result<Vec<String>, human
 
     let refs = output
         .split_terminator('\n')
-        .filter(|&s| !s.starts_with("* "))
+        // `git branch --merged` marks the current branch with a `* ` prefix and any
+        // branch that is checked out in a linked worktree with a `+ ` prefix. Neither
+        // can be deleted while they remain checked out, so we exclude both.
+        .filter(|&s| !s.starts_with("* ") && !s.starts_with("+ "))
         .map(|s| s.trim().to_string());
     Ok(refs.collect())
 }

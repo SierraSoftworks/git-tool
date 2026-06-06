@@ -152,6 +152,11 @@ local repository which are remnants of previously merged PRs. Cleaning these out
 can be a bit of a chore, so Git-Tool provides a `prune` command which will identify
 any merged branches (using `git branch --merged`) and remove them for you automatically.
 
+In addition to merged branches, `prune` will remove any Git worktrees for the
+repository which do not contain uncommitted changes. Worktrees with pending work
+are left in place so that you don't lose anything, and you'll be asked to confirm
+before anything is removed.
+
 #### Options
  - `-y`, `--yes` will skip the confirmation prompt and remove any branches that are found.
 
