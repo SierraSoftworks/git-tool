@@ -53,6 +53,9 @@ shellexpand = "3"
 [target.'cfg(windows)'.dependencies]
 junction = "1"
 
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
 [dev-dependencies]
 http = "1.4"
 mockall = "0.14.0"

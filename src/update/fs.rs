@@ -92,7 +92,7 @@ impl FileSystem for DefaultFileSystem {
 
     fn get_temp_app_path(&self, release: &Release) -> PathBuf {
         let file_name = format!(
-            "git-tool-update-{}{}",
+            "git-tool-{}{}",
             release.id,
             if cfg!(windows) { ".exe" } else { "" }
         );
@@ -151,9 +151,9 @@ mod tests {
         let path = fs.get_temp_app_path(&release);
 
         #[cfg(target_os = "windows")]
-        assert_eq!(path.file_name().unwrap(), "git-tool-update-1.0.0.exe");
+        assert_eq!(path.file_name().unwrap(), "git-tool-1.0.0.exe");
 
         #[cfg(not(target_os = "windows"))]
-        assert_eq!(path.file_name().unwrap(), "git-tool-update-1.0.0");
+        assert_eq!(path.file_name().unwrap(), "git-tool-1.0.0");
     }
 }
