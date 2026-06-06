@@ -2,7 +2,7 @@
 Many repositories come with a set of common operations you find yourself running over and over
 again: building the project, running its tests, starting a development server, and so on. Git-Tool
 lets each repository describe these operations as named **tasks** in a `git-tool.yml` file at its
-root, and provides the `gt task` command to run them from anywhere.
+root, and provides the `gt task` command to run them from within the repository.
 
 Because tasks run commands defined by a repository, Git-Tool will only execute them once you have
 confirmed that you **trust** the repository's configuration. This page covers the `git-tool.yml`
@@ -39,10 +39,8 @@ using the same engine as your apps, so they benefit from the same
 [templating](../config/templates.md) and signal forwarding.
 
 ## task <Badge text="v3.11+"/>
-The `gt task` command runs a task defined in a repository's `git-tool.yml` file. You can run it from
-within a repository, or against any repository by name. If the repository has not been cloned yet, it
-will be cloned automatically before the task runs (just like the [`gt worktree`](dev.md#worktree)
-command).
+The `gt task` command runs a task defined in the current repository's `git-tool.yml` file. Run it
+from within a repository, or with no arguments to list the tasks available in the current repository.
 
 ::: tip
 The first time Git-Tool encounters a repository's `git-tool.yml` (and any time it changes), you will
@@ -58,9 +56,6 @@ be shown its contents and asked whether you trust it. See [Trust](#trust) below 
 ``` powershell
 # Run the 'build' task in the current repository
 gt t build
-
-# Run the 'test' task in a specific repository (cloning it first if necessary)
-gt run github.com/sierrasoftworks/git-tool test
 
 # List the tasks available in the current repository
 gt task
