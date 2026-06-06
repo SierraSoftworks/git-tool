@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::Target;
 use crate::errors::HumanErrorResultExt;
 use crate::git;
+use crate::tasks::Task;
 use clap::Arg;
 use human_errors::ResultExt;
 use itertools::Itertools;
@@ -23,7 +24,10 @@ impl CommandRunnable for PruneCommand {
             .long_about(
                 "This command identifies branches in your local repository which have been merged
                 into upstream branches and will proceed to delete them. This is particularly helpful
-                if you use feature branches as part of your workflow and want to get rid of old ones.",
+                if you use feature branches as part of your workflow and want to get rid of old ones.
+
+                It will also remove any Git worktrees for the repository which do not contain
+                uncommitted changes, leaving any worktree with pending work untouched.",
             )
             .arg(
                 Arg::new("yes")
@@ -65,21 +69,55 @@ impl CommandRunnable for PruneCommand {
             .unique()
             .collect();
 
-        if to_remove.is_empty() {
-            writeln!(core.output(), "No branches to remove").to_human_error()?;
+        // Identify worktrees for this repository which have no uncommitted changes
+        // and can therefore be safely removed. `git worktree list` always reports the
+        // primary working tree (the repository itself) first, so we skip that entry
+        // and keep any linked worktree with pending work so the user doesn't lose
+        // anything.
+        let repo_path = repo.get_path();
+
+        let mut worktrees_to_remove = Vec::new();
+        for worktree in git::git_worktree_list(&repo_path)
+            .await?
+            .into_iter()
+            .skip(1)
+        {
+            if git::git_worktree_is_clean(&worktree.path)
+                .await
+                .unwrap_or(false)
+            {
+                worktrees_to_remove.push(worktree);
+            }
+        }
+
+        if to_remove.is_empty() && worktrees_to_remove.is_empty() {
+            writeln!(core.output(), "No branches or worktrees to remove").to_human_error()?;
             return Ok(0);
         }
 
         if !matches.get_flag("yes") {
-            writeln!(core.output(), "The following branches will be removed:").to_human_error()?;
-            for branch in to_remove.iter() {
-                writeln!(core.output(), "  {branch}").to_human_error()?;
+            if !to_remove.is_empty() {
+                writeln!(core.output(), "The following branches will be removed:")
+                    .to_human_error()?;
+                for branch in to_remove.iter() {
+                    writeln!(core.output(), "  {branch}").to_human_error()?;
+                }
+                writeln!(core.output()).to_human_error()?;
             }
-            writeln!(core.output()).to_human_error()?;
+
+            if !worktrees_to_remove.is_empty() {
+                writeln!(core.output(), "The following worktrees will be removed:")
+                    .to_human_error()?;
+                for worktree in worktrees_to_remove.iter() {
+                    writeln!(core.output(), "  {}", worktree.path.display()).to_human_error()?;
+                }
+                writeln!(core.output()).to_human_error()?;
+            }
+
             let remove_branches = core
                 .prompter()
                 .prompt_bool(
-                    "Are you sure you want to remove these branches? [y/N]: ",
+                    "Are you sure you want to remove these branches and worktrees? [y/N]: ",
                     Some(false),
                 )?
                 .unwrap_or_default();
@@ -90,9 +128,27 @@ impl CommandRunnable for PruneCommand {
             }
         }
 
-        for branch in to_remove.iter() {
-            git::git_branch_delete(&repo.get_path(), branch).await?;
+        // Remove worktrees before deleting branches: a branch which is checked out
+        // in a worktree cannot be deleted until that worktree has been removed. We
+        // chain the individual operations together using a Sequence task so that
+        // they are applied in order.
+        let mut cleanup: Vec<std::sync::Arc<dyn crate::tasks::Task + Send + Sync>> = Vec::new();
+
+        for worktree in worktrees_to_remove {
+            cleanup.push(std::sync::Arc::new(tasks::GitWorktreeRemove {
+                path: worktree.path,
+            }));
         }
+
+        for branch in to_remove {
+            cleanup.push(std::sync::Arc::new(tasks::GitBranchDelete {
+                branch: branch.clone(),
+            }));
+        }
+
+        tasks::Sequence::new(cleanup)
+            .apply_repo(core, &repo)
+            .await?;
 
         Ok(0)
     }
@@ -304,6 +360,91 @@ mod tests {
         let mut branches = git::git_branches(&repo.get_path()).await.unwrap();
         branches.sort();
         assert_eq!(branches, vec!["feature/test", "main"]);
+    }
+
+    #[tokio::test]
+    async fn prune_clean_worktree() {
+        let cmd: PruneCommand = PruneCommand {};
+
+        let temp = tempdir().unwrap();
+
+        let console = crate::console::mock_with_input("y\n");
+        let (core, repo) = setup_test_repo_with_remote(
+            Core::builder()
+                .with_config_for_dev_directory(temp.path())
+                .with_console(console.clone()),
+            &temp,
+        )
+        .await;
+
+        let worktree_path = temp.path().join("worktrees").join("clean");
+        git::git_worktree_add(
+            &repo.get_path(),
+            &worktree_path,
+            "feature/clean-worktree",
+            true,
+            None,
+        )
+        .await
+        .unwrap();
+
+        assert!(
+            worktree_path.exists(),
+            "the worktree should have been created"
+        );
+
+        let args: ArgMatches = cmd.app().get_matches_from(vec!["prune"]);
+        cmd.assert_run_successful(&core, &args).await;
+
+        assert!(
+            console.to_string().contains("clean"),
+            "the output should mention the worktree being removed"
+        );
+
+        assert!(
+            !worktree_path.exists(),
+            "the clean worktree should have been removed"
+        );
+        assert!(repo.valid(), "the repository should still be valid");
+    }
+
+    #[tokio::test]
+    async fn prune_preserves_dirty_worktree() {
+        let cmd: PruneCommand = PruneCommand {};
+
+        let temp = tempdir().unwrap();
+
+        let console = crate::console::mock_with_input("y\n");
+        let (core, repo) = setup_test_repo_with_remote(
+            Core::builder()
+                .with_config_for_dev_directory(temp.path())
+                .with_console(console.clone()),
+            &temp,
+        )
+        .await;
+
+        let worktree_path = temp.path().join("worktrees").join("dirty");
+        git::git_worktree_add(
+            &repo.get_path(),
+            &worktree_path,
+            "feature/dirty-worktree",
+            true,
+            None,
+        )
+        .await
+        .unwrap();
+
+        // Leave an uncommitted change behind so the worktree must be preserved.
+        std::fs::write(worktree_path.join("work-in-progress.txt"), "not done yet").unwrap();
+
+        let args: ArgMatches = cmd.app().get_matches_from(vec!["prune"]);
+        cmd.assert_run_successful(&core, &args).await;
+
+        assert!(
+            worktree_path.exists(),
+            "a worktree with uncommitted changes must not be removed"
+        );
+        assert!(repo.valid(), "the repository should still be valid");
     }
 
     #[tokio::test]

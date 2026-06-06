@@ -31,7 +31,9 @@ pub use init::git_init;
 pub use remote::{git_remote_add, git_remote_list, git_remote_rename, git_remote_set_url};
 pub use switch::git_switch;
 #[allow(unused_imports)]
-pub use worktree::{Worktree, git_worktree_add, git_worktree_list, git_worktree_remove};
+pub use worktree::{
+    Worktree, git_worktree_add, git_worktree_is_clean, git_worktree_list, git_worktree_remove,
+};
 
 #[cfg(test)]
 pub use config::git_config_set;

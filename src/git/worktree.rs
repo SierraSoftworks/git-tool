@@ -59,7 +59,24 @@ pub async fn git_worktree_remove(
     Ok(())
 }
 
-#[allow(dead_code)]
+/// Determines whether the worktree at the given path is free of uncommitted
+/// changes (including staged changes and untracked files). Returns `true` when
+/// the worktree is clean and can be safely removed.
+pub async fn git_worktree_is_clean(worktree: &path::Path) -> Result<bool, human_errors::Error> {
+    info!("Running `git status --porcelain` to check for uncommitted changes");
+    validate_repo_path_exists(worktree)?;
+
+    let output = git_cmd(
+        Command::new("git")
+            .current_dir(worktree)
+            .arg("status")
+            .arg("--porcelain"),
+    )
+    .await?;
+
+    Ok(output.trim().is_empty())
+}
+
 pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human_errors::Error> {
     info!("Running `git worktree list --porcelain` to list worktrees");
     validate_repo_path_exists(repo)?;
@@ -94,7 +111,7 @@ pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human
         } else if line.is_empty() {
             if let Some(path) = current_path.take() {
                 worktrees.push(Worktree {
-                    path,
+                    path: canonicalize_worktree_path(path),
                     branch: current_branch.take(),
                     head: current_head.take(),
                 });
@@ -106,13 +123,22 @@ pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human
 
     if let Some(path) = current_path.take() {
         worktrees.push(Worktree {
-            path,
+            path: canonicalize_worktree_path(path),
             branch: current_branch.take(),
             head: current_head.take(),
         });
     }
 
     Ok(worktrees)
+}
+
+/// Normalizes a worktree path to its canonical form so that callers can compare
+/// it against other paths (such as a repository's location) without having to
+/// account for symlinks or platform-specific path representations. If the path
+/// cannot be canonicalized (for example, because it no longer exists on disk) the
+/// original path is returned unchanged.
+fn canonicalize_worktree_path(path: path::PathBuf) -> path::PathBuf {
+    std::fs::canonicalize(&path).unwrap_or(path)
 }
 
 #[cfg(test)]
