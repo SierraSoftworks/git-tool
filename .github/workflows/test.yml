@@ -27,12 +27,9 @@ jobs:
           sudo apt-get install -y libdbus-1-3 libdbus-1-dev
 
       - name: install protoc
-        run: |
-          Invoke-WebRequest -OutFile /tmp/protoc.zip -Uri https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protoc-3.20.2-linux-x86_64.zip
-          Expand-Archive /tmp/protoc.zip -DestinationPath ../tools
-          Add-Content -Path $env:GITHUB_PATH -Value "$((get-item ./).parent.fullname)/tools/bin"
-          Get-Content $env:GITHUB_PATH
-        shell: pwsh
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: cargo clippy
         uses: actions-rs/cargo@v1.0.3
@@ -126,23 +123,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: install protoc
-        run: |
-          if ('${{ matrix.os }}' -eq 'windows') {
-            $protoc_arch = 'win64'
-          } elseif ('${{ matrix.os }}' -eq 'darwin') {
-            $protoc_arch = 'osx-x86_64'
-          } else {
-            $protoc_arch = 'linux-x86_64'
-          }
-
-          $protoc_url = "https://github.com/protocolbuffers/protobuf/releases/download/v3.20.2/protoc-3.20.2-$protoc_arch.zip"
-
-          Write-Host "Downloading protoc from '$protoc_url'"
-
-          Invoke-WebRequest -OutFile protoc.zip -Uri $protoc_url
-          Expand-Archive protoc.zip -DestinationPath ../tools
-          Add-Content -Path $env:GITHUB_PATH -Value "$((Get-Item ./).Parent.FullName)/tools/bin"
-        shell: pwsh
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: git config
         run: |
