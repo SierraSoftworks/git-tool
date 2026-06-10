@@ -132,11 +132,9 @@ jobs:
         if: matrix.setup
 
       - name: Get Rust Stable
-        uses: actions-rs/toolchain@v1.0.7
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
 
       - name: get secrets - sentry
         uses: hashicorp/vault-action@v4.0.0
