@@ -116,6 +116,8 @@ jobs:
 
       - name: cache ~/.cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: install protoc
         uses: arduino/setup-protoc@v3
