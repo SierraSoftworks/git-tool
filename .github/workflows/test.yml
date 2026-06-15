@@ -108,11 +108,6 @@ jobs:
           targets: ${{ matrix.target }}
           components: llvm-tools-preview
 
-      - name: cache ~/.cargo
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.target }}
-
       - name: install protoc
         if: matrix.builder != 'cross'
         uses: SierraSoftworks/setup-protoc@v3.0.1
@@ -125,6 +120,11 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall --no-confirm cross
+
+      - name: cache ~/.cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: git config
         run: |
