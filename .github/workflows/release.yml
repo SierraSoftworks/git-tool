@@ -107,14 +107,14 @@ jobs:
             run_on: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             experimental: true
+            builder: cross
             setup: |
+              # cross builds the binary inside its own container, but the debug
+              # symbols are stripped on the host (after the Sentry upload), so we
+              # still need the aarch64 strip utility available here.
               sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu lld
-
-              # Ensure that the libgcc
-              sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
+              sudo apt-get install -y binutils-aarch64-linux-gnu
             strip: aarch64-linux-gnu-strip --strip-debug
-            flags: --no-default-features
 
           # Apple MacOS builds
           - arch: amd64
@@ -163,15 +163,24 @@ jobs:
           name: cargofile
 
       - name: install protoc
+        if: matrix.builder != 'cross'
         uses: SierraSoftworks/setup-protoc@v3.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install Cross
+        if: matrix.builder == 'cross'
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
+
       - name: cargo build
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }} ${{ matrix.flags }}
+        run: ${{ matrix.builder || 'cargo' }} build --release --target ${{ matrix.target }} ${{ matrix.flags }}
+
+      - name: Reclaim cache ownership from cross
+        if: matrix.builder == 'cross'
+        run: sudo chown -R "$(id -u):$(id -g)" "$HOME/.cargo" target
 
       - name: Upload Debug Symbols to Sentry
         run: |

@@ -82,13 +82,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             experimental: true
             skiptests: true
-            setup: |
-              sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu lld
-
-              # Ensure that the libgcc library can be found
-              sudo ln -s /usr/aarch64-linux-gnu/lib/libgcc_s.so.1 /usr/aarch64-linux-gnu/lib/libgcc_s.so
-            flags: --no-default-features
+            builder: cross
 
           - arch: amd64
             run_on: macos-latest
@@ -120,20 +114,29 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: install protoc
+        if: matrix.builder != 'cross'
         uses: SierraSoftworks/setup-protoc@v3.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cross
+        if: matrix.builder == 'cross'
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
 
       - name: git config
         run: |
           git config --global init.defaultBranch "main"
 
       - name: cargo build
-        uses: actions-rs/cargo@v1.0.3
         if: matrix.skiptests
-        with:
-          command: build
-          args: --target ${{ matrix.target }} ${{ matrix.flags }}
+        run: ${{ matrix.builder || 'cargo' }} build --target ${{ matrix.target }} ${{ matrix.flags }}
+
+      - name: Reclaim cache ownership from cross
+        if: matrix.builder == 'cross'
+        run: sudo chown -R "$(id -u):$(id -g)" "$HOME/.cargo" target
 
       - name: cargo test
         uses: actions-rs/cargo@v1.0.3
