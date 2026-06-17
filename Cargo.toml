@@ -19,7 +19,7 @@ futures = "0.3"
 gtmpl = "0.7"
 human-errors = "0.2.3"
 inventory = "0.3.24"
-itertools = "0.14"
+itertools = "0.15"
 keyring = { version = "3.6.3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 lazy_static = "1.5"
 nix = { version = "0.31.3", features = ["process", "signal"] }
