@@ -198,15 +198,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: "true"
 
-      - name: Update Homebrew Tap
-        uses: SierraSoftworks/actions-tap@v1
-        with:
-          app-id: ${{ secrets.TAP_APP_ID }}
-          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          os: ${{ matrix.os }}
-          arch: ${{ matrix.arch }}
-
       # - uses: anchore/sbom-action@v0
       #   with:
       #     file: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
@@ -220,6 +211,21 @@ jobs:
       #     subject-name: "git-tool-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
       #     subject-path: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
       #     sbom-path: 'sbom.spdx.json'
+
+  tap:
+    name: Update Homebrew Tap
+    runs-on: ubuntu-latest
+    needs:
+      - build
+
+    steps:
+      - name: Update Homebrew Tap
+        uses: SierraSoftworks/actions-tap@v1
+        with:
+          app-id: ${{ secrets.TAP_APP_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          aliases: major minor
 
   sentry:
     name: Finalize Release
