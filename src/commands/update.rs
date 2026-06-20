@@ -65,14 +65,7 @@ where {
                 });
 
                 info!("Resuming update in phase {}", state.phase);
-                manager.resume(&state).await.inspect_err(|e| {
-                    // Only report system-caused failures to Sentry. User-caused
-                    // errors are the result of invalid input or environment state
-                    // and shouldn't be recorded as telemetry.
-                    if e.is(human_errors::Kind::System) {
-                        sentry::capture_error(&e);
-                    }
-                })?
+                manager.resume(&state).await.inspect_err(report_system_failure)?
             }
             None => false,
         };
@@ -178,6 +171,15 @@ where {
     }
 }
 
+/// Reports a failure to Sentry, but only when it was system-caused. User-caused
+/// errors are the result of invalid input or environment state and shouldn't be
+/// recorded as telemetry, so they are deliberately ignored here.
+fn report_system_failure(error: &human_errors::Error) {
+    if error.is(human_errors::Kind::System) {
+        sentry::capture_error(error);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::console::MockConsoleProvider;
@@ -217,5 +219,71 @@ mod tests {
         });
 
         assert!(has_version, "the output should contain a list of versions");
+    }
+
+    #[test]
+    fn report_user_failure_is_not_sent_to_sentry() {
+        let events = sentry::test::with_captured_events(|| {
+            report_system_failure(&human_errors::user(
+                "You did something that wasn't quite right.",
+                &["Try again with valid input."],
+            ));
+        });
+
+        assert!(
+            events.is_empty(),
+            "user-caused failures should not be reported to Sentry"
+        );
+    }
+
+    #[test]
+    fn report_system_failure_is_sent_to_sentry() {
+        let events = sentry::test::with_captured_events(|| {
+            report_system_failure(&human_errors::system(
+                "Something went wrong on our end.",
+                &["Please report this issue to us on GitHub."],
+            ));
+        });
+
+        assert_eq!(
+            events.len(),
+            1,
+            "system-caused failures should be reported to Sentry"
+        );
+    }
+
+    #[test]
+    fn run_resume_reports_only_system_failures() {
+        // Resuming an update whose state is missing the temporary application
+        // path fails with a system-caused error, which should be reported to
+        // Sentry through the `inspect_err(report_system_failure)` path in `run`.
+        let events = sentry::test::with_captured_events(|| {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .build()
+                .expect("we should be able to build a Tokio runtime");
+
+            rt.block_on(async {
+                let console = Arc::new(MockConsoleProvider::new());
+                let core = Core::builder()
+                    .with_default_config()
+                    .with_console(console.clone())
+                    .build();
+
+                let cmd = UpdateCommand {};
+                let args = cmd
+                    .app()
+                    .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
+
+                cmd.run(&core, &args).await.expect_err(
+                    "resuming an update without a temporary application path should fail",
+                );
+            });
+        });
+
+        assert_eq!(
+            events.len(),
+            1,
+            "the system-caused resume failure should be reported to Sentry"
+        );
     }
 }
