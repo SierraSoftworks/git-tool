@@ -203,6 +203,7 @@ jobs:
         with:
           app-id: ${{ secrets.TAP_APP_ID }}
           private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
           arch: ${{ matrix.arch }}
 
