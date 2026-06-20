@@ -6,6 +6,14 @@ Git Tool is a powerful tool for managing your Git repositories, storing them in
 a consistent folder structure and simplifying access when you need it. The best
 place to get started is by reading our [documentation](https://git-tool.sierrasoftworks.com).
 
+## Installation
+
+Install with [Homebrew](https://brew.sh):
+
+```sh
+brew install sierrasoftworks/tap/git-tool
+```
+
 ## Features
 
 - **Quickly open repositories** whether they are already cloned locally or not, using your favourite Git services and a concise folder structure.

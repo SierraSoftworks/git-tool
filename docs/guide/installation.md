@@ -16,6 +16,14 @@ Once you have downloaded the latest Git-Tool executable, rename it to `git-tool`
 On Linux and MacOS machines, you may need to use `chmod +x git-tool` to mark the program as executable.
 :::
 
+### Using Homebrew
+If you're using [Homebrew](https://brew.sh) on MacOS or Linux, you can install Git-Tool from
+the Sierra Softworks tap.
+
+```sh
+brew install sierrasoftworks/tap/git-tool
+```
+
 ### Using Cargo
 If you'd prefer, or if we don't (yet) provide pre-built releases for your platform, you can build
 Git-Tool yourself using `cargo`. Note that you'll need to have [rust installed](https://www.rust-lang.org/tools/install)
