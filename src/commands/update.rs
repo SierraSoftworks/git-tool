@@ -66,7 +66,12 @@ where {
 
                 info!("Resuming update in phase {}", state.phase);
                 manager.resume(&state).await.inspect_err(|e| {
-                    sentry::capture_error(&e);
+                    // Only report system-caused failures to Sentry. User-caused
+                    // errors are the result of invalid input or environment state
+                    // and shouldn't be recorded as telemetry.
+                    if e.is(human_errors::Kind::System) {
+                        sentry::capture_error(&e);
+                    }
                 })?
             }
             None => false,
