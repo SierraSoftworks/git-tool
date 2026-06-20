@@ -65,10 +65,7 @@ where {
                 });
 
                 info!("Resuming update in phase {}", state.phase);
-                manager
-                    .resume(&state)
-                    .await
-                    .inspect_err(report_system_failure)?
+                manager.resume(&state).await?
             }
             None => false,
         };
@@ -174,15 +171,6 @@ where {
     }
 }
 
-/// Reports a failure to Sentry, but only when it was system-caused. User-caused
-/// errors are the result of invalid input or environment state and shouldn't be
-/// recorded as telemetry, so they are deliberately ignored here.
-fn report_system_failure(error: &human_errors::Error) {
-    if error.is(human_errors::Kind::System) {
-        sentry::capture_error(error);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::console::MockConsoleProvider;
@@ -225,41 +213,11 @@ mod tests {
     }
 
     #[test]
-    fn report_user_failure_is_not_sent_to_sentry() {
-        let events = sentry::test::with_captured_events(|| {
-            report_system_failure(&human_errors::user(
-                "You did something that wasn't quite right.",
-                &["Try again with valid input."],
-            ));
-        });
-
-        assert!(
-            events.is_empty(),
-            "user-caused failures should not be reported to Sentry"
-        );
-    }
-
-    #[test]
-    fn report_system_failure_is_sent_to_sentry() {
-        let events = sentry::test::with_captured_events(|| {
-            report_system_failure(&human_errors::system(
-                "Something went wrong on our end.",
-                &["Please report this issue to us on GitHub."],
-            ));
-        });
-
-        assert_eq!(
-            events.len(),
-            1,
-            "system-caused failures should be reported to Sentry"
-        );
-    }
-
-    #[test]
-    fn run_resume_reports_only_system_failures() {
-        // Resuming an update whose state is missing the temporary application
-        // path fails with a system-caused error, which should be reported to
-        // Sentry through the `inspect_err(report_system_failure)` path in `run`.
+    fn run_resume_bubbles_up_failures_without_reporting() {
+        // The update command shouldn't report failures to Sentry itself; it
+        // bubbles them up so that `main` decides what to record (only
+        // system-caused errors are). This keeps user-caused errors out of
+        // telemetry and avoids double-reporting system-caused ones.
         let events = sentry::test::with_captured_events(|| {
             let rt = tokio::runtime::Builder::new_current_thread()
                 .build()
@@ -283,10 +241,9 @@ mod tests {
             });
         });
 
-        assert_eq!(
-            events.len(),
-            1,
-            "the system-caused resume failure should be reported to Sentry"
+        assert!(
+            events.is_empty(),
+            "the update command should not report failures to Sentry directly"
         );
     }
 }
