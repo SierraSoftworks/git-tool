@@ -198,6 +198,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: "true"
 
+      - name: Update Homebrew Tap
+        uses: SierraSoftworks/actions-tap@v1
+        with:
+          app-id: ${{ secrets.TAP_APP_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
+
       # - uses: anchore/sbom-action@v0
       #   with:
       #     file: "target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}"
