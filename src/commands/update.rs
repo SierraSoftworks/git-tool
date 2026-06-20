@@ -65,9 +65,7 @@ where {
                 });
 
                 info!("Resuming update in phase {}", state.phase);
-                manager.resume(&state).await.inspect_err(|e| {
-                    sentry::capture_error(&e);
-                })?
+                manager.resume(&state).await?
             }
             None => false,
         };
@@ -212,5 +210,40 @@ mod tests {
         });
 
         assert!(has_version, "the output should contain a list of versions");
+    }
+
+    #[test]
+    fn run_resume_bubbles_up_failures_without_reporting() {
+        // The update command shouldn't report failures to Sentry itself; it
+        // bubbles them up so that `main` decides what to record (only
+        // system-caused errors are). This keeps user-caused errors out of
+        // telemetry and avoids double-reporting system-caused ones.
+        let events = sentry::test::with_captured_events(|| {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .build()
+                .expect("we should be able to build a Tokio runtime");
+
+            rt.block_on(async {
+                let console = Arc::new(MockConsoleProvider::new());
+                let core = Core::builder()
+                    .with_default_config()
+                    .with_console(console.clone())
+                    .build();
+
+                let cmd = UpdateCommand {};
+                let args =
+                    cmd.app()
+                        .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
+
+                cmd.run(&core, &args).await.expect_err(
+                    "resuming an update without a temporary application path should fail",
+                );
+            });
+        });
+
+        assert!(
+            events.is_empty(),
+            "the update command should not report failures to Sentry directly"
+        );
     }
 }
