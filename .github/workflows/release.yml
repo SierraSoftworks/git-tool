@@ -15,6 +15,10 @@ jobs:
       id-token: write
       contents: read
 
+    env:
+      SENTRY_ORG: sierra-softworks
+      SENTRY_PROJECT: git-tool
+
     steps:
       - name: get secrets - sentry
         uses: hashicorp/vault-action@v4.0.0
@@ -27,12 +31,8 @@ jobs:
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
-      - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@v2.0.0
-        with:
-          token: ${{ env.SENTRY_AUTH_TOKEN }}
-          organization: sierra-softworks
-          project: git-tool
+      - name: Install Sentry CLI
+        run: npm install -g @sentry/cli
 
       - name: Check out code
         uses: actions/checkout@v7
@@ -72,6 +72,10 @@ jobs:
       id-token: write
       contents: write
       attestations: write
+
+    env:
+      SENTRY_ORG: sierra-softworks
+      SENTRY_PROJECT: git-tool
 
     needs:
       - version
@@ -147,12 +151,8 @@ jobs:
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
-      - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@v2.0.0
-        with:
-          token: ${{ env.SENTRY_AUTH_TOKEN }}
-          organization: sierra-softworks
-          project: git-tool
+      - name: Install Sentry CLI
+        run: npm install -g @sentry/cli
 
       - name: Check out code
         uses: actions/checkout@v7
@@ -235,6 +235,10 @@ jobs:
       id-token: write
       contents: read
 
+    env:
+      SENTRY_ORG: sierra-softworks
+      SENTRY_PROJECT: git-tool
+
     steps:
       - name: get secrets - sentry
         uses: hashicorp/vault-action@v4.0.0
@@ -247,12 +251,8 @@ jobs:
           secrets: |
             secrets/data/repos/SierraSoftworks/git-tool/sentry token | SENTRY_AUTH_TOKEN;
 
-      - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@v2.0.0
-        with:
-          token: ${{ env.SENTRY_AUTH_TOKEN }}
-          organization: sierra-softworks
-          project: git-tool
+      - name: Install Sentry CLI
+        run: npm install -g @sentry/cli
 
       - name: Finalize Sentry Release
         run: |
