@@ -65,7 +65,10 @@ where {
                 });
 
                 info!("Resuming update in phase {}", state.phase);
-                manager.resume(&state).await.inspect_err(report_system_failure)?
+                manager
+                    .resume(&state)
+                    .await
+                    .inspect_err(report_system_failure)?
             }
             None => false,
         };
@@ -270,9 +273,9 @@ mod tests {
                     .build();
 
                 let cmd = UpdateCommand {};
-                let args = cmd
-                    .app()
-                    .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
+                let args =
+                    cmd.app()
+                        .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
 
                 cmd.run(&core, &args).await.expect_err(
                     "resuming an update without a temporary application path should fail",
