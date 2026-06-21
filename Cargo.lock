@@ -3338,9 +3338,9 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update-rs"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d8f4ffd3c7c82bd6777cf0d273b4e1f27176408af43fc4b477e09500d86c2a3"
+checksum = "ad581eb1f8221eb83693667f43a587703dfd10036707da19902d93051412e666"
 dependencies = [
  "async-trait",
  "futures-util",

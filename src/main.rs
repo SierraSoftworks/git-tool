@@ -82,6 +82,11 @@ fn build_app() -> clap::Command {
                 .value_name("FILE")
                 .help("The path to your git-tool configuration file.")
                 .action(clap::ArgAction::Set))
+            .arg(Arg::new("update-resume-internal")
+                .long("update-resume-internal")
+                .help("A legacy flag emitted by older Git-Tool releases when coordinating an update. Tolerated (and ignored) so an update started by an older release can hand off to this one via the `update --state` sub-command it also passes.")
+                .action(clap::ArgAction::Set)
+                .hide(true))
             .arg(Arg::new("trace")
                 .long("trace")
                 .global(true)
@@ -95,20 +100,6 @@ fn build_app() -> clap::Command {
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
 async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, human_errors::Error> {
-    // If a previous update phase relaunched us with the resume flag, hand control
-    // straight to the updater before any argument parsing. The relaunch may carry
-    // trailing arguments (from older Git-Tool versions, which also appended an
-    // `update --state` sub-command) that clap would otherwise reject, and the
-    // serialized state continues the update's distributed trace.
-    let raw_args: Vec<String> = std::env::args().collect();
-    if let Some(idx) = raw_args.iter().position(|a| a == update::RESUME_FLAG)
-        && let Some(state) = raw_args.get(idx + 1)
-    {
-        info!("Detected an in-progress update relaunch; resuming the update.");
-        update::manager().resume_from_arg(state).await?;
-        return Ok(0);
-    }
-
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {

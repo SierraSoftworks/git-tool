@@ -16,6 +16,11 @@ impl CommandRunnable for UpdateCommand {
             .version("1.0")
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
             .long_about("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
+            .arg(Arg::new("state")
+                .long("state")
+                .help("Serialized state used to resume an in-progress update. Set automatically when the updater relaunches Git-Tool between phases.")
+                .hide(true)
+                .action(clap::ArgAction::Set))
             .arg(Arg::new("list")
                 .long("list")
                 .help("Prints the list of available releases.")
@@ -31,13 +36,24 @@ impl CommandRunnable for UpdateCommand {
 
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error> {
+        let manager = crate::update::manager();
+
+        // When the updater relaunches us between phases it invokes
+        // `gt update --state <json>`; hand that straight back to the updater to
+        // continue the in-progress update (the state also carries the trace
+        // context, so the phases stay on one distributed trace).
+        if let Some(state) = matches.get_one::<String>("state") {
+            info!("Resuming an in-progress update.");
+            manager.resume_from_arg(state).await?;
+            return Ok(0);
+        }
+
         let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
                 err,
                 "Could not parse the current application version into a SemVer version number.",
                 &["Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved."],
             ))?;
 
-        let manager = crate::update::manager();
         let releases = manager.get_releases().await?;
 
         if matches.get_flag("list") {
@@ -155,6 +171,8 @@ fn format_release_list(releases: &[Release], current_version: &semver::Version) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::console::MockConsoleProvider;
+    use std::sync::Arc;
 
     fn release(id: &str, version: &str, prerelease: bool, supported: bool) -> Release {
         Release {
@@ -192,6 +210,42 @@ mod tests {
         assert_eq!(
             lines[2], "  v2.1.0 (pre-release)",
             "an available pre-release is left unmarked and labelled"
+        );
+    }
+
+    #[test]
+    fn run_resume_bubbles_up_failures_without_reporting() {
+        // `gt update --state <json>` resumes an in-progress update. The command
+        // shouldn't report resume failures to Sentry itself; it bubbles them up so
+        // `main` decides what to record (only system-caused errors are). Resuming
+        // a cleanup phase with no temporary application path is a system error we
+        // can trigger without any network access.
+        let events = sentry::test::with_captured_events(|| {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .build()
+                .expect("we should be able to build a Tokio runtime");
+
+            rt.block_on(async {
+                let console = Arc::new(MockConsoleProvider::new());
+                let core = Core::builder()
+                    .with_default_config()
+                    .with_console(console.clone())
+                    .build();
+
+                let cmd = UpdateCommand {};
+                let args =
+                    cmd.app()
+                        .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
+
+                cmd.run(&core, &args)
+                    .await
+                    .expect_err("resuming a cleanup phase without a temporary path should fail");
+            });
+        });
+
+        assert!(
+            events.is_empty(),
+            "the update command should not report resume failures to Sentry directly"
         );
     }
 }
