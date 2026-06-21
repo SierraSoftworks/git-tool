@@ -1,9 +1,9 @@
 use super::*;
+use crate::engine::Target;
 use crate::engine::features;
 use crate::errors::HumanErrorResultExt;
 use crate::tasks::*;
-use crate::update::{GitHubSource, Release, ReleaseVariant};
-use crate::{engine::Target, update::UpdateManager};
+use crate::update::Release;
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -131,8 +131,8 @@ New applications can be configured either by making changes to your configuratio
 }
 
 impl OpenCommand {
-    #[tracing::instrument(err, skip(self, core))]
-    async fn check_for_update(&self, core: &Core) -> Result<Option<Release>, human_errors::Error> {
+    #[tracing::instrument(err, skip(self, _core))]
+    async fn check_for_update(&self, _core: &Core) -> Result<Option<Release>, human_errors::Error> {
         let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
                 err,
                 "Could not parse the current application version into a SemVer version number.",
@@ -141,15 +141,10 @@ impl OpenCommand {
 
         info!("Current application version is v{}", current_version);
 
-        let manager: UpdateManager<GitHubSource> = Default::default();
-
-        let releases = manager.get_releases(core).await?;
-        let current_variant = ReleaseVariant::default();
+        let releases = crate::update::manager().get_releases().await?;
 
         let target_release = Release::get_latest(releases.iter().filter(|&r| {
-            r.get_variant(&current_variant).is_some()
-                && r.version > current_version
-                && (!r.prerelease)
+            r.get_variant().is_some() && r.version > current_version && !r.prerelease
         }));
 
         Ok(target_release.cloned())

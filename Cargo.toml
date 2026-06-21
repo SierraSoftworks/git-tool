@@ -47,6 +47,10 @@ tokio = { version = "1.52", features = [
 ] }
 tracing = { version = "0.1.43", features = ["log"] }
 tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git", features = ["umami", "opentelemetry", "sentry"] }
+# Self-update machinery (extracted from this project). The `opentelemetry`
+# feature emits tracing spans for the update and propagates the trace context
+# across the three relaunch phases via the update state.
+update-rs = { version = "0.3", features = ["opentelemetry"] }
 dirs = "6.0.0"
 shellexpand = "3"
 

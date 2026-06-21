@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    errors::HumanErrorResultExt,
-    update::{GitHubSource, Release, ReleaseVariant, UpdateManager},
-};
+use crate::{errors::HumanErrorResultExt, update::Release};
 use clap::Arg;
 use tracing_batteries::prelude::*;
 
@@ -19,11 +16,6 @@ impl CommandRunnable for UpdateCommand {
             .version("1.0")
             .about("updates Git-Tool automatically by fetching the latest release from GitHub")
             .long_about("Allows you to update Git-Tool to the latest version, or a specific version, automatically.")
-            .arg(Arg::new("state")
-                .long("state")
-                .help("State information used to resume an update operation.")
-                .hide(true)
-                .action(clap::ArgAction::Set))
             .arg(Arg::new("list")
                 .long("list")
                 .help("Prints the list of available releases.")
@@ -38,78 +30,41 @@ impl CommandRunnable for UpdateCommand {
     }
 
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
-    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error>
-where {
+    async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error> {
         let current_version: semver::Version = version!().parse().map_err(|err| human_errors::wrap_system(
                 err,
                 "Could not parse the current application version into a SemVer version number.",
                 &["Please report this issue to us on GitHub and try updating manually by downloading the latest release from GitHub once the problem is resolved."],
             ))?;
-        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
 
-        let resume_successful = match matches.get_one::<String>("state") {
-            Some(state) => {
-                debug!("Received update state: {}", state);
-                sentry::configure_scope(|scope| {
-                    scope.set_extra("state", json!(state));
-                });
-
-                let state: crate::update::UpdateState = serde_json::from_str(state).map_err(|e| human_errors::wrap_system(
-                e,
-                "Could not deserialize the update state blob.",
-                &["Please report this issue to us on GitHub and use the manual update process until this problem is resolved."],
-            ))?;
-                sentry::configure_scope(|scope| {
-                    scope.set_extra("state", serde_json::to_value(&state).unwrap_or_default());
-                    scope.set_transaction(Some(&format!("update/{}", state.phase)));
-                });
-
-                info!("Resuming update in phase {}", state.phase);
-                manager.resume(&state).await?
-            }
-            None => false,
-        };
-
-        if resume_successful {
-            sentry::capture_message("Resumed Update", sentry::Level::Info);
-            return Ok(0);
-        }
-
-        let releases = manager.get_releases(core).await?;
-        let current_variant = ReleaseVariant::default();
+        let manager = crate::update::manager();
+        let releases = manager.get_releases().await?;
 
         if matches.get_flag("list") {
-            for release in releases {
-                let style = if release.version == current_version {
-                    "*"
-                } else if release.get_variant(&current_variant).is_none() {
-                    "!"
-                } else {
-                    " "
-                };
-
-                let suffix = if release.prerelease {
-                    " (pre-release)"
-                } else {
-                    ""
-                };
-
-                writeln!(core.output(), "{} {}{}", style, release.id, suffix).to_human_error()?;
-            }
+            write!(
+                core.output(),
+                "{}",
+                format_release_list(&releases, &current_version)
+            )
+            .to_human_error()?;
 
             return Ok(0);
         }
 
         let include_prerelease = matches.get_flag("prerelease");
-        let mut target_release = Release::get_latest(releases.iter().filter(|&r| {
-            r.get_variant(&current_variant).is_some()
-                && r.version > current_version
-                && (!r.prerelease || include_prerelease)
-        }));
+        let requested_version = matches.get_one::<String>("target-version");
 
-        if let Some(target_version) = matches.get_one::<String>("target-version") {
-            target_release = releases.iter().find(|r| &r.id == target_version);
-        }
+        let target_release = match requested_version {
+            // An explicit version (rollback or roll-forward) is matched by its tag.
+            Some(target_version) => releases.iter().find(|r| &r.id == target_version),
+            // Otherwise pick the newest release with an asset for this platform
+            // that is newer than what we're running.
+            None => Release::get_latest(releases.iter().filter(|&r| {
+                r.get_variant().is_some()
+                    && r.version > current_version
+                    && (!r.prerelease || include_prerelease)
+            })),
+        };
 
         match target_release {
             Some(release) => {
@@ -119,7 +74,7 @@ where {
                 );
                 writeln!(core.output(), "Downloading update {}...", &release.id)
                     .to_human_error()?;
-                if manager.update(core, release).await? {
+                if manager.update(release).await? {
                     writeln!(
                         core.output(),
                         "Shutting down to complete the update operation."
@@ -127,7 +82,7 @@ where {
                     .to_human_error()?;
                 }
             }
-            None if matches.contains_id("version") => {
+            None if requested_version.is_some() => {
                 return Err(human_errors::user(
                     "Could not find an available update for your platform matching the version you provided.",
                     &[
@@ -154,96 +109,89 @@ where {
 
     #[tracing::instrument(
         name = "gt complete -- gt update",
-        skip(self, core, completer, _matches)
+        skip(self, _core, completer, _matches)
     )]
-    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        let manager: UpdateManager<GitHubSource> = UpdateManager::default();
-
-        if let Ok(releases) = manager.get_releases(core).await {
-            let current_variant = ReleaseVariant::default();
+    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        if let Ok(releases) = crate::update::manager().get_releases().await {
             completer.offer_many(
                 releases
                     .iter()
-                    .filter(|&r| r.get_variant(&current_variant).is_some())
+                    .filter(|r| r.get_variant().is_some())
                     .map(|r| &r.id),
             );
         }
     }
 }
 
+/// Render the `gt update --list` output: one line per release, prefixed with a
+/// status marker — `*` for the version we're running, `!` for a release with no
+/// asset for this platform, and a space otherwise — and a `(pre-release)` suffix
+/// for pre-releases.
+fn format_release_list(releases: &[Release], current_version: &semver::Version) -> String {
+    use std::fmt::Write;
+
+    let mut output = String::new();
+    for release in releases {
+        let style = if release.version == *current_version {
+            "*"
+        } else if release.get_variant().is_none() {
+            "!"
+        } else {
+            " "
+        };
+
+        let suffix = if release.prerelease {
+            " (pre-release)"
+        } else {
+            ""
+        };
+
+        let _ = writeln!(output, "{style} {}{suffix}", release.id);
+    }
+
+    output
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::console::MockConsoleProvider;
-    use std::sync::Arc;
-
     use super::*;
 
-    #[tokio::test]
-    #[cfg_attr(feature = "pure-tests", ignore)]
-    async fn run_list() {
-        let console = Arc::new(MockConsoleProvider::new());
-        let core = Core::builder()
-            .with_default_config()
-            .with_console(console.clone())
-            .build();
-
-        let cmd = UpdateCommand {};
-        let args = cmd.app().get_matches_from(vec!["update", "--list"]);
-
-        cmd.assert_run_successful(&core, &args).await;
-
-        print!("{}", console);
-
-        let mut has_version = false;
-        console.to_string().split_terminator('\n').for_each(|line| {
-            assert!(
-                line.starts_with('*') || line.starts_with('!') || line.starts_with(' '),
-                "the output should contain a list of versions prefixed with a status indicator"
-            );
-
-            assert!(
-                line[1..].starts_with(" v"),
-                "the output should contain a list of versions prefixed with 'v...'"
-            );
-
-            has_version = true;
-        });
-
-        assert!(has_version, "the output should contain a list of versions");
+    fn release(id: &str, version: &str, prerelease: bool, supported: bool) -> Release {
+        Release {
+            id: id.to_string(),
+            changelog: String::new(),
+            version: version.parse().unwrap(),
+            prerelease,
+            variant: supported.then(|| update_rs::ReleaseVariant {
+                name: format!("git-tool-test-{id}"),
+                sha256: None,
+            }),
+        }
     }
 
     #[test]
-    fn run_resume_bubbles_up_failures_without_reporting() {
-        // The update command shouldn't report failures to Sentry itself; it
-        // bubbles them up so that `main` decides what to record (only
-        // system-caused errors are). This keeps user-caused errors out of
-        // telemetry and avoids double-reporting system-caused ones.
-        let events = sentry::test::with_captured_events(|| {
-            let rt = tokio::runtime::Builder::new_current_thread()
-                .build()
-                .expect("we should be able to build a Tokio runtime");
+    fn format_release_list_marks_current_unsupported_and_available() {
+        let current: semver::Version = "2.0.0".parse().unwrap();
+        let releases = vec![
+            release("v2.0.0", "2.0.0", false, true),
+            release("v1.5.0", "1.5.0", false, false),
+            release("v2.1.0", "2.1.0", true, true),
+        ];
 
-            rt.block_on(async {
-                let console = Arc::new(MockConsoleProvider::new());
-                let core = Core::builder()
-                    .with_default_config()
-                    .with_console(console.clone())
-                    .build();
+        let listing = format_release_list(&releases, &current);
+        let lines: Vec<&str> = listing.lines().collect();
 
-                let cmd = UpdateCommand {};
-                let args =
-                    cmd.app()
-                        .get_matches_from(vec!["update", "--state", r#"{"phase":"cleanup"}"#]);
-
-                cmd.run(&core, &args).await.expect_err(
-                    "resuming an update without a temporary application path should fail",
-                );
-            });
-        });
-
-        assert!(
-            events.is_empty(),
-            "the update command should not report failures to Sentry directly"
+        assert_eq!(
+            lines[0], "* v2.0.0",
+            "the current version is marked with '*'"
+        );
+        assert_eq!(
+            lines[1], "! v1.5.0",
+            "a release with no asset for this platform is marked with '!'"
+        );
+        assert_eq!(
+            lines[2], "  v2.1.0 (pre-release)",
+            "an available pre-release is left unmarked and labelled"
         );
     }
 }
