@@ -84,7 +84,7 @@ fn build_app() -> clap::Command {
                 .action(clap::ArgAction::Set))
             .arg(Arg::new("update-resume-internal")
                 .long("update-resume-internal")
-                .help("A legacy flag used to coordinate updates in the same way that the `update --state` flag is used now. Maintained for backwards compatibility reasons.")
+                .help("A legacy flag emitted by older Git-Tool releases when coordinating an update. Tolerated (and ignored) so an update started by an older release can hand off to this one via the `update --state` sub-command it also passes.")
                 .action(clap::ArgAction::Set)
                 .hide(true))
             .arg(Arg::new("trace")
@@ -258,31 +258,6 @@ async fn run(
             Span::current().context().span().span_context().trace_id()
         )
         .to_human_error()?;
-    }
-
-    // Legacy update interoperability for compatibility with the Golang implementation
-    if let (Some(state), None) = (
-        matches.get_one::<String>("update-resume-internal"),
-        matches.subcommand_name(),
-    ) {
-        info!(
-            "Detected the legacy --update-resume-internal flag, rewriting it to use the new update sub-command."
-        );
-        if let Some(cmd) = inventory::iter::<commands::Command>().find(|c| c.name() == "update") {
-            let matches = cmd
-                .app()
-                .try_get_matches_from(vec!["gt", "update", "--state", state])
-                .map_err(|e| human_errors::wrap_system(
-                    e.to_string(),
-                    "Failed to process internal update operation.",
-                    &["Please report this error to us on GitHub and use the manual update process until it is resolved."],
-                ))?;
-
-            info!(
-                "Running update sub-command with state sourced from --update-resume-internal flag."
-            );
-            return cmd.run(&core, &matches).await;
-        }
     }
 
     debug!("Looking for an appropriate matching command implementation.");

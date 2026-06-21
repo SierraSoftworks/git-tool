@@ -20,13 +20,34 @@ pub trait HttpClient: Send + Sync {
     }
 
     async fn request(&self, req: Request) -> Result<Response, human_errors::Error>;
+
+    /// The underlying [`reqwest::Client`], for code that needs a real client
+    /// rather than this trait — e.g. the self-updater, which hands a
+    /// `reqwest::Client` to `update-rs`. It shares this client's configuration
+    /// and connection pool.
+    fn reqwest_client(&self) -> Client;
 }
 
 pub fn client() -> Arc<dyn HttpClient + Send + Sync> {
-    Arc::new(TrueHttpClient {})
+    Arc::new(TrueHttpClient {
+        client: build_client(),
+    })
 }
 
-struct TrueHttpClient {}
+/// Build Git-Tool's shared reqwest client, carrying a default `User-Agent` so
+/// requests that don't set their own are still attributed to Git-Tool (GitHub
+/// requires one). Call sites that set a per-request `User-Agent` still override
+/// it.
+fn build_client() -> Client {
+    Client::builder()
+        .user_agent(version!("Git-Tool/"))
+        .build()
+        .unwrap_or_else(|_| Client::new())
+}
+
+struct TrueHttpClient {
+    client: Client,
+}
 
 impl std::fmt::Debug for dyn HttpClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -58,9 +79,7 @@ impl HttpClient for TrueHttpClient {
         )
     )]
     async fn request(&self, req: Request) -> Result<Response, human_errors::Error> {
-        let client = Client::new();
-
-        let response = client.execute(req).await.to_human_error()?;
+        let response = self.client.execute(req).await.to_human_error()?;
 
         if !response.status().is_success() {
             Span::current().record("otel.status_code", 2_u32).record(
@@ -78,11 +97,17 @@ impl HttpClient for TrueHttpClient {
 
         Ok(response)
     }
+
+    fn reqwest_client(&self) -> Client {
+        self.client.clone()
+    }
 }
 
 impl From<Arc<Config>> for TrueHttpClient {
     fn from(_: Arc<Config>) -> Self {
-        Self {}
+        Self {
+            client: build_client(),
+        }
     }
 }
 
