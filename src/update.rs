@@ -29,13 +29,27 @@ impl Launcher for GitToolLauncher {
     }
 }
 
+/// Build the HTTP client the updater uses, carrying Git-Tool's `User-Agent` (as
+/// GitHub requires) so self-update requests are attributed to Git-Tool rather
+/// than to update-rs's generic default client.
+fn http_client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .user_agent(version!("Git-Tool/"))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new())
+}
+
 /// Build an [`UpdateManager`] configured for Git-Tool's releases.
 ///
 /// It downloads the Go-style `git-tool-<os>-<arch>[.exe]` asset for the current
 /// platform (matching the names produced by `.github/workflows/release.yml`)
-/// from the project's GitHub releases, whose tags are `vX.Y.Z`, and relaunches
-/// through the `update --state` sub-command.
+/// from the project's GitHub releases, whose tags are `vX.Y.Z`, using Git-Tool's
+/// own HTTP client, and relaunches through the `update --state` sub-command.
 pub fn manager() -> UpdateManager<GitHubSource> {
-    UpdateManager::new(GitHubSource::new(REPO, naming::go("git-tool")).with_release_tag_prefix("v"))
-        .with_launcher(Box::new(GitToolLauncher))
+    UpdateManager::new(
+        GitHubSource::new(REPO, naming::go("git-tool"))
+            .with_release_tag_prefix("v")
+            .with_client(http_client()),
+    )
+    .with_launcher(Box::new(GitToolLauncher))
 }

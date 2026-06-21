@@ -50,7 +50,7 @@ tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batterie
 # Self-update machinery (extracted from this project). The `opentelemetry`
 # feature emits tracing spans for the update and propagates the trace context
 # across the three relaunch phases via the update state.
-update-rs = { version = "0.4", features = ["opentelemetry"] }
+update-rs = { version = "0.4.1", features = ["opentelemetry"] }
 dirs = "6.0.0"
 shellexpand = "3"
 
