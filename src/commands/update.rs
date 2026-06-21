@@ -36,7 +36,7 @@ impl CommandRunnable for UpdateCommand {
 
     #[tracing::instrument(name = "gt update", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, engine::Error> {
-        let manager = crate::update::manager();
+        let manager = crate::update::manager(core);
 
         // When the updater relaunches us between phases it invokes
         // `gt update --state <json>`; hand that straight back to the updater to
@@ -125,10 +125,10 @@ impl CommandRunnable for UpdateCommand {
 
     #[tracing::instrument(
         name = "gt complete -- gt update",
-        skip(self, _core, completer, _matches)
+        skip(self, core, completer, _matches)
     )]
-    async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        if let Ok(releases) = crate::update::manager().get_releases().await {
+    async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
+        if let Ok(releases) = crate::update::manager(core).get_releases().await {
             completer.offer_many(
                 releases
                     .iter()
