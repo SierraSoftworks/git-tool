@@ -62,7 +62,7 @@ winresource = "0.1"
 
 [dev-dependencies]
 http = "1.4"
-mockall = "0.14.0"
+mockall = "0.15.0"
 rstest = "0.26"
 sentry = { version = "0.48", default-features = false, features = [
     "reqwest",
