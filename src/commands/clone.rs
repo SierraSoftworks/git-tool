@@ -56,7 +56,7 @@ impl CommandRunnable for CloneCommand {
                     continue;
                 }
 
-                let repo = core.resolver().get_best_repo(&line.trim().parse()?)?;
+                let repo: Repo = core.resolve(line.trim())?;
                 writeln!(core.output(), "{}", repo).to_human_error()?;
                 match operation.apply_repo(core, &repo).await {
                     Ok(()) => {}
@@ -64,8 +64,7 @@ impl CommandRunnable for CloneCommand {
                 }
             }
         } else {
-            let identifier = repo_name.parse()?;
-            let repo = core.resolver().get_best_repo(&identifier)?;
+            let repo: Repo = core.resolve(repo_name.as_str())?;
 
             if !repo.exists() {
                 match sequence![GitClone::default()].apply_repo(core, &repo).await {

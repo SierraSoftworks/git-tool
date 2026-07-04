@@ -26,17 +26,14 @@ impl CommandRunnable for RemoveCommand {
 
     #[tracing::instrument(name = "gt remove", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
-        let repo_name = matches
-            .get_one::<String>("repo")
-            .ok_or_else(|| {
-                human_errors::user(
-                    "No repository name was provided.",
-                    &["Provide the name of the repository you wish to remove."],
-                )
-            })?
-            .parse()?;
+        let repo_name = matches.get_one::<String>("repo").ok_or_else(|| {
+            human_errors::user(
+                "No repository name was provided.",
+                &["Provide the name of the repository you wish to remove."],
+            )
+        })?;
 
-        let repo = core.resolver().get_best_repo(&repo_name)?;
+        let repo: Repo = core.resolve(repo_name.as_str())?;
 
         if repo.exists()
             && let Err(err) = std::fs::remove_dir_all(repo.get_path())

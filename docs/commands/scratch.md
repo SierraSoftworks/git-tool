@@ -49,7 +49,16 @@ gt s code
 
 # Open a specially named scratchpad folder
 gt s 2021w10-super-important
+
+# Open the current week's scratchpad in a shell with an environment override
+gt s shell FOO=bar
 ```
+
+::: tip
+Just like [`gt open`](repos.md#open), you can append `KEY=VALUE` tokens to override environment
+variables for the launched application. These overrides are applied verbatim and take precedence
+over any matching `environment` entry configured for the app.
+:::
 
 ::: tip
 You don't need to use our naming scheme if you don't want to, just run `gt s something` and

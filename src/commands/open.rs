@@ -1,6 +1,6 @@
 use super::*;
-use crate::engine::Target;
 use crate::engine::features;
+use crate::engine::{Repo, Resolver, Target};
 use crate::errors::HumanErrorResultExt;
 use crate::tasks::*;
 use crate::update::Release;
@@ -21,15 +21,14 @@ impl CommandRunnable for OpenCommand {
             .version("1.0")
             .visible_aliases(["o"])
             .about("opens a repository using an application defined in your config")
-            .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo. Aliases take precedence over repos, which take precedence over apps. When specifying an app, it should appear before the repo/alias parameter. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
-            
+            .long_about("This command launches an application defined in your configuration within the specified repository. You can specify any combination of alias, app and repo, in any order. Aliases take precedence over repos, which take precedence over apps. If you are already inside a repository, you can specify only an app and it will launch in the context of the current repo.
+
+You may also append any number of KEY=VALUE tokens to override environment variables for the launched application (for example `gt open my/repo shell FOO=bar`). These overrides are applied verbatim and take precedence over any environment configured for the app.
+
 New applications can be configured either by making changes to your configuration, or by using the `git-tool config add` command to install them from the GitHub registry. For example, you can use `gt config add apps/bash` to configure `bash` as an available app.")
-            .arg(Arg::new("app")
-                    .help("The name of the application to launch.")
-                    .index(1))
-            .arg(Arg::new("repo")
-                    .help("The name of the repository to open.")
-                    .index(2))
+            .arg(Arg::new("args")
+                    .help("The app, repository/alias, and any KEY=VALUE environment overrides to launch with (in any order).")
+                    .action(clap::ArgAction::Append))
             .arg(Arg::new("create")
                     .long("create")
                     .short('c')
@@ -52,32 +51,16 @@ New applications can be configured either by making changes to your configuratio
             ).to_human_error()?;
         }
 
-        let (app, repo) = match helpers::get_launch_app(
-            core,
-            matches.get_one::<String>("app"),
-            matches.get_one::<String>("repo"),
-        )? {
-            helpers::LaunchTarget::AppAndTarget(app, target) => {
-                (app, core.resolver().get_best_repo(&target)?)
-            }
-            helpers::LaunchTarget::App(app) => (app, core.resolver().get_current_repo()?),
-            helpers::LaunchTarget::Target(target) => {
-                let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
+        // The current repository (when we are inside one) acts as the implied
+        // target and lets a lone app-named token be treated as an application.
+        let current: Option<Repo> = core.resolve(()).ok();
+        let parsed = crate::completion::parse::<Repo>(core, current.as_ref(), matches)?;
 
-                (app, core.resolver().get_best_repo(&target)?)
-            }
-            helpers::LaunchTarget::None => {
-                return Err(human_errors::user(
-                    "You did not specify the name of a repository to use.",
-                    &[
-                        "Remember to specify a repository name like this: 'git-tool open github.com/sierrasoftworks/git-tool'.",
-                    ],
-                ));
-            }
-        };
+        let app = parsed.launch_app(core)?;
+        let repo = &parsed.target;
 
         if !repo.exists() {
-            match sequence![GitClone::default()].apply_repo(core, &repo).await {
+            match sequence![GitClone::default()].apply_repo(core, repo).await {
                 Ok(()) => {}
                 Err(_) if matches.get_flag("create") => {
                     sequence![
@@ -88,7 +71,7 @@ New applications can be configured either by making changes to your configuratio
                             enabled: !matches.get_flag("no-create-remote")
                         }
                     ]
-                    .apply_repo(core, &repo)
+                    .apply_repo(core, repo)
                     .await?;
                 }
                 Err(e) => return Err(e),
@@ -101,7 +84,7 @@ New applications can be configured either by making changes to your configuratio
             .has(features::CHECK_FOR_UPDATES)
         {
             let (status, latest_release) =
-                futures::join!(core.launcher().run(app, &repo), self.check_for_update(core));
+                futures::join!(core.launcher().run(&app, repo), self.check_for_update(core));
 
             if let Ok(Some(latest_release)) = latest_release {
                 writeln!(
@@ -113,7 +96,7 @@ New applications can be configured either by making changes to your configuratio
 
             Ok(status?)
         } else {
-            Ok(core.launcher().run(app, &repo).await?)
+            Ok(core.launcher().run(&app, repo).await?)
         }
     }
 
@@ -189,6 +172,8 @@ features:
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
                 let identifier: Identifier = "repo".parse().unwrap();
+                mock.expect_get_current_repo()
+                    .returning(|| Err(human_errors::user("not in a repository", &[])));
                 mock.expect_get_best_repo()
                     .with(eq(identifier))
                     .returning(move |_| {
@@ -211,5 +196,62 @@ features:
             }
             Err(err) => panic!("{}", err.message()),
         }
+    }
+
+    #[tokio::test]
+    #[cfg_attr(feature = "pure-tests", ignore)]
+    async fn run_with_env_override() {
+        let cmd = OpenCommand {};
+
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["open", "test-app", "repo", "FOO=bar"]);
+
+        let cfg = Config::from_str(
+            "
+directory: /dev
+
+apps:
+  - name: test-app
+    command: test
+    args:
+        - '{{ .Target.Name }}'
+
+features:
+  http_transport: true
+",
+        )
+        .unwrap();
+
+        let temp = tempdir().unwrap();
+        std::fs::create_dir(temp.path().join("repo")).expect("create test repo dir");
+        let temp_path = temp.path().to_owned();
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(|mock| {
+                let temp_path = temp_path.clone();
+                let identifier: Identifier = "repo".parse().unwrap();
+                mock.expect_get_current_repo()
+                    .returning(|| Err(human_errors::user("not in a repository", &[])));
+                mock.expect_get_best_repo()
+                    .with(eq(identifier))
+                    .returning(move |_| {
+                        Ok(Repo::new("gh:git-fixtures/basic", temp_path.join("repo")))
+                    });
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .withf(|app, repo| {
+                        app.get_name() == "test-app"
+                            && repo.get_name() == "basic"
+                            && app
+                                .get_overrides()
+                                .contains(&("FOO".to_string(), "bar".to_string()))
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        cmd.assert_run_successful(&core, &args).await;
     }
 }

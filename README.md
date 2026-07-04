@@ -32,6 +32,9 @@ gt o sierrasoftworks/git-tool
 # Open the github.com/sierrasoftworks/git-tool repo in VS Code (if listed in your config)
 gt o code gh:sierrasoftworks/git-tool
 
+# Open a repo in a shell, overriding an environment variable for that launch
+gt o sierrasoftworks/git-tool shell FOO=bar
+
 # Create a new repository and instruct GitHub to create the repo as well, if you
 # have permission to do so.
 gt new gh:sierrasoftworks/demo-repo

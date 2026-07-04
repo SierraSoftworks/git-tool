@@ -10,14 +10,25 @@ pub trait Target: Display {
     fn template_context(&self, config: &Config) -> Value;
 }
 
+/// Controls what happens to a [`TempTarget`]'s directory once the target is
+/// dropped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TempMode {
+    /// Remove the temporary directory when the target is dropped.
+    Cleanup,
+    /// Leave the temporary directory in place for the user to clean up
+    /// themselves (the `--keep` behaviour).
+    Retain,
+}
+
 pub struct TempTarget {
     dir: tempfile::TempDir,
 }
 
 impl TempTarget {
-    pub fn new(keep: bool) -> Result<Self, human_errors::Error> {
+    pub fn new(mode: TempMode) -> Result<Self, human_errors::Error> {
         let mut builder = tempfile::Builder::new();
-        if keep {
+        if mode == TempMode::Retain {
             builder.disable_cleanup(true);
         }
 

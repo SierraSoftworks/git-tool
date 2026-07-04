@@ -1,8 +1,10 @@
 use crate::console::{self, ConsoleProvider};
 
-use super::{
-    Config, Core, HttpClient, KeyChain, Launcher, Resolver, auth, http, launcher, resolver,
-};
+use super::resolve::{ResolverBackend, TrueResolver};
+use super::{Config, Core, HttpClient, KeyChain, Launcher, auth, http, launcher};
+
+#[cfg(test)]
+use super::resolve::MockResolver;
 use std::{path::PathBuf, sync::Arc};
 
 #[cfg(test)]
@@ -22,7 +24,7 @@ impl CoreBuilderWithoutConfig {
 
         CoreBuilderWithConfig {
             launcher: launcher::launcher(config.clone()),
-            resolver: resolver::resolver(config.clone()),
+            resolver: ResolverBackend::True(TrueResolver::new(config.clone())),
             keychain: auth::keychain(),
             http_client: http::client(),
             console: console::default(),
@@ -58,7 +60,7 @@ pub struct CoreBuilderWithConfig {
     pub(super) config: Arc<Config>,
     pub(super) console: Arc<dyn ConsoleProvider + Send + Sync>,
     pub(super) launcher: Arc<dyn Launcher + Send + Sync>,
-    pub(super) resolver: Arc<dyn Resolver + Send + Sync>,
+    pub(super) resolver: ResolverBackend,
     pub(super) keychain: Arc<dyn KeyChain + Send + Sync>,
     pub(super) http_client: Arc<dyn HttpClient + Send + Sync>,
 }
@@ -102,15 +104,15 @@ impl CoreBuilderWithConfig {
         self.with_launcher(Arc::new(mock))
     }
 
-    pub fn with_resolver(self, resolver: Arc<dyn Resolver + Send + Sync>) -> Self {
+    pub fn with_resolver(self, resolver: ResolverBackend) -> Self {
         Self { resolver, ..self }
     }
 
     #[cfg(test)]
-    pub fn with_mock_resolver<F: FnMut(&mut resolver::MockResolver)>(self, mut config: F) -> Self {
-        let mut mock = resolver::MockResolver::new();
+    pub fn with_mock_resolver<F: FnMut(&mut MockResolver)>(self, mut config: F) -> Self {
+        let mut mock = MockResolver::new();
         config(&mut mock);
-        self.with_resolver(Arc::new(mock))
+        self.with_resolver(ResolverBackend::Mock(mock))
     }
 
     pub fn with_keychain(self, keychain: Arc<dyn KeyChain + Send + Sync>) -> Self {

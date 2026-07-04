@@ -1,4 +1,4 @@
-pub use super::{Config, Target, templates::repo_context};
+pub use super::{Branch, Config, Target, Worktree, templates::repo_context};
 use gtmpl::Value;
 use std::path;
 
@@ -54,6 +54,12 @@ impl Repo {
 
     pub fn valid(&self) -> bool {
         self.path.join(".git").is_dir()
+    }
+
+    /// Resolves the [`Worktree`] this repository maps a given branch to, using the
+    /// worktree directory configured in `config`.
+    pub fn worktree(&self, branch: &Branch, config: &Config) -> Worktree {
+        Worktree::new(self, branch, config)
     }
 }
 

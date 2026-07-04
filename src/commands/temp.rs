@@ -1,6 +1,6 @@
 use super::async_trait;
 use super::*;
-use crate::engine::Target;
+use crate::engine::{Resolver, Target, TempMode, TempTarget};
 use crate::errors::HumanErrorResultExt;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -41,11 +41,15 @@ impl CommandRunnable for TempCommand {
             core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?
         };
 
-        let keep = matches.get_one::<bool>("keep").copied().unwrap_or_default();
+        let mode = if matches.get_flag("keep") {
+            TempMode::Retain
+        } else {
+            TempMode::Cleanup
+        };
 
-        let temp = core.resolver().get_temp(keep)?;
+        let temp: TempTarget = core.resolve(mode)?;
 
-        if keep {
+        if mode == TempMode::Retain {
             writeln!(core.output(), "temp path: {}", temp.get_path().display()).to_human_error()?;
         }
 
@@ -94,8 +98,8 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
-                mock.expect_get_temp().returning(move |keep| {
-                    let temp = TempTarget::new(keep).unwrap();
+                mock.expect_get_temp().returning(move |mode| {
+                    let temp = TempTarget::new(mode).unwrap();
                     *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
                     Ok(temp)
                 });
@@ -151,8 +155,8 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 let temp_path = temp_path.clone();
-                mock.expect_get_temp().returning(move |keep| {
-                    let temp = TempTarget::new(keep).unwrap();
+                mock.expect_get_temp().returning(move |mode| {
+                    let temp = TempTarget::new(mode).unwrap();
                     *temp_path.write().unwrap() = Some(temp.get_path().to_owned());
                     Ok(temp)
                 });
@@ -202,7 +206,7 @@ apps:
             .with_config(cfg)
             .with_mock_resolver(|mock| {
                 mock.expect_get_temp()
-                    .returning(|keep| Ok(TempTarget::new(keep).unwrap()));
+                    .returning(|mode| Ok(TempTarget::new(mode).unwrap()));
             })
             .with_mock_launcher(|mock| {
                 mock.expect_run().never();

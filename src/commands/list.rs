@@ -47,7 +47,7 @@ where {
         let quiet = matches.get_flag("quiet");
         let full = matches.get_flag("full");
 
-        let repos = core.resolver().get_repos()?;
+        let repos: Vec<Repo> = core.resolve_many(())?;
 
         let mut first = true;
         for repo in search::best_matches_by(filter, repos.iter(), |r| {

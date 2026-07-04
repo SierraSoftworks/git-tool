@@ -40,7 +40,7 @@ impl CommandRunnable for SwitchCommand {
 
     #[tracing::instrument(name = "gt switch", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
-        let repo = core.resolver().get_current_repo()?;
+        let repo: Repo = core.resolve(())?;
 
         match matches.get_one::<String>("branch") {
             Some(branch) => {
@@ -71,7 +71,8 @@ impl CommandRunnable for SwitchCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        if let Ok(repo) = core.resolver().get_current_repo() {
+        let repo: Result<Repo, _> = core.resolve(());
+        if let Ok(repo) = repo {
             completer.offer("--create");
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(

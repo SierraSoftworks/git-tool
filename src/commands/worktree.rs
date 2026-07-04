@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{Repo, Target};
+use crate::engine::{Branch, Repo, Resolver, Target, Worktree};
 use crate::errors::HumanErrorResultExt;
 use crate::git;
 use crate::tasks::*;
@@ -22,15 +22,14 @@ impl CommandRunnable for WorktreeCommand {
             .version("1.0")
             .visible_aliases(["w", "wt"])
             .about("opens a git worktree for a branch using an application defined in your config")
-            .long_about("This command prepares a git worktree for the specified branch of the current repository and launches an application within it. It behaves like a combination of the `switch` and `open` commands: run it from within a repository to operate on the current repo (`gt w <branch> [app]`).
+            .long_about("This command prepares a git worktree for the specified branch of the current repository and launches an application within it. It behaves like a combination of the `switch` and `open` commands: run it from within a repository to operate on the current repo (`gt w <branch> [app]`). The branch is given first, optionally followed by an application; running the command with no arguments lists the repository's existing worktrees.
+
+You may also append any number of KEY=VALUE tokens to override environment variables for the launched application (for example `gt w <branch> shell FOO=bar`). These overrides apply only to the launched application and are applied verbatim, taking precedence over any environment configured for the app.
 
 Worktrees are created within the worktree directory configured in your config file (defaulting to `$DEV_DIRECTORY/worktrees`). When the requested branch does not exist yet, it will be created (use `--no-create` to disable this). The branch a new worktree is based on can be controlled with `--base`.")
-            .arg(Arg::new("branch")
-                    .help("The branch to open a worktree for.")
-                    .index(1))
-            .arg(Arg::new("app")
-                    .help("The application to launch.")
-                    .index(2))
+            .arg(Arg::new("args")
+                    .help("The branch to open a worktree for, an optional app to launch, and any KEY=VALUE environment overrides (in any order).")
+                    .action(clap::ArgAction::Append))
             .arg(Arg::new("no-create")
                     .short('N')
                     .long("no-create")
@@ -52,72 +51,60 @@ Worktrees are created within the worktree directory configured in your config fi
         let base = matches.get_one::<String>("base");
         let remove_after = matches.get_flag("rm");
 
-        let repo = core.resolver().get_current_repo()?;
+        let repo: Repo = core.resolve(())?;
 
-        let branch = matches.get_one::<String>("branch").cloned();
-        let app_arg = matches.get_one::<String>("app").cloned();
+        let args: Vec<&str> = matches
+            .get_many::<String>("args")
+            .map(|values| values.map(|s| s.as_str()).collect())
+            .unwrap_or_default();
 
-        // Without a branch we list the existing worktrees for the repository.
-        let branch = match branch {
-            Some(branch) => branch,
-            None => {
-                let worktrees = git::git_worktree_list(&repo.get_path()).await?;
-                let mut output = core.output();
-                // `git worktree list` always reports the primary working tree
-                // first, followed by each linked worktree, so we can rely on the
-                // ordering to label the primary checkout.
-                for (index, worktree) in worktrees.iter().enumerate() {
-                    let label = match &worktree.branch {
-                        Some(branch) => branch.clone(),
-                        None => match &worktree.head {
-                            Some(head) => {
-                                format!("(detached HEAD {})", &head[..head.len().min(8)])
-                            }
-                            None => "(detached HEAD)".to_string(),
-                        },
-                    };
+        // Without any arguments we list the existing worktrees for the repository.
+        if args.is_empty() {
+            let worktrees = git::git_worktree_list(&repo.get_path()).await?;
+            let mut output = core.output();
+            // `git worktree list` always reports the primary working tree
+            // first, followed by each linked worktree, so we can rely on the
+            // ordering to label the primary checkout.
+            for (index, worktree) in worktrees.iter().enumerate() {
+                let label = match &worktree.branch {
+                    Some(branch) => branch.clone(),
+                    None => match &worktree.head {
+                        Some(head) => {
+                            format!("(detached HEAD {})", &head[..head.len().min(8)])
+                        }
+                        None => "(detached HEAD)".to_string(),
+                    },
+                };
 
-                    let suffix = if index == 0 { " [primary]" } else { "" };
-                    writeln!(output, "{label}{suffix}").to_human_error()?;
-                }
-
-                return Ok(0);
+                let suffix = if index == 0 { " [primary]" } else { "" };
+                writeln!(output, "{label}{suffix}").to_human_error()?;
             }
-        };
 
-        let app = match app_arg {
-            Some(name) => core.config().get_app(&name).ok_or_else(|| {
-                human_errors::user(
-                    format!("Could not find application with name '{name}'."),
-                    &["Check your configuration file for available applications, or install one with 'git-tool config add apps/bash'."],
-                )
-            })?,
-            None => core.config().get_default_app().ok_or_else(|| {
-                human_errors::user(
-                    "No default application available.",
-                    &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."],
-                )
-            })?,
-        };
+            return Ok(0);
+        }
 
-        let worktree_path = core
-            .config()
-            .get_worktree_directory()
-            .join(Self::worktree_dir_name(&repo, &branch));
+        // A worktree always operates on an explicit branch, so there is no
+        // implied context; a lone app-named token is therefore treated as the
+        // branch.
+        let parsed = crate::completion::parse::<Branch>(core, None, matches)?;
+        let branch = &parsed.target;
+
+        // Overrides apply only to the launched application, never to the
+        // repository's worktree automation tasks.
+        let app = parsed.launch_app(core)?;
+
+        // Resolve the branch to the worktree it maps to within this repository.
+        let worktree: Worktree = core.resolve((&repo, branch))?;
+        let worktree_path = worktree.path();
 
         GitWorktree {
             path: worktree_path.clone(),
-            branch: branch.clone(),
+            branch: branch.to_string(),
             create_if_missing: !no_create,
             base: base.cloned(),
         }
         .apply_repo(core, &repo)
         .await?;
-
-        let worktree_target = Repo::new(
-            &format!("{}:{}", repo.service, repo.get_full_name()),
-            worktree_path.clone(),
-        );
 
         // Apply any worktree automation (symlinks and setup tasks) defined in the
         // repository's 'git-tool.yml' file before launching the application. The
@@ -127,11 +114,11 @@ Worktrees are created within the worktree directory configured in your config fi
             && repo_config.worktree().is_some()
             && crate::commands::trust::ensure_trusted(core, &repo, &repo_config).await?
         {
-            self.apply_worktree_automation(core, &repo, &worktree_target, &repo_config)
+            self.apply_worktree_automation(core, &repo, &worktree, &repo_config)
                 .await?;
         }
 
-        let result = core.launcher().run(app, &worktree_target).await;
+        let result = core.launcher().run(&app, &worktree).await;
 
         // When requested, remove the worktree now that the launched application has
         // exited. We always attempt cleanup (even if the application failed), but we
@@ -171,7 +158,8 @@ Worktrees are created within the worktree directory configured in your config fi
         completer.offer("--rm");
         completer.offer_apps(core);
 
-        if let Ok(repo) = core.resolver().get_current_repo()
+        let repo: Result<Repo, _> = core.resolve(());
+        if let Ok(repo) = repo
             && let Ok(branches) = git::git_branches(&repo.get_path()).await
         {
             completer.offer_many(branches.iter().unique().sorted());
@@ -190,7 +178,7 @@ impl WorktreeCommand {
         &self,
         core: &Core,
         repo: &Repo,
-        worktree_target: &Repo,
+        worktree_target: &Worktree,
         config: &crate::engine::RepoConfig,
     ) -> Result<(), human_errors::Error> {
         let worktree = match config.worktree() {
@@ -250,50 +238,6 @@ impl WorktreeCommand {
 
         Ok(())
     }
-
-    /// Builds the directory name used to store a worktree for the given repository
-    /// and branch. The repository's short name and the (sanitized) branch keep the
-    /// path human-readable, while an 8 character hash of the repository's full
-    /// identity disambiguates repositories that share the same short name (for
-    /// example `org-a/tools` and `org-b/tools`).
-    fn worktree_dir_name(repo: &Repo, branch: &str) -> String {
-        let sanitized_branch: String = branch
-            .chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
-                    c
-                } else {
-                    '-'
-                }
-            })
-            .collect();
-
-        let identity = format!("{}:{}", repo.service, repo.get_full_name());
-
-        format!(
-            "{}-{}-{}",
-            repo.name,
-            sanitized_branch,
-            Self::short_hash(&identity)
-        )
-    }
-
-    /// Produces a stable 8 character hexadecimal hash of the provided string using
-    /// the FNV-1a algorithm. FNV-1a is used (rather than [`std::hash::DefaultHasher`])
-    /// because it produces identical output across platforms and toolchain
-    /// versions, ensuring a repository always maps to the same worktree directory.
-    fn short_hash(value: &str) -> String {
-        const FNV_OFFSET_BASIS: u32 = 0x811c_9dc5;
-        const FNV_PRIME: u32 = 0x0100_0193;
-
-        let mut hash = FNV_OFFSET_BASIS;
-        for byte in value.bytes() {
-            hash ^= byte as u32;
-            hash = hash.wrapping_mul(FNV_PRIME);
-        }
-
-        format!("{hash:08x}")
-    }
 }
 
 #[cfg(test)]
@@ -301,48 +245,6 @@ mod tests {
     use super::*;
     use crate::engine::{builder::CoreBuilderWithConfig, *};
     use tempfile::tempdir;
-
-    #[test]
-    fn worktree_dir_name_sanitizes_branch() {
-        let repo = Repo::new("gh:sierrasoftworks/git-tool", "/dev/git-tool".into());
-
-        // The human-readable prefix is the repo's short name and the sanitized
-        // branch, followed by an 8 character hash of the repo's full identity.
-        assert!(
-            WorktreeCommand::worktree_dir_name(&repo, "feat/forgejo")
-                .starts_with("git-tool-feat-forgejo-")
-        );
-        assert!(
-            WorktreeCommand::worktree_dir_name(&repo, "release/v1.2.3")
-                .starts_with("git-tool-release-v1.2.3-")
-        );
-    }
-
-    #[test]
-    fn worktree_dir_name_disambiguates_repositories() {
-        let repo_a = Repo::new("gh:org-a/tools", "/dev/a/tools".into());
-        let repo_b = Repo::new("gh:org-b/tools", "/dev/b/tools".into());
-
-        // Two repositories that share a short name must map to distinct worktree
-        // directories thanks to the identity hash suffix.
-        assert_ne!(
-            WorktreeCommand::worktree_dir_name(&repo_a, "main"),
-            WorktreeCommand::worktree_dir_name(&repo_b, "main")
-        );
-
-        // The hash must be stable across invocations for a given repository.
-        assert_eq!(
-            WorktreeCommand::worktree_dir_name(&repo_a, "main"),
-            WorktreeCommand::worktree_dir_name(&repo_a, "main")
-        );
-    }
-
-    #[test]
-    fn short_hash_is_eight_hex_characters() {
-        let hash = WorktreeCommand::short_hash("gh:sierrasoftworks/git-tool");
-        assert_eq!(hash.len(), 8);
-        assert!(hash.chars().all(|c| c.is_ascii_hexdigit()));
-    }
 
     #[tokio::test]
     async fn apply_worktree_automation_creates_symlinks_and_runs_tasks() {
@@ -363,19 +265,15 @@ mod tests {
         )
         .unwrap();
 
-        let worktree_target = Repo::new(
-            "gh:sierrasoftworks/test-worktree-automation",
-            temp.path().join("worktree"),
-        );
-        std::fs::create_dir_all(worktree_target.get_path()).unwrap();
+        let config = Config::for_dev_directory(temp.path());
+        let branch: Branch = "feature/automation".parse().unwrap();
+        let worktree_target = Worktree::new(&repo, &branch, &config);
+        std::fs::create_dir_all(worktree_target.path()).unwrap();
 
         let repo_config = RepoConfig::for_repo(&repo).unwrap().unwrap();
 
         let core = Core::builder()
-            .with_config(
-                Config::for_dev_directory(temp.path())
-                    .with_trusted_repo(repo.to_string(), repo_config.hash().unwrap()),
-            )
+            .with_config(config)
             .with_null_console()
             .with_mock_launcher(|mock| {
                 mock.expect_run()
@@ -389,7 +287,7 @@ mod tests {
             .await
             .unwrap();
 
-        let link = worktree_target.get_path().join("target");
+        let link = worktree_target.path().join("target");
         assert!(link.exists(), "the symlink should have been created");
         assert_eq!(
             std::fs::read_to_string(link.join("marker.txt")).unwrap(),
@@ -449,7 +347,7 @@ mod tests {
         let expected_path = temp
             .path()
             .join("worktrees")
-            .join(WorktreeCommand::worktree_dir_name(&repo, "feature/test"));
+            .join(Worktree::dir_name(&repo, &"feature/test".parse().unwrap()));
         let expected_for_assert = expected_path.clone();
 
         let core = core
@@ -484,6 +382,49 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn run_in_repo_applies_env_override() {
+        let cmd = WorktreeCommand {};
+        let temp = tempdir().unwrap();
+
+        let cfg = Config::for_dev_directory(temp.path());
+        let core = Core::builder().with_config(cfg);
+        let (core, repo) = setup_current_repo(core, &temp).await;
+
+        let expected_path = temp
+            .path()
+            .join("worktrees")
+            .join(Worktree::dir_name(&repo, &"feature/env".parse().unwrap()));
+
+        let core = core
+            .with_mock_launcher(move |mock| {
+                let expected_path = expected_path.clone();
+                mock.expect_run()
+                    .withf(move |app, target| {
+                        app.get_name() == "shell"
+                            && target.get_path() == expected_path
+                            && app
+                                .get_overrides()
+                                .contains(&("FOO".to_string(), "bar".to_string()))
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        sequence!(GitInit {}, GitCheckout { branch: "main" })
+            .apply_repo(&core, &repo)
+            .await
+            .unwrap();
+        commit_initial(&repo).await;
+
+        // `shell` is the default app; the branch is given first, then the app,
+        // then the environment override.
+        let args = cmd
+            .app()
+            .get_matches_from(vec!["worktree", "feature/env", "shell", "FOO=bar"]);
+        cmd.run(&core, &args).await.unwrap();
+    }
+
+    #[tokio::test]
     async fn run_in_repo_removes_worktree_after_exit() {
         let cmd = WorktreeCommand {};
         let temp = tempdir().unwrap();
@@ -495,7 +436,7 @@ mod tests {
         let expected_path = temp
             .path()
             .join("worktrees")
-            .join(WorktreeCommand::worktree_dir_name(&repo, "feature/test"));
+            .join(Worktree::dir_name(&repo, &"feature/test".parse().unwrap()));
         let expected_for_assert = expected_path.clone();
 
         let core = core
@@ -542,7 +483,7 @@ mod tests {
         let expected_path = temp
             .path()
             .join("worktrees")
-            .join(WorktreeCommand::worktree_dir_name(&repo, "feature/boom"));
+            .join(Worktree::dir_name(&repo, &"feature/boom".parse().unwrap()));
         let expected_for_assert = expected_path.clone();
 
         let core = core
@@ -589,7 +530,7 @@ mod tests {
         let expected_path = temp
             .path()
             .join("worktrees")
-            .join(WorktreeCommand::worktree_dir_name(&repo, "feature/dirty"));
+            .join(Worktree::dir_name(&repo, &"feature/dirty".parse().unwrap()));
         let expected_for_assert = expected_path.clone();
 
         let core = core

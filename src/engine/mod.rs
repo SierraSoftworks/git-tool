@@ -1,5 +1,6 @@
 mod app;
 mod auth;
+mod branch;
 pub mod builder;
 mod config;
 pub mod features;
@@ -9,11 +10,12 @@ mod launcher;
 mod prompt;
 mod repo;
 mod repo_config;
-mod resolver;
+mod resolve;
 mod scratchpad;
 mod service;
 mod target;
 mod templates;
+mod worktree;
 
 use std::{io::Write, sync::Arc};
 
@@ -27,22 +29,25 @@ pub use human_errors::Error;
 pub use self::http::HttpClient;
 pub use app::App;
 pub use auth::KeyChain;
+pub use branch::Branch;
 pub use config::Config;
 pub use identifier::Identifier;
 pub use launcher::Launcher;
 pub use prompt::Prompter;
 pub use repo::Repo;
 pub use repo_config::RepoConfig;
-pub use resolver::Resolver;
+pub use resolve::{ResolveMany, Resolver};
+use resolve::ResolverBackend;
 pub use scratchpad::Scratchpad;
 pub use service::{Service, ServiceAPI};
-pub use target::{Target, TempTarget};
+pub use target::{Target, TempMode, TempTarget};
+pub use worktree::Worktree;
 
 pub struct Core {
     config: Arc<Config>,
     console: Arc<dyn ConsoleProvider + Send + Sync>,
     launcher: Arc<dyn Launcher + Send + Sync>,
-    resolver: Arc<dyn Resolver + Send + Sync>,
+    resolver: ResolverBackend,
     keychain: Arc<dyn KeyChain + Send + Sync>,
     http_client: Arc<dyn HttpClient + Send + Sync>,
 }
@@ -62,10 +67,6 @@ impl Core {
 
     pub fn launcher(&self) -> &(dyn Launcher + Send + Sync) {
         self.launcher.as_ref()
-    }
-
-    pub fn resolver(&self) -> &(dyn Resolver + Send + Sync) {
-        self.resolver.as_ref()
     }
 
     pub fn console(&self) -> Arc<dyn ConsoleProvider + Send + Sync> {

@@ -52,7 +52,7 @@ impl ForkRemote {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::{Core, Identifier, Repo};
+    use crate::engine::{Core, Identifier, Repo, Resolver};
     use crate::tasks::{ForkRemote, Task};
     use mockall::predicate::eq;
     use rstest::rstest;
@@ -120,14 +120,8 @@ mod tests {
             })
             .build();
 
-        let from_repo = core
-            .resolver()
-            .get_best_repo(&source_repo.parse().unwrap())
-            .unwrap();
-        let target_repo = core
-            .resolver()
-            .get_best_repo(&target_repo.parse().unwrap())
-            .unwrap();
+        let from_repo: Repo = core.resolve(source_repo).unwrap();
+        let target_repo: Repo = core.resolve(target_repo).unwrap();
 
         ForkRemote::from_remote(from_repo)
             .apply_repo(&core, &target_repo)

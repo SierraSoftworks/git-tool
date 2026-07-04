@@ -312,7 +312,8 @@ impl CommandRunnable for ConfigCommand {
                     completer.offer_many(core.config().get_aliases().map(|(a, _)| a));
                 } else if !args.get_flag("delete") && !args.contains_id("repo") {
                     completer.offer("-d");
-                    if let Ok(repos) = core.resolver().get_repos() {
+                    let repos: Result<Vec<Repo>, _> = core.resolve_many(());
+                    if let Ok(repos) = repos {
                         completer.offer_many(
                             repos
                                 .iter()

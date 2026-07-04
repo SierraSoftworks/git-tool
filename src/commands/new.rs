@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::Identifier;
+use crate::engine::Repo;
 use crate::{engine::features, tasks::*};
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -18,11 +18,13 @@ impl CommandRunnable for NewCommand {
             .version("1.0")
             .about("creates a new repository")
             .visible_aliases(["n", "create"])
-            .long_about("Creates a new repository with the provided name.")
+            .long_about("Creates a new repository with the provided name.
+
+You may also provide an application to open the repository with once it has been created, along with any number of KEY=VALUE tokens to override environment variables for that application (for example `gt new my/repo shell FOO=bar`). Providing an application implies `--open`.")
             .arg(
-                Arg::new("repo")
-                    .help("The name of the repository to create.")
-                    .index(1),
+                Arg::new("args")
+                    .help("The repository to create, an optional app to open it with, and any KEY=VALUE environment overrides (in any order).")
+                    .action(clap::ArgAction::Append),
             )
             .arg(
                 Arg::new("open")
@@ -64,27 +66,22 @@ impl CommandRunnable for NewCommand {
 
     #[tracing::instrument(name = "gt new", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
-        let repo_id = matches
-            .get_one::<String>("repo")
-            .ok_or_else(|| {
-                human_errors::user("No repository name provided for creation.", &["Please provide a repository name when calling this method: git-tool new my/repo"])
-            })?
-            .parse()?;
-
-        let repo = core.resolver().get_best_repo(&repo_id)?;
+        // `new` always creates an explicit target, so there is no implied
+        // context; a lone token is therefore always treated as the repository.
+        let parsed = crate::completion::parse::<Repo>(core, None, matches)?;
+        let repo = &parsed.target;
 
         if repo.valid() {
             return Ok(0);
         }
 
         let tasks = if let Some(from_repo) = matches.get_one::<String>("from") {
-            let from_repo_id: Identifier = from_repo.as_str().parse()?;
-            let from_repo = core.resolver().get_best_repo(&from_repo_id)?;
+            let from_repo: Repo = core.resolve(from_repo.as_str())?;
             let from_service = core.config().get_service(&from_repo.service)?;
             let from_url = from_service.get_git_url(&from_repo)?;
 
             let target_service = core.config().get_service(&from_repo.service)?;
-            let target_url = target_service.get_git_url(&repo)?;
+            let target_url = target_service.get_git_url(repo)?;
 
             sequence![
                 ForkRemote {
@@ -115,12 +112,17 @@ impl CommandRunnable for NewCommand {
             ]
         };
 
-        tasks.apply_repo(core, &repo).await?;
+        tasks.apply_repo(core, repo).await?;
 
-        if matches.get_flag("open") || core.config().get_features().has(features::OPEN_NEW_REPO) {
-            let app = core.config().get_default_app().ok_or_else(|| human_errors::user("No default application available.", &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."]))?;
+        // Naming an application is a shorthand for `--open`: if the user told us
+        // what to launch, they clearly want the repository opened.
+        let should_open = parsed.app.is_some()
+            || matches.get_flag("open")
+            || core.config().get_features().has(features::OPEN_NEW_REPO);
 
-            let status = core.launcher().run(app, &repo).await?;
+        if should_open {
+            let app = parsed.launch_app(core)?;
+            let status = core.launcher().run(&app, repo).await?;
             return Ok(status);
         }
 
@@ -133,7 +135,8 @@ impl CommandRunnable for NewCommand {
         completer.offer("--no-create-remote");
         completer.offer("--from");
 
-        if let Ok(repos) = core.resolver().get_repos() {
+        let repos: Result<Vec<Repo>, _> = core.resolve_many(());
+        if let Ok(repos) = repos {
             let mut namespaces = std::collections::HashSet::new();
             let default_svc = core
                 .config()
@@ -157,7 +160,7 @@ impl CommandRunnable for NewCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::Repo;
+    use crate::engine::{Identifier, Repo};
     use mockall::predicate::eq;
     use rstest::rstest;
     use tempfile::tempdir;
@@ -186,10 +189,7 @@ mod tests {
             ))
             .build();
 
-        let repo = core
-            .resolver()
-            .get_best_repo(&"gh:test/new-repo-partial".parse().unwrap())
-            .unwrap();
+        let repo: Repo = core.resolve("gh:test/new-repo-partial").unwrap();
         assert!(!repo.valid());
         cmd.assert_run_successful(&core, &args).await;
 
@@ -220,15 +220,67 @@ mod tests {
             ))
             .build();
 
-        let repo = core
-            .resolver()
-            .get_best_repo(&"gh:test/new-repo-full".parse().unwrap())
-            .unwrap();
+        let repo: Repo = core.resolve("gh:test/new-repo-full").unwrap();
         assert!(!repo.valid());
 
         cmd.assert_run_successful(&core, &args).await;
 
         assert!(repo.valid());
+    }
+
+    #[tokio::test]
+    async fn run_with_env_override() {
+        let cmd = NewCommand {};
+
+        // An app token implies `--open`; the KEY=VALUE token becomes a literal
+        // override on the launched app. `-R`/`-E` keep the creation local so the
+        // test doesn't touch the network.
+        let args = cmd.app().get_matches_from(vec![
+            "new",
+            "test/env-repo",
+            "test-app",
+            "FOO=bar",
+            "-R",
+            "-E",
+        ]);
+
+        let temp = tempfile::tempdir().unwrap();
+        let cfg = crate::engine::Config::from_str(&format!(
+            "
+directory: {}
+
+apps:
+  - name: test-app
+    command: test
+",
+            temp.path().display(),
+        ))
+        .unwrap();
+
+        let repo_path = temp.path().join("gh").join("test").join("env-repo");
+        std::fs::create_dir_all(&repo_path).expect("create test repo dir");
+
+        let core = Core::builder()
+            .with_config(cfg)
+            .with_mock_resolver(move |mock| {
+                let repo_path = repo_path.clone();
+                mock.expect_get_best_repo()
+                    .returning(move |_| Ok(Repo::new("gh:test/env-repo", repo_path.clone())));
+            })
+            .with_mock_launcher(|mock| {
+                mock.expect_run()
+                    .once()
+                    .withf(|app, _| {
+                        app.get_name() == "test-app"
+                            && app
+                                .get_overrides()
+                                .contains(&("FOO".to_string(), "bar".to_string()))
+                    })
+                    .returning(|_, _| Box::pin(async { Ok(0) }));
+            })
+            .build();
+
+        cmd.assert_run_successful(&core, &args).await;
     }
 
     #[rstest]
@@ -299,10 +351,7 @@ mod tests {
             })
             .build();
 
-        let repo = core
-            .resolver()
-            .get_best_repo(&target_repo.parse().unwrap())
-            .unwrap();
+        let repo: Repo = core.resolve(target_repo).unwrap();
 
         assert!(!repo.valid());
 

@@ -51,7 +51,7 @@ impl CommandRunnable for RenameCommand {
             )
         })?)?;
 
-        let repo = core.resolver().get_best_repo(&repo_name)?;
+        let repo: Repo = core.resolve(&repo_name)?;
         if !repo.exists() {
             return Err(human_errors::user(
                 "Could not find the repository directory due to an error.",
@@ -61,7 +61,7 @@ impl CommandRunnable for RenameCommand {
             ));
         }
 
-        let new_repo = core.resolver().get_best_repo(&new_name)?;
+        let new_repo: Repo = core.resolve(&new_name)?;
 
         sequence![
             MoveDirectory {
@@ -98,7 +98,8 @@ impl CommandRunnable for RenameCommand {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        if let Ok(repos) = core.resolver().get_repos() {
+        let repos: Result<Vec<Repo>, _> = core.resolve_many(());
+        if let Ok(repos) = repos {
             completer.offer_many(
                 repos
                     .iter()
@@ -157,10 +158,7 @@ mod tests {
             .with_null_console()
             .build();
 
-        let src_repo = core
-            .resolver()
-            .get_best_repo(&source_repo.parse().unwrap())
-            .unwrap();
+        let src_repo: Repo = core.resolve(source_repo).unwrap();
 
         GitInit {}.apply_repo(&core, &src_repo).await.unwrap();
 
@@ -174,10 +172,7 @@ mod tests {
             "the old repo should not longer exist after being moved"
         );
 
-        let new_repo = core
-            .resolver()
-            .get_best_repo(&target_repo.parse().unwrap())
-            .unwrap();
+        let new_repo: Repo = core.resolve(target_repo).unwrap();
 
         assert!(
             new_repo.path.exists(),
