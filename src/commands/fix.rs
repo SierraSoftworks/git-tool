@@ -48,7 +48,7 @@ impl CommandRunnable for FixCommand {
                     .map(|s| s.as_str())
                     .unwrap_or("");
 
-                let repos = core.resolver().get_repos()?;
+                let repos: Vec<Repo> = core.resolve_many(())?;
                 for repo in search::best_matches_by(filter, repos.iter(), |r| {
                     format!("{}:{}", &r.service, r.get_full_name())
                 }) {
@@ -63,9 +63,9 @@ impl CommandRunnable for FixCommand {
                 }
             }
             false => {
-                let repo = match matches.get_one::<String>("repo") {
-                    Some(name) => core.resolver().get_best_repo(&name.parse()?)?,
-                    None => core.resolver().get_current_repo()?,
+                let repo: Repo = match matches.get_one::<String>("repo") {
+                    Some(name) => core.resolve(name.as_str())?,
+                    None => core.resolve(())?,
                 };
 
                 tasks.apply_repo(core, &repo).await?;

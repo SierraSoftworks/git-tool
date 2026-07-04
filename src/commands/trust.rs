@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{Config, Identifier, Repo, RepoConfig};
+use crate::engine::{Config, Repo, RepoConfig};
 use crate::errors::HumanErrorResultExt;
 use clap::Arg;
 use tracing_batteries::prelude::*;
@@ -52,12 +52,9 @@ impl CommandRunnable for TrustCommand {
             return self.list_trusted(core);
         }
 
-        let repo = match matches.get_one::<String>("repo") {
-            Some(value) => {
-                let identifier: Identifier = value.parse()?;
-                core.resolver().get_best_repo(&identifier)?
-            }
-            None => core.resolver().get_current_repo().map_err(|_| {
+        let repo: Repo = match matches.get_one::<String>("repo") {
+            Some(value) => core.resolve(value.as_str())?,
+            None => core.resolve(()).map_err(|_| {
                 human_errors::user(
                     "You are not currently within a repository and did not specify one to trust.",
                     &["Run this command from within a repository, or specify a repository like this: 'git-tool trust github.com/sierrasoftworks/git-tool'."],

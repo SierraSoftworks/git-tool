@@ -79,3 +79,12 @@ environment:
 so you can gather information about the repository or scratchpad you're targeting and tailor your call appropriately.
 :::
 
+::: tip Launch-time overrides
+You can override environment variables when you launch an application by appending `KEY=VALUE`
+tokens to [`gt open`](../commands/repos.md#open), [`gt scratch`](../commands/scratch.md#scratch),
+[`gt new`](../commands/repos.md#new) and [`gt worktree`](../commands/dev.md#worktree) — for example
+`gt o my-repo shell FOO=bar`. Unlike the values configured here, launch-time overrides are applied
+**literally** (they are not run through the [template](templates.md) engine) and take precedence over
+any matching `environment` entry (later-wins).
+:::
+

@@ -29,7 +29,7 @@ Tasks are only executed once you have confirmed that you trust the repository's 
 
     #[tracing::instrument(name = "gt task", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
-        let repo = core.resolver().get_current_repo()?;
+        let repo: Repo = core.resolve(())?;
         let task_name = matches.get_one::<String>("task").cloned();
 
         let config = RepoConfig::for_repo(&repo)?.ok_or_else(|| {
@@ -89,7 +89,8 @@ Tasks are only executed once you have confirmed that you trust the repository's 
 
     #[tracing::instrument(name = "gt complete -- gt task", skip(self, core, completer, _matches))]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        if let Ok(repo) = core.resolver().get_current_repo()
+        let repo: Result<Repo, _> = core.resolve(());
+        if let Ok(repo) = repo
             && let Ok(Some(config)) = RepoConfig::for_repo(&repo)
         {
             completer.offer_many(config.task_names().sorted());

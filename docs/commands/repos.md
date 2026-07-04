@@ -33,9 +33,14 @@ To do so, you'll use the `gt open` command, which allows you to launch a shell (
 app you have defined in your [config](../config/README.md)) inside that repository's directory.
 
 ::: warning
-Aliases take precedence over repos, which take precedence over apps. *When specifying an app,
-it should appear before the repo/alias parameter to avoid confusion.*
+Aliases take precedence over repos, which take precedence over apps. *You can provide the app
+and the repo/alias in any order — Git-Tool will work out which token is which.*
 :::
+
+You can also override environment variables for the launched application by appending one or more
+`KEY=VALUE` tokens to the command. These overrides are applied verbatim (they are **not** run
+through the [template](../config/templates.md) engine) and take precedence over any matching
+`environment` entry configured for the app.
 
 New applications can be configured either by making changes to your configuration, or by using the
 [`git-tool config add`](config.md#apps) command to install them from the GitHub registry. For example, you
@@ -64,6 +69,9 @@ gt o vs
 
 # Open a repository in VS Code
 gt o gh:SierraSoftworks/git-tool code
+
+# Open a repository in a shell with an environment variable override
+gt o gh:SierraSoftworks/git-tool shell FOO=bar
 ```
 
 ::: tip
@@ -101,6 +109,11 @@ helping you quickly figure out where your repo should be created.
 - `-f`/`--fork`/`--from` <Badge text="v3.9+"/> create a fork of an existing remote (on supported services) or a copy of
   an existing remote repository (on unsupported services)
 
+You can also name an application to open the new repository with once it has been created (which
+implies `--open`), and append `KEY=VALUE` tokens to override environment variables for that
+application. As with [`gt open`](#open), these overrides are applied verbatim and take precedence
+over any matching `environment` entry configured for the app.
+
 #### Example
 
 ```powershell
@@ -109,6 +122,9 @@ gt n gh:notheotherben/demo
 
 # Create (and open) a new repository
 gt n --open gh:notheotherben/demo
+
+# Create a new repository and open it in a shell with an environment override
+gt n gh:notheotherben/demo shell FOO=bar
 
 # Create a new repository but don't create it remotely
 gt n --no-create-remote gh:notheotherben/demo

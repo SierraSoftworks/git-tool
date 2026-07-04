@@ -51,15 +51,24 @@ impl Launcher for TrueLauncher {
         let program = render(a.get_command(), context.clone())?;
         let args = render_list(a.get_args(), context.clone())?;
         let env_args = render_list(a.get_environment(), context.clone())?;
-        let env_arg_tuples = env_args
+        // Configured environment entries are rendered through the template engine
+        // above; any entry which isn't shaped like `KEY=VALUE` is simply ignored
+        // rather than panicking. The literal launch-time overrides are appended
+        // last so that, under `Command::envs` later-wins semantics, they take
+        // precedence over any configured value with the same key.
+        let mut env_tuples: Vec<(String, String)> = env_args
             .iter()
-            .map(|i| i.split('=').collect())
-            .map(|i: Vec<&str>| (i[0], i[1]));
+            .filter_map(|e| {
+                e.split_once('=')
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+            })
+            .collect();
+        env_tuples.extend(a.get_overrides().iter().cloned());
 
         let mut child = Command::new(program)
             .args(args)
             .current_dir(t.get_path())
-            .envs(env_arg_tuples)
+            .envs(env_tuples)
             .spawn()
             .wrap_user_err(
                 format!("Could not launch the application '{}' due to an OS-level error.", a.get_command()),
@@ -201,5 +210,62 @@ mod tests {
 
         let result = launcher.run(&a, &t).await.unwrap();
         assert_eq!(result, 123);
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn run_app_override_wins() {
+        // The configured environment would resolve TEST_CODE to the target name
+        // ("123"), but the literal override is appended last and therefore wins.
+        // The override value is also taken verbatim: it is not run through the
+        // template engine.
+        let a: app::App = app::App::builder()
+            .with_name("test")
+            .with_command("sh")
+            .with_args(vec!["-c", "exit $TEST_CODE"])
+            .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
+            .into();
+        let a = a.with_overrides(vec![("TEST_CODE".to_string(), "42".to_string())]);
+
+        let test_dir = get_dev_dir();
+        let t = Scratchpad::new("123", test_dir);
+
+        let config = Arc::new(Config::default());
+        let launcher = launcher(config);
+
+        let result = launcher.run(&a, &t).await.unwrap();
+        assert_eq!(
+            result, 42,
+            "the literal override should win over the configured value"
+        );
+    }
+
+    #[tokio::test]
+    #[cfg(windows)]
+    async fn run_app_override_wins() {
+        let a: app::App = app::App::builder()
+            .with_name("test")
+            .with_command("powershell.exe")
+            .with_args(vec![
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "exit $env:TEST_CODE",
+            ])
+            .with_environment(vec!["TEST_CODE={{ .Target.Name }}"])
+            .into();
+        let a = a.with_overrides(vec![("TEST_CODE".to_string(), "42".to_string())]);
+
+        let test_dir = get_dev_dir();
+        let t = Scratchpad::new("123", test_dir);
+
+        let config = Arc::new(Config::default());
+        let launcher = launcher(config);
+
+        let result = launcher.run(&a, &t).await.unwrap();
+        assert_eq!(
+            result, 42,
+            "the literal override should win over the configured value"
+        );
     }
 }

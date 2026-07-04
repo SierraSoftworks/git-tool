@@ -57,7 +57,7 @@ impl CommandRunnable for PruneCommand {
 
     #[tracing::instrument(name = "gt prune", err, skip(self, core, matches))]
     async fn run(&self, core: &Core, matches: &ArgMatches) -> Result<i32, human_errors::Error> {
-        let repo = core.resolver().get_current_repo()?;
+        let repo: Repo = core.resolve(())?;
 
         // Determine which subsets we should prune. When neither flag is provided we
         // prune both branches and worktrees; specifying one flag restricts the
@@ -154,7 +154,8 @@ impl CommandRunnable for PruneCommand {
         skip(self, core, completer, _matches)
     )]
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
-        if let Ok(repo) = core.resolver().get_current_repo() {
+        let repo: Result<Repo, _> = core.resolve(());
+        if let Ok(repo) = repo {
             completer.offer("--yes");
             completer.offer("--branches");
             completer.offer("--worktrees");

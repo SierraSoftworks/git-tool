@@ -1,4 +1,4 @@
-use crate::engine::Core;
+use crate::engine::{Core, Repo, ResolveMany};
 use crate::{console::ConsoleProvider, search::fuzzy_matches};
 use itertools::Itertools;
 use std::{fmt::Display, sync::Arc};
@@ -63,7 +63,8 @@ impl Completer {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        if let Ok(repos) = core.resolver().get_repos() {
+        let repos: Result<Vec<Repo>, _> = core.resolve_many(());
+        if let Ok(repos) = repos {
             self.offer_many(
                 repos
                     .iter()
@@ -89,7 +90,8 @@ impl Completer {
             .map(|s| s.name.clone())
             .unwrap_or_default();
 
-        if let Ok(repos) = core.resolver().get_repos() {
+        let repos: Result<Vec<Repo>, _> = core.resolve_many(());
+        if let Ok(repos) = repos {
             self.offer_many(
                 repos
                     .iter()

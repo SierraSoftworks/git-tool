@@ -49,11 +49,16 @@ repository's full name appended to keep repositories with the same short name fr
 
 ::: tip
 Run `gt worktree` from within a repository to operate on the current repo (`gt w <branch> [app]`),
-just like `gt switch`.
+just like `gt switch`. The branch is given first, optionally followed by an application.
 
 If you don't specify a branch, Git-Tool will list the existing worktrees for the repository. The
 primary working tree is labelled `[primary]`, and worktrees with a detached `HEAD` are shown with
 their current commit.
+
+You can also append `KEY=VALUE` tokens to override environment variables for the launched
+application (for example `gt w feat/forgejo shell FOO=bar`). These overrides apply only to the
+launched application — the repository's [worktree automation](tasks.md#worktree-automation) tasks are
+unaffected — and are applied verbatim, taking precedence over any matching `environment` entry.
 :::
 
 ::: tip Worktree automation
@@ -97,6 +102,9 @@ gt w feat/forgejo
 
 # Open the feat/forgejo worktree in VS Code
 gt w feat/forgejo code
+
+# Open the feat/forgejo worktree in a shell with an environment override
+gt w feat/forgejo shell FOO=bar
 
 # Base a new worktree branch on origin/main
 gt w feat/forgejo --base origin/main

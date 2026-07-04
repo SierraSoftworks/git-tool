@@ -5,7 +5,10 @@ use async_trait::async_trait;
 use clap::ArgMatches;
 use std::{io::Write, vec::Vec};
 
-use crate::{completion::Completer, engine::Core};
+use crate::{
+    completion::Completer,
+    engine::{Core, Repo, ResolveMany, Resolver},
+};
 
 mod apps;
 
@@ -16,7 +19,6 @@ mod complete;
 mod config;
 mod doctor;
 mod fix;
-mod helpers;
 mod ignore;
 mod info;
 mod list;

@@ -10,6 +10,12 @@ pub struct App {
     args: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     environment: Vec<String>,
+
+    /// Literal environment variable overrides provided at launch time. These are
+    /// applied verbatim (they are never run through the template engine) and are
+    /// not part of the persisted configuration.
+    #[serde(skip)]
+    overrides: Vec<(String, String)>,
 }
 
 impl App {
@@ -32,6 +38,19 @@ impl App {
     pub fn get_environment(&self) -> Vec<String> {
         self.environment.clone()
     }
+
+    /// Returns a copy of this application with the provided literal environment
+    /// overrides attached. The overrides are applied verbatim at launch time and
+    /// take precedence over any configured `environment` entries.
+    pub fn with_overrides(&self, overrides: Vec<(String, String)>) -> App {
+        let mut app = self.clone();
+        app.overrides = overrides;
+        app
+    }
+
+    pub fn get_overrides(&self) -> &[(String, String)] {
+        &self.overrides
+    }
 }
 
 impl Display for App {
@@ -39,6 +58,15 @@ impl Display for App {
         write!(f, "{}: ", &self.name)?;
         if !self.environment.is_empty() {
             write!(f, "{} ", &self.environment.join(" "))?;
+        }
+        if !self.overrides.is_empty() {
+            let overrides = self
+                .overrides
+                .iter()
+                .map(|(k, v)| format!("{k}={v}"))
+                .collect::<Vec<_>>()
+                .join(" ");
+            write!(f, "{overrides} ")?;
         }
 
         write!(f, "{}", &self.command)?;
@@ -101,6 +129,7 @@ impl From<&mut AppBuilder> for App {
             command: builder.command.clone(),
             args: builder.args.clone(),
             environment: builder.environment.clone(),
+            overrides: Vec::new(),
         }
     }
 }
