@@ -171,7 +171,10 @@ mod tests {
     fn normal_ordering() {
         let core = core();
         let parsed = parse::<Branch>(&core, None, &matches(&["shell", "some-branch"])).unwrap();
-        assert_eq!(parsed.app.map(|a| a.get_name().to_string()), Some("shell".into()));
+        assert_eq!(
+            parsed.app.map(|a| a.get_name().to_string()),
+            Some("shell".into())
+        );
         assert_eq!(parsed.target.as_str(), "some-branch");
         assert!(parsed.env.is_empty());
     }
@@ -180,7 +183,10 @@ mod tests {
     fn odd_ordering() {
         let core = core();
         let parsed = parse::<Branch>(&core, None, &matches(&["some-branch", "shell"])).unwrap();
-        assert_eq!(parsed.app.map(|a| a.get_name().to_string()), Some("shell".into()));
+        assert_eq!(
+            parsed.app.map(|a| a.get_name().to_string()),
+            Some("shell".into())
+        );
         assert_eq!(parsed.target.as_str(), "some-branch");
     }
 
@@ -189,7 +195,10 @@ mod tests {
         let core = core();
         let parsed =
             parse::<Branch>(&core, Some(&branch("current")), &matches(&["shell"])).unwrap();
-        assert_eq!(parsed.app.map(|a| a.get_name().to_string()), Some("shell".into()));
+        assert_eq!(
+            parsed.app.map(|a| a.get_name().to_string()),
+            Some("shell".into())
+        );
         assert_eq!(parsed.target.as_str(), "current");
     }
 
@@ -322,7 +331,10 @@ mod tests {
         let core = core();
         let parsed =
             parse::<Branch>(&core, None, &matches(&["shell", "some-branch", "FOO=bar"])).unwrap();
-        assert_eq!(parsed.app.map(|a| a.get_name().to_string()), Some("shell".into()));
+        assert_eq!(
+            parsed.app.map(|a| a.get_name().to_string()),
+            Some("shell".into())
+        );
         assert_eq!(parsed.target.as_str(), "some-branch");
         assert_eq!(parsed.env, vec![("FOO".to_string(), "bar".to_string())]);
     }

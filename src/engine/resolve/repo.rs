@@ -167,7 +167,10 @@ impl TrueResolver {
     /// directory corresponds to. This is shared by the current-repo resolution
     /// (which starts from the working directory) and repository enumeration
     /// (which starts from the directories on disk).
-    pub(super) fn repo_from_path(&self, path: &std::path::Path) -> Result<Repo, human_errors::Error> {
+    pub(super) fn repo_from_path(
+        &self,
+        path: &std::path::Path,
+    ) -> Result<Repo, human_errors::Error> {
         debug!("Constructing repo object from path '{}'", path.display());
         let dev_dir = self.config.get_dev_directory().canonicalize().wrap_user_err(
             format!("Could not determine the canonical path for your dev directory '{}' due to an OS-level error.", self.config.get_dev_directory().display()),

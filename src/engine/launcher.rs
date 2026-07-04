@@ -58,7 +58,10 @@ impl Launcher for TrueLauncher {
         // precedence over any configured value with the same key.
         let mut env_tuples: Vec<(String, String)> = env_args
             .iter()
-            .filter_map(|e| e.split_once('=').map(|(k, v)| (k.to_string(), v.to_string())))
+            .filter_map(|e| {
+                e.split_once('=')
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+            })
             .collect();
         env_tuples.extend(a.get_overrides().iter().cloned());
 
@@ -231,7 +234,10 @@ mod tests {
         let launcher = launcher(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
-        assert_eq!(result, 42, "the literal override should win over the configured value");
+        assert_eq!(
+            result, 42,
+            "the literal override should win over the configured value"
+        );
     }
 
     #[tokio::test]
@@ -257,6 +263,9 @@ mod tests {
         let launcher = launcher(config);
 
         let result = launcher.run(&a, &t).await.unwrap();
-        assert_eq!(result, 42, "the literal override should win over the configured value");
+        assert_eq!(
+            result, 42,
+            "the literal override should win over the configured value"
+        );
     }
 }
