@@ -31,9 +31,10 @@ export default defineUserConfig({
         }],
         ["link", { rel: "icon", href: "/favicon.ico" }],
         ["script", {
-            defer: "",
-            src: "https://analytics.sierrasoftworks.com/script.js",
-            "data-website-id": "a816dd16-8bf4-4433-b04f-9d73a6751f84"
+            async: "",
+            src: "https://analytics.sierrasoftworks.com/tracker.js",
+            "data-api": "https://analytics.sierrasoftworks.com",
+            "data-auto-capture-exceptions": "true"
         }],
     ],
 
