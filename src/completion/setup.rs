@@ -176,7 +176,7 @@ impl Shell for Fish {
 
     fn short_init(&self) -> String {
         let app = app_path();
-        format!(r#"source ("{app}" shell-init fish --full | psub)"#)
+        format!(r#""{app}" shell-init fish --full | source"#)
     }
 
     fn long_init(&self, core: &Core) -> String {
