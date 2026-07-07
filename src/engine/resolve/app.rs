@@ -11,7 +11,7 @@ impl Resolver<(), App> for Core {
             )
         });
 
-        self.record_resolve_event::<App>(result.is_ok(), "one");
+        self.record_resolve_event::<App>(result.is_ok(), "default");
         result
     }
 }
@@ -28,7 +28,7 @@ impl Resolver<&str, App> for Core {
             )
         });
 
-        self.record_resolve_event::<App>(result.is_ok(), "one");
+        self.record_resolve_event::<App>(result.is_ok(), "name");
         result
     }
 }

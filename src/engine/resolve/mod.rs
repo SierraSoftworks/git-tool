@@ -72,23 +72,31 @@ impl Core {
     /// it. The [`Resolver`] implementations on [`Core`] which are substitutable in
     /// tests route through this rather than calling the backend directly.
     #[cfg(not(test))]
-    pub(crate) fn resolve_with_events<S, T>(&self, source: S) -> Result<T, human_errors::Error>
+    pub(crate) fn resolve_with_events<S, T>(
+        &self,
+        source: S,
+        scope: &'static str,
+    ) -> Result<T, human_errors::Error>
     where
         TrueResolver: Resolver<S, T>,
     {
         let result = self.resolver.resolve_with(source);
-        self.record_resolve_event::<T>(result.is_ok(), "one");
+        self.record_resolve_event::<T>(result.is_ok(), scope);
         result
     }
 
     #[cfg(test)]
-    pub(crate) fn resolve_with_events<S, T>(&self, source: S) -> Result<T, human_errors::Error>
+    pub(crate) fn resolve_with_events<S, T>(
+        &self,
+        source: S,
+        scope: &'static str,
+    ) -> Result<T, human_errors::Error>
     where
         TrueResolver: Resolver<S, T>,
         MockResolver: Resolver<S, T>,
     {
         let result = self.resolver.resolve_with(source);
-        self.record_resolve_event::<T>(result.is_ok(), "one");
+        self.record_resolve_event::<T>(result.is_ok(), scope);
         result
     }
 
@@ -97,12 +105,13 @@ impl Core {
     pub(crate) fn resolve_many_with_events<S, T>(
         &self,
         source: S,
+        scope: &'static str,
     ) -> Result<Vec<T>, human_errors::Error>
     where
         TrueResolver: ResolveMany<S, T>,
     {
         let result = self.resolver.resolve_many_with(source);
-        self.record_resolve_event::<T>(result.is_ok(), "many");
+        self.record_resolve_event::<T>(result.is_ok(), scope);
         result
     }
 
@@ -110,13 +119,14 @@ impl Core {
     pub(crate) fn resolve_many_with_events<S, T>(
         &self,
         source: S,
+        scope: &'static str,
     ) -> Result<Vec<T>, human_errors::Error>
     where
         TrueResolver: ResolveMany<S, T>,
         MockResolver: ResolveMany<S, T>,
     {
         let result = self.resolver.resolve_many_with(source);
-        self.record_resolve_event::<T>(result.is_ok(), "many");
+        self.record_resolve_event::<T>(result.is_ok(), scope);
         result
     }
 
@@ -125,18 +135,15 @@ impl Core {
     /// the source it was resolved from or the entity it resolved to.
     pub(crate) fn record_resolve_event<T>(&self, success: bool, scope: &'static str) {
         self.analytics().record_event(
-            format!("resolve::{}", entity_name::<T>()),
-            [
-                (
-                    "status",
-                    if success {
-                        "succeeded".to_string()
-                    } else {
-                        "failed".to_string()
-                    },
-                ),
-                ("scope", scope.to_string()),
-            ],
+            format!("resolve::{}::{scope}", entity_name::<T>()),
+            [(
+                "status",
+                if success {
+                    "succeeded".to_string()
+                } else {
+                    "failed".to_string()
+                },
+            )],
         );
     }
 }
