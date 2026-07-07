@@ -13,6 +13,10 @@ pub struct GitWorktree {
 
 #[async_trait::async_trait]
 impl Task for GitWorktree {
+    fn name(&self) -> &'static str {
+        "git-worktree"
+    }
+
     #[tracing::instrument(name = "task:git_worktree(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         if self.path.exists() {

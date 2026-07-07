@@ -1,3 +1,4 @@
+mod analytics;
 mod app;
 mod auth;
 mod branch;
@@ -27,6 +28,7 @@ use crate::console::ConsoleProvider;
 pub use human_errors::Error;
 
 pub use self::http::HttpClient;
+pub use analytics::Analytics;
 pub use app::App;
 pub use auth::KeyChain;
 pub use branch::Branch;
@@ -50,6 +52,7 @@ pub struct Core {
     resolver: ResolverBackend,
     keychain: Arc<dyn KeyChain + Send + Sync>,
     http_client: Arc<dyn HttpClient + Send + Sync>,
+    analytics: Analytics,
 }
 
 impl Core {
@@ -83,5 +86,9 @@ impl Core {
 
     pub fn http_client(&self) -> &(dyn HttpClient + Send + Sync) {
         self.http_client.as_ref()
+    }
+
+    pub fn analytics(&self) -> &Analytics {
+        &self.analytics
     }
 }

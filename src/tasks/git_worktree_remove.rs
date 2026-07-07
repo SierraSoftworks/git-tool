@@ -9,6 +9,10 @@ pub struct GitWorktreeRemove {
 
 #[async_trait::async_trait]
 impl Task for GitWorktreeRemove {
+    fn name(&self) -> &'static str {
+        "git-worktree-remove"
+    }
+
     #[tracing::instrument(name = "task:git_worktree_remove(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_worktree_remove(&repo.get_path(), &self.path).await

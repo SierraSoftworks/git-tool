@@ -38,7 +38,7 @@ mod update;
 mod test;
 
 #[cfg(feature = "telemetry")]
-type TelemetrySession = Session;
+type TelemetrySession = Arc<Session>;
 #[cfg(not(feature = "telemetry"))]
 type TelemetrySession = ();
 
@@ -51,8 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         match host(app, &session).await {
             Ok(status) => {
-                #[cfg(feature = "telemetry")]
-                session.shutdown();
+                telemetry::shutdown(session);
                 status
             }
             Err(err) => {
@@ -61,8 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     session.record_error(&err);
                 }
 
-                #[cfg(feature = "telemetry")]
-                session.shutdown();
+                telemetry::shutdown(session);
                 1
             }
         }
@@ -179,7 +177,17 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
     #[cfg(not(feature = "telemetry"))]
     let telemetry_enabled = Arc::new(AtomicBool::new(false));
 
-    match run(matches, telemetry_enabled.clone()).await {
+    #[cfg(feature = "telemetry")]
+    let analytics = engine::Analytics::new(session.clone());
+    #[cfg(not(feature = "telemetry"))]
+    let analytics = engine::Analytics::disabled();
+
+    // The event is named after the command so that a session trace reads
+    // naturally; the name is one of the hard-coded subcommands (clap rejects
+    // anything else before we get here) or `help` when none was given.
+    let command_event = format!("commands::{}", matches.subcommand_name().unwrap_or("help"));
+
+    match run(matches, telemetry_enabled.clone(), analytics.clone()).await {
         Ok(-2) => {
             app.clone().print_help().unwrap_or_default();
 
@@ -187,12 +195,29 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 2_u32);
 
+            analytics.record_event(
+                command_event.clone(),
+                [
+                    ("status", "succeeded".to_string()),
+                    ("exit_code", 2.to_string()),
+                ],
+            );
+
             warn!("Exiting with status code {}", 2);
             Ok(2)
         }
         Ok(status) => {
             info!("Exiting with status code {}", status);
             Span::current().record("exit_code", status);
+
+            analytics.record_event(
+                command_event.clone(),
+                [
+                    ("status", "succeeded".to_string()),
+                    ("exit_code", status.to_string()),
+                ],
+            );
+
             Ok(status)
         }
         Err(error) => {
@@ -202,6 +227,21 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
             Span::current()
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32);
+
+            analytics.record_event(
+                command_event.clone(),
+                [
+                    ("status", "failed".to_string()),
+                    (
+                        "error_kind",
+                        if error.is(human_errors::Kind::System) {
+                            "system".to_string()
+                        } else {
+                            "user".to_string()
+                        },
+                    ),
+                ],
+            );
 
             if error.is(human_errors::Kind::System) {
                 Span::current().record("exception", display(&error));
@@ -221,10 +261,11 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
     }
 }
 
-#[tracing::instrument(err, skip(matches), fields(command=matches.subcommand_name().unwrap_or("")))]
+#[tracing::instrument(err, skip(matches, analytics), fields(command=matches.subcommand_name().unwrap_or("")))]
 async fn run(
     matches: clap::ArgMatches,
     telemetry_enabled: Arc<AtomicBool>,
+    analytics: engine::Analytics,
 ) -> Result<i32, human_errors::Error> {
     let core_builder = engine::Core::builder();
 
@@ -241,7 +282,7 @@ async fn run(
         core_builder.with_default_config()
     };
 
-    let core = core_builder.build();
+    let core = core_builder.with_analytics(analytics).build();
 
     // If telemetry is enabled in the config file, then turn it on here.
     if !core.config().get_features().has(features::TELEMETRY) {

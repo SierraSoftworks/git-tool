@@ -9,6 +9,10 @@ pub struct ForkRemote {
 
 #[async_trait::async_trait]
 impl Task for ForkRemote {
+    fn name(&self) -> &'static str {
+        "fork-remote"
+    }
+
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:fork_repository(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), engine::Error> {

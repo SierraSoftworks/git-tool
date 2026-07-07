@@ -97,12 +97,12 @@ Worktrees are created within the worktree directory configured in your config fi
         let worktree: Worktree = core.resolve((&repo, branch))?;
         let worktree_path = worktree.path();
 
-        GitWorktree {
+        sequence![GitWorktree {
             path: worktree_path.clone(),
             branch: branch.to_string(),
             create_if_missing: !no_create,
             base: base.cloned(),
-        }
+        }]
         .apply_repo(core, &repo)
         .await?;
 

@@ -11,7 +11,7 @@ use tracing_batteries::prelude::*;
 /// Resolves the repository containing the current working directory.
 impl Resolver<(), Repo> for Core {
     fn resolve(&self, source: ()) -> Result<Repo, human_errors::Error> {
-        self.resolver.resolve_with(source)
+        self.resolve_with_events(source)
     }
 }
 
@@ -19,7 +19,7 @@ impl Resolver<(), Repo> for Core {
 /// taking aliases and the configured default service into account.
 impl Resolver<&Identifier, Repo> for Core {
     fn resolve(&self, source: &Identifier) -> Result<Repo, human_errors::Error> {
-        self.resolver.resolve_with(source)
+        self.resolve_with_events(source)
     }
 }
 
@@ -35,14 +35,14 @@ impl Resolver<&str, Repo> for Core {
 /// Enumerates every repository within the development directory.
 impl ResolveMany<(), Repo> for Core {
     fn resolve_many(&self, source: ()) -> Result<Vec<Repo>, human_errors::Error> {
-        self.resolver.resolve_many_with(source)
+        self.resolve_many_with_events(source)
     }
 }
 
 /// Enumerates the repositories belonging to a specific service.
 impl ResolveMany<&Service, Repo> for Core {
     fn resolve_many(&self, source: &Service) -> Result<Vec<Repo>, human_errors::Error> {
-        self.resolver.resolve_many_with(source)
+        self.resolve_many_with_events(source)
     }
 }
 

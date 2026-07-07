@@ -13,6 +13,10 @@ impl Default for EnsureNoRemote {
 
 #[async_trait::async_trait]
 impl Task for EnsureNoRemote {
+    fn name(&self) -> &'static str {
+        "ensure-no-remote"
+    }
+
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:ensure_no_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {

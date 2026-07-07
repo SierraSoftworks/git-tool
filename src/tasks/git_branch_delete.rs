@@ -8,6 +8,10 @@ pub struct GitBranchDelete {
 
 #[async_trait::async_trait]
 impl Task for GitBranchDelete {
+    fn name(&self) -> &'static str {
+        "git-branch-delete"
+    }
+
     #[tracing::instrument(name = "task:git_branch_delete(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_branch_delete(&repo.get_path(), &self.branch).await

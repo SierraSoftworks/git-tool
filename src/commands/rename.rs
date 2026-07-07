@@ -76,7 +76,7 @@ impl CommandRunnable for RenameCommand {
         .await?;
 
         // Don't forget to update the remote URL to match the new repository name
-        GitRemote { name: "origin" }
+        sequence![GitRemote { name: "origin" }]
             .apply_repo(core, &new_repo)
             .await?;
 

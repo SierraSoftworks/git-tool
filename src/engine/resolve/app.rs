@@ -4,26 +4,32 @@ use crate::engine::{App, Core};
 /// Resolves the default application (the first one in the configuration file).
 impl Resolver<(), App> for Core {
     fn resolve(&self, _source: ()) -> Result<App, human_errors::Error> {
-        self.config().get_default_app().cloned().ok_or_else(|| {
+        let result = self.config().get_default_app().cloned().ok_or_else(|| {
             human_errors::user(
                 "No default application available.",
                 &["Make sure that you add an app to your config file using 'git-tool config add apps/bash' or similar."],
             )
-        })
+        });
+
+        self.record_resolve_event::<App>(result.is_ok(), "one");
+        result
     }
 }
 
 /// Resolves an application by its configured name.
 impl Resolver<&str, App> for Core {
     fn resolve(&self, source: &str) -> Result<App, human_errors::Error> {
-        self.config().get_app(source).cloned().ok_or_else(|| {
+        let result = self.config().get_app(source).cloned().ok_or_else(|| {
             human_errors::user(
                 format!(
                     "Could not find application with name '{source}'. Make sure that you are using an application which is present in your configuration file, or install it with 'git-tool config add apps/{source}'."
                 ),
                 &["Check your configuration file for available applications."],
             )
-        })
+        });
+
+        self.record_resolve_event::<App>(result.is_ok(), "one");
+        result
     }
 }
 

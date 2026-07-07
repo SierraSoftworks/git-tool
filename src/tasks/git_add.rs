@@ -9,6 +9,10 @@ pub struct GitAdd<'a> {
 
 #[async_trait::async_trait]
 impl Task for GitAdd<'_> {
+    fn name(&self) -> &'static str {
+        "git-add"
+    }
+
     #[tracing::instrument(name = "task:git_add(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_add(&repo.get_path(), &self.paths).await

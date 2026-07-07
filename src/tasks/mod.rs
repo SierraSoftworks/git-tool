@@ -60,6 +60,13 @@ pub use write_file::WriteFile;
 
 #[async_trait]
 pub trait Task {
+    /// A short, hard-coded name identifying this kind of task in telemetry events.
+    ///
+    /// The name must be a compile-time literal describing the operation only (for
+    /// example `git-clone`) so that it can never leak information about the entity
+    /// the task is applied to — never derive it from the task's arguments.
+    fn name(&self) -> &'static str;
+
     async fn apply_repo(&self, _core: &Core, _repo: &engine::Repo) -> Result<(), engine::Error> {
         Ok(())
     }
@@ -93,6 +100,10 @@ impl Default for TestTask {
 #[cfg(test)]
 #[async_trait]
 impl Task for TestTask {
+    fn name(&self) -> &'static str {
+        "test"
+    }
+
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let mut r = self.ran_repo.lock().await;
 
