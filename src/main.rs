@@ -45,11 +45,14 @@ type TelemetrySession = ();
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     std::process::exit({
-        let session = telemetry::setup();
+        let session_id = std::env::var("GITTOOL_SESSION_ID")
+            .unwrap_or_else(|_| tracing_batteries::Analytics::session_id());
+
+        let session = telemetry::setup(&session_id);
 
         let app = build_app();
 
-        match host(app, &session).await {
+        match host(app, &session, &session_id).await {
             Ok(status) => {
                 telemetry::shutdown(session);
                 status
@@ -97,7 +100,11 @@ fn build_app() -> clap::Command {
 }
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
-async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, human_errors::Error> {
+async fn host(
+    app: clap::Command,
+    session: &TelemetrySession,
+    session_id: &str,
+) -> Result<i32, human_errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
@@ -178,7 +185,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
     let telemetry_enabled = Arc::new(AtomicBool::new(false));
 
     #[cfg(feature = "telemetry")]
-    let analytics = engine::Analytics::new(session.clone());
+    let analytics = engine::Analytics::new(session.clone(), session_id);
     #[cfg(not(feature = "telemetry"))]
     let analytics = engine::Analytics::disabled();
 

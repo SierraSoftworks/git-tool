@@ -16,14 +16,16 @@ use tracing_batteries::Session;
 #[derive(Clone, Default)]
 pub struct Analytics {
     session: Option<Arc<Session>>,
+    session_id: String,
 }
 
 impl Analytics {
     /// Creates a handle which records events through the provided telemetry session.
     #[cfg_attr(not(feature = "telemetry"), allow(dead_code))]
-    pub fn new(session: Arc<Session>) -> Self {
+    pub fn new(session: Arc<Session>, session_id: impl ToString) -> Self {
         Self {
             session: Some(session),
+            session_id: session_id.to_string(),
         }
     }
 
@@ -31,6 +33,11 @@ impl Analytics {
     /// without an explicit session (tests, telemetry-less builds).
     pub fn disabled() -> Self {
         Self::default()
+    }
+
+    /// Returns the session ID associated with this telemetry handle.
+    pub fn session_id(&self) -> &str {
+        &self.session_id
     }
 
     /// Records a usage event against the telemetry session.
