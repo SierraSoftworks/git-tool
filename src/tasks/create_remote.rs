@@ -13,6 +13,10 @@ impl Default for CreateRemote {
 
 #[async_trait::async_trait]
 impl Task for CreateRemote {
+    fn name(&self) -> &'static str {
+        "create-remote"
+    }
+
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:create_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {

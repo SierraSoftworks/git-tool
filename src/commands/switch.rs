@@ -44,12 +44,12 @@ impl CommandRunnable for SwitchCommand {
 
         match matches.get_one::<String>("branch") {
             Some(branch) => {
-                let task = GitSwitch {
+                sequence![GitSwitch {
                     branch: branch.to_string(),
                     create_if_missing: !matches.get_flag("no-create"),
-                };
-
-                task.apply_repo(core, &repo).await?;
+                }]
+                .apply_repo(core, &repo)
+                .await?;
             }
             None => {
                 let branches = git::git_branches(&repo.get_path()).await?;

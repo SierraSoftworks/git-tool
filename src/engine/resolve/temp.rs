@@ -7,7 +7,7 @@ use tracing_batteries::prelude::*;
 /// ([`TempMode::Retain`]) when the target is dropped.
 impl Resolver<TempMode, TempTarget> for Core {
     fn resolve(&self, source: TempMode) -> Result<TempTarget, human_errors::Error> {
-        self.resolver.resolve_with(source)
+        self.resolve_with_events(source)
     }
 }
 

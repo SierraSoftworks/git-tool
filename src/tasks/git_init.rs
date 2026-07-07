@@ -6,6 +6,10 @@ pub struct GitInit {}
 
 #[async_trait::async_trait]
 impl Task for GitInit {
+    fn name(&self) -> &'static str {
+        "git-init"
+    }
+
     #[tracing::instrument(name = "task:git_init(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_init(&repo.get_path()).await?;

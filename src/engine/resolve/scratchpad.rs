@@ -8,7 +8,7 @@ use tracing_batteries::prelude::*;
 /// Resolves the current week's scratchpad.
 impl Resolver<(), Scratchpad> for Core {
     fn resolve(&self, source: ()) -> Result<Scratchpad, human_errors::Error> {
-        self.resolver.resolve_with(source)
+        self.resolve_with_events(source)
     }
 }
 
@@ -16,14 +16,14 @@ impl Resolver<(), Scratchpad> for Core {
 /// (e.g. `^1` is last week's scratchpad).
 impl Resolver<&str, Scratchpad> for Core {
     fn resolve(&self, source: &str) -> Result<Scratchpad, human_errors::Error> {
-        self.resolver.resolve_with(source)
+        self.resolve_with_events(source)
     }
 }
 
 /// Enumerates the scratchpads which currently exist on disk.
 impl ResolveMany<(), Scratchpad> for Core {
     fn resolve_many(&self, source: ()) -> Result<Vec<Scratchpad>, human_errors::Error> {
-        self.resolver.resolve_many_with(source)
+        self.resolve_many_with_events(source)
     }
 }
 

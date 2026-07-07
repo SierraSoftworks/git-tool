@@ -44,7 +44,28 @@ impl CommandRunnable for UpdateCommand {
         // context, so the phases stay on one distributed trace).
         if let Some(state) = matches.get_one::<String>("state") {
             info!("Resuming an in-progress update.");
-            manager.resume_from_arg(state).await?;
+
+            // The reported phase comes from deserializing update-rs's own state
+            // type, so its value is one of that crate's hard-coded phase names —
+            // never free-form input.
+            let phase = serde_json::from_str::<update_rs::UpdateState>(state)
+                .map(|state| state.phase.to_string())
+                .unwrap_or_else(|_| "invalid".to_string());
+
+            let result = manager.resume_from_arg(state).await;
+            core.analytics().record_event(
+                format!("update::{phase}"),
+                [(
+                    "status",
+                    if result.is_ok() {
+                        "succeeded".to_string()
+                    } else {
+                        "failed".to_string()
+                    },
+                )],
+            );
+            result?;
+
             return Ok(0);
         }
 
@@ -88,9 +109,34 @@ impl CommandRunnable for UpdateCommand {
                     &format!("Starting Update to {}", release.id),
                     sentry::Level::Info,
                 );
+
+                // Release versions are public information from this project's own
+                // GitHub releases, making them safe to include in telemetry events.
+                core.analytics().record_event(
+                    "update::started",
+                    [
+                        ("to_version", release.id.clone()),
+                        ("prerelease", release.prerelease.to_string()),
+                    ],
+                );
+
                 writeln!(core.output(), "Downloading update {}...", &release.id)
                     .to_human_error()?;
-                if manager.update(release).await? {
+
+                let result = manager.update(release).await;
+                core.analytics().record_event(
+                    "update::prepare",
+                    [(
+                        "status",
+                        if result.is_ok() {
+                            "succeeded".to_string()
+                        } else {
+                            "failed".to_string()
+                        },
+                    )],
+                );
+
+                if result? {
                     writeln!(
                         core.output(),
                         "Shutting down to complete the update operation."

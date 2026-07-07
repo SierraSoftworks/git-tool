@@ -9,6 +9,10 @@ pub struct MoveRemote {
 
 #[async_trait::async_trait]
 impl Task for MoveRemote {
+    fn name(&self) -> &'static str {
+        "move-remote"
+    }
+
     #[cfg(feature = "auth")]
     #[tracing::instrument(name = "task:move_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &Repo) -> Result<(), engine::Error> {

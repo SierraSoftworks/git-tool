@@ -10,6 +10,10 @@ pub struct GitCommit<'a> {
 
 #[async_trait::async_trait]
 impl Task for GitCommit<'_> {
+    fn name(&self) -> &'static str {
+        "git-commit"
+    }
+
     #[tracing::instrument(name = "task:git_commit(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_commit(&repo.get_path(), self.message, &self.paths).await

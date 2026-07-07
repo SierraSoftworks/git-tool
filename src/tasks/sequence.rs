@@ -14,10 +14,16 @@ impl Sequence {
 
 #[async_trait]
 impl Task for Sequence {
+    fn name(&self) -> &'static str {
+        "sequence"
+    }
+
     #[tracing::instrument(name = "task:sequence(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         for task in self.tasks.iter() {
-            task.apply_repo(core, repo).await?;
+            let result = task.apply_repo(core, repo).await;
+            record_task_event(core, task.as_ref(), "repo", &result);
+            result?;
         }
 
         Ok(())
@@ -30,11 +36,43 @@ impl Task for Sequence {
         scratch: &engine::Scratchpad,
     ) -> Result<(), engine::Error> {
         for task in self.tasks.iter() {
-            task.apply_scratchpad(core, scratch).await?;
+            let result = task.apply_scratchpad(core, scratch).await;
+            record_task_event(core, task.as_ref(), "scratchpad", &result);
+            result?;
         }
 
         Ok(())
     }
+}
+
+/// Records a telemetry event for a task which has just been applied. Only the
+/// task's hard-coded [`Task::name`] and the kind of target it was applied to are
+/// reported — never anything about the target itself.
+fn record_task_event(
+    core: &Core,
+    task: &(dyn Task + Send + Sync),
+    target: &'static str,
+    result: &Result<(), engine::Error>,
+) {
+    // Nested sequences report their child tasks themselves.
+    if task.name() == "sequence" {
+        return;
+    }
+
+    core.analytics().record_event(
+        format!("tasks::{}", task.name()),
+        [
+            (
+                "status",
+                if result.is_ok() {
+                    "succeeded".to_string()
+                } else {
+                    "failed".to_string()
+                },
+            ),
+            ("target", target.to_string()),
+        ],
+    );
 }
 
 #[cfg(test)]

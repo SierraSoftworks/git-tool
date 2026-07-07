@@ -6,6 +6,10 @@ pub struct NewFolder {}
 
 #[async_trait::async_trait]
 impl Task for NewFolder {
+    fn name(&self) -> &'static str {
+        "new-folder"
+    }
+
     #[tracing::instrument(name = "task:new_folder(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let path = repo.get_path();

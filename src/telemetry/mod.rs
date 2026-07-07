@@ -1,8 +1,19 @@
 use std::sync::Arc;
 use tracing_batteries::prelude::*;
 
+/// Initializes the telemetry session for this run of Git-Tool.
+///
+/// The session is returned behind an [`Arc`] so that a handle to it can be shared
+/// with the [`crate::engine::Core`] (via [`crate::engine::Analytics`]), allowing usage
+/// events to be recorded from anywhere in the application. The `main` function keeps
+/// the original reference and hands it back to [`shutdown`] once the run completes.
 #[cfg(feature = "telemetry")]
-pub fn setup() -> tracing_batteries::Session {
+pub fn setup() -> Arc<tracing_batteries::Session> {
+    Arc::new(session())
+}
+
+#[cfg(feature = "telemetry")]
+fn session() -> tracing_batteries::Session {
     tracing_batteries::Session::new("git-tool", version!())
         .with_battery(tracing_batteries::Sentry::new((
             "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
@@ -42,3 +53,23 @@ pub fn setup() -> tracing_batteries::Session {
 pub fn setup() -> () {
     ()
 }
+
+/// Shuts down the telemetry session, flushing any buffered telemetry before the
+/// process exits.
+///
+/// By this point the [`crate::engine::Core`] (and with it every shared handle to the
+/// session) has been dropped, so reclaiming exclusive ownership from the [`Arc`] is
+/// expected to succeed; if some handle does still exist we skip the final flush
+/// rather than blocking or crashing on our way out.
+#[cfg(feature = "telemetry")]
+pub fn shutdown(session: Arc<tracing_batteries::Session>) {
+    match Arc::try_unwrap(session) {
+        Ok(session) => session.shutdown(),
+        Err(_) => {
+            warn!("The telemetry session is still shared elsewhere, skipping the final flush.")
+        }
+    }
+}
+
+#[cfg(not(feature = "telemetry"))]
+pub fn shutdown(_session: ()) {}

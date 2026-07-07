@@ -8,6 +8,10 @@ pub struct GitCheckout<'a> {
 
 #[async_trait::async_trait]
 impl Task for GitCheckout<'_> {
+    fn name(&self) -> &'static str {
+        "git-checkout"
+    }
+
     #[tracing::instrument(name = "task:git_checkout(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         git::git_checkout(&repo.get_path(), self.branch).await

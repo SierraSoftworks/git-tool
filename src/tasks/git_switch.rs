@@ -9,6 +9,10 @@ pub struct GitSwitch {
 
 #[async_trait::async_trait]
 impl Task for GitSwitch {
+    fn name(&self) -> &'static str {
+        "git-switch"
+    }
+
     #[tracing::instrument(name = "task:git_switch(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let mut create = self.create_if_missing;

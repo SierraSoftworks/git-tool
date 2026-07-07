@@ -10,6 +10,10 @@ pub struct MoveDirectory {
 
 #[async_trait::async_trait]
 impl Task for MoveDirectory {
+    fn name(&self) -> &'static str {
+        "move-directory"
+    }
+
     #[tracing::instrument(name = "task:move_directory(repo)", err, skip(self, _core))]
     async fn apply_repo(
         &self,

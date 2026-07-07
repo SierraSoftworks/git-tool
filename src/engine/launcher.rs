@@ -28,6 +28,43 @@ pub fn launcher(config: Arc<Config>) -> Arc<dyn Launcher + Send + Sync> {
     Arc::new(TrueLauncher { config })
 }
 
+/// Wraps a [`Launcher`] so that every application launch records privacy-preserving
+/// telemetry events: that an application was launched, and how it exited. Nothing
+/// about the application itself (its name, command, arguments or target) is reported.
+pub(super) struct InstrumentedLauncher {
+    pub(super) inner: Arc<dyn Launcher + Send + Sync>,
+    pub(super) analytics: super::Analytics,
+}
+
+#[async_trait::async_trait]
+impl Launcher for InstrumentedLauncher {
+    async fn run(
+        &self,
+        a: &app::App,
+        t: &(dyn Target + Send + Sync),
+    ) -> Result<i32, human_errors::Error> {
+        self.analytics
+            .record_event("apps::launched", std::iter::empty());
+
+        let result = self.inner.run(a, t).await;
+
+        match &result {
+            Ok(status) => self.analytics.record_event(
+                "apps::exited",
+                [
+                    ("status", "succeeded".to_string()),
+                    ("exit_code", status.to_string()),
+                ],
+            ),
+            Err(_) => self
+                .analytics
+                .record_event("apps::exited", [("status", "failed".to_string())]),
+        }
+
+        result
+    }
+}
+
 struct TrueLauncher {
     config: Arc<Config>,
 }

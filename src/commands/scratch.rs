@@ -39,8 +39,9 @@ You may also append any number of KEY=VALUE tokens to override environment varia
         let scratchpad = &parsed.target;
 
         if !scratchpad.exists() {
-            let task = tasks::NewFolder {};
-            task.apply_scratchpad(core, scratchpad).await?;
+            sequence![tasks::NewFolder {}]
+                .apply_scratchpad(core, scratchpad)
+                .await?;
         }
 
         let status = core.launcher().run(&app, scratchpad).await?;

@@ -14,6 +14,10 @@ impl Default for GitRemote<'static> {
 
 #[async_trait::async_trait]
 impl Task for GitRemote<'_> {
+    fn name(&self) -> &'static str {
+        "git-remote"
+    }
+
     #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         let service = core.config().get_service(&repo.service)?;
@@ -39,6 +43,10 @@ pub struct GitAddRemote {
 
 #[async_trait::async_trait]
 impl Task for GitAddRemote {
+    fn name(&self) -> &'static str {
+        "git-add-remote"
+    }
+
     #[tracing::instrument(name = "task:git_remote(repo)", err, skip(self, _core))]
     async fn apply_repo(&self, _core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         if git::git_remote_list(&repo.get_path())

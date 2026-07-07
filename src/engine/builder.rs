@@ -1,7 +1,7 @@
 use crate::console::{self, ConsoleProvider};
 
 use super::resolve::{ResolverBackend, TrueResolver};
-use super::{Config, Core, HttpClient, KeyChain, Launcher, auth, http, launcher};
+use super::{Analytics, Config, Core, HttpClient, KeyChain, Launcher, auth, http, launcher};
 
 #[cfg(test)]
 use super::resolve::MockResolver;
@@ -28,6 +28,7 @@ impl CoreBuilderWithoutConfig {
             keychain: auth::keychain(),
             http_client: http::client(),
             console: console::default(),
+            analytics: Analytics::disabled(),
             config,
         }
     }
@@ -63,6 +64,7 @@ pub struct CoreBuilderWithConfig {
     pub(super) resolver: ResolverBackend,
     pub(super) keychain: Arc<dyn KeyChain + Send + Sync>,
     pub(super) http_client: Arc<dyn HttpClient + Send + Sync>,
+    pub(super) analytics: Analytics,
 }
 
 impl From<CoreBuilderWithConfig> for Core {
@@ -74,14 +76,29 @@ impl From<CoreBuilderWithConfig> for Core {
 #[allow(dead_code)]
 impl CoreBuilderWithConfig {
     pub fn build(self) -> Core {
+        // The launcher and HTTP client are wrapped here (rather than where they are
+        // constructed) so that every implementation — including the mocks used in
+        // tests — reports its telemetry events consistently, regardless of the order
+        // in which the builder methods were called.
         Core {
             config: self.config,
-            launcher: self.launcher,
+            launcher: Arc::new(launcher::InstrumentedLauncher {
+                inner: self.launcher,
+                analytics: self.analytics.clone(),
+            }),
             resolver: self.resolver,
             keychain: self.keychain,
-            http_client: self.http_client,
+            http_client: Arc::new(http::InstrumentedHttpClient {
+                inner: self.http_client,
+                analytics: self.analytics.clone(),
+            }),
             console: self.console,
+            analytics: self.analytics,
         }
+    }
+
+    pub fn with_analytics(self, analytics: Analytics) -> Self {
+        Self { analytics, ..self }
     }
 
     pub fn with_console(self, console: Arc<dyn ConsoleProvider + Send + Sync>) -> Self {

@@ -9,6 +9,10 @@ pub struct GitClone {
 
 #[async_trait::async_trait]
 impl Task for GitClone {
+    fn name(&self) -> &'static str {
+        "git-clone"
+    }
+
     #[tracing::instrument(name = "task:git_clone(repo)", err, skip(self, core))]
     async fn apply_repo(&self, core: &Core, repo: &engine::Repo) -> Result<(), engine::Error> {
         if repo.exists() {

@@ -49,6 +49,50 @@ struct TrueHttpClient {
     client: Client,
 }
 
+/// Wraps an [`HttpClient`] so that every request records a privacy-preserving
+/// telemetry event describing the request's method and response status — never
+/// its URL, which may identify the service (and repository) being accessed.
+///
+/// Requests made through [`HttpClient::reqwest_client`] bypass this wrapper; the
+/// call sites which need a raw client (such as the self-updater) record their own
+/// higher-level events instead.
+pub(super) struct InstrumentedHttpClient {
+    pub(super) inner: Arc<dyn HttpClient + Send + Sync>,
+    pub(super) analytics: super::Analytics,
+}
+
+#[async_trait::async_trait]
+impl HttpClient for InstrumentedHttpClient {
+    async fn request(&self, req: Request) -> Result<Response, human_errors::Error> {
+        let method = req.method().to_string();
+
+        let result = self.inner.request(req).await;
+
+        let mut properties = vec![
+            ("method", method),
+            (
+                "status",
+                if result.is_ok() {
+                    "succeeded".to_string()
+                } else {
+                    "failed".to_string()
+                },
+            ),
+        ];
+        if let Ok(response) = &result {
+            properties.push(("code", response.status().as_u16().to_string()));
+        }
+
+        self.analytics.record_event("http::request", properties);
+
+        result
+    }
+
+    fn reqwest_client(&self) -> Client {
+        self.inner.reqwest_client()
+    }
+}
+
 impl std::fmt::Debug for dyn HttpClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "HttpClient")
