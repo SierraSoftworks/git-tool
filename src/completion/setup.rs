@@ -184,10 +184,8 @@ impl Shell for Fish {
         let session_id = core.analytics().session_id();
 
         format!(
-            r#"
-complete -f -c {app} "({app} complete (commandline -cp))"
-set -gx GITTOOL_SESSION_ID "{session_id}"
-"#
+            r#"set -gx GITTOOL_SESSION_ID "{session_id}"
+complete -f -c {app} -a "({app} complete (commandline -cp))""#
         )
     }
 
