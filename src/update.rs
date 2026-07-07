@@ -22,11 +22,17 @@ const REPO: &str = "SierraSoftworks/git-tool";
 /// relaunches the new binary with `update --state <json>`) hands off cleanly to
 /// this one. The active trace context is carried inside the state itself (via
 /// update-rs's `opentelemetry` feature), so no extra arguments are needed.
-struct GitToolLauncher;
+struct GitToolLauncher {
+    session_id: String,
+}
 
 impl Launcher for GitToolLauncher {
     fn resume_args(&self, state_json: &str) -> Vec<OsString> {
         vec!["update".into(), "--state".into(), state_json.into()]
+    }
+
+    fn extra_envs(&self) -> Vec<(OsString, OsString)> {
+        vec![("GITTOOL_SESSION_ID".into(), self.session_id.clone().into())]
     }
 }
 
@@ -43,5 +49,7 @@ pub fn manager(core: &Core) -> UpdateManager<GitHubSource> {
             .with_release_tag_prefix("v")
             .with_client(core.http_client().reqwest_client()),
     )
-    .with_launcher(Box::new(GitToolLauncher))
+    .with_launcher(Box::new(GitToolLauncher {
+        session_id: core.analytics().session_id().to_string(),
+    }))
 }
