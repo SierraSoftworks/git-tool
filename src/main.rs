@@ -202,13 +202,7 @@ async fn host(
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 2_u32);
 
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "succeeded".to_string()),
-                    ("exit_code", 2.to_string()),
-                ],
-            );
+            analytics.record_event("commands::help", [("subcommand", command_name.clone())]);
 
             warn!("Exiting with status code {}", 2);
             Ok(2)
@@ -216,14 +210,6 @@ async fn host(
         Ok(status) => {
             info!("Exiting with status code {}", status);
             Span::current().record("exit_code", status);
-
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "succeeded".to_string()),
-                    ("exit_code", status.to_string()),
-                ],
-            );
 
             Ok(status)
         }
@@ -235,25 +221,34 @@ async fn host(
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32);
 
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "failed".to_string()),
-                    (
-                        "error_kind",
-                        if error.is(human_errors::Kind::System) {
-                            "system".to_string()
-                        } else {
-                            "user".to_string()
-                        },
-                    ),
-                ],
-            );
-
             if error.is(human_errors::Kind::System) {
                 Span::current().record("exception", display(&error));
+                let error = tracing_batteries::ErrorInfo::new(&error).with_metadata(
+                    "trace.id",
+                    format!(
+                        "{:032x}",
+                        Span::current().context().span().span_context().trace_id()
+                    ),
+                );
+
+                analytics.record_custom_error(error);
             } else {
                 Span::current().record("exception", error.description());
+
+                analytics.record_event(
+                    command_event.clone(),
+                    [
+                        ("status", "failed".to_string()),
+                        (
+                            "error_kind",
+                            if error.is(human_errors::Kind::System) {
+                                "system".to_string()
+                            } else {
+                                "user".to_string()
+                            },
+                        ),
+                    ],
+                );
             }
 
             if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {

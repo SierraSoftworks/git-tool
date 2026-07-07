@@ -70,6 +70,22 @@ impl Analytics {
             );
         }
     }
+
+    /// Records an error against the telemetry session.
+    #[allow(dead_code)]
+    pub fn record_error<E: std::error::Error + Send + Sync + 'static>(&self, error: &E) {
+        if let Some(session) = &self.session {
+            session.record_error(error);
+        }
+    }
+
+    /// Records a custom error against the telemetry session.
+    #[allow(dead_code)]
+    pub fn record_custom_error(&self, error: tracing_batteries::ErrorInfo) {
+        if let Some(session) = &self.session {
+            session.record_custom_error(error);
+        }
+    }
 }
 
 #[cfg(test)]
