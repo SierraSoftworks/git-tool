@@ -48,7 +48,8 @@ fn session(id: &str) -> tracing_batteries::Session {
         ))
         .with_battery(
             tracing_batteries::Analytics::new("https://analytics.sierrasoftworks.com")
-                .with_session_id(id),
+                .with_session_id(id)
+                .without_initial_page(),
         )
 }
 
