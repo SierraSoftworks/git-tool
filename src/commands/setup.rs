@@ -167,7 +167,7 @@ impl SetupCommand {
 
         let other_shells = shells
             .iter()
-            .map(|s| s.get_name())
+            .map(|s| s.name())
             .filter(|&s| s != default_shell)
             .join("/");
 
@@ -176,7 +176,7 @@ impl SetupCommand {
                 return true;
             }
 
-            if shells.iter().any(|s| s.get_name() == v) {
+            if shells.iter().any(|s| s.name() == v) {
                 return true;
             }
 
@@ -189,13 +189,13 @@ impl SetupCommand {
         }).unwrap_or_else(|| default_shell.into());
 
         writeln!(core.output()).to_human_error()?;
-        if let Some(shell) = shells.iter().find(|s| s.get_name() == shell) {
+        if let Some(shell) = shells.iter().find(|s| s.name() == shell) {
             writeln!(
                 core.output(),
                 "To use Git-Tool, you'll need to add the following to your shell's config file ({}):",
-                shell.get_config_file()
+                shell.config_file()
             ).to_human_error()?;
-            writeln!(core.output(), "{}", shell.get_install()).to_human_error()?;
+            writeln!(core.output(), "{}", shell.install()).to_human_error()?;
         } else {
             writeln!(
                 core.output(),
