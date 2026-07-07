@@ -46,7 +46,15 @@ impl Launcher for InstrumentedLauncher {
         self.analytics
             .record_event("apps::launched", std::iter::empty());
 
-        let result = self.inner.run(a, t).await;
+        let mut overrides = a.get_overrides().to_owned();
+        overrides.push((
+            "GITTOOL_SESSION_ID".to_string(),
+            self.analytics.session_id().to_string(),
+        ));
+
+        let a = a.with_overrides(overrides);
+
+        let result = self.inner.run(&a, t).await;
 
         match &result {
             Ok(status) => self.analytics.record_event(
