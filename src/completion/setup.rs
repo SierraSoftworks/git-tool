@@ -1,48 +1,46 @@
 use std::env::args;
 
-pub struct Shell {
-    name: &'static str,
-    short_init: String,
-    long_init: String,
+use crate::engine::Core;
 
-    config_file: String,
-    install: String,
+pub trait Shell {
+    fn name(&self) -> &'static str;
+    fn short_init(&self) -> String;
+    fn long_init(&self, core: &Core) -> String;
+
+    fn config_file(&self) -> &'static str;
+    fn install(&self) -> String;
 }
 
-impl Shell {
-    pub fn get_name(&self) -> &str {
-        self.name
-    }
-
-    pub fn get_short_init(&self) -> &str {
-        &self.short_init
-    }
-
-    pub fn get_long_init(&self) -> &str {
-        &self.long_init
-    }
-
-    pub fn get_config_file(&self) -> &str {
-        &self.config_file
-    }
-
-    pub fn get_install(&self) -> &str {
-        &self.install
-    }
-}
-
-pub fn get_shells() -> Vec<Shell> {
-    let app = args().next().unwrap_or_else(|| "git-tool".to_string());
-
+pub fn get_shells() -> Vec<Box<dyn Shell>> {
     vec![
-        Shell {
-            name: "powershell",
-            short_init: format!(
-                r#"Invoke-Expression (@(&"{app}" shell-init powershell --full) -join "`n")"#,
-                app = &app
-            ),
-            long_init: format!(
-                r#"
+        Box::new(PowerShell),
+        Box::new(Bash),
+        Box::new(Zsh),
+        Box::new(Fish),
+    ]
+}
+
+fn app_path() -> String {
+    args().next().unwrap_or_else(|| "git-tool".to_string())
+}
+
+struct PowerShell;
+impl Shell for PowerShell {
+    fn name(&self) -> &'static str {
+        "powershell"
+    }
+
+    fn short_init(&self) -> String {
+        let app = app_path();
+        format!(r#"Invoke-Expression (@(&"{app}" shell-init powershell --full) -join "`n")"#)
+    }
+
+    fn long_init(&self, core: &Core) -> String {
+        let app = app_path();
+        let session_id = core.analytics().session_id();
+
+        format!(
+            r#"
 Register-ArgumentCompleter -CommandName gt, git-tool, git-tool.exe -ScriptBlock {{
 param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
 
@@ -50,33 +48,51 @@ param([string]$commandName, [string]$wordToComplete, [int]$cursorPosition)
     [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
 }}
 }} -Native
-            "#,
-                app = &app
-            ),
 
-            config_file: "$PROFILE.CurrentUserAllHosts".to_string(),
-            install: format!(
-                r#"
-Invoke-Expression (&{app} shell-init powershell)
-New-Alias -Name gt -Value {app}"#,
-                app = &app
-            ),
-        },
-        Shell {
-            name: "bash",
-            short_init: format!(
-                r#"
+$env:GITTOOL_SESSION_ID = "{session_id}"
+"#
+        )
+    }
+
+    fn config_file(&self) -> &'static str {
+        "$PROFILE.CurrentUserAllHosts"
+    }
+
+    fn install(&self) -> String {
+        let app = app_path();
+        format!(
+            r#"Invoke-Expression (&{app} shell-init powershell)
+New-Alias -Name gt -Value {app}"#
+        )
+    }
+}
+
+struct Bash;
+impl Shell for Bash {
+    fn name(&self) -> &'static str {
+        "bash"
+    }
+
+    fn short_init(&self) -> String {
+        let app = app_path();
+        format!(
+            r#"
 if [ "${{BASH_VERSINFO[0]}}" -gt 4 ] || ([ "${{BASH_VERSINFO[0]}}" -eq 4 ] && [ "${{BASH_VERSINFO[1]}}" -ge 1 ])
 then
 source <("{app}" shell-init bash --full)
 else
 source /dev/stdin <<<"$("%s" shell-init bash --full)"
 fi
-            "#,
-                app = &app
-            ),
-            long_init: format!(
-                r#"
+"#
+        )
+    }
+
+    fn long_init(&self, core: &Core) -> String {
+        let app = app_path();
+        let session_id = core.analytics().session_id();
+
+        format!(
+            r#"
 _gittool_bash_autocomplete() {{
     local word=${{COMP_WORDS[COMP_CWORD]}}
 
@@ -90,23 +106,42 @@ _gittool_bash_autocomplete() {{
 }}
 
 complete -F _gittool_bash_autocomplete gt git-tool
-            "#,
-                app = &app
-            ),
 
-            config_file: "~/.bashrc".to_string(),
-            install: format!(
-                r#"
-eval "$({app} shell-init bash)"
-alias gt={app}"#,
-                app = &app
-            ),
-        },
-        Shell {
-            name: "zsh",
-            short_init: format!(r#"source <("{app}" shell-init zsh --full)"#, app = &app),
-            long_init: format!(
-                r#"
+export GITTOOL_SESSION_ID="{session_id}"
+"#
+        )
+    }
+
+    fn config_file(&self) -> &'static str {
+        "~/.bashrc"
+    }
+
+    fn install(&self) -> String {
+        let app = app_path();
+        format!(
+            r#"eval "$({app} shell-init bash)"
+alias gt={app}"#
+        )
+    }
+}
+
+struct Zsh;
+impl Shell for Zsh {
+    fn name(&self) -> &'static str {
+        "zsh"
+    }
+
+    fn short_init(&self) -> String {
+        let app = app_path();
+        format!(r#"source <("{app}" shell-init zsh --full)"#)
+    }
+
+    fn long_init(&self, core: &Core) -> String {
+        let app = app_path();
+        let session_id = core.analytics().session_id();
+
+        format!(
+            r#"
 _gittool_zsh_autocomplete() {{
     local completions=("$({app} complete "$words")")
 
@@ -114,36 +149,57 @@ _gittool_zsh_autocomplete() {{
 }}
     
 compctl -U -K _gittool_zsh_autocomplete git-tool
-            "#,
-                app = &app
-            ),
 
-            config_file: "~/.zshrc".to_string(),
-            install: format!(
-                r#"
-eval "$({app} shell-init zsh)"
-alias gt={app}"#,
-                app = &app
-            ),
-        },
-        Shell {
-            name: "fish",
-            short_init: format!(
-                r#"complete -f -c {app} -a "({app} complete (commandline -cp))""#,
-                app = &app
-            ),
-            long_init: format!(
-                r#"complete -f -c {app} "({app} complete (commandline -cp))""#,
-                app = &app
-            ),
+export GITTOOL_SESSION_ID="{session_id}"
+"#
+        )
+    }
 
-            config_file: "~/.fishrc".to_string(),
-            install: format!(
-                r#"
-eval "$({app} shell-init fish)"
-alias gt={app}"#,
-                app = &app
-            ),
-        },
-    ]
+    fn config_file(&self) -> &'static str {
+        "~/.zshrc"
+    }
+
+    fn install(&self) -> String {
+        let app = app_path();
+        format!(
+            r#"eval "$({app} shell-init zsh)"
+alias gt={app}"#
+        )
+    }
+}
+
+struct Fish;
+impl Shell for Fish {
+    fn name(&self) -> &'static str {
+        "fish"
+    }
+
+    fn short_init(&self) -> String {
+        let app = app_path();
+        format!(r#"source ("{app}" shell-init fish --full | psub)"#)
+    }
+
+    fn long_init(&self, core: &Core) -> String {
+        let app = app_path();
+        let session_id = core.analytics().session_id();
+
+        format!(
+            r#"
+complete -f -c {app} "({app} complete (commandline -cp))"
+set -gx GITTOOL_SESSION_ID "{session_id}"
+"#
+        )
+    }
+
+    fn config_file(&self) -> &'static str {
+        "~/.fishrc"
+    }
+
+    fn install(&self) -> String {
+        let app = app_path();
+        format!(
+            r#"eval "$({app} shell-init fish)"
+alias gt={app}"#
+        )
+    }
 }

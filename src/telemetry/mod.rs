@@ -8,13 +8,21 @@ use tracing_batteries::prelude::*;
 /// events to be recorded from anywhere in the application. The `main` function keeps
 /// the original reference and hands it back to [`shutdown`] once the run completes.
 #[cfg(feature = "telemetry")]
-pub fn setup() -> Arc<tracing_batteries::Session> {
-    Arc::new(session())
+pub fn setup(id: &str) -> Arc<tracing_batteries::Session> {
+    Arc::new(session(id))
 }
 
 #[cfg(feature = "telemetry")]
-fn session() -> tracing_batteries::Session {
+fn session(id: &str) -> tracing_batteries::Session {
     tracing_batteries::Session::new("git-tool", version!())
+        .with_context(
+            "host.environment",
+            if cfg!(debug_assertions) {
+                "Development"
+            } else {
+                "Customer"
+            },
+        )
         .with_battery(tracing_batteries::Sentry::new((
             "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
             sentry::ClientOptions {
@@ -35,22 +43,18 @@ fn session() -> tracing_batteries::Session {
                 ..Default::default()
             },
         )))
-        .with_battery(
-            tracing_batteries::OpenTelemetry::new("https://api.honeycomb.io:443").with_header(
-                "x-honeycomb-team",
-                #[cfg(debug_assertions)]
-                "X6naTEMkzy10PMiuzJKifF",
-                #[cfg(not(debug_assertions))]
-                "vdf1xcENEju8V0d8ffQq2Y",
-            ),
-        )
-        .with_battery(tracing_batteries::Analytics::new(
-            "https://analytics.sierrasoftworks.com",
+        .with_battery(tracing_batteries::OpenTelemetry::new(
+            "https://telemetry.sierrasoftworks.com",
         ))
+        .with_battery(
+            tracing_batteries::Analytics::new("https://analytics.sierrasoftworks.com")
+                .with_session_id(id)
+                .without_initial_page(),
+        )
 }
 
 #[cfg(not(feature = "telemetry"))]
-pub fn setup() -> () {
+pub fn setup(_id: &str) -> () {
     ()
 }
 

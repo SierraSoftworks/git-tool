@@ -21,7 +21,7 @@ impl CommandRunnable for ShellInitCommand {
 
         for shell in shells {
             cmd = cmd.subcommand(
-                clap::Command::new(shell.get_name().to_owned())
+                clap::Command::new(shell.name().to_owned())
                     .about("prints the initialization script for this shell")
                     .arg(
                         Arg::new("full")
@@ -44,15 +44,15 @@ where {
         match matches.subcommand() {
             Some((name, matches)) => {
                 let shells = get_shells();
-                let shell = shells.iter().find(|s| s.get_name() == name).ok_or_else(|| human_errors::user(
+                let shell = shells.iter().find(|s| s.name() == name).ok_or_else(|| human_errors::user(
                     format!("The shell '{name}' is not currently supported by Git-Tool."),
                     &["Make sure you're using a supported shell, or submit a PR on GitHub to add support for your shell."],
                 ))?;
 
                 if matches.get_flag("full") {
-                    write!(output, "{}", shell.get_long_init()).to_human_error()?;
+                    write!(output, "{}", shell.long_init(core)).to_human_error()?;
                 } else {
-                    write!(output, "{}", shell.get_short_init()).to_human_error()?;
+                    write!(output, "{}", shell.short_init()).to_human_error()?;
                 }
             }
             _ => {
@@ -73,7 +73,7 @@ where {
     )]
     async fn complete(&self, _core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let shells = get_shells();
-        completer.offer_many(shells.iter().map(|s| s.get_name()));
+        completer.offer_many(shells.iter().map(|s| s.name()));
     }
 }
 

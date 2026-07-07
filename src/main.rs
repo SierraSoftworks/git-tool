@@ -45,11 +45,14 @@ type TelemetrySession = ();
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     std::process::exit({
-        let session = telemetry::setup();
+        let session_id = std::env::var("GITTOOL_SESSION_ID")
+            .unwrap_or_else(|_| tracing_batteries::Analytics::session_id());
+
+        let session = telemetry::setup(&session_id);
 
         let app = build_app();
 
-        match host(app, &session).await {
+        match host(app, &session, &session_id).await {
             Ok(status) => {
                 telemetry::shutdown(session);
                 status
@@ -97,7 +100,11 @@ fn build_app() -> clap::Command {
 }
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
-async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, human_errors::Error> {
+async fn host(
+    app: clap::Command,
+    session: &TelemetrySession,
+    session_id: &str,
+) -> Result<i32, human_errors::Error> {
     let matches = match app.clone().try_get_matches() {
         Ok(matches) => {
             if let Some(context) = matches.get_one::<String>("trace-context") {
@@ -178,7 +185,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
     let telemetry_enabled = Arc::new(AtomicBool::new(false));
 
     #[cfg(feature = "telemetry")]
-    let analytics = engine::Analytics::new(session.clone());
+    let analytics = engine::Analytics::new(session.clone(), session_id);
     #[cfg(not(feature = "telemetry"))]
     let analytics = engine::Analytics::disabled();
 
@@ -195,13 +202,7 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 2_u32);
 
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "succeeded".to_string()),
-                    ("exit_code", 2.to_string()),
-                ],
-            );
+            analytics.record_event("commands::help", [("subcommand", command_name.clone())]);
 
             warn!("Exiting with status code {}", 2);
             Ok(2)
@@ -209,14 +210,6 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
         Ok(status) => {
             info!("Exiting with status code {}", status);
             Span::current().record("exit_code", status);
-
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "succeeded".to_string()),
-                    ("exit_code", status.to_string()),
-                ],
-            );
 
             Ok(status)
         }
@@ -228,25 +221,34 @@ async fn host(app: clap::Command, session: &TelemetrySession) -> Result<i32, hum
                 .record("otel.status_code", 2_u32)
                 .record("exit_code", 1_u32);
 
-            analytics.record_event(
-                command_event.clone(),
-                [
-                    ("status", "failed".to_string()),
-                    (
-                        "error_kind",
-                        if error.is(human_errors::Kind::System) {
-                            "system".to_string()
-                        } else {
-                            "user".to_string()
-                        },
-                    ),
-                ],
-            );
-
             if error.is(human_errors::Kind::System) {
                 Span::current().record("exception", display(&error));
+                let error = tracing_batteries::ErrorInfo::new(&error).with_metadata(
+                    "trace.id",
+                    format!(
+                        "{:032x}",
+                        Span::current().context().span().span_context().trace_id()
+                    ),
+                );
+
+                analytics.record_custom_error(error);
             } else {
                 Span::current().record("exception", error.description());
+
+                analytics.record_event(
+                    command_event.clone(),
+                    [
+                        ("status", "failed".to_string()),
+                        (
+                            "error_kind",
+                            if error.is(human_errors::Kind::System) {
+                                "system".to_string()
+                            } else {
+                                "user".to_string()
+                            },
+                        ),
+                    ],
+                );
             }
 
             if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {

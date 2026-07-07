@@ -16,14 +16,16 @@ use tracing_batteries::Session;
 #[derive(Clone, Default)]
 pub struct Analytics {
     session: Option<Arc<Session>>,
+    session_id: String,
 }
 
 impl Analytics {
     /// Creates a handle which records events through the provided telemetry session.
     #[cfg_attr(not(feature = "telemetry"), allow(dead_code))]
-    pub fn new(session: Arc<Session>) -> Self {
+    pub fn new(session: Arc<Session>, session_id: impl ToString) -> Self {
         Self {
             session: Some(session),
+            session_id: session_id.to_string(),
         }
     }
 
@@ -31,6 +33,11 @@ impl Analytics {
     /// without an explicit session (tests, telemetry-less builds).
     pub fn disabled() -> Self {
         Self::default()
+    }
+
+    /// Returns the session ID associated with this telemetry handle.
+    pub fn session_id(&self) -> &str {
+        &self.session_id
     }
 
     /// Records a usage event against the telemetry session.
@@ -61,6 +68,22 @@ impl Analytics {
                     .map(|(key, value)| (key.to_string(), value))
                     .collect(),
             );
+        }
+    }
+
+    /// Records an error against the telemetry session.
+    #[allow(dead_code)]
+    pub fn record_error<E: std::error::Error + Send + Sync + 'static>(&self, error: &E) {
+        if let Some(session) = &self.session {
+            session.record_error(error);
+        }
+    }
+
+    /// Records a custom error against the telemetry session.
+    #[allow(dead_code)]
+    pub fn record_custom_error(&self, error: tracing_batteries::ErrorInfo) {
+        if let Some(session) = &self.session {
+            session.record_custom_error(error);
         }
     }
 }
