@@ -165,19 +165,24 @@ async fn host(
         }
     };
 
-    let command_name = format!("gt {}", matches.subcommand_name().unwrap_or(""))
-        .trim()
-        .to_string();
+    let subcommand_name = matches.subcommand_name().unwrap_or_default();
+    let command_name = format!("gt {}", subcommand_name).trim().to_string();
+
+    // Disable telemetry emission for the `shell-init` and `complete` subcommands, since they are invoked by the shell
+    // and not by the user directly (i.e. they mis-represent user engagement with the tool and lead to overly-chatty
+    // telemetry data).
+    if subcommand_name == "shell-init" || subcommand_name == "complete" {
+        session
+            .enable()
+            .store(false, std::sync::atomic::Ordering::Relaxed);
+    }
 
     Span::current()
         .record("command", command_name.as_str())
         .record("otel.name", command_name.as_str());
 
     #[cfg(feature = "telemetry")]
-    let _page = session.record_new_page(format!(
-        "/{}",
-        matches.subcommand_name().unwrap_or_default()
-    ));
+    let _page = session.record_new_page(format!("/{}", subcommand_name));
 
     #[cfg(feature = "telemetry")]
     let telemetry_enabled = session.enable();
