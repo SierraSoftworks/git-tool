@@ -5,6 +5,13 @@ description: Build and drive the git-tool CLI to verify a change end-to-end, inc
 
 # Verifying git-tool changes
 
+## Run the test suite
+
+```bash
+# Use pure-tests to avoid network calls and dependencies on the keychain, which can be flaky in sandboxed shells.
+cargo test --features pure-tests
+```
+
 ## Build & run
 
 ```bash
@@ -45,10 +52,9 @@ URL afterwards.** Events appear as `"e":"custom"` hits with the event name in
   the run:
 
   ```bash
-  GIT_CONFIG_GLOBAL=<neutral-gitconfig> GIT_CONFIG_SYSTEM=/dev/null cargo test
+  GIT_CONFIG_GLOBAL=<neutral-gitconfig> GIT_CONFIG_SYSTEM=/dev/null cargo test --features pure-tests
   ```
 
   where the neutral config sets `user.name`/`user.email`,
   `commit.gpgsign = false` and `init.defaultBranch = main`.
-- The ignore/gitignore network tests are flaky under parallel `cargo test`;
-  they pass when run isolated.
+
