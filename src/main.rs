@@ -13,7 +13,7 @@ extern crate tracing_batteries;
 
 use crate::engine::features;
 use crate::{commands::CommandRunnable, errors::HumanErrorResultExt};
-use clap::{Arg, crate_authors};
+use clap::{Arg, ArgAction, crate_authors};
 use std::sync::{Arc, atomic::AtomicBool};
 use tracing_batteries::{Session, prelude::*};
 
@@ -91,7 +91,8 @@ fn build_app() -> clap::Command {
             .arg(Arg::new("trace")
                 .long("trace")
                 .global(true)
-                .help("Enable tracing for the current command and print the trace ID to assist with bug reports."))
+                .help("Enable tracing for the current command and print the trace ID to assist with bug reports.")
+                .action(ArgAction::SetTrue))
             .arg(Arg::new("trace-context")
                 .long("trace-context")
                 .help("Configures the trace context used by this Git-Tool execution.")
@@ -171,7 +172,9 @@ async fn host(
     // Disable telemetry emission for the `shell-init` and `complete` subcommands, since they are invoked by the shell
     // and not by the user directly (i.e. they mis-represent user engagement with the tool and lead to overly-chatty
     // telemetry data).
-    if subcommand_name == "shell-init" || subcommand_name == "complete" {
+    if !matches.get_flag("trace")
+        && (subcommand_name == "shell-init" || subcommand_name == "complete")
+    {
         session
             .enable()
             .store(false, std::sync::atomic::Ordering::Relaxed);
