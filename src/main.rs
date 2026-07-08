@@ -11,8 +11,8 @@ extern crate serde_json;
 extern crate tokio;
 extern crate tracing_batteries;
 
+use crate::commands::CommandRunnable;
 use crate::engine::features;
-use crate::{commands::CommandRunnable, errors::HumanErrorResultExt};
 use clap::{Arg, ArgAction, crate_authors};
 use std::sync::{Arc, atomic::AtomicBool};
 use tracing_batteries::{Session, prelude::*};
@@ -169,15 +169,18 @@ async fn host(
     let subcommand_name = matches.subcommand_name().unwrap_or_default();
     let command_name = format!("gt {}", subcommand_name).trim().to_string();
 
+    #[cfg(feature = "telemetry")]
+    let telemetry_enabled = session.enable();
+    #[cfg(not(feature = "telemetry"))]
+    let telemetry_enabled = Arc::new(AtomicBool::new(false));
+
     // Disable telemetry emission for the `shell-init` and `complete` subcommands, since they are invoked by the shell
     // and not by the user directly (i.e. they mis-represent user engagement with the tool and lead to overly-chatty
     // telemetry data).
     if !matches.get_flag("trace")
         && (subcommand_name == "shell-init" || subcommand_name == "complete")
     {
-        session
-            .enable()
-            .store(false, std::sync::atomic::Ordering::Relaxed);
+        telemetry_enabled.store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     Span::current()
@@ -186,11 +189,6 @@ async fn host(
 
     #[cfg(feature = "telemetry")]
     let _page = session.record_new_page(format!("/{}", subcommand_name));
-
-    #[cfg(feature = "telemetry")]
-    let telemetry_enabled = session.enable();
-    #[cfg(not(feature = "telemetry"))]
-    let telemetry_enabled = Arc::new(AtomicBool::new(false));
 
     #[cfg(feature = "telemetry")]
     let analytics = engine::Analytics::new(session.clone(), session_id);
@@ -300,15 +298,13 @@ async fn run(
     }
 
     // If the user explicitly enables tracing, then turn it on and print your trace ID
-    if matches.contains_id("trace") {
+    if matches.get_flag("trace") {
         debug!("Tracing enabled by command line flag.");
         telemetry_enabled.store(true, std::sync::atomic::Ordering::Relaxed);
-        writeln!(
-            core.output(),
+        eprintln!(
             "Tracing enabled, your trace ID is: {:032x}",
             Span::current().context().span().span_context().trace_id()
-        )
-        .to_human_error()?;
+        );
     }
 
     debug!("Looking for an appropriate matching command implementation.");
