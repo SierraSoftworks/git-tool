@@ -3252,6 +3252,7 @@ source = "git+https://github.com/sierrasoftworks/tracing-batteries-rs.git#ffa273
 dependencies = [
  "chrono",
  "hex",
+ "human-errors",
  "iana-time-zone",
  "opentelemetry",
  "opentelemetry-appender-tracing",

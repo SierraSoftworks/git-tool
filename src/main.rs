@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             Err(err) => {
                 if err.is(human_errors::Kind::System) {
                     #[cfg(feature = "telemetry")]
-                    session.record_error(&err);
+                    session.record_human_error(&err);
                 }
 
                 telemetry::shutdown(session);
@@ -229,7 +229,7 @@ async fn host(
 
             if error.is(human_errors::Kind::System) {
                 Span::current().record("exception", display(&error));
-                let error = tracing_batteries::ErrorInfo::new(&error).with_metadata(
+                let error = tracing_batteries::ErrorInfo::from_human_error(&error).with_metadata(
                     "trace.id",
                     format!(
                         "{:032x}",
