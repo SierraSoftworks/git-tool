@@ -1,13 +1,9 @@
 #Added by cargo
 
-/result
 /target
 *.profraw
 *.profdata
 lcov.info
-
-.direnv
-.flox
 
 ## -------- Managed by Git Tool -------- ##
 ## Add any custom rules above this block ##
