@@ -17,7 +17,7 @@ clap = { version = "4.6.1", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
 gtmpl = "0.7"
-human-errors = "0.2.3"
+human-errors = { version = "0.2.4", features = ["pretty", "force_backtraces"] }
 inventory = "0.3.24"
 itertools = "0.15"
 keyring = { version = "3.6.3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
