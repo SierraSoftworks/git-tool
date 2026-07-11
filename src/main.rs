@@ -132,7 +132,7 @@ async fn host(
 
             #[cfg(feature = "telemetry")]
             if session.enable().load(std::sync::atomic::Ordering::Relaxed) {
-                eprintln!(
+                safe_eprintln!(
                     "Trace ID: {:032x}",
                     Span::current().context().span().span_context().trace_id()
                 );
@@ -220,7 +220,7 @@ async fn host(
             Ok(status)
         }
         Err(error) => {
-            eprintln!("{}", human_errors::pretty(&error));
+            safe_eprintln!("{}", human_errors::pretty(&error));
 
             error!("Exiting with status code {}", 1);
             Span::current()
@@ -258,7 +258,7 @@ async fn host(
             }
 
             if telemetry_enabled.load(std::sync::atomic::Ordering::Relaxed) {
-                eprintln!(
+                safe_eprintln!(
                     "Trace ID: {:032x}",
                     Span::current().context().span().span_context().trace_id()
                 );
@@ -301,7 +301,7 @@ async fn run(
     if matches.get_flag("trace") {
         debug!("Tracing enabled by command line flag.");
         telemetry_enabled.store(true, std::sync::atomic::Ordering::Relaxed);
-        eprintln!(
+        safe_eprintln!(
             "Tracing enabled, your trace ID is: {:032x}",
             Span::current().context().span().span_context().trace_id()
         );
