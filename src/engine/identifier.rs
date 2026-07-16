@@ -9,6 +9,21 @@ pub struct Identifier {
 
 #[allow(dead_code)]
 impl Identifier {
+    fn validate_path(path: &str) -> Result<(), human_errors::Error> {
+        if !path.trim().is_empty() {
+            return Ok(());
+        }
+
+        Err(human_errors::user(
+            format!(
+                "The repository identifier path '{path}' was not in a valid format and could not be understood."
+            ),
+            &[
+                "Make sure you specify a valid repository identifier in the form 'service:namespace/name' or 'namespace/name'",
+            ],
+        ))
+    }
+
     pub fn namespace(&self) -> &str {
         self.path
             .rsplit_once('/')
@@ -53,10 +68,13 @@ impl Identifier {
                 old_segments[n - idx - 1] = segment;
             });
 
-        Ok(Identifier {
+        let resolved = Identifier {
             scope: self.scope.clone(),
             path: old_segments.join("/").to_string(),
-        })
+        };
+        Self::validate_path(&resolved.path)?;
+
+        Ok(resolved)
     }
 }
 
@@ -95,6 +113,7 @@ impl FromStr for Identifier {
             id.scope = scope.to_string();
         }
 
+        Self::validate_path(s)?;
         id.path = s.to_string();
         Ok(id)
     }
@@ -114,6 +133,15 @@ mod tests {
 
         assert_eq!(id.scope, expected_scope);
         assert_eq!(id.path, expected_path);
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("   ")]
+    #[case(":")]
+    #[case("gh:")]
+    fn test_parse_rejects_empty_path(#[case] source: &str) {
+        assert!(source.parse::<Identifier>().is_err());
     }
 
     #[rstest]
@@ -137,6 +165,12 @@ mod tests {
         let id: Identifier = source.parse().expect("id to be valid");
         let new = id.resolve(relative).expect("new to be valid");
         assert_eq!(format!("{new}"), expected);
+    }
+
+    #[test]
+    fn test_resolve_rejects_empty_path() {
+        let id: Identifier = "git-tool".parse().expect("id to be valid");
+        assert!(id.resolve("/").is_err());
     }
 
     #[rstest]

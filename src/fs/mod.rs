@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 ///
 /// ## Example
 /// ```
-/// use crate::fs::to_native_path;
+/// use git_tool::fs::to_native_path;
 ///
 /// to_native_path("a/b/c");
 /// ```

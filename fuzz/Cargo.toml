@@ -1,0 +1,43 @@
+[package]
+name = "git-tool-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+clap = "4.6.1"
+git-tool = { path = ".." }
+libfuzzer-sys = "0.4"
+tempfile = "3.27"
+tokio = { version = "1.52", features = ["rt-multi-thread"] }
+
+[[bin]]
+name = "commands"
+path = "fuzz_targets/commands.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "git_operations"
+path = "fuzz_targets/git_operations.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "identifier"
+path = "fuzz_targets/identifier.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tasks"
+path = "fuzz_targets/tasks.rs"
+test = false
+doc = false
+bench = false
