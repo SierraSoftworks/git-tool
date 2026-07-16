@@ -40,13 +40,12 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
+            - { name: Install nightly Rust, uses: "dtolnay/rust-toolchain@nightly" }
+
             - name: Install system dependencies
               run: |
                   sudo apt-get update
                   sudo apt-get install -y libdbus-1-3 libdbus-1-dev
-
-            - name: Install nightly Rust
-              uses: dtolnay/rust-toolchain@nightly
 
             - name: Install protoc
               uses: SierraSoftworks/setup-protoc@v3.0.1
@@ -67,4 +66,7 @@ jobs:
                   tool: cargo-fuzz
 
             - name: Run fuzz target
-              run: cargo +nightly fuzz run ${{ matrix.target }} fuzz/corpus/${{ matrix.target }} -- -max_total_time=30 -timeout=10
+              run: >-
+                  cargo +nightly fuzz run --target x86_64-unknown-linux-gnu
+                  ${{ matrix.target }} fuzz/corpus/${{ matrix.target }} --
+                  -max_total_time=30 -timeout=10
