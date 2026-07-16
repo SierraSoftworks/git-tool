@@ -1,73 +1,146 @@
 name: Fuzz
 
 on:
-    pull_request:
-        paths:
-            - ".github/workflows/fuzz.yml"
-            - "fuzz/**"
-            - "src/**"
-            - "Cargo.toml"
-    push:
-        branches:
-            - main
-        paths:
-            - ".github/workflows/fuzz.yml"
-            - "fuzz/**"
-            - "src/**"
-            - "Cargo.toml"
-    schedule:
-        - cron: "23 3 * * 1"
-    workflow_dispatch:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
-    fuzz:
-        name: ${{ matrix.target }}
-        runs-on: ubuntu-latest
-        env: { CARGO_BUILD_TARGET: "x86_64-unknown-linux-gnu", RUSTFLAGS: "-C target-feature=-crt-static" }
-        strategy:
-            fail-fast: false
-            matrix:
-                target:
-                    - commands
-                    - completion
-                    - config
-                    - git_operations
-                    - identifier
-                    - repo_config
-                    - search
-                    - tasks
-                    - templates
+  fuzz:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_TARGET: x86_64-unknown-linux-gnu
+      RUSTFLAGS: -C target-feature=-crt-static
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - commands
+          - completion
+          - config
+          - git_operations
+          - identifier
+          - repo_config
+          - search
+          - tasks
+          - templates
 
-        steps:
-            - uses: actions/checkout@v7
+    steps:
+      - uses: actions/checkout@v7
 
-            - { name: Install nightly Rust, uses: "dtolnay/rust-toolchain@nightly" }
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
 
-            - name: Install system dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y libdbus-1-3 libdbus-1-dev
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-3 libdbus-1-dev
 
-            - name: Install protoc
-              uses: SierraSoftworks/setup-protoc@v3.0.1
-              with:
-                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install protoc
+        uses: SierraSoftworks/setup-protoc@v3.0.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Cache Cargo
-              uses: Swatinem/rust-cache@v2
-              with:
-                  workspaces: |
-                      . -> target
-                      fuzz -> fuzz/target
-                  key: fuzz-${{ matrix.target }}
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            fuzz -> fuzz/target
+          key: fuzz-${{ matrix.target }}
 
-            - name: Install cargo-fuzz
-              uses: taiki-e/install-action@v2.83.2
-              with:
-                  tool: cargo-fuzz
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@v2.83.2
+        with:
+          tool: cargo-fuzz
 
-            - name: Run fuzz target
-              run: >-
-                  cargo +nightly fuzz run --target x86_64-unknown-linux-gnu
-                  ${{ matrix.target }} fuzz/corpus/${{ matrix.target }} --
-                  -max_total_time=30 -timeout=10
+      - name: Run fuzz target
+        id: fuzz
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          cargo +nightly fuzz run --target x86_64-unknown-linux-gnu \
+            "${{ matrix.target }}" "fuzz/corpus/${{ matrix.target }}" -- \
+            -max_total_time=300 -timeout=10 2>&1 | tee "fuzz-${{ matrix.target }}.log"
+          status=${PIPESTATUS[0]}
+          echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Upload failure details
+        if: always() && steps.fuzz.outcome == 'failure'
+        uses: actions/upload-artifact@v6
+        with:
+          name: fuzz-failure-${{ matrix.target }}-${{ github.run_id }}
+          path: |
+            fuzz-${{ matrix.target }}.log
+            fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Report fuzz failure
+        if: always() && steps.fuzz.outcome == 'failure'
+        uses: actions/github-script@v8
+        env:
+          FUZZ_TARGET: ${{ matrix.target }}
+          FUZZ_LOG: fuzz-${{ matrix.target }}.log
+        with:
+          script: |
+            const fs = require('fs');
+            const target = process.env.FUZZ_TARGET;
+            const marker = `<!-- git-tool-fuzz:${target} -->`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            let log = fs.readFileSync(process.env.FUZZ_LOG, 'utf8');
+            if (log.length > 50000) {
+              log = `[truncated to final 50000 characters]\n${log.slice(-50000)}`;
+            }
+            log = log.replaceAll('```', '` ` `');
+
+            const occurrence = [
+              `Fuzz target: \`${target}\``,
+              `Commit: \`${context.sha}\``,
+              `Workflow run: ${runUrl}`,
+              `Failure artifacts: ${runUrl}#artifacts`,
+              '',
+              '<details><summary>Fuzzer output</summary>',
+              '',
+              '```text',
+              log,
+              '```',
+              '</details>',
+            ].join('\n');
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find(issue =>
+              !issue.pull_request && issue.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: occurrence,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Fuzz failure: ${target}`,
+                body: `${marker}\nA scheduled fuzzing run found a reproducible failure.\n\n${occurrence}`,
+              });
+            }
+
+      - name: Fail job after reporting
+        if: always() && steps.fuzz.outcome == 'failure'
+        run: exit 1
