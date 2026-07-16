@@ -3,7 +3,12 @@
 use std::sync::OnceLock;
 
 const MAX_OPERATIONS: usize = 8;
+const MAX_INPUT_LENGTH: usize = 16 * 1024;
 const MAX_TEXT_LENGTH: usize = 128;
+
+pub fn bounded_bytes(data: &[u8]) -> &[u8] {
+    &data[..data.len().min(MAX_INPUT_LENGTH)]
+}
 
 pub fn bounded_text(data: &[u8]) -> String {
     String::from_utf8_lossy(&data[..data.len().min(MAX_TEXT_LENGTH)]).into_owned()

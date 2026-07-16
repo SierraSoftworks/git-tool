@@ -28,9 +28,14 @@ jobs:
             matrix:
                 target:
                     - commands
+                    - completion
+                    - config
                     - git_operations
                     - identifier
+                    - repo_config
+                    - search
                     - tasks
+                    - templates
 
         steps:
             - uses: actions/checkout@v7

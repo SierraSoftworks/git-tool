@@ -111,14 +111,16 @@ impl<'a> SequenceMatcher<'a> {
             return None;
         }
 
-        if self.pattern.len() > value.len() {
+        let pattern_length = self.pattern.chars().count();
+        let value_length = value.chars().count();
+        if pattern_length > value_length {
             return None;
         }
 
         let mut shortest_sequence: Option<usize> = None;
 
         // Outer loop evaluates an offset from the end of the string to start searching
-        for offset in 0..value.len() - 1 {
+        for offset in 0..value_length {
             let pattern = self.pattern.chars();
             let sequence = value.chars().skip(offset);
 
@@ -131,7 +133,7 @@ impl<'a> SequenceMatcher<'a> {
             }
         }
 
-        shortest_sequence.map(|v| self.pattern.len() as f32 / v as f32)
+        shortest_sequence.map(|v| pattern_length as f32 / v as f32)
     }
 
     fn score_sequence<S, P>(&self, sequence: S, pattern: P) -> Option<usize>
@@ -238,6 +240,12 @@ mod tests {
             best_matches("main", vec!["main123", "main", "main456",]),
             vec!["main", "main123", "main456"]
         );
+    }
+
+    #[test]
+    fn exact_single_character_matches() {
+        assert_eq!(best_matches("a", ["a", "b"]), vec!["a"]);
+        assert_eq!(best_matches("é", ["é", "e"]), vec!["é"]);
     }
 
     #[test]
