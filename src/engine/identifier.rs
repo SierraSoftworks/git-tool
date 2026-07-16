@@ -110,6 +110,14 @@ impl FromStr for Identifier {
 
         let mut s = s.trim();
         if let Some((scope, rest)) = s.split_once(':') {
+            if scope.is_empty() {
+                return Err(human_errors::user(
+                    format!(
+                        "The repository identifier '{s}' did not specify a service before ':'."
+                    ),
+                    &["Specify a service name before ':' or remove the ':' separator."],
+                ));
+            }
             s = rest;
             id.scope = scope.to_string();
         }
@@ -140,6 +148,8 @@ mod tests {
     #[case("")]
     #[case("   ")]
     #[case(":")]
+    #[case("::")]
+    #[case(":repo")]
     #[case("gh:")]
     fn test_parse_rejects_empty_path(#[case] source: &str) {
         assert!(source.parse::<Identifier>().is_err());

@@ -51,9 +51,7 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                 }
             }
             TemplateSection::Action => {
-                if !bytes[index].is_ascii() {
-                    return Err(unicode_action_error());
-                }
+                validate_action_byte(bytes[index])?;
 
                 if bytes[index..].starts_with(b"}}") {
                     section = TemplateSection::Text;
@@ -72,9 +70,7 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                 }
             }
             TemplateSection::DoubleQuoted | TemplateSection::SingleQuoted => {
-                if !bytes[index].is_ascii() {
-                    return Err(unicode_action_error());
-                }
+                validate_action_byte(bytes[index])?;
 
                 let quote = match section {
                     TemplateSection::DoubleQuoted => b'"',
@@ -90,18 +86,14 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                 index += 1;
             }
             TemplateSection::RawQuoted => {
-                if !bytes[index].is_ascii() {
-                    return Err(unicode_action_error());
-                }
+                validate_action_byte(bytes[index])?;
                 if bytes[index] == b'`' {
                     section = TemplateSection::Action;
                 }
                 index += 1;
             }
             TemplateSection::Comment => {
-                if !bytes[index].is_ascii() {
-                    return Err(unicode_action_error());
-                }
+                validate_action_byte(bytes[index])?;
                 if bytes[index..].starts_with(b"*/}}") {
                     section = TemplateSection::Text;
                     index += 4;
@@ -118,13 +110,31 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
     Ok(())
 }
 
-fn unicode_action_error() -> human_errors::Error {
-    human_errors::user(
-        "Template actions currently support ASCII characters only.",
-        &[
-            "Move Unicode text outside the '{{ ... }}' action and pass dynamic Unicode text through the template context.",
-        ],
-    )
+fn validate_action_byte(byte: u8) -> Result<(), human_errors::Error> {
+    if !byte.is_ascii() {
+        return Err(template_action_error(
+            "Template actions currently support ASCII characters only.",
+            &[
+                "Move Unicode text outside the '{{ ... }}' action and pass dynamic Unicode text through the template context.",
+            ],
+        ));
+    }
+
+    if byte.is_ascii_control() && !matches!(byte, b'\t' | b'\r' | b'\n') {
+        return Err(template_action_error(
+            "Template actions cannot contain control characters.",
+            &["Remove control characters from inside the '{{ ... }}' action."],
+        ));
+    }
+
+    Ok(())
+}
+
+fn template_action_error(
+    message: &'static str,
+    advice: &'static [&'static str],
+) -> human_errors::Error {
+    human_errors::user(message, advice)
 }
 
 #[tracing::instrument(err, skip(context, items))]
@@ -384,6 +394,19 @@ mod tests {
             32, 101, 110, 100, 32, 125, 125,
         ];
         let template = String::from_utf8_lossy(&fuzz_input);
+
+        assert!(render(&template, Value::NoValue).is_err());
+    }
+
+    #[test]
+    fn render_rejects_control_characters_inside_action_without_hanging() {
+        let fuzz_input = [
+            123, 123, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105, 116, 104, 32, 47, 42,
+            97, 109, 101, 32, 125, 125, 123, 123, 32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46,
+            86, 97, 108, 117, 101, 32, 125, 125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125,
+            101, 109, 112, 116, 121, 123, 123, 32, 101, 110, 100, 32, 125, 125,
+        ];
+        let template = String::from_utf8(fuzz_input.to_vec()).unwrap();
 
         assert!(render(&template, Value::NoValue).is_err());
     }
