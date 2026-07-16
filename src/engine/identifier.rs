@@ -41,7 +41,8 @@ impl Identifier {
     }
 
     pub fn resolve(&self, partial: &str) -> Result<Self, human_errors::Error> {
-        if partial.trim().is_empty() {
+        let partial = partial.trim();
+        if partial.is_empty() {
             return Err(human_errors::user(
                 format!(
                     "Could not resolve a new repository identifier based on '{}' when the target is empty.",
@@ -171,6 +172,18 @@ mod tests {
     fn test_resolve_rejects_empty_path() {
         let id: Identifier = "git-tool".parse().expect("id to be valid");
         assert!(id.resolve("/").is_err());
+    }
+
+    #[test]
+    fn test_resolve_trims_relative_identifier() {
+        let id: Identifier = "\u{1}".parse().expect("id to be valid");
+        let resolved = id.resolve("\u{b})").expect("relative id to be valid");
+
+        assert_eq!(resolved.path, ")");
+        assert_eq!(
+            resolved.to_string().parse::<Identifier>().unwrap(),
+            resolved
+        );
     }
 
     #[rstest]
