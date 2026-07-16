@@ -1,5 +1,5 @@
 use human_errors::ResultExt;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::env::consts::OS;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
@@ -19,14 +19,19 @@ pub struct Config {
     #[serde(rename = "$schema")]
     schema: Option<String>,
 
-    #[serde(rename = "directory", deserialize_with = "deserialize_expanded_path")]
+    #[serde(
+        rename = "directory",
+        deserialize_with = "deserialize_expanded_path",
+        serialize_with = "serialize_expanded_path"
+    )]
     dev_directory: PathBuf,
     #[serde(default, rename = "scratchpads")]
     scratch_directory: Option<PathBuf>,
     #[serde(
         default,
         rename = "worktrees",
-        deserialize_with = "deserialize_optional_expanded_path"
+        deserialize_with = "deserialize_optional_expanded_path",
+        serialize_with = "serialize_optional_expanded_path"
     )]
     worktree_directory: Option<PathBuf>,
 
@@ -427,6 +432,35 @@ where
     Ok(s.map(expand_path))
 }
 
+fn serialize_expanded_path<S>(path: &Path, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&escape_expanded_path::<S::Error>(path)?)
+}
+
+fn serialize_optional_expanded_path<S>(
+    path: &Option<PathBuf>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match path {
+        Some(path) => serializer.serialize_some(&escape_expanded_path::<S::Error>(path)?),
+        None => serializer.serialize_none(),
+    }
+}
+
+fn escape_expanded_path<E>(path: &Path) -> Result<String, E>
+where
+    E: serde::ser::Error,
+{
+    path.to_str()
+        .map(|path| path.replace('$', "$$"))
+        .ok_or_else(|| E::custom("Expanded configuration paths must contain valid UTF-8."))
+}
+
 impl Default for Config {
     fn default() -> Self {
         let dev_dir = match std::env::var("DEV_DIRECTORY").ok() {
@@ -583,6 +617,31 @@ mod tests {
             }
             Err(e) => panic!("{}", e.message()),
         }
+    }
+
+    #[test]
+    fn expanded_paths_with_literal_dollars_round_trip() {
+        let cfg =
+            Config::from_str("directory: /tmp/gi$$$$-0btor$$$$\nworktrees: /tmp/worktrees$$$$")
+                .unwrap();
+
+        assert_eq!(cfg.get_dev_directory(), PathBuf::from("/tmp/gi$$-0btor$$"));
+        assert_eq!(
+            cfg.get_worktree_directory(),
+            PathBuf::from("/tmp/worktrees$$")
+        );
+
+        let serialized = cfg.to_string().unwrap();
+        let reparsed = Config::from_str(&serialized).unwrap();
+        assert_eq!(reparsed.get_dev_directory(), cfg.get_dev_directory());
+        assert_eq!(
+            reparsed.get_worktree_directory(),
+            cfg.get_worktree_directory()
+        );
+        let serialized_value: serde_yaml::Value = serde_yaml::from_str(&serialized).unwrap();
+        let reparsed_value: serde_yaml::Value =
+            serde_yaml::from_str(&reparsed.to_string().unwrap()).unwrap();
+        assert_eq!(reparsed_value, serialized_value);
     }
 
     #[test]

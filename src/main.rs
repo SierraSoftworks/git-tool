@@ -4,38 +4,18 @@ extern crate base64;
 extern crate chrono;
 extern crate clap;
 extern crate gtmpl;
-#[macro_use]
 extern crate lazy_static;
-#[macro_use]
 extern crate serde_json;
 extern crate tokio;
 extern crate tracing_batteries;
 
-use crate::commands::CommandRunnable;
-use crate::engine::features;
-use clap::{Arg, ArgAction, crate_authors};
+use git_tool::{
+    commands::{self, CommandRunnable},
+    engine::{self, features},
+    safe_eprintln, telemetry,
+};
 use std::sync::{Arc, atomic::AtomicBool};
 use tracing_batteries::{Session, prelude::*};
-
-#[macro_use]
-mod macros;
-#[macro_use]
-mod tasks;
-#[macro_use]
-mod commands;
-mod completion;
-mod console;
-mod engine;
-mod errors;
-mod fs;
-mod git;
-mod online;
-mod search;
-mod telemetry;
-mod update;
-
-#[cfg(test)]
-mod test;
 
 #[cfg(feature = "telemetry")]
 type TelemetrySession = Arc<Session>;
@@ -50,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let session = telemetry::setup(&session_id);
 
-        let app = build_app();
+        let app = commands::app();
 
         match host(app, &session, &session_id).await {
             Ok(status) => {
@@ -68,36 +48,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }
         }
     });
-}
-
-#[allow(non_upper_case_globals)]
-fn build_app() -> clap::Command {
-    clap::Command::new("Git-Tool")
-            .version(version!("v"))
-            .author(crate_authors!("\n"))
-            .about("Simplify your Git repository management and stop thinking about where things belong.")
-            .arg(Arg::new("config")
-                .short('c')
-                .long("config")
-                .env("GITTOOL_CONFIG")
-                .value_name("FILE")
-                .help("The path to your git-tool configuration file.")
-                .action(clap::ArgAction::Set))
-            .arg(Arg::new("update-resume-internal")
-                .long("update-resume-internal")
-                .help("A legacy flag emitted by older Git-Tool releases when coordinating an update. Tolerated (and ignored) so an update started by an older release can hand off to this one via the `update --state` sub-command it also passes.")
-                .action(clap::ArgAction::Set)
-                .hide(true))
-            .arg(Arg::new("trace")
-                .long("trace")
-                .global(true)
-                .help("Enable tracing for the current command and print the trace ID to assist with bug reports.")
-                .action(ArgAction::SetTrue))
-            .arg(Arg::new("trace-context")
-                .long("trace-context")
-                .help("Configures the trace context used by this Git-Tool execution.")
-                .action(clap::ArgAction::Set))
-            .subcommands(inventory::iter::<commands::Command>().map(|x| x.app()))
 }
 
 #[tracing::instrument(err, skip(app, session), fields(otel.name=EmptyField, command=EmptyField, exit_code=EmptyField, otel.status_code=0, exception=EmptyField))]
@@ -338,15 +288,4 @@ fn load_trace_context(span: &Span, context: &str) {
         serde_json::from_str(context).unwrap_or_default();
     let parent_context = opentelemetry::global::get_text_map_propagator(|p| p.extract(&carrier));
     span.set_parent(parent_context).unwrap_or_default();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn validate_command() {
-        let app = build_app();
-        app.debug_assert();
-    }
 }

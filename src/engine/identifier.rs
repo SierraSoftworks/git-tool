@@ -9,6 +9,21 @@ pub struct Identifier {
 
 #[allow(dead_code)]
 impl Identifier {
+    fn validate_path(path: &str) -> Result<(), human_errors::Error> {
+        if !path.trim().is_empty() {
+            return Ok(());
+        }
+
+        Err(human_errors::user(
+            format!(
+                "The repository identifier path '{path}' was not in a valid format and could not be understood."
+            ),
+            &[
+                "Make sure you specify a valid repository identifier in the form 'service:namespace/name' or 'namespace/name'",
+            ],
+        ))
+    }
+
     pub fn namespace(&self) -> &str {
         self.path
             .rsplit_once('/')
@@ -26,7 +41,8 @@ impl Identifier {
     }
 
     pub fn resolve(&self, partial: &str) -> Result<Self, human_errors::Error> {
-        if partial.trim().is_empty() {
+        let partial = partial.trim();
+        if partial.is_empty() {
             return Err(human_errors::user(
                 format!(
                     "Could not resolve a new repository identifier based on '{}' when the target is empty.",
@@ -53,10 +69,13 @@ impl Identifier {
                 old_segments[n - idx - 1] = segment;
             });
 
-        Ok(Identifier {
+        let resolved = Identifier {
             scope: self.scope.clone(),
             path: old_segments.join("/").to_string(),
-        })
+        };
+        Self::validate_path(&resolved.path)?;
+
+        Ok(resolved)
     }
 }
 
@@ -91,10 +110,19 @@ impl FromStr for Identifier {
 
         let mut s = s.trim();
         if let Some((scope, rest)) = s.split_once(':') {
+            if scope.is_empty() {
+                return Err(human_errors::user(
+                    format!(
+                        "The repository identifier '{s}' did not specify a service before ':'."
+                    ),
+                    &["Specify a service name before ':' or remove the ':' separator."],
+                ));
+            }
             s = rest;
             id.scope = scope.to_string();
         }
 
+        Self::validate_path(s)?;
         id.path = s.to_string();
         Ok(id)
     }
@@ -114,6 +142,17 @@ mod tests {
 
         assert_eq!(id.scope, expected_scope);
         assert_eq!(id.path, expected_path);
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("   ")]
+    #[case(":")]
+    #[case("::")]
+    #[case(":repo")]
+    #[case("gh:")]
+    fn test_parse_rejects_empty_path(#[case] source: &str) {
+        assert!(source.parse::<Identifier>().is_err());
     }
 
     #[rstest]
@@ -137,6 +176,24 @@ mod tests {
         let id: Identifier = source.parse().expect("id to be valid");
         let new = id.resolve(relative).expect("new to be valid");
         assert_eq!(format!("{new}"), expected);
+    }
+
+    #[test]
+    fn test_resolve_rejects_empty_path() {
+        let id: Identifier = "git-tool".parse().expect("id to be valid");
+        assert!(id.resolve("/").is_err());
+    }
+
+    #[test]
+    fn test_resolve_trims_relative_identifier() {
+        let id: Identifier = "\u{1}".parse().expect("id to be valid");
+        let resolved = id.resolve("\u{b})").expect("relative id to be valid");
+
+        assert_eq!(resolved.path, ")");
+        assert_eq!(
+            resolved.to_string().parse::<Identifier>().unwrap(),
+            resolved
+        );
     }
 
     #[rstest]

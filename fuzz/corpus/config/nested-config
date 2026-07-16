@@ -1,0 +1,10 @@
+directory: /tmp/git-tool-fuzz
+scratchpads: /tmp/git-tool-fuzz/scratch
+features:
+  telemetry: false
+  fuzz_feature: true
+aliases:
+  gt: gh:SierraSoftworks/git-tool
+apps:
+  - name: shell
+    command: bash

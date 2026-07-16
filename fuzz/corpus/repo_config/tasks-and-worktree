@@ -1,0 +1,8 @@
+tasks:
+  build:
+    command: cargo
+    args: [build]
+    environment: [RUST_LOG=debug]
+worktree:
+  symlinks: [target, node_modules]
+  tasks: [build]

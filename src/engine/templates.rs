@@ -16,11 +16,125 @@ macro_rules! map(
 
 pub fn render(tmpl: &str, context: Value) -> Result<String, human_errors::Error> {
     debug!("Rendering template '{}' with context {}", tmpl, context);
+    validate_template_actions(tmpl)?;
     template(tmpl, context).map_err(|e| human_errors::wrap_user(
         e.to_string(),
         format!("We couldn't render your template '{tmpl}'."),
         &["Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/"],
     ))
+}
+
+#[derive(Clone, Copy)]
+enum TemplateSection {
+    Text,
+    Action,
+    DoubleQuoted,
+    SingleQuoted,
+    RawQuoted,
+    Comment,
+}
+
+fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
+    let bytes = tmpl.as_bytes();
+    let mut section = TemplateSection::Text;
+    let mut escaped = false;
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match section {
+            TemplateSection::Text => {
+                if bytes[index..].starts_with(b"{{") {
+                    section = TemplateSection::Action;
+                    index += 2;
+                } else {
+                    index += 1;
+                }
+            }
+            TemplateSection::Action => {
+                validate_action_byte(bytes[index])?;
+
+                if bytes[index..].starts_with(b"}}") {
+                    section = TemplateSection::Text;
+                    index += 2;
+                } else if bytes[index..].starts_with(b"/*") {
+                    section = TemplateSection::Comment;
+                    index += 2;
+                } else {
+                    section = match bytes[index] {
+                        b'"' => TemplateSection::DoubleQuoted,
+                        b'\'' => TemplateSection::SingleQuoted,
+                        b'`' => TemplateSection::RawQuoted,
+                        _ => TemplateSection::Action,
+                    };
+                    index += 1;
+                }
+            }
+            TemplateSection::DoubleQuoted | TemplateSection::SingleQuoted => {
+                validate_action_byte(bytes[index])?;
+
+                let quote = match section {
+                    TemplateSection::DoubleQuoted => b'"',
+                    _ => b'\'',
+                };
+                if escaped {
+                    escaped = false;
+                } else if bytes[index] == b'\\' {
+                    escaped = true;
+                } else if bytes[index] == quote {
+                    section = TemplateSection::Action;
+                }
+                index += 1;
+            }
+            TemplateSection::RawQuoted => {
+                validate_action_byte(bytes[index])?;
+                if bytes[index] == b'`' {
+                    section = TemplateSection::Action;
+                }
+                index += 1;
+            }
+            TemplateSection::Comment => {
+                validate_action_byte(bytes[index])?;
+                if bytes[index..].starts_with(b"*/}}") {
+                    section = TemplateSection::Text;
+                    index += 4;
+                } else if bytes[index..].starts_with(b"*/-}}") {
+                    section = TemplateSection::Text;
+                    index += 5;
+                } else {
+                    index += 1;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_action_byte(byte: u8) -> Result<(), human_errors::Error> {
+    if !byte.is_ascii() {
+        return Err(template_action_error(
+            "Template actions currently support ASCII characters only.",
+            &[
+                "Move Unicode text outside the '{{ ... }}' action and pass dynamic Unicode text through the template context.",
+            ],
+        ));
+    }
+
+    if byte.is_ascii_control() && !matches!(byte, b'\t' | b'\r' | b'\n') {
+        return Err(template_action_error(
+            "Template actions cannot contain control characters.",
+            &["Remove control characters from inside the '{{ ... }}' action."],
+        ));
+    }
+
+    Ok(())
+}
+
+fn template_action_error(
+    message: &'static str,
+    advice: &'static [&'static str],
+) -> human_errors::Error {
+    human_errors::user(message, advice)
 }
 
 #[tracing::instrument(err, skip(context, items))]
@@ -257,6 +371,44 @@ mod tests {
         let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
         render("{{ .Target.Name", (&scratch).into()).unwrap_err();
+    }
+
+    #[test]
+    fn render_unicode_literal_text() {
+        let context = Value::Object(map! {
+            "Name" => Value::String("世界".to_string())
+        });
+
+        assert_eq!(
+            render("Héllo, {{ .Name }}", context).unwrap(),
+            "Héllo, 世界"
+        );
+    }
+
+    #[test]
+    fn render_rejects_unicode_inside_action_without_panicking() {
+        let fuzz_input = [
+            123, 123, 32, 119, 105, 116, 104, 32, 46, 255, 255, 255, 255, 255, 255, 255, 1, 123,
+            32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46, 86, 97, 108, 117, 117, 101, 32, 125,
+            125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125, 101, 109, 152, 139, 134, 132, 123,
+            32, 101, 110, 100, 32, 125, 125,
+        ];
+        let template = String::from_utf8_lossy(&fuzz_input);
+
+        assert!(render(&template, Value::NoValue).is_err());
+    }
+
+    #[test]
+    fn render_rejects_control_characters_inside_action_without_hanging() {
+        let fuzz_input = [
+            123, 123, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105, 116, 104, 32, 47, 42,
+            97, 109, 101, 32, 125, 125, 123, 123, 32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46,
+            86, 97, 108, 117, 101, 32, 125, 125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125,
+            101, 109, 112, 116, 121, 123, 123, 32, 101, 110, 100, 32, 125, 125,
+        ];
+        let template = String::from_utf8(fuzz_input.to_vec()).unwrap();
+
+        assert!(render(&template, Value::NoValue).is_err());
     }
 
     #[test]

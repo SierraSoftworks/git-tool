@@ -43,6 +43,7 @@ pub use resolve::{ResolveMany, Resolver};
 pub use scratchpad::Scratchpad;
 pub use service::{Service, ServiceAPI};
 pub use target::{Target, TempMode, TempTarget};
+pub use templates::{render, render_list};
 pub use worktree::Worktree;
 
 pub struct Core {

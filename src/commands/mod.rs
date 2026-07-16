@@ -2,7 +2,7 @@ use super::engine;
 use super::online;
 use super::tasks;
 use async_trait::async_trait;
-use clap::ArgMatches;
+use clap::{Arg, ArgAction, ArgMatches, crate_authors};
 use std::{io::Write, vec::Vec};
 
 use crate::{
@@ -38,6 +38,44 @@ mod trust;
 mod update;
 mod worktree;
 inventory::collect!(Command);
+
+#[allow(non_upper_case_globals)]
+pub fn app() -> clap::Command {
+    clap::Command::new("Git-Tool")
+        .version(version!("v"))
+        .author(crate_authors!("\n"))
+        .about("Simplify your Git repository management and stop thinking about where things belong.")
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .env("GITTOOL_CONFIG")
+                .value_name("FILE")
+                .help("The path to your git-tool configuration file.")
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("update-resume-internal")
+                .long("update-resume-internal")
+                .help("A legacy flag emitted by older Git-Tool releases when coordinating an update. Tolerated (and ignored) so an update started by an older release can hand off to this one via the `update --state` sub-command it also passes.")
+                .action(ArgAction::Set)
+                .hide(true),
+        )
+        .arg(
+            Arg::new("trace")
+                .long("trace")
+                .global(true)
+                .help("Enable tracing for the current command and print the trace ID to assist with bug reports.")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("trace-context")
+                .long("trace-context")
+                .help("Configures the trace context used by this Git-Tool execution.")
+                .action(ArgAction::Set),
+        )
+        .subcommands(inventory::iter::<Command>().map(|command| command.app()))
+}
 
 #[macro_export]
 macro_rules! command {
@@ -92,5 +130,13 @@ pub trait CommandRunnable: Send + Sync {
             }
             Err(err) => panic!("{}", err.message()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn command_graph_is_valid() {
+        super::app().debug_assert();
     }
 }

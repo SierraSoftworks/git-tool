@@ -29,6 +29,7 @@ macro_rules! version {
 /// downstream pipe goes away mid-write that turns an unremarkable shutdown into
 /// a crash which our panic hook then reports as an exception. There is nowhere
 /// left to surface the message in that situation, so we simply drop it.
+#[macro_export]
 macro_rules! safe_eprintln {
     ($($arg:tt)*) => {{
         use std::io::Write;

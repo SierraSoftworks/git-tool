@@ -1,0 +1,80 @@
+[package]
+name = "git-tool-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+clap = "4.6.1"
+git-tool = { path = ".." }
+gtmpl = "0.7"
+libfuzzer-sys = "0.4"
+serde_yaml = "0.9"
+tempfile = "3.27"
+tokio = { version = "1.52", features = ["rt-multi-thread"] }
+
+[[bin]]
+name = "commands"
+path = "fuzz_targets/commands.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "completion"
+path = "fuzz_targets/completion.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "config"
+path = "fuzz_targets/config.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "git_operations"
+path = "fuzz_targets/git_operations.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "identifier"
+path = "fuzz_targets/identifier.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "repo_config"
+path = "fuzz_targets/repo_config.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "search"
+path = "fuzz_targets/search.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tasks"
+path = "fuzz_targets/tasks.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "templates"
+path = "fuzz_targets/templates.rs"
+test = false
+doc = false
+bench = false

@@ -1,6 +1,8 @@
 #Added by cargo
 
 /target
+/fuzz/artifacts
+/fuzz/target
 *.profraw
 *.profdata
 lcov.info
