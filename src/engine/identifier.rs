@@ -204,6 +204,7 @@ mod tests {
         let resolved = id.resolve(partial).expect("resolved id to be valid");
 
         assert!(!resolved.path.trim().is_empty());
+        assert_eq!(resolved.path, resolved.path.trim());
         assert_eq!(
             resolved.to_string().parse::<Identifier>().unwrap(),
             resolved
