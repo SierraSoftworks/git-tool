@@ -71,7 +71,7 @@ impl Identifier {
 
         let resolved = Identifier {
             scope: self.scope.clone(),
-            path: old_segments.join("/").to_string(),
+            path: old_segments.join("/").trim().to_string(),
         };
         Self::validate_path(&resolved.path)?;
 
@@ -190,6 +190,20 @@ mod tests {
         let resolved = id.resolve("\u{b})").expect("relative id to be valid");
 
         assert_eq!(resolved.path, ")");
+        assert_eq!(
+            resolved.to_string().parse::<Identifier>().unwrap(),
+            resolved
+        );
+    }
+
+    #[rstest]
+    #[case("/ a/b", "x")]
+    #[case("/\ta/b", "repo")]
+    fn test_resolve_result_roundtrips(#[case] source: &str, #[case] partial: &str) {
+        let id: Identifier = source.parse().expect("id to be valid");
+        let resolved = id.resolve(partial).expect("resolved id to be valid");
+
+        assert!(!resolved.path.trim().is_empty());
         assert_eq!(
             resolved.to_string().parse::<Identifier>().unwrap(),
             resolved
