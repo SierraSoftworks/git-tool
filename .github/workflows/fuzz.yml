@@ -85,7 +85,7 @@ jobs:
 
       - name: Report fuzz failure
         if: always() && steps.fuzz.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           FUZZ_TARGET: ${{ matrix.target }}
           FUZZ_LOG: fuzz-${{ matrix.target }}.log
