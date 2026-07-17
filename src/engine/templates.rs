@@ -107,6 +107,13 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
         }
     }
 
+    if !matches!(section, TemplateSection::Text) {
+        return Err(template_action_error(
+            "Template actions must be closed with '}}'.",
+            &["Close the '{{ ... }}' action so the template can be rendered."],
+        ));
+    }
+
     Ok(())
 }
 
@@ -408,6 +415,36 @@ mod tests {
         ];
         let template = String::from_utf8(fuzz_input.to_vec()).unwrap();
 
+        assert!(render(&template, Value::NoValue).is_err());
+    }
+
+    #[test]
+    fn render_rejects_unterminated_action_without_hanging() {
+        for template in ["{{ ", "{{ .", "{{ if ", "{{ range ", "{{ \"a", "{{ /*"] {
+            assert!(
+                render(template, Value::NoValue).is_err(),
+                "expected unterminated action '{template}' to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn render_rejects_unterminated_action_from_fuzz_input_without_hanging() {
+        // Mirrors how the `templates` fuzz target extracts the template from the
+        // NUL-delimited corpus entry, which reduces to an unterminated `{{ ` action.
+        let fuzz_input = [
+            123, 123, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105, 116, 104, 32, 47, 42,
+            97, 109, 101, 32, 125, 125, 123, 123, 32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46,
+            86, 97, 108, 117, 101, 32, 125, 125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125,
+            101, 109, 112, 116, 121, 123, 123, 32, 101, 110, 100, 32, 125, 125,
+        ];
+        let template = fuzz_input
+            .split(|byte| *byte == 0)
+            .next()
+            .map(|field| String::from_utf8_lossy(field).into_owned())
+            .unwrap_or_default();
+
+        assert_eq!(template, "{{ ");
         assert!(render(&template, Value::NoValue).is_err());
     }
 
