@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload failure details
         if: always() && steps.fuzz.outcome == 'failure'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-failure-${{ matrix.target }}-${{ github.run_id }}
           path: |
