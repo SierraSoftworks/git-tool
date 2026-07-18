@@ -39,11 +39,20 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
     let mut section = TemplateSection::Text;
     let mut escaped = false;
     let mut index = 0;
+    let mut text_section_start = 0usize;
 
     while index < bytes.len() {
         match section {
             TemplateSection::Text => {
                 if bytes[index..].starts_with(b"{{") {
+                    // "{{- " (hyphen + space) is the left-trim marker in gtmpl, which calls
+                    // rtrim_len() on the preceding text. gtmpl's rtrim_len has a bug where it
+                    // computes an incorrect byte offset when the last non-whitespace character
+                    // is a multi-byte UTF-8 character, causing a panic in emit(). Reject such
+                    // templates before they reach gtmpl.
+                    if bytes[index + 2..].starts_with(b"- ") {
+                        validate_text_before_left_trim(&tmpl[text_section_start..index])?;
+                    }
                     section = TemplateSection::Action;
                     index += 2;
                 } else {
@@ -56,6 +65,7 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                 if bytes[index..].starts_with(b"}}") {
                     section = TemplateSection::Text;
                     index += 2;
+                    text_section_start = index;
                 } else if bytes[index..].starts_with(b"/*") {
                     section = TemplateSection::Comment;
                     index += 2;
@@ -97,9 +107,11 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                 if bytes[index..].starts_with(b"*/}}") {
                     section = TemplateSection::Text;
                     index += 4;
+                    text_section_start = index;
                 } else if bytes[index..].starts_with(b"*/-}}") {
                     section = TemplateSection::Text;
                     index += 5;
+                    text_section_start = index;
                 } else {
                     index += 1;
                 }
@@ -134,6 +146,27 @@ fn validate_action_byte(byte: u8) -> Result<(), human_errors::Error> {
         ));
     }
 
+    Ok(())
+}
+
+fn validate_text_before_left_trim(text: &str) -> Result<(), human_errors::Error> {
+    if let Some(last_non_ws_start) = text.rfind(|c: char| !c.is_whitespace()) {
+        let last_char = text[last_non_ws_start..]
+            .chars()
+            .next()
+            .expect("rfind guarantees a char starts at last_non_ws_start");
+        if !last_char.is_ascii() {
+            return Err(human_errors::user(
+                format!(
+                    "Template left-trim actions ('{}') cannot directly follow non-ASCII text (found {:?}).",
+                    "{{-", last_char
+                ),
+                &[
+                    "Use '{{' without the '-' trim marker when the preceding text contains non-ASCII characters.",
+                ],
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -446,6 +479,37 @@ mod tests {
 
         assert_eq!(template, "{{ ");
         assert!(render(&template, Value::NoValue).is_err());
+    }
+
+    #[test]
+    fn render_rejects_left_trim_after_non_ascii_without_panicking() {
+        // gtmpl's rtrim_len has a bug: it computes `s.len() - 1 - i` where i is the byte
+        // start of the last non-whitespace character, which is only correct for single-byte
+        // (ASCII) characters. For multi-byte chars the formula is wrong, placing the lexer
+        // position in the middle of a multi-byte char and causing a panic in emit().
+        for template in [
+            "é {{- .Name }}",
+            "⸀ {{- .Name }}",
+            "héllo{{- .Name }}",
+            "héllo {{- .Name }}",
+        ] {
+            assert!(
+                render(template, Value::NoValue).is_err(),
+                "expected '{{-' after non-ASCII text '{template}' to be rejected without panicking"
+            );
+        }
+
+        // Ensure ASCII text before "{{-" is still allowed through (errors here come from
+        // gtmpl evaluating the template, not from our pre-validation)
+        let context = Value::Object(std::collections::HashMap::from([(
+            "Name".to_string(),
+            Value::String("world".to_string()),
+        )]));
+        assert_eq!(
+            render("hello {{- .Name }}", context.clone()).unwrap(),
+            "helloworld"
+        );
+        assert_eq!(render(" {{- .Name }}", context).unwrap(), "world");
     }
 
     #[test]
