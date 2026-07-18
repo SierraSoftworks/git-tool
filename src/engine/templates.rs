@@ -151,10 +151,16 @@ fn validate_action_byte(byte: u8) -> Result<(), human_errors::Error> {
 
 fn validate_text_before_left_trim(text: &str) -> Result<(), human_errors::Error> {
     if let Some(last_non_ws_start) = text.rfind(|c: char| !c.is_whitespace()) {
-        let last_char = text[last_non_ws_start..].chars().next().unwrap();
+        let last_char = text[last_non_ws_start..]
+            .chars()
+            .next()
+            .expect("rfind guarantees a char starts at last_non_ws_start");
         if !last_char.is_ascii() {
-            return Err(template_action_error(
-                "Template left-trim actions ('{{-') cannot directly follow non-ASCII text.",
+            return Err(human_errors::user(
+                format!(
+                    "Template left-trim actions ('{}') cannot directly follow non-ASCII text (found {:?}).",
+                    "{{-", last_char
+                ),
                 &[
                     "Use '{{' without the '-' trim marker when the preceding text contains non-ASCII characters.",
                 ],
