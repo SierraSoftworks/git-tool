@@ -31,7 +31,6 @@ enum TemplateSection {
     DoubleQuoted,
     SingleQuoted,
     RawQuoted,
-    Comment,
 }
 
 fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
@@ -66,9 +65,6 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                     section = TemplateSection::Text;
                     index += 2;
                     text_section_start = index;
-                } else if bytes[index..].starts_with(b"/*") {
-                    section = TemplateSection::Comment;
-                    index += 2;
                 } else {
                     section = match bytes[index] {
                         b'"' => TemplateSection::DoubleQuoted,
@@ -101,20 +97,6 @@ fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
                     section = TemplateSection::Action;
                 }
                 index += 1;
-            }
-            TemplateSection::Comment => {
-                validate_action_byte(bytes[index])?;
-                if bytes[index..].starts_with(b"*/}}") {
-                    section = TemplateSection::Text;
-                    index += 4;
-                    text_section_start = index;
-                } else if bytes[index..].starts_with(b"*/-}}") {
-                    section = TemplateSection::Text;
-                    index += 5;
-                    text_section_start = index;
-                } else {
-                    index += 1;
-                }
             }
         }
     }
@@ -517,5 +499,35 @@ mod tests {
         let scratch = Scratchpad::new("2020w07", PathBuf::from("/test/scratch/2020w07"));
 
         render("{{ .Target.UnknownField }}", (&scratch).into()).unwrap_err();
+    }
+
+    #[test]
+    fn render_rejects_non_ascii_after_inner_comment_without_panicking() {
+        // Fuzz failure: our validator used to enter Comment mode for `/*` anywhere
+        // inside an action body (not just immediately after `{{`). This caused it to
+        // skip bytes that gtmpl still processes as action content. When those bytes
+        // contained a non-ASCII character directly following an identifier, gtmpl's
+        // `backup()` (which incorrectly subtracts 1 instead of self.width) would set
+        // `self.pos` into the middle of a multi-byte UTF-8 sequence and panic.
+        //
+        // The template here contains `{{-*{{{//*...*/-}}` where the `/*` inside the
+        // action body was incorrectly treated as a comment start. The non-ASCII bytes
+        // after the apparent comment close (`*/-}}`) are in fact still inside the
+        // action from gtmpl's perspective.
+        let fuzz_input = [
+            127u8, 255, 255, 255, 255, 255, 255, 248, 41, 61, 123, 123, 45, 42, 123, 123, 123,
+            47, 47, 42, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 38,
+            39, 39, 39, 39, 52, 52, 32, 42, 47, 45, 125, 125, 213, 39, 39, 39, 39, 39, 39, 39,
+            39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 69, 217, 216, 217, 8, 0, 0, 10, 39, 39, 39,
+            52, 42, 47, 39, 32, 52, 39, 45, 125, 125, 0, 103,
+        ];
+        let template = fuzz_input
+            .splitn(3, |byte| *byte == 0)
+            .next()
+            .map(|field| String::from_utf8_lossy(&field[..field.len().min(128)]).into_owned())
+            .unwrap_or_default();
+
+        // render() must either succeed or return an error — it must NOT panic
+        let _ = render(&template, Value::NoValue);
     }
 }
