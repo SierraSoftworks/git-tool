@@ -522,7 +522,7 @@ mod tests {
             52, 42, 47, 39, 32, 52, 39, 45, 125, 125, 0, 103,
         ];
         let template = fuzz_input
-            .splitn(3, |byte| *byte == 0)
+            .split(|byte| *byte == 0)
             .next()
             .map(|field| String::from_utf8_lossy(&field[..field.len().min(128)]).into_owned())
             .unwrap_or_default();
