@@ -65,9 +65,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          cargo +nightly fuzz run --target x86_64-unknown-linux-gnu \
-            "${{ matrix.target }}" "fuzz/corpus/${{ matrix.target }}" -- \
-            -max_total_time=300 -timeout=10 2>&1 | tee "fuzz-${{ matrix.target }}.log"
+          ./scripts/fuzz "${{ matrix.target }}" 300 2>&1 | tee "fuzz-${{ matrix.target }}.log"
           status=${PIPESTATUS[0]}
           echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
           exit "$status"

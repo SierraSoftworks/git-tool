@@ -1,5 +1,5 @@
-use super::{Config, Target};
-use gtmpl::Value;
+use super::{Config, Target, templates::target_context};
+use gotmpl::Value;
 use std::path;
 
 #[derive(Debug, Clone)]
@@ -21,8 +21,8 @@ impl Target for Scratchpad {
         self.path.is_dir()
     }
 
-    fn template_context(&self, _config: &Config) -> Value {
-        self.into()
+    fn template_context(&self, _config: &Config) -> Result<Value, human_errors::Error> {
+        target_context(self)
     }
 }
 

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+target="${1:-templates}"
+duration="${2:-60}"
+
+if [[ ! "$duration" =~ ^[0-9]+$ ]]; then
+    echo "Usage: ./scripts/fuzz [target] [seconds] [libFuzzer options...]" >&2
+    exit 2
+fi
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+if [[ ! -f "fuzz/fuzz_targets/${target}.rs" ]]; then
+    echo "Unknown fuzz target '${target}'. Available targets:" >&2
+    find fuzz/fuzz_targets -maxdepth 1 -name '*.rs' ! -name 'common.rs' -exec basename {} .rs \; | sort >&2
+    exit 2
+fi
+
+if ! cargo +nightly --version >/dev/null 2>&1; then
+    echo "Nightly Rust is required. Install it with: rustup toolchain install nightly" >&2
+    exit 1
+fi
+
+if ! command -v cargo-fuzz >/dev/null 2>&1; then
+    echo "cargo-fuzz is required. Install it with: cargo install cargo-fuzz" >&2
+    exit 1
+fi
+
+mkdir -p "fuzz/corpus-output/${target}"
+
+cargo_args=(+nightly fuzz run)
+if [[ -n "${CARGO_BUILD_TARGET:-}" ]]; then
+    cargo_args+=(--target "$CARGO_BUILD_TARGET")
+fi
+
+if [[ -n "${FUZZ_SANITIZER:-}" ]]; then
+    cargo_args+=(--sanitizer "$FUZZ_SANITIZER")
+elif [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+    echo "Apple Silicon detected; disabling sanitizers to avoid the current linker incompatibility." >&2
+    cargo_args+=(--sanitizer none)
+fi
+
+if (( $# >= 2 )); then
+    shift 2
+else
+    shift $#
+fi
+
+exec cargo "${cargo_args[@]}" \
+    "$target" \
+    "fuzz/corpus-output/${target}" \
+    "fuzz/corpus/${target}" -- \
+    -max_total_time="$duration" \
+    -timeout=10 \
+    "$@"

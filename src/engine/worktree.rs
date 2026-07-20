@@ -1,5 +1,5 @@
 use super::{Branch, Config, Repo, Target};
-use gtmpl::Value;
+use gotmpl::Value;
 use std::path::PathBuf;
 
 /// A git worktree for a particular [`Branch`] of a [`Repo`], resolved to its
@@ -101,7 +101,7 @@ impl Target for Worktree {
         self.repo.exists()
     }
 
-    fn template_context(&self, config: &Config) -> Value {
+    fn template_context(&self, config: &Config) -> Result<Value, human_errors::Error> {
         self.repo.template_context(config)
     }
 }

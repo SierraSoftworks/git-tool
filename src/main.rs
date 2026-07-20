@@ -3,7 +3,7 @@
 extern crate base64;
 extern crate chrono;
 extern crate clap;
-extern crate gtmpl;
+extern crate gotmpl;
 extern crate lazy_static;
 extern crate serde_json;
 extern crate tokio;

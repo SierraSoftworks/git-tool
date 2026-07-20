@@ -20,11 +20,17 @@ pub struct ServiceAPI {
 
 impl Service {
     pub fn get_website(&self, r: &Repo) -> Result<String, human_errors::Error> {
-        templates::render(self.website.clone().as_str(), r.into())
+        templates::render(
+            self.website.as_str(),
+            templates::repo_context_without_service(r)?,
+        )
     }
 
     pub fn get_git_url(&self, r: &Repo) -> Result<String, human_errors::Error> {
-        templates::render(self.git_url.clone().as_str(), r.into())
+        templates::render(
+            self.git_url.as_str(),
+            templates::repo_context_without_service(r)?,
+        )
     }
 }
 

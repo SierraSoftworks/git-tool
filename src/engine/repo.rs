@@ -1,5 +1,5 @@
 pub use super::{Branch, Config, Target, Worktree, templates::repo_context};
-use gtmpl::Value;
+use gotmpl::Value;
 use std::path;
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl Target for Repo {
         self.path.is_dir()
     }
 
-    fn template_context(&self, config: &Config) -> Value {
+    fn template_context(&self, config: &Config) -> Result<Value, human_errors::Error> {
         repo_context(config, self)
     }
 }

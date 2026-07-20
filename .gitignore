@@ -2,6 +2,7 @@
 
 /target
 /fuzz/artifacts
+/fuzz/corpus-output
 /fuzz/target
 *.profraw
 *.profdata

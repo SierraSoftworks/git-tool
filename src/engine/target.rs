@@ -1,5 +1,5 @@
-use super::Config;
-use gtmpl::Value;
+use super::{Config, templates::target_context};
+use gotmpl::Value;
 use human_errors::ResultExt;
 use std::fmt::Display;
 
@@ -7,7 +7,7 @@ pub trait Target: Display {
     fn get_name(&self) -> String;
     fn get_path(&self) -> std::path::PathBuf;
     fn exists(&self) -> bool;
-    fn template_context(&self, config: &Config) -> Value;
+    fn template_context(&self, config: &Config) -> Result<Value, human_errors::Error>;
 }
 
 /// Controls what happens to a [`TempTarget`]'s directory once the target is
@@ -68,8 +68,8 @@ impl Target for TempTarget {
         true
     }
 
-    fn template_context(&self, _config: &Config) -> Value {
-        self.into()
+    fn template_context(&self, _config: &Config) -> Result<Value, human_errors::Error> {
+        target_context(self)
     }
 }
 
