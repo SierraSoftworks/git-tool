@@ -1,180 +1,30 @@
 use super::{Config, Repo, Scratchpad, Service, Target, target::TempTarget};
-use gtmpl::{Value, template};
+use gotmpl::{MissingKey, Template, Value};
 use tracing_batteries::prelude::*;
 
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {
         {
-            let mut m = ::std::collections::HashMap::new();
+            let mut m = ::std::collections::BTreeMap::new();
             $(
-                m.insert(String::from($key), $value);
+                m.insert(String::from($key).into(), $value);
             )+
-            m
+            m.into()
         }
      };
 );
 
 pub fn render(tmpl: &str, context: Value) -> Result<String, human_errors::Error> {
     debug!("Rendering template '{}' with context {}", tmpl, context);
-    validate_template_actions(tmpl)?;
-    template(tmpl, context).map_err(|e| human_errors::wrap_user(
-        e.to_string(),
-        format!("We couldn't render your template '{tmpl}'."),
-        &["Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/"],
-    ))
-}
-
-#[derive(Clone, Copy)]
-enum TemplateSection {
-    Text,
-    Action,
-    DoubleQuoted,
-    SingleQuoted,
-    RawQuoted,
-    Comment,
-}
-
-fn validate_template_actions(tmpl: &str) -> Result<(), human_errors::Error> {
-    let bytes = tmpl.as_bytes();
-    let mut section = TemplateSection::Text;
-    let mut escaped = false;
-    let mut index = 0;
-    let mut text_section_start = 0usize;
-
-    while index < bytes.len() {
-        match section {
-            TemplateSection::Text => {
-                if bytes[index..].starts_with(b"{{") {
-                    // "{{- " (hyphen + space) is the left-trim marker in gtmpl, which calls
-                    // rtrim_len() on the preceding text. gtmpl's rtrim_len has a bug where it
-                    // computes an incorrect byte offset when the last non-whitespace character
-                    // is a multi-byte UTF-8 character, causing a panic in emit(). Reject such
-                    // templates before they reach gtmpl.
-                    if bytes[index + 2..].starts_with(b"- ") {
-                        validate_text_before_left_trim(&tmpl[text_section_start..index])?;
-                    }
-                    section = TemplateSection::Action;
-                    index += 2;
-                } else {
-                    index += 1;
-                }
-            }
-            TemplateSection::Action => {
-                validate_action_byte(bytes[index])?;
-
-                if bytes[index..].starts_with(b"}}") {
-                    section = TemplateSection::Text;
-                    index += 2;
-                    text_section_start = index;
-                } else if bytes[index..].starts_with(b"/*") {
-                    section = TemplateSection::Comment;
-                    index += 2;
-                } else {
-                    section = match bytes[index] {
-                        b'"' => TemplateSection::DoubleQuoted,
-                        b'\'' => TemplateSection::SingleQuoted,
-                        b'`' => TemplateSection::RawQuoted,
-                        _ => TemplateSection::Action,
-                    };
-                    index += 1;
-                }
-            }
-            TemplateSection::DoubleQuoted | TemplateSection::SingleQuoted => {
-                validate_action_byte(bytes[index])?;
-
-                let quote = match section {
-                    TemplateSection::DoubleQuoted => b'"',
-                    _ => b'\'',
-                };
-                if escaped {
-                    escaped = false;
-                } else if bytes[index] == b'\\' {
-                    escaped = true;
-                } else if bytes[index] == quote {
-                    section = TemplateSection::Action;
-                }
-                index += 1;
-            }
-            TemplateSection::RawQuoted => {
-                validate_action_byte(bytes[index])?;
-                if bytes[index] == b'`' {
-                    section = TemplateSection::Action;
-                }
-                index += 1;
-            }
-            TemplateSection::Comment => {
-                validate_action_byte(bytes[index])?;
-                if bytes[index..].starts_with(b"*/}}") {
-                    section = TemplateSection::Text;
-                    index += 4;
-                    text_section_start = index;
-                } else if bytes[index..].starts_with(b"*/-}}") {
-                    section = TemplateSection::Text;
-                    index += 5;
-                    text_section_start = index;
-                } else {
-                    index += 1;
-                }
-            }
-        }
-    }
-
-    if !matches!(section, TemplateSection::Text) {
-        return Err(template_action_error(
-            "Template actions must be closed with '}}'.",
-            &["Close the '{{ ... }}' action so the template can be rendered."],
-        ));
-    }
-
-    Ok(())
-}
-
-fn validate_action_byte(byte: u8) -> Result<(), human_errors::Error> {
-    if !byte.is_ascii() {
-        return Err(template_action_error(
-            "Template actions currently support ASCII characters only.",
-            &[
-                "Move Unicode text outside the '{{ ... }}' action and pass dynamic Unicode text through the template context.",
-            ],
-        ));
-    }
-
-    if byte.is_ascii_control() && !matches!(byte, b'\t' | b'\r' | b'\n') {
-        return Err(template_action_error(
-            "Template actions cannot contain control characters.",
-            &["Remove control characters from inside the '{{ ... }}' action."],
-        ));
-    }
-
-    Ok(())
-}
-
-fn validate_text_before_left_trim(text: &str) -> Result<(), human_errors::Error> {
-    if let Some(last_non_ws_start) = text.rfind(|c: char| !c.is_whitespace()) {
-        let last_char = text[last_non_ws_start..]
-            .chars()
-            .next()
-            .expect("rfind guarantees a char starts at last_non_ws_start");
-        if !last_char.is_ascii() {
-            return Err(human_errors::user(
-                format!(
-                    "Template left-trim actions ('{}') cannot directly follow non-ASCII text (found {:?}).",
-                    "{{-", last_char
-                ),
-                &[
-                    "Use '{{' without the '-' trim marker when the preceding text contains non-ASCII characters.",
-                ],
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn template_action_error(
-    message: &'static str,
-    advice: &'static [&'static str],
-) -> human_errors::Error {
-    human_errors::user(message, advice)
+    Template::new("git-tool")
+        .missing_key(MissingKey::Error)
+        .parse(tmpl)
+        .and_then(|template| template.execute_to_string(&context))
+        .map_err(|e| human_errors::wrap_user(
+            e.to_string(),
+            format!("We couldn't render your template '{tmpl}'."),
+            &["Check that your template follows the Go template syntax here: https://golang.org/pkg/text/template/"],
+        ))
 }
 
 #[tracing::instrument(err, skip(context, items))]
@@ -209,23 +59,23 @@ impl Into<Value> for RepoWithService<'_> {
     fn into(self) -> Value {
         let service: Value = self.service.into();
 
-        Value::Object(map! {
-            "Target" => Value::Object(map!{
-                "Name" => Value::String(self.repo.get_full_name()),
-                "Path" => Value::String(String::from(self.repo.get_path().to_str().unwrap_or_default())),
+        Value::Map(map! {
+            "Target" => Value::Map(map!{
+                "Name" => Value::String(self.repo.get_full_name().into()),
+                "Path" => Value::String(String::from(self.repo.get_path().to_str().unwrap_or_default()).into()),
                 "Exists" => Value::Bool(self.repo.exists())
             }),
-            "Repo" => Value::Object(map!{
-                "FullName" => Value::String(self.repo.get_full_name()),
-                "Name" => Value::String(self.repo.get_name()),
-                "Namespace" => Value::String(self.repo.namespace.clone()),
-                "Domain" => Value::String(self.repo.service.clone()),
+            "Repo" => Value::Map(map!{
+                "FullName" => Value::String(self.repo.get_full_name().into()),
+                "Name" => Value::String(self.repo.get_name().into()),
+                "Namespace" => Value::String(self.repo.namespace.clone().into()),
+                "Domain" => Value::String(self.repo.service.clone().into()),
                 "Exists" => Value::Bool(self.repo.exists()),
                 "Valid" => Value::Bool(self.repo.valid()),
-                "Path" => Value::String(String::from(self.repo.get_path().to_str().unwrap_or_default())),
-                "Website" => Value::String(self.service.get_website(self.repo).unwrap_or_default()),
-                "GitURL" => Value::String(self.service.get_git_url(self.repo).unwrap_or_default()),
-                "HttpURL" => Value::String(self.service.get_git_url(self.repo).unwrap_or_default()),
+                "Path" => Value::String(String::from(self.repo.get_path().to_str().unwrap_or_default()).into()),
+                "Website" => Value::String(self.service.get_website(self.repo).unwrap_or_default().into()),
+                "GitURL" => Value::String(self.service.get_git_url(self.repo).unwrap_or_default().into()),
+                "HttpURL" => Value::String(self.service.get_git_url(self.repo).unwrap_or_default().into()),
                 "Service" => service.clone()
             }),
             "Service" => service
@@ -236,11 +86,11 @@ impl Into<Value> for RepoWithService<'_> {
 #[allow(clippy::from_over_into)]
 impl Into<Value> for &Service {
     fn into(self) -> Value {
-        Value::Object(map! {
-            "Name" => Value::String(self.name.clone()),
-            "Domain" => Value::String(self.name.clone()),
-            "DirectoryGlob" => Value::String(self.pattern.clone()),
-            "Pattern" => Value::String(self.pattern.clone())
+        Value::Map(map! {
+            "Name" => Value::String(self.name.clone().into()),
+            "Domain" => Value::String(self.name.clone().into()),
+            "DirectoryGlob" => Value::String(self.pattern.clone().into()),
+            "Pattern" => Value::String(self.pattern.clone().into())
         })
     }
 }
@@ -248,29 +98,29 @@ impl Into<Value> for &Service {
 #[allow(clippy::from_over_into)]
 impl Into<Value> for &Repo {
     fn into(self) -> Value {
-        let service = Value::Object(map! {
-            "Domain" => Value::String(self.service.clone()),
-            "DirectoryGlob" => Value::NoValue,
-            "Pattern" => Value::NoValue
+        let service = Value::Map(map! {
+            "Domain" => Value::String(self.service.clone().into()),
+            "DirectoryGlob" => Value::Nil,
+            "Pattern" => Value::Nil
         });
 
-        Value::Object(map! {
-            "Target" => Value::Object(map!{
-                "Name" => Value::String(self.get_full_name()),
-                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
+        Value::Map(map! {
+            "Target" => Value::Map(map!{
+                "Name" => Value::String(self.get_full_name().into()),
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default()).into()),
                 "Exists" => Value::Bool(self.exists())
             }),
-            "Repo" => Value::Object(map!{
-                "FullName" => Value::String(self.get_full_name()),
-                "Name" => Value::String(self.get_name()),
-                "Namespace" => Value::String(self.namespace.clone()),
-                "Domain" => Value::String(self.service.clone()),
+            "Repo" => Value::Map(map!{
+                "FullName" => Value::String(self.get_full_name().into()),
+                "Name" => Value::String(self.get_name().into()),
+                "Namespace" => Value::String(self.namespace.clone().into()),
+                "Domain" => Value::String(self.service.clone().into()),
                 "Exists" => Value::Bool(self.exists()),
                 "Valid" => Value::Bool(self.valid()),
-                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
-                "Website" => Value::NoValue,
-                "GitURL" => Value::NoValue,
-                "HttpURL" => Value::NoValue,
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default()).into()),
+                "Website" => Value::Nil,
+                "GitURL" => Value::Nil,
+                "HttpURL" => Value::Nil,
                 "Service" => service.clone()
             }),
             "Service" => service
@@ -281,14 +131,14 @@ impl Into<Value> for &Repo {
 #[allow(clippy::from_over_into)]
 impl Into<Value> for &Scratchpad {
     fn into(self) -> Value {
-        Value::Object(map! {
-            "Target" => Value::Object(map!{
-                "Name" => Value::String(self.get_name()),
-                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
+        Value::Map(map! {
+            "Target" => Value::Map(map!{
+                "Name" => Value::String(self.get_name().into()),
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default()).into()),
                 "Exists" => Value::Bool(self.exists())
             }),
-            "Repo" => Value::NoValue,
-            "Service" => Value::NoValue
+            "Repo" => Value::Nil,
+            "Service" => Value::Nil
         })
     }
 }
@@ -296,14 +146,14 @@ impl Into<Value> for &Scratchpad {
 #[allow(clippy::from_over_into)]
 impl Into<Value> for &TempTarget {
     fn into(self) -> Value {
-        Value::Object(map! {
-            "Target" => Value::Object(map!{
-                "Name" => Value::String(self.get_name()),
-                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default())),
+        Value::Map(map! {
+            "Target" => Value::Map(map!{
+                "Name" => Value::String(self.get_name().into()),
+                "Path" => Value::String(String::from(self.get_path().to_str().unwrap_or_default()).into()),
                 "Exists" => Value::Bool(self.exists())
             }),
-            "Repo" => Value::NoValue,
-            "Service" => Value::NoValue
+            "Repo" => Value::Nil,
+            "Service" => Value::Nil
         })
     }
 }
@@ -415,8 +265,8 @@ mod tests {
 
     #[test]
     fn render_unicode_literal_text() {
-        let context = Value::Object(map! {
-            "Name" => Value::String("世界".to_string())
+        let context = Value::Map(map! {
+            "Name" => Value::String("世界".into())
         });
 
         assert_eq!(
@@ -435,7 +285,7 @@ mod tests {
         ];
         let template = String::from_utf8_lossy(&fuzz_input);
 
-        assert!(render(&template, Value::NoValue).is_err());
+        assert!(render(&template, Value::Nil).is_err());
     }
 
     #[test]
@@ -448,14 +298,14 @@ mod tests {
         ];
         let template = String::from_utf8(fuzz_input.to_vec()).unwrap();
 
-        assert!(render(&template, Value::NoValue).is_err());
+        assert!(render(&template, Value::Nil).is_err());
     }
 
     #[test]
     fn render_rejects_unterminated_action_without_hanging() {
         for template in ["{{ ", "{{ .", "{{ if ", "{{ range ", "{{ \"a", "{{ /*"] {
             assert!(
-                render(template, Value::NoValue).is_err(),
+                render(template, Value::Nil).is_err(),
                 "expected unterminated action '{template}' to be rejected"
             );
         }
@@ -478,38 +328,23 @@ mod tests {
             .unwrap_or_default();
 
         assert_eq!(template, "{{ ");
-        assert!(render(&template, Value::NoValue).is_err());
+        assert!(render(&template, Value::Nil).is_err());
     }
 
     #[test]
-    fn render_rejects_left_trim_after_non_ascii_without_panicking() {
-        // gtmpl's rtrim_len has a bug: it computes `s.len() - 1 - i` where i is the byte
-        // start of the last non-whitespace character, which is only correct for single-byte
-        // (ASCII) characters. For multi-byte chars the formula is wrong, placing the lexer
-        // position in the middle of a multi-byte char and causing a panic in emit().
-        for template in [
-            "é {{- .Name }}",
-            "⸀ {{- .Name }}",
-            "héllo{{- .Name }}",
-            "héllo {{- .Name }}",
-        ] {
-            assert!(
-                render(template, Value::NoValue).is_err(),
-                "expected '{{-' after non-ASCII text '{template}' to be rejected without panicking"
-            );
-        }
+    fn render_trims_whitespace_after_unicode_without_panicking() {
+        let context = Value::Map(map! {
+            "Name" => Value::String("world".into())
+        });
 
-        // Ensure ASCII text before "{{-" is still allowed through (errors here come from
-        // gtmpl evaluating the template, not from our pre-validation)
-        let context = Value::Object(std::collections::HashMap::from([(
-            "Name".to_string(),
-            Value::String("world".to_string()),
-        )]));
-        assert_eq!(
-            render("hello {{- .Name }}", context.clone()).unwrap(),
-            "helloworld"
-        );
-        assert_eq!(render(" {{- .Name }}", context).unwrap(), "world");
+        for (template, expected) in [
+            ("é {{- .Name }}", "éworld"),
+            ("⸀ {{- .Name }}", "⸀world"),
+            ("héllo{{- .Name }}", "hélloworld"),
+            ("héllo {{- .Name }}", "hélloworld"),
+        ] {
+            assert_eq!(render(template, context.clone()).unwrap(), expected);
+        }
     }
 
     #[test]

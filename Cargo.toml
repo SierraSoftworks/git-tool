@@ -1,9 +1,7 @@
 [package]
 name = "git-tool"
 version = "3.12.0"
-authors = [
-    "Benjamin Pannell <benjamin@pannell.dev>",
-]
+authors = ["Benjamin Pannell <benjamin@pannell.dev>"]
 edition = "2024"
 
 [[bin]]
@@ -16,11 +14,15 @@ chrono = { version = "0.4.45" }
 clap = { version = "4.6.1", features = ["cargo", "env", "string"] }
 directories-next = "2.0"
 futures = "0.3"
-gtmpl = "0.7"
+gotmpl = "0.6.1"
 human-errors = { version = "0.2.4", features = ["pretty", "force_backtraces"] }
 inventory = "0.3.24"
 itertools = "0.15"
-keyring = { version = "3.6.3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
+keyring = { version = "3.6.3", optional = true, features = [
+    "apple-native",
+    "windows-native",
+    "sync-secret-service",
+] }
 lazy_static = "1.5"
 nix = { version = "0.31.3", features = ["process", "signal"] }
 rpassword = { version = "7.5", optional = true }
@@ -46,7 +48,12 @@ tokio = { version = "1.52", features = [
     "signal",
 ] }
 tracing = { version = "0.1.43", features = ["log"] }
-tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git", features = ["analytics", "opentelemetry", "sentry", "human_errors"] }
+tracing-batteries = { git = "https://github.com/sierrasoftworks/tracing-batteries-rs.git", features = [
+    "analytics",
+    "opentelemetry",
+    "sentry",
+    "human_errors",
+] }
 # Self-update machinery (extracted from this project). The `opentelemetry`
 # feature emits tracing spans for the update and propagates the trace context
 # across the three relaunch phases via the update state.

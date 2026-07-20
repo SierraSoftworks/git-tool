@@ -1,5 +1,5 @@
 use super::{Config, Target};
-use gtmpl::Value;
+use gotmpl::Value;
 use std::path;
 
 #[derive(Debug, Clone)]

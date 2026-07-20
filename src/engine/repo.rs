@@ -1,5 +1,5 @@
 pub use super::{Branch, Config, Target, Worktree, templates::repo_context};
-use gtmpl::Value;
+use gotmpl::Value;
 use std::path;
 
 #[derive(Debug, Clone)]

@@ -1,5 +1,5 @@
 use super::Config;
-use gtmpl::Value;
+use gotmpl::Value;
 use human_errors::ResultExt;
 use std::fmt::Display;
 

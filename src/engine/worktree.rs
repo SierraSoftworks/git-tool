@@ -1,5 +1,5 @@
 use super::{Branch, Config, Repo, Target};
-use gtmpl::Value;
+use gotmpl::Value;
 use std::path::PathBuf;
 
 /// A git worktree for a particular [`Branch`] of a [`Repo`], resolved to its

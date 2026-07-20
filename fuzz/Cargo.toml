@@ -10,7 +10,7 @@ cargo-fuzz = true
 [dependencies]
 clap = "4.6.1"
 git-tool = { path = ".." }
-gtmpl = "0.7"
+gotmpl = "0.6.1"
 libfuzzer-sys = "0.4"
 serde_yaml = "0.9"
 tempfile = "3.27"
