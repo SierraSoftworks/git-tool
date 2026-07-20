@@ -59,10 +59,6 @@ fuzz_target!(|data: &[u8]| {
     let trim_template = format!("{literal} \t\r\n{{{{- .Value -}}}}\n\t {literal}");
     assert_eq!(
         render(&trim_template, context).unwrap(),
-        format!(
-            "{}{value}{}",
-            literal.trim_end(),
-            literal.trim_start()
-        )
+        format!("{}{value}{}", literal.trim_end(), literal.trim_start())
     );
 });

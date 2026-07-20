@@ -23,7 +23,7 @@ impl Target for Repo {
         self.path.is_dir()
     }
 
-    fn template_context(&self, config: &Config) -> Value {
+    fn template_context(&self, config: &Config) -> Result<Value, human_errors::Error> {
         repo_context(config, self)
     }
 }

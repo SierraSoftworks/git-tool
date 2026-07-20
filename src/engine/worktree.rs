@@ -101,7 +101,7 @@ impl Target for Worktree {
         self.repo.exists()
     }
 
-    fn template_context(&self, config: &Config) -> Value {
+    fn template_context(&self, config: &Config) -> Result<Value, human_errors::Error> {
         self.repo.template_context(config)
     }
 }

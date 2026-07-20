@@ -992,6 +992,7 @@ dependencies = [
  "lazy_static",
  "mockall",
  "nix",
+ "percent-encoding",
  "reqwest 0.12.28",
  "rpassword",
  "rstest",

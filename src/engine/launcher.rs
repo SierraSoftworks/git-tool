@@ -91,7 +91,7 @@ impl Launcher for TrueLauncher {
         a: &app::App,
         t: &(dyn Target + Send + Sync),
     ) -> Result<i32, human_errors::Error> {
-        let context = t.template_context(&self.config);
+        let context = t.template_context(&self.config)?;
 
         let program = render(a.get_command(), context.clone())?;
         let args = render_list(a.get_args(), context.clone())?;
