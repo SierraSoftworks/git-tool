@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
+name: Gitee
+description: Adds support for managing Gitee repositories through Git-Tool.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      name: gitee.com
+      website: "https://gitee.com/{{ .Repo.FullName }}"
+      gitUrl: "git@gitee.com:{{ .Repo.FullName }}.git"
+      pattern: "*/*"

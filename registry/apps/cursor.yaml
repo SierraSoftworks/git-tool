@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: Cursor
+description: Launches the Cursor AI code editor in a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: cursor
+      command: cmd.exe
+      args:
+        - "/Q"
+        - "/C"
+        - "cursor.cmd ."
+  - platform: linux
+    app:
+      name: cursor
+      command: cursor
+      args:
+        - "."
+  - platform: darwin
+    app:
+      name: cursor
+      command: cursor
+      args:
+        - "."

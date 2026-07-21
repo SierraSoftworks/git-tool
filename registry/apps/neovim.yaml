@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: Neovim
+description: Launches the Neovim text editor in a project directory.
+version: 1.0.0
+configs:
+  - platform: any
+    app:
+      name: nvim
+      command: nvim

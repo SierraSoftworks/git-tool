@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: opencode
+description: Launches the opencode AI coding agent in a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: opencode
+      command: cmd.exe
+      args:
+        - "/Q"
+        - "/C"
+        - "opencode"
+  - platform: linux
+    app:
+      name: opencode
+      command: opencode
+  - platform: darwin
+    app:
+      name: opencode
+      command: opencode
