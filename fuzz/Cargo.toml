@@ -5,13 +5,18 @@ publish = false
 edition = "2024"
 
 [dependencies]
-afl = "0.15"
+afl = "0.18"
 clap = "4.6.1"
 git-tool = { path = ".." }
 gotmpl = "0.6.1"
 serde_yaml = "0.9"
 tempfile = "3.27"
 tokio = { version = "1.52", features = ["rt-multi-thread"] }
+
+[lints.rust]
+# cargo-afl (afl.rs) sets `cfg(fuzzing)` when building fuzz targets; declaring it
+# here keeps plain `cargo` builds free of unexpected-cfg warnings.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
 
 [[bin]]
 name = "commands"
@@ -42,8 +47,22 @@ doc = false
 bench = false
 
 [[bin]]
+name = "gitignore"
+path = "fuzz_targets/gitignore.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "identifier"
 path = "fuzz_targets/identifier.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "registry"
+path = "fuzz_targets/registry.rs"
 test = false
 doc = false
 bench = false
@@ -72,6 +91,13 @@ bench = false
 [[bin]]
 name = "templates"
 path = "fuzz_targets/templates.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "worktree"
+path = "fuzz_targets/worktree.rs"
 test = false
 doc = false
 bench = false

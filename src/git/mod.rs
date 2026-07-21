@@ -35,6 +35,11 @@ pub use worktree::{
     Worktree, git_worktree_add, git_worktree_is_clean, git_worktree_list, git_worktree_remove,
 };
 
+// Only exposed to the fuzzing harness (cargo-afl sets `cfg(fuzzing)`), allowing
+// the `git worktree list --porcelain` parser to be fuzzed without invoking git.
+#[cfg(fuzzing)]
+pub use worktree::parse_worktree_list_fuzz;
+
 #[cfg(test)]
 pub use config::git_config_set;
 #[cfg(test)]

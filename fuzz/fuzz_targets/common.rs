@@ -39,3 +39,30 @@ pub fn runtime() -> &'static tokio::runtime::Runtime {
             .expect("the fuzz runtime to initialize")
     })
 }
+
+/// Records the observed state (hashed from the provided fields) with IJON so
+/// that AFL++ treats reaching a previously-unseen state as new coverage. This
+/// helps the fuzzer explore stateful code paths — such as sequences of git
+/// branch operations — whose interesting behaviour is invisible to plain edge
+/// coverage. On non-fuzzing builds it is a no-op.
+pub fn record_state(fields: &[String]) {
+    #[cfg(fuzzing)]
+    {
+        let mut sorted: Vec<&String> = fields.iter().collect();
+        sorted.sort();
+
+        // FNV-style fold of the sorted field set into a single IJON state value.
+        let mut hash: u32 = 0;
+        for field in sorted {
+            for byte in field.bytes() {
+                hash = hash.wrapping_mul(31).wrapping_add(byte as u32);
+            }
+            hash = hash.wrapping_mul(31).wrapping_add(1);
+        }
+
+        afl::ijon_set!(hash);
+    }
+
+    #[cfg(not(fuzzing))]
+    let _ = fields;
+}

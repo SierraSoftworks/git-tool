@@ -1,0 +1,10 @@
+# custom rules kept above the managed block
+*.log
+.env
+
+## -------- Managed by Git Tool -------- ##
+## Add any custom rules above this block ##
+## ------------------------------------- ##
+## @languages: rust,node
+/target
+node_modules/
