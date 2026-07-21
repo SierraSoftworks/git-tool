@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: Nano
+description: Launches the GNU nano text editor in a project directory.
+version: 1.0.0
+configs:
+  - platform: any
+    app:
+      name: nano
+      command: nano

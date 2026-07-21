@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: IntelliJ IDEA
+description: Launches JetBrains IntelliJ IDEA in a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: idea
+      command: cmd.exe
+      args:
+        - "/Q"
+        - "/C"
+        - "idea.cmd ."
+  - platform: linux
+    app:
+      name: idea
+      command: idea
+      args:
+        - "."
+  - platform: darwin
+    app:
+      name: idea
+      command: idea
+      args:
+        - "."
