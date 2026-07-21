@@ -133,3 +133,15 @@ api:
 - `GitHub/v3` is used to communicate with a GitHub server supporting the v3 API. Public GitHub uses
   `https://api.github.com` as its endpoint while a private GitHub Enterprise instance uses
   `https://github.example.com/api/v3`.
+- `GitLab/v4` is used to communicate with a GitLab server supporting the v4 REST API. Public GitLab uses
+  `https://gitlab.com/api/v4` as its endpoint while a self-managed instance uses
+  `https://gitlab.example.com/api/v4`. Authentication uses a Personal Access Token with the `api` scope.
+- `Gitea/v1` is used to communicate with a Gitea or Forgejo server (including Codeberg) supporting the v1
+  API. Gitea.com uses `https://gitea.com/api/v1`, Codeberg uses `https://codeberg.org/api/v1`, and a
+  self-hosted instance uses `https://gitea.example.com/api/v1`. Authentication uses an Access Token with
+  the `repository` (and, for organizations, `organization`) scope.
+- `BitBucket/2.0` is used to communicate with BitBucket Cloud's 2.0 REST API at
+  `https://api.bitbucket.org/2.0`. Authentication accepts either an App Password provided as
+  `username:app_password` (used with HTTP Basic authentication) or a standalone Access Token (used with
+  Bearer authentication). BitBucket does not support transferring a repository between workspaces through
+  its API, so [`gt move`](../commands/repos.md#move) can only rename repositories within the same workspace.

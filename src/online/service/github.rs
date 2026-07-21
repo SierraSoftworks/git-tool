@@ -8,7 +8,6 @@ use reqwest::{Method, Request, StatusCode, Url};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tracing_batteries::prelude::*;
 
 #[derive(Default)]
 pub struct GitHubService {}

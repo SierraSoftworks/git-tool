@@ -9,3 +9,6 @@ configs:
       website: "https://gitlab.com/{{ .Repo.FullName }}"
       gitUrl: "git@gitlab.com:{{ .Repo.FullName }}.git"
       pattern: "*/*"
+      api:
+        kind: GitLab/v4
+        url: https://gitlab.com/api/v4

@@ -9,3 +9,6 @@ configs:
       website: "https://codeberg.org/{{ .Repo.FullName }}"
       gitUrl: "git@codeberg.org:{{ .Repo.FullName }}.git"
       pattern: "*/*"
+      api:
+        kind: Gitea/v1
+        url: https://codeberg.org/api/v1
