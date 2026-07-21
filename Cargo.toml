@@ -92,5 +92,12 @@ telemetry = []
 # to complex failure modes.
 pure-tests = []
 
+[lints.rust]
+# `fuzzing` is set by cargo-afl (afl.rs) when building fuzz targets. Declaring it
+# here keeps normal `cargo build`/`cargo test` runs free of unexpected-cfg
+# warnings for the `#[cfg(fuzzing)]`-gated helpers that are only exposed to the
+# fuzzing harness.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+
 [profile.release]
 debug = true

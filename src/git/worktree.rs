@@ -93,6 +93,21 @@ pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human
     )
     .await?;
 
+    Ok(parse_worktree_list(&output)
+        .into_iter()
+        .map(|worktree| Worktree {
+            path: canonicalize_worktree_path(worktree.path),
+            ..worktree
+        })
+        .collect())
+}
+
+/// Parses the output of `git worktree list --porcelain` into [`Worktree`]
+/// entries. The returned paths are exactly as reported by git (they are
+/// canonicalized separately by [`git_worktree_list`]) so that this function
+/// performs no filesystem access and can be exercised against arbitrary input
+/// in isolation.
+fn parse_worktree_list(output: &str) -> Vec<Worktree> {
     let mut worktrees = Vec::new();
     let mut current_path: Option<path::PathBuf> = None;
     let mut current_branch: Option<String> = None;
@@ -114,7 +129,7 @@ pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human
         } else if line.is_empty() {
             if let Some(path) = current_path.take() {
                 worktrees.push(Worktree {
-                    path: canonicalize_worktree_path(path),
+                    path,
                     branch: current_branch.take(),
                     head: current_head.take(),
                 });
@@ -126,13 +141,21 @@ pub async fn git_worktree_list(repo: &path::Path) -> Result<Vec<Worktree>, human
 
     if let Some(path) = current_path.take() {
         worktrees.push(Worktree {
-            path: canonicalize_worktree_path(path),
+            path,
             branch: current_branch.take(),
             head: current_head.take(),
         });
     }
 
-    Ok(worktrees)
+    worktrees
+}
+
+/// Exposes [`parse_worktree_list`] to the fuzzing harness. This is compiled only
+/// for `cfg(fuzzing)` builds (which cargo-afl sets automatically) so the
+/// porcelain parser can be fuzzed against arbitrary input without spawning git.
+#[cfg(fuzzing)]
+pub fn parse_worktree_list_fuzz(output: &str) -> Vec<Worktree> {
+    parse_worktree_list(output)
 }
 
 /// Normalizes a worktree path to its canonical form so that callers can compare

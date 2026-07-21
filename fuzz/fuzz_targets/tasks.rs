@@ -49,9 +49,13 @@ fn main() {
                 }
 
                 assert!(temp.path().join(".git").is_dir());
-                git::git_branches(temp.path())
+                let branches = git::git_branches(temp.path())
                     .await
                     .expect("the task-managed repository to remain queryable");
+
+                // Feed the current branch-set to IJON so AFL++ explores novel
+                // repository states rather than just newly-executed code edges.
+                common::record_state(&branches);
             }
         });
     });

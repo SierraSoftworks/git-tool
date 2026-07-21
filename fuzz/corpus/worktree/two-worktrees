@@ -1,0 +1,8 @@
+worktree /home/user/project
+HEAD 0123456789abcdef0123456789abcdef01234567
+branch refs/heads/main
+
+worktree /home/user/project-feature
+HEAD 89abcdef0123456789abcdef0123456789abcdef
+branch refs/heads/feature/example
+

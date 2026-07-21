@@ -24,11 +24,14 @@ jobs:
           - completion
           - config
           - git_operations
+          - gitignore
           - identifier
+          - registry
           - repo_config
           - search
           - tasks
           - templates
+          - worktree
 
     steps:
       - uses: actions/checkout@v7

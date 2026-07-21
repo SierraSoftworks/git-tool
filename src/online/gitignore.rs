@@ -159,6 +159,16 @@ impl GitIgnoreFileSection {
     }
 }
 
+/// Exposes the `.gitignore` managed-section parser to the fuzzing harness. This
+/// is compiled only for `cfg(fuzzing)` builds (which cargo-afl sets
+/// automatically) so the parser can be fuzzed against arbitrary input without
+/// performing any network requests. Returns the normalized rendering of the
+/// managed section when one is present.
+#[cfg(fuzzing)]
+pub fn parse_managed_section_fuzz(input: &str) -> Option<String> {
+    GitIgnoreFileSection::parse(input).map(Into::into)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
