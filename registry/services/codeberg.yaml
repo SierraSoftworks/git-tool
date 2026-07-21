@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v2/template.schema.json
+name: Codeberg
+description: Adds support for managing Codeberg repositories through Git-Tool.
+version: 1.0.0
+configs:
+  - platform: any
+    service:
+      name: codeberg.org
+      website: "https://codeberg.org/{{ .Repo.FullName }}"
+      gitUrl: "git@codeberg.org:{{ .Repo.FullName }}.git"
+      pattern: "*/*"
