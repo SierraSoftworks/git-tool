@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://schemas.sierrasoftworks.com/git-tool/v1/template.schema.json
+name: Windsurf
+description: Launches the Windsurf AI code editor in a project directory.
+version: 1.0.0
+configs:
+  - platform: windows
+    app:
+      name: windsurf
+      command: cmd.exe
+      args:
+        - "/Q"
+        - "/C"
+        - "windsurf.cmd ."
+  - platform: linux
+    app:
+      name: windsurf
+      command: windsurf
+      args:
+        - "."
+  - platform: darwin
+    app:
+      name: windsurf
+      command: windsurf
+      args:
+        - "."
