@@ -6,7 +6,7 @@ target="${1:-templates}"
 duration="${2:-60}"
 
 if [[ ! "$duration" =~ ^[0-9]+$ ]]; then
-    echo "Usage: ./scripts/fuzz [target] [seconds] [libFuzzer options...]" >&2
+    echo "Usage: ./scripts/fuzz [target] [seconds] [afl-fuzz options...]" >&2
     exit 2
 fi
 
@@ -19,28 +19,43 @@ if [[ ! -f "fuzz/fuzz_targets/${target}.rs" ]]; then
     exit 2
 fi
 
-if ! cargo +nightly --version >/dev/null 2>&1; then
-    echo "Nightly Rust is required. Install it with: rustup toolchain install nightly" >&2
+if ! command -v cargo-afl >/dev/null 2>&1; then
+    echo "cargo-afl is required. Install it with: cargo install cargo-afl" >&2
     exit 1
 fi
 
-if ! command -v cargo-fuzz >/dev/null 2>&1; then
-    echo "cargo-fuzz is required. Install it with: cargo install cargo-fuzz" >&2
-    exit 1
-fi
-
-mkdir -p "fuzz/corpus-output/${target}"
-
-cargo_args=(+nightly fuzz run)
+# Build the AFL-instrumented target binary.
+build_args=(afl build --release --manifest-path fuzz/Cargo.toml --bin "$target")
 if [[ -n "${CARGO_BUILD_TARGET:-}" ]]; then
-    cargo_args+=(--target "$CARGO_BUILD_TARGET")
+    build_args+=(--target "$CARGO_BUILD_TARGET")
+fi
+cargo "${build_args[@]}"
+
+if [[ -n "${CARGO_BUILD_TARGET:-}" ]]; then
+    binary="fuzz/target/${CARGO_BUILD_TARGET}/release/${target}"
+else
+    binary="fuzz/target/release/${target}"
 fi
 
-if [[ -n "${FUZZ_SANITIZER:-}" ]]; then
-    cargo_args+=(--sanitizer "$FUZZ_SANITIZER")
-elif [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
-    echo "Apple Silicon detected; disabling sanitizers to avoid the current linker incompatibility." >&2
-    cargo_args+=(--sanitizer none)
+# The checked-in corpus provides read-only seeds; AFL writes its state and any
+# discovered crashes to the (git-ignored) output directory.
+input_dir="fuzz/corpus/${target}"
+output_dir="fuzz/corpus-output/${target}"
+
+# AFL refuses to start without at least one seed input, so synthesise one when
+# the checked-in corpus is empty.
+if [[ -z "$(ls -A "$input_dir" 2>/dev/null || true)" ]]; then
+    input_dir="$(mktemp -d)"
+    printf '\0' >"${input_dir}/seed"
+fi
+
+# Resume an existing session when one is already present, otherwise start fresh.
+if [[ -d "${output_dir}/default/queue" ]]; then
+    afl_input=(-i -)
+else
+    rm -rf "$output_dir"
+    mkdir -p "$output_dir"
+    afl_input=(-i "$input_dir")
 fi
 
 if (( $# >= 2 )); then
@@ -49,10 +64,25 @@ else
     shift $#
 fi
 
-exec cargo "${cargo_args[@]}" \
-    "$target" \
-    "fuzz/corpus-output/${target}" \
-    "fuzz/corpus/${target}" -- \
-    -max_total_time="$duration" \
-    -timeout=10 \
-    "$@"
+# Keep AFL non-interactive so it runs cleanly in CI and on developer machines
+# where the kernel core pattern / CPU governor cannot be reconfigured.
+export AFL_SKIP_CPUFREQ="${AFL_SKIP_CPUFREQ:-1}"
+export AFL_NO_AFFINITY="${AFL_NO_AFFINITY:-1}"
+export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES="${AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES:-1}"
+# Stop as soon as a reproducible crash is found so failures surface quickly.
+export AFL_BENCH_UNTIL_CRASH="${AFL_BENCH_UNTIL_CRASH:-1}"
+
+cargo afl fuzz \
+    "${afl_input[@]}" \
+    -o "$output_dir" \
+    -V "$duration" \
+    "$@" \
+    -- "$binary"
+
+crashes_dir="${output_dir}/default/crashes"
+if compgen -G "${crashes_dir}/id:*" >/dev/null 2>&1; then
+    echo "Fuzzing found crashes in ${crashes_dir}:" >&2
+    ls -1 "${crashes_dir}" >&2
+    echo "Reproduce with: cargo afl run --release --manifest-path fuzz/Cargo.toml --bin ${target} < ${crashes_dir}/<crash-file>" >&2
+    exit 1
+fi
