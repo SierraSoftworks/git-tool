@@ -9,3 +9,6 @@ configs:
       website: "https://bitbucket.org/{{ .Repo.FullName }}"
       gitUrl: "git@bitbucket.org:{{ .Repo.FullName }}.git"
       pattern: "*/*"
+      api:
+        kind: BitBucket/2.0
+        url: https://api.bitbucket.org/2.0

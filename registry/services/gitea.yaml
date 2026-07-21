@@ -9,3 +9,6 @@ configs:
       website: "https://gitea.com/{{ .Repo.FullName }}"
       gitUrl: "git@gitea.com:{{ .Repo.FullName }}.git"
       pattern: "*/*"
+      api:
+        kind: Gitea/v1
+        url: https://gitea.com/api/v1
