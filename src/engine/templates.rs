@@ -321,75 +321,39 @@ mod tests {
         );
     }
 
-    #[test]
-    fn render_rejects_unicode_inside_action_without_panicking() {
-        let fuzz_input = [
-            123, 123, 32, 119, 105, 116, 104, 32, 46, 255, 255, 255, 255, 255, 255, 255, 1, 123,
-            32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46, 86, 97, 108, 117, 117, 101, 32, 125,
-            125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125, 101, 109, 152, 139, 134, 132, 123,
-            32, 101, 110, 100, 32, 125, 125,
-        ];
-        let template = String::from_utf8_lossy(&fuzz_input);
+    mod fuzzer_tests {
+        use super::*;
+        use rstest::rstest;
 
-        assert!(render(&template, Value::Nil).is_err());
-    }
-
-    #[test]
-    fn render_rejects_control_characters_inside_action_without_hanging() {
-        let fuzz_input = [
-            123, 123, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105, 116, 104, 32, 47, 42,
-            97, 109, 101, 32, 125, 125, 123, 123, 32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46,
-            86, 97, 108, 117, 101, 32, 125, 125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125,
-            101, 109, 112, 116, 121, 123, 123, 32, 101, 110, 100, 32, 125, 125,
-        ];
-        let template = String::from_utf8(fuzz_input.to_vec()).unwrap();
-
-        assert!(render(&template, Value::Nil).is_err());
-    }
-
-    #[test]
-    fn render_rejects_unterminated_action_without_hanging() {
-        for template in ["{{ ", "{{ .", "{{ if ", "{{ range ", "{{ \"a", "{{ /*"] {
-            assert!(
-                render(template, Value::Nil).is_err(),
-                "expected unterminated action '{template}' to be rejected"
-            );
+        #[rstest]
+        #[case::unicode_inside_action("{{ .� }}")]
+        #[case::control_character_inside_action("{{ \0 }}")]
+        fn render_rejects_parser_repros(#[case] template: &str) {
+            assert!(render(template, Value::Nil).is_err());
         }
-    }
 
-    #[test]
-    fn render_rejects_unterminated_action_from_fuzz_input_without_hanging() {
-        // Mirrors how the `templates` fuzz target extracts the template from the
-        // NUL-delimited corpus entry, which reduces to an unterminated `{{ ` action.
-        let fuzz_input = [
-            123, 123, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105, 116, 104, 32, 47, 42,
-            97, 109, 101, 32, 125, 125, 123, 123, 32, 46, 32, 125, 125, 61, 123, 123, 32, 36, 46,
-            86, 97, 108, 117, 101, 32, 125, 125, 123, 123, 32, 101, 108, 115, 101, 32, 125, 125,
-            101, 109, 112, 116, 121, 123, 123, 32, 101, 110, 100, 32, 125, 125,
-        ];
-        let template = fuzz_input
-            .split(|byte| *byte == 0)
-            .next()
-            .map(|field| String::from_utf8_lossy(field).into_owned())
-            .unwrap_or_default();
+        #[rstest]
+        #[case::empty("{{ ")]
+        #[case::field("{{ .")]
+        #[case::if_action("{{ if ")]
+        #[case::range_action("{{ range ")]
+        #[case::quoted_string("{{ \"a")]
+        #[case::comment("{{ /*")]
+        fn render_rejects_unterminated_action(#[case] template: &str) {
+            assert!(render(template, Value::Nil).is_err());
+        }
 
-        assert_eq!(template, "{{ ");
-        assert!(render(&template, Value::Nil).is_err());
-    }
+        #[rstest]
+        #[case("é {{- .Name }}", "éworld")]
+        #[case("⸀ {{- .Name }}", "⸀world")]
+        #[case("héllo{{- .Name }}", "hélloworld")]
+        #[case("héllo {{- .Name }}", "hélloworld")]
+        fn render_trims_whitespace_after_unicode(#[case] template: &str, #[case] expected: &str) {
+            let context = tmap! {
+                "Name" => Value::String("world".into())
+            };
 
-    #[test]
-    fn render_trims_whitespace_after_unicode_without_panicking() {
-        let context = tmap! {
-            "Name" => Value::String("world".into())
-        };
-
-        for (template, expected) in [
-            ("é {{- .Name }}", "éworld"),
-            ("⸀ {{- .Name }}", "⸀world"),
-            ("héllo{{- .Name }}", "hélloworld"),
-            ("héllo {{- .Name }}", "hélloworld"),
-        ] {
-            assert_eq!(render(template, context.clone()).unwrap(), expected);
+            assert_eq!(render(template, context).unwrap(), expected);
         }
     }
 
