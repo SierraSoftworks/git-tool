@@ -1,7 +1,6 @@
 #Added by cargo
 
 /target
-/fuzz/artifacts
 /fuzz/corpus-output
 /fuzz/target
 *.profraw
