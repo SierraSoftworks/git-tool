@@ -58,7 +58,7 @@ jobs:
           key: fuzz-${{ matrix.target }}
 
       - name: Install cargo-afl
-        uses: taiki-e/install-action@v2.84.0
+        uses: taiki-e/install-action@v2.84.1
         with:
           tool: cargo-afl
 
