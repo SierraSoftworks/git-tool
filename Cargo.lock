@@ -219,7 +219,7 @@ version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -230,7 +230,7 @@ checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
 dependencies = [
  "anstyle",
  "once_cell_polyfill",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -520,7 +520,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -728,7 +728,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -793,7 +793,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1003,7 +1003,7 @@ dependencies = [
  "rpassword",
  "rstest",
  "semver",
- "sentry",
+ "sentry 0.48.5",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1488,7 +1488,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "160f2eade097f30263b548aae5deb12ad349c909baa710fa24b92c9090b2e006"
 dependencies = [
  "scopeguard",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1655,7 +1655,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2026,7 +2026,7 @@ dependencies = [
  "once_cell",
  "socket2 0.6.4",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2363,7 +2363,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2422,7 +2422,7 @@ dependencies = [
  "security-framework 3.7.0",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2531,24 +2531,40 @@ dependencies = [
  "httpdate",
  "reqwest 0.13.4",
  "rustls",
+ "sentry-core 0.48.5",
+ "sentry-log 0.48.5",
+ "tokio",
+ "ureq",
+]
+
+[[package]]
+name = "sentry"
+version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63207365db50cb817402f0ec8097d6dad3d644ef3fffd6ba30c75b3077e514da"
+dependencies = [
+ "cfg_aliases",
+ "httpdate",
+ "reqwest 0.13.4",
+ "rustls",
  "sentry-actix",
- "sentry-core",
- "sentry-log",
+ "sentry-core 0.49.1",
+ "sentry-log 0.49.1",
  "tokio",
  "ureq",
 ]
 
 [[package]]
 name = "sentry-actix"
-version = "0.48.5"
+version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "119ede4e37790ec04e8a14073c8414f0a4b2648402856c0563495a9a5cf54d57"
+checksum = "4a0eb1ed18478fb48db007aeaa672a3de176055357feb768eee0c3471802d0ce"
 dependencies = [
  "actix-http",
  "actix-web",
  "bytes",
  "futures-util",
- "sentry-core",
+ "sentry-core 0.49.1",
 ]
 
 [[package]]
@@ -2558,7 +2574,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecf0b1a4a4e9ec88395b52e6fa4868b95564c1fa96b26a0606f5f6288a0f7149"
 dependencies = [
  "rand 0.9.5",
- "sentry-types",
+ "sentry-types 0.48.5",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "sentry-core"
+version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48759bc392fb5e3b36b4efcb485f51074c0ba8479711cd5c8cf79e86f9f75d41"
+dependencies = [
+ "rand 0.9.5",
+ "sentry-types 0.49.1",
  "serde",
  "serde_json",
  "url",
@@ -2572,7 +2601,18 @@ checksum = "11ffc7737b6d4f1cb3707284703c7364e9f5f056118abc523dd52e732f13cbe1"
 dependencies = [
  "bitflags",
  "log",
- "sentry-core",
+ "sentry-core 0.48.5",
+]
+
+[[package]]
+name = "sentry-log"
+version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9553a2f0f75bc8550137ebc753e8d2161af63ff780ca59983935f8df8f01655"
+dependencies = [
+ "bitflags",
+ "log",
+ "sentry-core 0.49.1",
 ]
 
 [[package]]
@@ -2580,6 +2620,23 @@ name = "sentry-types"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2239099d47e76857b0825a182ecdb90159add7aa1097b60247c6e7ca6bf49c6a"
+dependencies = [
+ "debugid",
+ "hex",
+ "rand 0.9.5",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "sentry-types"
+version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fab146d15a30ab4897a95fd15d6a038b8d7fbf2661c5f8b13738ce8df7a095b7"
 dependencies = [
  "debugid",
  "hex",
@@ -2777,7 +2834,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52d1cfed4120b4d927bf7c0f86d2087a4a7d6027c906d9f9d525a80573b9be51"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -2880,7 +2937,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3261,7 +3318,7 @@ dependencies = [
 [[package]]
 name = "tracing-batteries"
 version = "0.1.0"
-source = "git+https://github.com/sierrasoftworks/tracing-batteries-rs.git#f059e936623c2eb0ca67f6ae3301487c9443ffd0"
+source = "git+https://github.com/sierrasoftworks/tracing-batteries-rs.git#2bdcc42b2dfa2f5baecad83e051638d977113a7d"
 dependencies = [
  "chrono",
  "hex",
@@ -3274,7 +3331,7 @@ dependencies = [
  "radix_fmt",
  "rand 0.10.2",
  "reqwest 0.12.28",
- "sentry",
+ "sentry 0.49.1",
  "serde",
  "sha2",
  "sys-locale",
@@ -3675,7 +3732,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
