@@ -23,26 +23,28 @@ fn session(id: &str) -> tracing_batteries::Session {
                 "Customer"
             },
         )
-        .with_battery(tracing_batteries::Sentry::new((
-            "https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938",
-            sentry::ClientOptions {
-                release: Some(version!("git-tool@v").into()),
-                #[cfg(debug_assertions)]
-                environment: Some("Development".into()),
-                #[cfg(not(debug_assertions))]
-                environment: Some("Customer".into()),
-                default_integrations: true,
-                attach_stacktrace: true,
-                send_default_pii: false,
-                before_send: Some(Arc::new(|mut event| {
+        .with_battery(tracing_batteries::Sentry::new(
+            sentry::ClientOptions::new()
+                .dsn("https://0787127414b24323be5a3d34767cb9b8@o219072.ingest.sentry.io/1486938")
+                .release(version!("git-tool@v"))
+                .environment({
+                    #[cfg(debug_assertions)]
+                    let environment = "Development";
+                    #[cfg(not(debug_assertions))]
+                    let environment = "Customer";
+
+                    environment
+                })
+                .default_integrations(true)
+                .attach_stacktrace(true)
+                .send_default_pii(false)
+                .before_send(|mut event| {
                     // Don't send the server name (as it may leak information about the user)
                     event.server_name = None;
 
                     Some(event)
-                })),
-                ..Default::default()
-            },
-        )))
+                }),
+        ))
         .with_battery(tracing_batteries::OpenTelemetry::new(
             "https://telemetry.sierrasoftworks.com",
         ))
