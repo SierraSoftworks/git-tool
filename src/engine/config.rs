@@ -301,7 +301,11 @@ impl Config {
 
         match &self.schema {
             Some(schema) => Ok(format!(
-                "# yaml-language-server: $schema={schema}\n{config}",
+                "# yaml-language-server: $schema={schema}\n# path: {}\n{config}",
+                self.config_file
+                    .as_ref()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| "<unknown>".into()),
             )),
             None => Ok(config),
         }
