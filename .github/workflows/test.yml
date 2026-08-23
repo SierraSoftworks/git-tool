@@ -72,11 +72,13 @@ jobs:
           #     sudo apt-get install -y libdbus-1-3 libdbus-1-dev
           - arch: "arm64"
             os: linux
-            run_on: ubuntu-latest
+            run_on: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             experimental: true
             skiptests: true
-            builder: cross
+            setup: |
+              sudo apt-get update
+              sudo apt-get install -y libdbus-1-3 libdbus-1-dev
 
           - arch: amd64
             run_on: macos-latest
@@ -103,17 +105,9 @@ jobs:
           components: llvm-tools-preview
 
       - name: install protoc
-        if: matrix.builder != 'cross'
         uses: SierraSoftworks/setup-protoc@v3.0.1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Cross
-        if: matrix.builder == 'cross'
-        shell: bash
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall --no-confirm cross
 
       - name: cache ~/.cargo
         uses: Swatinem/rust-cache@v2
@@ -126,11 +120,7 @@ jobs:
 
       - name: cargo build
         if: matrix.skiptests
-        run: ${{ matrix.builder || 'cargo' }} build --target ${{ matrix.target }} ${{ matrix.flags }}
-
-      - name: Reclaim cache ownership from cross
-        if: matrix.builder == 'cross'
-        run: sudo chown -R "$(id -u):$(id -g)" "$HOME/.cargo" target
+        run: cargo build --target ${{ matrix.target }} ${{ matrix.flags }}
 
       - name: cargo test
         if: "!matrix.skiptests"
