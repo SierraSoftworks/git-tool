@@ -170,6 +170,17 @@ jobs:
         run: |
           sentry-cli upload-dif -o sierra-softworks -p git-tool --include-sources ./target/${{ matrix.target }}/release/
 
+      # Publish debug symbols to symbols.sierrasoftworks.com as well (build ID
+      # derived server-side; authenticated with this workflow's OIDC id-token)
+      # so Pyroscope's symbolizer and debuggers can resolve frames by build
+      # ID. Runs before the strip below while the DWARF still exists; the
+      # action's own re-strip is then a no-op ahead of the full strip.
+      - name: Publish debug symbols
+        uses: SierraSoftworks/symbols@v1
+        with:
+          binary: target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}
+          version: ${{ github.event.release.tag_name }}
+
       - name: Strip Debug Symbols
         run: |
           ${{ matrix.strip }} target/${{ matrix.target }}/release/git-tool${{ matrix.extension }}
