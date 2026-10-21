@@ -73,7 +73,7 @@ impl CommandRunnable for SwitchCommand {
     async fn complete(&self, core: &Core, completer: &Completer, _matches: &ArgMatches) {
         let repo: Result<Repo, _> = core.resolve(());
         if let Ok(repo) = repo {
-            completer.offer("--create");
+            completer.offer("--no-create");
             if let Ok(branches) = git::git_branches(&repo.get_path()).await {
                 completer.offer_many(
                     branches
@@ -214,7 +214,13 @@ mod tests {
 
         let (core, _repo) = setup_test_repo_with_remote(core, &temp).await;
 
-        test_completions_with_core(&core, "gt switch", "", vec!["main", "feature/test"]).await;
+        test_completions_with_core(
+            &core,
+            "gt switch",
+            "",
+            vec!["--no-create", "main", "feature/test"],
+        )
+        .await;
     }
 
     #[tokio::test]
