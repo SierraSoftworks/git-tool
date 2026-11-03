@@ -113,7 +113,7 @@ impl Registry for GitHubRegistry {
         match resp.status() {
             reqwest::StatusCode::OK => {
                 let body = resp.bytes().await.to_human_error()?;
-                let entity = serde_yaml::from_slice(&body).wrap_system_err(
+                let entity = serde_norway::from_slice(&body).wrap_system_err(
                     format!("Could not parse /registry/{id}.yaml from the Git-Tool registry."),
                     &["Please report this issue to us by creating a new GitHub issue."],
                 )?;

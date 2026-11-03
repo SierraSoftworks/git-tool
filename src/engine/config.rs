@@ -224,7 +224,7 @@ impl Config {
 
     #[cfg(test)]
     pub fn from_str(yaml: &str) -> Result<Self, human_errors::Error> {
-        serde_yaml::from_str(yaml)
+        serde_norway::from_str(yaml)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 human_errors::wrap_user(
@@ -262,7 +262,7 @@ impl Config {
     where
         R: std::io::Read,
     {
-        serde_yaml::from_reader(rdr)
+        serde_norway::from_reader(rdr)
             .map(|x| Config::default().extend(x))
             .map_err(|e| {
                 human_errors::wrap_user(
@@ -291,7 +291,7 @@ impl Config {
     }
 
     pub fn to_string(&self) -> Result<String, human_errors::Error> {
-        let config = serde_yaml::to_string(self).map_err(|e| {
+        let config = serde_norway::to_string(self).map_err(|e| {
             human_errors::wrap_system(
                 e,
                 "We couldn't serialize your configuration to YAML due to a YAML serializer error.",
@@ -642,9 +642,9 @@ mod tests {
             reparsed.get_worktree_directory(),
             cfg.get_worktree_directory()
         );
-        let serialized_value: serde_yaml::Value = serde_yaml::from_str(&serialized).unwrap();
-        let reparsed_value: serde_yaml::Value =
-            serde_yaml::from_str(&reparsed.to_string().unwrap()).unwrap();
+        let serialized_value: serde_norway::Value = serde_norway::from_str(&serialized).unwrap();
+        let reparsed_value: serde_norway::Value =
+            serde_norway::from_str(&reparsed.to_string().unwrap()).unwrap();
         assert_eq!(reparsed_value, serialized_value);
     }
 

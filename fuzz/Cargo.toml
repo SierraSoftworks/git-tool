@@ -9,7 +9,7 @@ afl = "0.18"
 clap = "4.6.1"
 git-tool = { path = ".." }
 gotmpl = "0.6.1"
-serde_yaml = "0.9"
+serde_norway = "0.9.42"
 tempfile = "3.27"
 tokio = { version = "1.52", features = ["rt-multi-thread"] }
 
