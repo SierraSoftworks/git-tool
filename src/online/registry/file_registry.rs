@@ -86,7 +86,7 @@ impl Registry for FileRegistry {
             &["Check that the file exists and that Git-Tool has read access to it."],
         )?;
 
-        serde_yaml::from_str(&contents).wrap_user_err(
+        serde_norway::from_str(&contents).wrap_user_err(
             format!("Could not deserialize the registry entry '{id}' due to a YAML parser error."),
             &["Check that the registry entry is valid YAML and matches the registry entry schema."],
         )

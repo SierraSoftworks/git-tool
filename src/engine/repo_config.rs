@@ -78,7 +78,7 @@ impl RepoConfig {
 
     /// Parses a repository configuration from its raw bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, human_errors::Error> {
-        serde_yaml::from_slice(bytes).map_err(|e| {
+        serde_norway::from_slice(bytes).map_err(|e| {
             human_errors::wrap_user(
                 e,
                 "We couldn't parse your repository configuration file due to a YAML parser error.",
@@ -94,7 +94,7 @@ impl RepoConfig {
     /// original file (such as comments, whitespace, or key ordering) are
     /// normalized away.
     pub fn to_yaml(&self) -> Result<String, human_errors::Error> {
-        serde_yaml::to_string(self).map_err(|e| {
+        serde_norway::to_string(self).map_err(|e| {
             human_errors::wrap_system(
                 e,
                 "We couldn't serialize your repository configuration to YAML.",

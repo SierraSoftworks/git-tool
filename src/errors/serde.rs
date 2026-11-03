@@ -1,4 +1,4 @@
-impl super::HumanErrorExt for serde_yaml::Error {
+impl super::HumanErrorExt for serde_norway::Error {
     fn to_human_error(self) -> human_errors::Error {
         human_errors::wrap_user(
             self,

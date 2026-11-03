@@ -17,9 +17,9 @@ fn main() {
             let reserialized = reparsed
                 .to_string()
                 .expect("a reparsed configuration to serialize");
-            let canonical_value: serde_yaml::Value = serde_yaml::from_str(&canonical)
+            let canonical_value: serde_norway::Value = serde_norway::from_str(&canonical)
                 .expect("a serialized configuration to be valid YAML");
-            let reserialized_value: serde_yaml::Value = serde_yaml::from_str(&reserialized)
+            let reserialized_value: serde_norway::Value = serde_norway::from_str(&reserialized)
                 .expect("a reserialized configuration to be valid YAML");
 
             assert_eq!(canonical_value, reserialized_value);
