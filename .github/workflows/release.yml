@@ -159,7 +159,7 @@ jobs:
           name: cargofile
 
       - name: install protoc
-        uses: SierraSoftworks/setup-protoc@v3.0.1
+        uses: SierraSoftworks/setup-protoc@v3.0.2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
