@@ -45,7 +45,7 @@ jobs:
           sudo apt-get install -y libdbus-1-3 libdbus-1-dev clang llvm
 
       - name: Install protoc
-        uses: SierraSoftworks/setup-protoc@v3.0.2
+        uses: SierraSoftworks/setup-protoc@v3.0.3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
