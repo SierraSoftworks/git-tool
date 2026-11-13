@@ -141,7 +141,9 @@ jobs:
           Write-Host "Merging raw profile output files"
           &"$(rustc --print target-libdir)/../bin/llvm-profdata" merge -sparse default.profraw -o default.profdata
 
-          $latest_asset = Get-ChildItem -Path ./target/${{ matrix.target }}/debug/deps -Filter "git_tool-*" -File `
+          # Rust 1.100 moved test binaries out of target/<triple>/debug/deps and into
+          # target/<triple>/debug/build/<pkg>/<hash>/, so search the whole profile directory.
+          $latest_asset = Get-ChildItem -Path ./target/${{ matrix.target }}/debug -Recurse -Filter "git_tool-*" -File `
           | Where-Object { $_.Name.EndsWith(".exe") -or (-not $_.Name.Contains(".")) } `
           | Sort-Object -Top 1 -Property LastWriteTime
 
