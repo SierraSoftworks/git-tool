@@ -260,4 +260,18 @@ mod tests {
             "a detached worktree should still report its HEAD commit"
         );
     }
+
+    #[rstest::rstest]
+    #[case("branch refs/heads/main", Some("main"))]
+    #[case("branch refs/heads/feature/x", Some("feature/x"))]
+    // git permits branches named `refs/heads/...`; only one prefix is stripped (#2129).
+    #[case("branch refs/heads/refs/heads/foo", Some("refs/heads/foo"))]
+    #[case("branch refs/remotes/origin/main", Some("refs/remotes/origin/main"))]
+    #[case("detached", None)]
+    fn test_parse_worktree_list_branch(#[case] line: &str, #[case] expected: Option<&str>) {
+        let output = format!("worktree /repo\nHEAD abc123\n{line}\n\n");
+        let worktrees = parse_worktree_list(&output);
+        assert_eq!(worktrees.len(), 1);
+        assert_eq!(worktrees[0].branch.as_deref(), expected);
+    }
 }

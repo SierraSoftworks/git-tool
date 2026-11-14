@@ -14,8 +14,16 @@ fn main() {
 
         for worktree in &worktrees {
             if let Some(branch) = &worktree.branch {
-                // The refs/heads/ prefix is always stripped from branch names.
-                assert!(!branch.starts_with("refs/heads/"));
+                // Each branch comes from a `branch <ref>` line with a single
+                // leading refs/heads/ stripped. The result may itself start with
+                // refs/heads/, since git allows branches named that way
+                // (e.g. `git branch refs/heads/foo` => refs/heads/refs/heads/foo).
+                assert!(input.lines().any(|line| {
+                    line.trim_end()
+                        .strip_prefix("branch ")
+                        .map(|r| r.strip_prefix("refs/heads/").unwrap_or(r) == branch)
+                        .unwrap_or(false)
+                }));
             }
         }
     });
