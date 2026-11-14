@@ -75,9 +75,10 @@ jobs:
       - name: Build AFL toolchain
         run: cargo afl config --build --force
 
+      # cargo-afl invokes `sudo afl-system-config` itself; wrapping it in sudo
+      # fails because sudo's secure_path doesn't include ~/.cargo/bin.
       - name: Configure system for AFL++
-        run: |
-          sudo cargo afl system-config
+        run: cargo afl system-config
 
       - name: Run fuzz target
         id: fuzz
