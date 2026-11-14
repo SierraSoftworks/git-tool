@@ -57,17 +57,28 @@ jobs:
             fuzz -> fuzz/target
           key: fuzz-${{ matrix.target }}
 
+      # cargo-afl is built from source rather than via taiki-e/install-action:
+      # install-action has no cargo-afl manifest and falls back to a prebuilt
+      # binstall binary, which leaves the cargo-afl-common source (and its
+      # bundled AFLplusplus tree) out of ~/.cargo/registry/src, so
+      # `cargo afl config --build` cannot find AFL++ to build. `--force` makes
+      # sure the source is unpacked even when rust-cache restores the binary.
       - name: Install cargo-afl
-        uses: taiki-e/install-action@v2.90.3
-        with:
-          tool: cargo-afl
+        run: cargo install cargo-afl --locked --force
 
+      # `cargo install cargo-afl` already builds the AFL++ runtime for the
+      # active rustc, and a plain `config --build` refuses to overwrite it, so
+      # `--force` keeps this step working both after a fresh install and when
+      # rust-cache restores the binary without the (uncached) runtime.
+      # `--plugins` is omitted: it requires cargo-afl to be compiled with a
+      # nightly toolchain, and the fuzz targets don't rely on the LLVM plugins.
       - name: Build AFL toolchain
-        run: cargo afl config --build --plugins
+        run: cargo afl config --build --force
 
+      # cargo-afl invokes `sudo afl-system-config` itself; wrapping it in sudo
+      # fails because sudo's secure_path doesn't include ~/.cargo/bin.
       - name: Configure system for AFL++
-        run: |
-          sudo cargo afl system-config
+        run: cargo afl system-config
 
       - name: Run fuzz target
         id: fuzz
@@ -80,6 +91,16 @@ jobs:
           echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      # AFL++ names crash inputs like `id:000000,sig:06,...`, and
+      # upload-artifact rejects paths containing `:`, so archive them first.
+      - name: Package crash inputs
+        if: always() && steps.fuzz.outcome == 'failure'
+        run: |
+          crashes="fuzz/corpus-output/${{ matrix.target }}/default/crashes"
+          if [[ -d "$crashes" ]]; then
+            tar -czf "fuzz-crashes-${{ matrix.target }}.tar.gz" -C "$(dirname "$crashes")" crashes
+          fi
+
       - name: Upload failure details
         if: always() && steps.fuzz.outcome == 'failure'
         uses: actions/upload-artifact@v7
@@ -87,7 +108,7 @@ jobs:
           name: fuzz-failure-${{ matrix.target }}-${{ github.run_id }}
           path: |
             fuzz-${{ matrix.target }}.log
-            fuzz/corpus-output/${{ matrix.target }}/default/crashes
+            fuzz-crashes-${{ matrix.target }}.tar.gz
           if-no-files-found: warn
           retention-days: 30
 
