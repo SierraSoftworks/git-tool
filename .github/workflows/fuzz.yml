@@ -91,6 +91,16 @@ jobs:
           echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      # AFL++ names crash inputs like `id:000000,sig:06,...`, and
+      # upload-artifact rejects paths containing `:`, so archive them first.
+      - name: Package crash inputs
+        if: always() && steps.fuzz.outcome == 'failure'
+        run: |
+          crashes="fuzz/corpus-output/${{ matrix.target }}/default/crashes"
+          if [[ -d "$crashes" ]]; then
+            tar -czf "fuzz-crashes-${{ matrix.target }}.tar.gz" -C "$(dirname "$crashes")" crashes
+          fi
+
       - name: Upload failure details
         if: always() && steps.fuzz.outcome == 'failure'
         uses: actions/upload-artifact@v7
@@ -98,7 +108,7 @@ jobs:
           name: fuzz-failure-${{ matrix.target }}-${{ github.run_id }}
           path: |
             fuzz-${{ matrix.target }}.log
-            fuzz/corpus-output/${{ matrix.target }}/default/crashes
+            fuzz-crashes-${{ matrix.target }}.tar.gz
           if-no-files-found: warn
           retention-days: 30
 
