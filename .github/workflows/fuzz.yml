@@ -57,13 +57,19 @@ jobs:
             fuzz -> fuzz/target
           key: fuzz-${{ matrix.target }}
 
+      # cargo-afl is built from source rather than via taiki-e/install-action:
+      # install-action has no cargo-afl manifest and falls back to a prebuilt
+      # binstall binary, which leaves the cargo-afl-common source (and its
+      # bundled AFLplusplus tree) out of ~/.cargo/registry/src, so
+      # `cargo afl config --build` cannot find AFL++ to build. `--force` makes
+      # sure the source is unpacked even when rust-cache restores the binary.
       - name: Install cargo-afl
-        uses: taiki-e/install-action@v2.90.3
-        with:
-          tool: cargo-afl
+        run: cargo install cargo-afl --locked --force
 
+      # `--plugins` is omitted: it requires cargo-afl to be compiled with a
+      # nightly toolchain, and the fuzz targets don't rely on the LLVM plugins.
       - name: Build AFL toolchain
-        run: cargo afl config --build --plugins
+        run: cargo afl config --build
 
       - name: Configure system for AFL++
         run: |
