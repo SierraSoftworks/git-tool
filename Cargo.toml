@@ -24,7 +24,7 @@ keyring = { version = "3.6.3", optional = true, features = [
     "sync-secret-service",
 ] }
 lazy_static = "1.5"
-nix = { version = "0.31.3", features = ["process", "signal"] }
+nix = { version = "0.32.0", features = ["process", "signal"] }
 percent-encoding = "2.3"
 rpassword = { version = "7.5", optional = true }
 reqwest = { version = "0.12", default-features = false, features = [
