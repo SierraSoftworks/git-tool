@@ -1,6 +1,6 @@
 import { defineUserConfig, PageHeader } from "vuepress";
 import { viteBundler } from "@vuepress/bundler-vite";
-import { defaultTheme } from "@vuepress/theme-default";
+import { themeClassic } from "@vuepress/theme-classic";
 import { path } from "@vuepress/utils";
 
 import { googleAnalyticsPlugin } from "@vuepress/plugin-google-analytics";
@@ -45,7 +45,7 @@ export default defineUserConfig({
         fixedHeaders.forEach((header) => fixPageHeader(header));
     },
 
-    theme: defaultTheme({
+    theme: themeClassic({
         logo: "https://cdn.sierrasoftworks.com/logos/icon.png",
 
         repo: "SierraSoftworks/git-tool",
