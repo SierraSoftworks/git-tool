@@ -1,0 +1,25 @@
+# Configuration for `cargo audit` (also read by the audit-check action in the
+# Security Audit workflow).
+#
+# Only advisories for crates that are never compiled into this project belong
+# here. Each one must be re-checked with
+# `cargo tree --all-features --target all -i <crate>`, which prints nothing for
+# every crate listed below.
+[advisories]
+ignore = [
+    # quinn-udp: receive loop can spin after a truncated datagram. quinn-udp is
+    # only in Cargo.lock because reqwest lists `quinn` as an optional (HTTP/3)
+    # dependency, which we don't enable.
+    "RUSTSEC-2026-0538",
+
+    # actix-http / actix-web (HTTP server) advisories. Both are only in
+    # Cargo.lock because `sentry` lists the optional `sentry-actix`
+    # integration, which we don't enable; we never run an actix server.
+    "RUSTSEC-2026-0446", # actix-http: request smuggling via malformed chunked trailers
+    "RUSTSEC-2026-0447", # actix-web: compressed request bodies exhaust memory before extractor limits
+    "RUSTSEC-2026-0448", # actix-http: unbounded decompression exhausts memory and CPU
+    "RUSTSEC-2026-0455", # actix-http: large-window Brotli bodies bypass decompression limits
+    "RUSTSEC-2026-0552", # actix-http: bare LF in chunked trailers consumes pipelined requests
+    "RUSTSEC-2026-0553", # actix-http: malformed quoted chunk extensions end request bodies early
+    "RUSTSEC-2026-0554", # actix-http: partial keep-alive requests bypass the header timeout
+]
