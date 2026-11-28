@@ -2,6 +2,20 @@ name: Security Audit
 on:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.cargo/audit.toml'
+      - '.github/workflows/security_audit.yml'
+
+permissions:
+  contents: read
+  # audit-check reports its findings as a check run on the commit.
+  checks: write
+  issues: write
+
 jobs:
   audit:
     runs-on: ubuntu-latest
